@@ -35,7 +35,7 @@ export function HomeMain({ language }: HomeMainProps) {
   const servicesTranslations = {
     title: t.servicesTitle,
     subtitle: t.servicesSubtitle,
-    description: t.servicesSubtitle,
+    description: t.servicesDescription,
     cards: [
       { title: t.servicesCards.buying, ...SERVICE_CARD_CONTENT[0] },
       { title: t.servicesCards.selling, ...SERVICE_CARD_CONTENT[1] },

@@ -23,6 +23,7 @@ export const homeTranslations: Record<
     featuredViewAll: string;
     servicesTitle: string;
     servicesSubtitle: string;
+    servicesDescription: string;
     servicesCards: { buying: string; selling: string; management: string };
     whyTitle: string;
     whyPoints: {
@@ -30,6 +31,12 @@ export const homeTranslations: Record<
       transparency: string;
       advisors: string;
       exclusive: string;
+    };
+    propertyTabs: {
+      overview: string;
+      amenities: string;
+      location: string;
+      reviews: string;
     };
     footerDescription: string;
     footerQuickLinks: { buy: string; rent: string; sell: string; agents: string };
@@ -58,6 +65,8 @@ export const homeTranslations: Record<
     servicesTitle: "Our Services",
     servicesSubtitle:
       "From buying and selling to property management, our dedicated team supports you at every step.",
+    servicesDescription:
+      "Tailored solutions for every stage of your property journey.",
     servicesCards: {
       buying: "Buying a Home",
       selling: "Selling Property",
@@ -69,6 +78,12 @@ export const homeTranslations: Record<
       transparency: "Complete Transparency",
       advisors: "Dedicated Advisors",
       exclusive: "Exclusive Listings",
+    },
+    propertyTabs: {
+      overview: "Overview",
+      amenities: "Amenities",
+      location: "Location",
+      reviews: "Reviews",
     },
     footerDescription:
       "Premium real estate agency helping families and investors find exceptional properties across Amman's top neighborhoods.",
@@ -103,6 +118,7 @@ export const homeTranslations: Record<
     servicesTitle: "خدماتنا",
     servicesSubtitle:
       "من الشراء والبيع إلى إدارة العقارات، فريقنا المتخصص يرافقك في كل خطوة.",
+    servicesDescription: "حلول مصممة خصيصاً لكل مرحلة من رحلتك العقارية.",
     servicesCards: {
       buying: "شراء عقار",
       selling: "بيع عقار",
@@ -114,6 +130,12 @@ export const homeTranslations: Record<
       transparency: "شفافية كاملة",
       advisors: "مستشارون مخصصون",
       exclusive: "عقارات حصرية",
+    },
+    propertyTabs: {
+      overview: "نظرة عامة",
+      amenities: "المرافق",
+      location: "الموقع",
+      reviews: "التقييمات",
     },
     footerDescription:
       "شركة عقارية رائدة تساعد العائلات والمستثمرين في إيجاد أفضل العقارات في أحياء عمّان المرموقة.",
@@ -148,6 +170,8 @@ export const homeTranslations: Record<
     servicesTitle: "Nuestros servicios",
     servicesSubtitle:
       "Desde la compra y venta hasta la gestión de propiedades, nuestro equipo te acompaña en cada paso.",
+    servicesDescription:
+      "Soluciones a medida para cada etapa de tu trayectoria inmobiliaria.",
     servicesCards: {
       buying: "Compra de vivienda",
       selling: "Venta de propiedad",
@@ -159,6 +183,12 @@ export const homeTranslations: Record<
       transparency: "Transparencia total",
       advisors: "Asesores dedicados",
       exclusive: "Listados exclusivos",
+    },
+    propertyTabs: {
+      overview: "Resumen",
+      amenities: "Comodidades",
+      location: "Ubicación",
+      reviews: "Opiniones",
     },
     footerDescription:
       "Agencia inmobiliaria premium que ayuda a familias e inversores a encontrar propiedades excepcionales en los mejores barrios de Ammán.",
@@ -198,6 +228,8 @@ export const homeTranslations: Record<
     servicesTitle: "Nos services",
     servicesSubtitle:
       "De l'achat et la vente à la gestion locative, notre équipe vous accompagne à chaque étape.",
+    servicesDescription:
+      "Des solutions sur mesure à chaque étape de votre projet immobilier.",
     servicesCards: {
       buying: "Achat de bien",
       selling: "Vente de bien",
@@ -209,6 +241,12 @@ export const homeTranslations: Record<
       transparency: "Transparence totale",
       advisors: "Conseillers dédiés",
       exclusive: "Biens exclusifs",
+    },
+    propertyTabs: {
+      overview: "Aperçu",
+      amenities: "Équipements",
+      location: "Localisation",
+      reviews: "Avis",
     },
     footerDescription:
       "Agence immobilière haut de gamme aidant les familles et les investisseurs à trouver des biens d'exception dans les meilleurs quartiers d'Amman.",

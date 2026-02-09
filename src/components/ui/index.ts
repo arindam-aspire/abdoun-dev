@@ -15,6 +15,8 @@ export { Checkbox } from "./checkbox";
 export type { CheckboxProps } from "./checkbox";
 export { Select } from "./select";
 export type { SelectProps, SelectOption } from "./select";
+export { LanguageSelect } from "./language-select";
+export type { LanguageSelectProps } from "./language-select";
 export { Dropdown } from "./dropdown";
 export type { DropdownProps, DropdownOption } from "./dropdown";
 
@@ -65,6 +67,8 @@ export type {
   DialogDescriptionProps,
   DialogFooterProps,
 } from "./dialog";
+export { Modal } from "./modal";
+export type { ModalProps } from "./modal";
 export { Tabs } from "./tabs";
 export type { TabsProps, TabItem } from "./tabs";
 export { Link } from "./link";

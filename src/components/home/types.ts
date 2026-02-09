@@ -29,10 +29,13 @@ export interface FeaturedTranslations {
   viewAll: string;
 }
 
+export type ServiceCardIcon = "home" | "trending-up" | "building";
+
 export interface ServiceItem {
   title: string;
   description: string;
   cta: string;
+  icon?: ServiceCardIcon;
 }
 
 export interface ServicesTranslations {

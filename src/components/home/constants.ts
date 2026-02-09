@@ -94,15 +94,18 @@ export const SERVICE_CARD_CONTENT: Omit<ServiceItem, "title">[] = [
     description:
       "Access exclusive listings in prime Amman neighborhoods with personalized guidance from local experts.",
     cta: "Learn more →",
+    icon: "home",
   },
   {
     description:
       "Maximize your property value with expert staging, marketing, and a curated buyer network.",
     cta: "Learn more →",
+    icon: "trending-up",
   },
   {
     description:
       "End-to-end management for your villas and apartments, from tenant screening to maintenance.",
     cta: "Learn more →",
+    icon: "building",
   },
 ];

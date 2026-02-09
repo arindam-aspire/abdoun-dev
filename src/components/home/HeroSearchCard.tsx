@@ -20,7 +20,7 @@ export function HeroSearchCard({
   return (
     <div className="mt-10 w-full max-w-5xl">
       <div className="rounded-3xl bg-white/95 p-4 shadow-2xl ring-1 ring-slate-100 backdrop-blur-sm md:p-5 lg:p-6">
-        <div className="mb-4 flex items-center gap-6 border-b border-slate-200 pb-2 text-sm font-medium text-slate-500">
+        <div className="mb-4 flex items-center gap-6 border-slate-200 text-sm font-medium text-slate-500">
           {(["buy", "rent", "sell"] as const).map((tabKey) => (
             <button
               key={tabKey}

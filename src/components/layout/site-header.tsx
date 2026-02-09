@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import type { LanguageCode } from "@/lib/i18n";
-import { LANGUAGES, homeTranslations } from "@/lib/i18n";
+import { homeTranslations } from "@/lib/i18n";
 import { Building2 } from "lucide-react";
+import { LanguageSelect } from "@/components/ui/language-select";
 
 interface SiteHeaderProps {
   language: LanguageCode;
@@ -19,10 +21,12 @@ export function SiteHeader({ language, onLanguageChange }: SiteHeaderProps) {
           language === "ar" ? "flex-row-reverse" : ""
         }`}
       >
-        <div
-          className={`flex items-center gap-3 ${
+        <Link
+          href="/"
+          className={`flex items-center gap-3 transition hover:opacity-90 ${
             language === "ar" ? "flex-row-reverse text-right" : ""
           }`}
+          aria-label="Go to home page"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm">
             <Building2 className="h-5 w-5" aria-hidden="true" />
@@ -35,7 +39,7 @@ export function SiteHeader({ language, onLanguageChange }: SiteHeaderProps) {
               {t.heroSubtitle}
             </p> */}
           </div>
-        </div>
+        </Link>
 
         <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
           <button className="text-slate-900">
@@ -50,25 +54,18 @@ export function SiteHeader({ language, onLanguageChange }: SiteHeaderProps) {
         </nav>
 
         <div className="flex items-center gap-3">
-          <select
+          <LanguageSelect
             value={language}
-            onChange={(e) => onLanguageChange(e.target.value as LanguageCode)}
-            className="h-9 rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
-            aria-label="Select language"
-          >
-            {LANGUAGES.map((lang) => (
-              <option key={lang.code} value={lang.code}>
-                {lang.label}
-              </option>
-            ))}
-          </select>
+            onChange={onLanguageChange}
+            showFullLabels
+          />
 
-          <button className="hidden h-9 items-center rounded-full border border-slate-200 px-4 text-xs font-medium text-slate-700 hover:bg-slate-50 md:inline-flex">
+          <Link
+            href="/login"
+            className="hidden h-9 items-center rounded-full border border-slate-200 px-4 text-xs font-medium text-slate-700 hover:bg-slate-50 md:inline-flex"
+          >
             Sign In
-          </button>
-          <button className="hidden h-9 items-center rounded-full bg-sky-600 px-4 text-xs font-semibold text-white shadow-sm hover:bg-sky-700 md:inline-flex">
-            Contact Us
-          </button>
+          </Link>
         </div>
       </div>
     </header>

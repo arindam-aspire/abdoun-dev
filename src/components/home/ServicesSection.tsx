@@ -9,21 +9,21 @@ export interface ServicesSectionProps {
 
 export function ServicesSection({ translations: t }: ServicesSectionProps) {
   return (
-    <section className="bg-white">
-      <div className="container mx-auto px-4 py-10 md:px-8 md:py-14">
-        <div className="mb-8 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-600">
+    <section className="bg-slate-50/50">
+      <div className="container mx-auto px-4 py-16 md:px-8 md:py-20">
+        <header className="mx-auto text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-600">
             {t.title}
           </p>
-          <h2 className="mt-2 text-xl font-semibold text-slate-900 md:text-2xl">
+          <h2 className="mt-4 text-2xl font-semibold leading-tight text-slate-900 md:text-3xl md:leading-snug">
             {t.subtitle}
           </h2>
-          <p className="mt-3 text-sm text-slate-500 md:text-base">
+          <p className="mt-4 text-sm leading-relaxed text-slate-500 md:text-base">
             {t.description}
           </p>
-        </div>
+        </header>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="mt-12 grid gap-6 md:grid-cols-3 md:gap-8">
           {t.cards.map((card) => (
             <ServiceCard key={card.title} item={card} />
           ))}

@@ -17,7 +17,7 @@ export function SiteFooter({ language }: SiteFooterProps) {
           language === "ar" ? "text-right" : "text-left"
         }`}
       >
-        <div className="px-4 py-10 md:px-8 grid gap-10 text-sm text-slate-600 md:grid-cols-4">
+        <div className="px-4 py-12 md:px-8 grid gap-10 md:gap-14 text-sm text-slate-600 md:grid-cols-4">
           {/* Brand / description */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -28,7 +28,9 @@ export function SiteFooter({ language }: SiteFooterProps) {
               Abdoun Real Estate
             </p>
             </div>
-            <p>{t.footerDescription}</p>
+            <p className="text-xs leading-relaxed text-slate-500">
+              {t.footerDescription}
+            </p>
           </div>
 
           {/* Properties / links column */}
@@ -213,6 +215,25 @@ export function SiteFooter({ language }: SiteFooterProps) {
             <button className="hover:text-slate-800">Blog</button>
             <button className="hover:text-slate-800">Help Center</button>
             <button className="hover:text-slate-800">Sell with us</button>
+          </div>
+        </div>
+
+        {/* Disclaimer strip */}
+        <div className="border-t border-slate-200 bg-slate-50">
+          <div
+            className={`mx-auto container px-4 py-4 md:px-8 text-[10px] leading-relaxed text-slate-500 ${
+              language === "ar" ? "text-right" : "text-left"
+            }`}
+          >
+            <p>
+              Abdoun Real Estate acts only as an intermediary platform to
+              connect property buyers, sellers and renters. We do not own,
+              operate, or control any of the properties listed on the platform
+              and are not responsible for the completeness, accuracy or
+              legality of any listings. Users are advised to conduct their own
+              due diligence and seek professional advice before entering into
+              any transaction.
+            </p>
           </div>
         </div>
 
