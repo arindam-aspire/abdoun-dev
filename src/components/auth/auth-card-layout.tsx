@@ -1,8 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
-import { setLanguage } from "@/features/ui/uiSlice";
+import { useAppSelector } from "@/hooks/storeHooks";
 import type { LanguageCode } from "@/lib/i18n";
 import { useTranslations } from "@/hooks/useTranslations";
 import { LanguageSelect } from "@/components/ui/language-select";
@@ -12,13 +11,8 @@ interface AuthCardLayoutProps {
 }
 
 export function AuthCardLayout({ children }: AuthCardLayoutProps) {
-  const dispatch = useAppDispatch();
   const language = useAppSelector((state) => state.ui.language);
   const t = useTranslations("auth");
-
-  const handleLanguageChange = (lang: LanguageCode) => {
-    dispatch(setLanguage(lang));
-  };
 
   return (
     <div className="min-h-screen bg-[#faf9f7] flex flex-col">
@@ -27,7 +21,6 @@ export function AuthCardLayout({ children }: AuthCardLayoutProps) {
         <LanguageSelect
           id="auth-language"
           value={language as LanguageCode}
-          onChange={handleLanguageChange}
           showFullLabels
         />
       </div>

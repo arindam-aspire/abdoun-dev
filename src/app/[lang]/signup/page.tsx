@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Building2, Mail, Eye, EyeOff, User, ArrowRight } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { AuthCardLayout } from "@/components/auth/auth-card-layout";
@@ -11,9 +11,11 @@ import { useTranslations } from "@/hooks/useTranslations";
 import { login } from "@/features/auth/authSlice";
 import type { UserRole } from "@/features/auth/authSlice";
 
-export default function SignupPage() {
+export default function LocalizedSignupPage() {
   const t = useTranslations("auth");
   const router = useRouter();
+  const params = useParams<{ lang: string }>();
+  const lang = params.lang || "en";
   const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -40,9 +42,9 @@ export default function SignupPage() {
         name: fullName || "New User",
         email: email || "user@agency.com",
         role: "user" as UserRole,
-      })
+      }),
     );
-    router.push("/dashboard");
+    router.push(`/${lang}/dashboard`);
   };
 
   return (
@@ -166,14 +168,14 @@ export default function SignupPage() {
             className="w-full mt-2"
           >
             {t("submitSignup")}
-            <ArrowRight className="h-4 w-4" aria-hidden />
+            <ArrowRight className="h-4 w-4 rtl-flip-x" aria-hidden />
           </Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-zinc-600">
           {t("haveAccountSignIn")}{" "}
           <Link
-            href="/login"
+            href={`/${lang}/login`}
             className="font-semibold text-zinc-900 hover:underline"
           >
             {t("signInLink")}
@@ -183,3 +185,4 @@ export default function SignupPage() {
     </AuthCardLayout>
   );
 }
+

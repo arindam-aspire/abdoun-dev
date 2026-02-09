@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { MapPin } from "lucide-react";
-import type { HeroTabKey } from "./types";
-import type { HeroTranslations } from "./types";
+import type { HeroTabKey, HeroTranslations } from "./types";
+import { BudgetRangeInputs } from "./BudgetRangeInputs";
+import { HeroDropdown } from "./HeroDropdown";
+import { PropertyTypeSelect, type PropertyType } from "./PropertyTypeSelect";
 
 export interface HeroSearchCardProps {
   translations: HeroTranslations;
@@ -17,6 +20,26 @@ export function HeroSearchCard({
   onTabChange,
   isRtl,
 }: HeroSearchCardProps) {
+  const [propertyType, setPropertyType] = useState<PropertyType>("Property Type");
+
+  const [minBudget, setMinBudget] = useState<string>("");
+  const [maxBudget, setMaxBudget] = useState<string>("");
+  const [isBudgetOpen, setIsBudgetOpen] = useState(false);
+
+  const formatBudgetLabel = () => {
+    if (!minBudget && !maxBudget) return "Select budget";
+
+    const formatNumber = (value: string) =>
+      new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: 0,
+      }).format(Number(value));
+
+    const minLabel = minBudget ? formatNumber(minBudget) : "Min";
+    const maxLabel = maxBudget ? formatNumber(maxBudget) : "Max";
+
+    return `${minLabel} - ${maxLabel}`;
+  };
+
   return (
     <div className="mt-10 w-full max-w-5xl">
       <div className="rounded-3xl bg-white/95 p-4 shadow-2xl ring-1 ring-slate-100 backdrop-blur-sm md:p-5 lg:p-6">
@@ -26,7 +49,7 @@ export function HeroSearchCard({
               key={tabKey}
               type="button"
               onClick={() => onTabChange(tabKey)}
-              className={`relative pb-1 capitalize transition ${
+              className={`relative cursor-pointer pb-1 capitalize transition ${
                 activeTab === tabKey
                   ? "text-slate-900 after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:rounded-full after:bg-sky-500"
                   : "hover:text-slate-900"
@@ -42,6 +65,7 @@ export function HeroSearchCard({
             isRtl ? "md:flex-row-reverse" : ""
           }`}
         >
+          {/* Location */}
           <div className="min-w-0 flex-[3]">
             <label
               className={`mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 ${
@@ -62,29 +86,16 @@ export function HeroSearchCard({
             </div>
           </div>
 
-          <div className="flex-[1.2]">
-            <label
-              className={`mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 ${
-                isRtl ? "text-right" : "text-left"
-              }`}
-            >
-              {t.typeLabel}
-            </label>
-            <div className="flex h-14 items-center gap-2 rounded-full border-2 border-sky-300 bg-white px-4 shadow-[0_0_0_1px_rgba(15,23,42,0.02)] transition-colors focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-200">
-              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-50 text-[10px] font-medium text-sky-600">
-                🏙
-              </span>
-              <select className="w-full border-none bg-transparent text-sm text-slate-800 outline-none">
-                <option>Property Type</option>
-                <option>Apartment</option>
-                <option>Villa</option>
-                <option>Penthouse</option>
-                <option>Office</option>
-              </select>
-            </div>
-          </div>
+          {/* Type / Property Type */}
+          <PropertyTypeSelect
+            label={t.typeLabel}
+            isRtl={isRtl}
+            value={propertyType}
+            onChange={setPropertyType}
+          />
 
-          <div className="flex-[1.2]">
+          {/* Budget */}
+          <div className="relative flex-[1.2]">
             <label
               className={`mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 ${
                 isRtl ? "text-right" : "text-left"
@@ -92,24 +103,49 @@ export function HeroSearchCard({
             >
               {t.budgetLabel}
             </label>
-            <div className="flex h-14 items-center gap-2 rounded-full border-2 border-sky-300 bg-white px-4 shadow-[0_0_0_1px_rgba(15,23,42,0.02)] transition-colors focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-200">
+            <button
+              type="button"
+              className="flex h-14 w-full cursor-pointer items-center gap-2 rounded-full border-2 border-sky-300 bg-white px-4 text-left shadow-[0_0_0_1px_rgba(15,23,42,0.02)] transition-colors hover:border-sky-400 focus:outline-none focus-visible:border-sky-500 focus-visible:ring-2 focus-visible:ring-sky-200"
+              onClick={() => {
+                setIsBudgetOpen((open) => !open);
+              }}
+            >
               <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-50 text-[10px] font-medium text-sky-600">
                 $
               </span>
-              <select className="w-full border-none bg-transparent text-sm text-slate-800 outline-none">
-                <option>Max Price</option>
-                <option>$2,500</option>
-                <option>$5,000</option>
-                <option>$10,000</option>
-                <option>$25,000</option>
-              </select>
-            </div>
+              <span className="w-full truncate text-sm text-slate-800">
+                {formatBudgetLabel()}
+              </span>
+            </button>
+
+            <HeroDropdown
+              isOpen={isBudgetOpen}
+              onClose={() => {
+                setIsBudgetOpen(false);
+              }}
+              align={isRtl ? "right" : "left"}
+            >
+              <BudgetRangeInputs
+                minBudget={minBudget}
+                maxBudget={maxBudget}
+                onChangeMin={setMinBudget}
+                onChangeMax={setMaxBudget}
+                onReset={() => {
+                  setMinBudget("");
+                  setMaxBudget("");
+                }}
+                onDone={() => {
+                  setIsBudgetOpen(false);
+                }}
+              />
+            </HeroDropdown>
           </div>
 
+          {/* Search button */}
           <div className="flex-none self-end pt-2 md:pt-5 md:self-auto">
             <button
               type="button"
-              className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-sky-600 px-6 text-sm font-semibold text-white shadow-md hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 md:w-auto"
+              className="inline-flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-sky-600 px-6 text-sm font-semibold text-white shadow-md hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 md:w-auto"
             >
               {t.search}
             </button>

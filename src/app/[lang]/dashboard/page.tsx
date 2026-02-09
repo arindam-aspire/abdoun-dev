@@ -25,16 +25,17 @@ function RoleBadge({ role }: { role: UserRole }) {
   );
 }
 
-export default function DashboardPage() {
+export default function LocalizedDashboardPage() {
   const auth = useAppSelector((state) => state.auth);
+  const uiLanguage = useAppSelector((state) => state.ui.language);
   const router = useRouter();
   const tDash = useTranslations("dashboard");
 
   useEffect(() => {
     if (!auth.user) {
-      router.replace("/login");
+      router.replace(`/${uiLanguage}/login`);
     }
-  }, [auth.user, router]);
+  }, [auth.user, router, uiLanguage]);
 
   if (!auth.user) {
     return null;

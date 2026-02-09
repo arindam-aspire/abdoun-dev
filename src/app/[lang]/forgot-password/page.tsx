@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { AuthCardLayout } from "@/components/auth/auth-card-layout";
 import { useTranslations } from "@/hooks/useTranslations";
 
-export default function ForgotPasswordPage() {
+export default function LocalizedForgotPasswordPage() {
   const t = useTranslations("auth");
+  const params = useParams<{ lang: string }>();
+  const lang = params.lang || "en";
 
   return (
     <AuthCardLayout>
@@ -18,7 +21,7 @@ export default function ForgotPasswordPage() {
           signing in again.
         </p>
         <Link
-          href="/login"
+          href={`/${lang}/login`}
           className="inline-flex h-11 w-full items-center justify-center rounded-md bg-sky-600 px-5 text-base font-medium text-white hover:bg-sky-700 mt-6"
         >
           {t("signInLink")}
@@ -27,3 +30,4 @@ export default function ForgotPasswordPage() {
     </AuthCardLayout>
   );
 }
+

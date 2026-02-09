@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/layout/app-shell";
 import { UiProvider } from "@/components/layout/ui-provider";
+import { LanguageRouteSync } from "@/components/layout/language-route-sync";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +31,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-50 text-zinc-900`}
       >
         <AppShell>
+          <LanguageRouteSync />
           <UiProvider>{children}</UiProvider>
         </AppShell>
       </body>

@@ -10,47 +10,47 @@ export function SiteFooter({ language }: SiteFooterProps) {
   const t = homeTranslations[language];
 
   return (
-    <footer className="mt-12 border-t border-slate-200 bg-white">
+    <footer className="mt-12 border-t border-slate-800 bg-slate-950 text-slate-200">
       {/* Top multi-column area */}
       <div
         className={`mx-auto container ${
           language === "ar" ? "text-right" : "text-left"
         }`}
       >
-        <div className="px-4 py-12 md:px-8 grid gap-10 md:gap-14 text-sm text-slate-600 md:grid-cols-4">
+        <div className="px-4 py-12 md:px-8 grid gap-10 md:gap-14 text-sm text-slate-300 md:grid-cols-4">
           {/* Brand / description */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sky-600 text-white">
                 <Building2 className="h-4 w-4" />
               </div>
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-sky-600">
+              <p className="text-sm font-bold uppercase tracking-[0.18em] text-sky-400">
               Abdoun Real Estate
             </p>
             </div>
-            <p className="text-xs leading-relaxed text-slate-500">
+            <p className="text-xs leading-relaxed text-slate-400">
               {t.footerDescription}
             </p>
           </div>
 
           {/* Properties / links column */}
           <div className="space-y-3">
-            <p className="text-sm font-semibold text-slate-900">
+            <p className="text-sm font-semibold text-slate-100">
               {t.footerQuickLinks.buy} / {t.footerQuickLinks.rent}
             </p>
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Properties in Amman
               </p>
-              <p className="text-xs leading-relaxed text-slate-500">
+              <p className="text-xs leading-relaxed text-slate-400">
                 Abdoun | Dabouq | Dair Ghbar | Khalda | Abdali | Umm Uthaina
               </p>
             </div>
             <div className="space-y-1 pt-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                 New Projects
               </p>
-              <p className="text-xs leading-relaxed text-slate-500">
+              <p className="text-xs leading-relaxed text-slate-400">
                 Luxury villas | Branded residences | Serviced apartments
               </p>
             </div>
@@ -58,18 +58,18 @@ export function SiteFooter({ language }: SiteFooterProps) {
 
           {/* Company / network */}
           <div className="space-y-3">
-            <p className="text-sm font-semibold text-slate-900">
+            <p className="text-sm font-semibold text-slate-100">
               {t.footerCompany.about}
             </p>
-            <p className="text-xs leading-relaxed text-slate-500">
+            <p className="text-xs leading-relaxed text-slate-400">
               Abdoun Real Estate connects buyers, sellers, and investors with
               curated properties across West Amman and beyond.
             </p>
             <div className="space-y-1 pt-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                 More from our network
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-400">
                 Market Insights | Neighborhood Guides
               </p>
             </div>
@@ -77,7 +77,7 @@ export function SiteFooter({ language }: SiteFooterProps) {
 
           {/* Apps / newsletter */}
           <div className="space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
               {t.footerStayUpdatedTitle}
             </p>
             <p>{t.footerStayUpdatedCopy}</p>
@@ -89,19 +89,20 @@ export function SiteFooter({ language }: SiteFooterProps) {
               <input
                 type="email"
                 placeholder={t.footerEmailPlaceholder}
-                className="h-9 flex-1 rounded-full border border-slate-200 px-3 text-xs placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                className="h-9 flex-1 rounded-full border border-slate-700 bg-slate-900/60 px-3 text-xs text-slate-100 placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-900"
               />
-              <button className="h-9 rounded-full bg-sky-600 px-4 text-xs font-semibold text-white shadow-sm hover:bg-sky-700">
+              <button className="h-9 rounded-full bg-sky-600 px-4 text-xs font-semibold text-white shadow-sm hover:bg-sky-500">
                 {t.footerSubscribe}
               </button>
             </div>
             </div>
         </div>
+      </div>
 
         {/* Get the app + social — one line, centered */}
-        <div className="border-t border-slate-200 px-4 py-4 md:px-8">
+        <div className="border-t border-slate-800 px-4 py-4 md:px-8">
           <div
-            className={`mx-auto flex flex-nowrap items-center justify-center gap-3 overflow-x-auto container ${
+            className={`mx-auto container flex flex-nowrap items-center justify-center gap-3 overflow-x-auto container ${
               language === "ar" ? "flex-row-reverse" : ""
             }`}
           >
@@ -204,22 +205,22 @@ export function SiteFooter({ language }: SiteFooterProps) {
           </div>
         </div>
         {/* Middle link bar */}
-        <div className="border-t border-slate-200 bg-slate-50">
+        <div className="border-t border-slate-800 bg-slate-950">
           <div
-            className={`mx-auto flex container flex-wrap items-center gap-4 px-4 py-3 text-[11px] text-slate-500 md:px-8 ${
+            className={`mx-auto flex container flex-wrap items-center gap-4 px-4 py-3 text-[11px] text-slate-400 md:px-8 ${
               language === "ar" ? "justify-end" : ""
             }`}
           >
-            <button className="hover:text-slate-800">{t.footerTerms}</button>
-            <button className="hover:text-slate-800">{t.footerPrivacy}</button>
-            <button className="hover:text-slate-800">Blog</button>
-            <button className="hover:text-slate-800">Help Center</button>
-            <button className="hover:text-slate-800">Sell with us</button>
+            <button className="hover:text-slate-200">{t.footerTerms}</button>
+            <button className="hover:text-slate-200">{t.footerPrivacy}</button>
+            <button className="hover:text-slate-200">Blog</button>
+            <button className="hover:text-slate-200">Help Center</button>
+            <button className="hover:text-slate-200">Sell with us</button>
           </div>
         </div>
 
         {/* Disclaimer strip */}
-        <div className="border-t border-slate-200 bg-slate-50">
+        <div className="border-t border-slate-800 bg-slate-950">
           <div
             className={`mx-auto container px-4 py-4 md:px-8 text-[10px] leading-relaxed text-slate-500 ${
               language === "ar" ? "text-right" : "text-left"
@@ -238,7 +239,7 @@ export function SiteFooter({ language }: SiteFooterProps) {
         </div>
 
         {/* Bottom dark bar */}
-        <div className="bg-slate-900">
+        <div className="bg-black/90">
           <div
             className={`mx-auto flex container flex-col gap-2 px-4 py-3 text-[11px] text-slate-300 md:flex-row md:items-center md:justify-between md:px-8 ${
               language === "ar" ? "text-right" : "text-left"
@@ -254,7 +255,6 @@ export function SiteFooter({ language }: SiteFooterProps) {
               All trademarks and logos belong to their respective owners.
             </p>
           </div>
-        </div>
       </div>
     </footer>
   );

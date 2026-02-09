@@ -107,17 +107,17 @@ export function PropertyDetailsMain({ language }: PropertyDetailsMainProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-slate-50 text-slate-900">
+    <div
+      className={`min-h-screen bg-gradient-to-b from-sky-50 via-white to-slate-50 text-slate-900 ${
+        isRtl ? "text-right" : "text-left"
+      }`}
+    >
       <PropertyDetailsHero
         property={MOCK_DETAILED_PROPERTY}
         onOpenGallery={() => setIsGalleryOpen(true)}
       />
 
-      <main
-        className={`mx-auto container px-4 pb-12 md:px-8 md:pb-16 ${
-          isRtl ? "text-right" : "text-left"
-        }`}
-      >
+      <main className="mx-auto container px-4 pb-12 md:px-8 md:pb-16">
         <div className="mt-4 flex justify-center md:justify-start">
           <div
             className={`inline-flex items-center gap-1 rounded-full bg-white/80 p-1 text-[11px] font-medium text-slate-600 shadow-sm ring-1 ring-slate-200/70 backdrop-blur-sm ${

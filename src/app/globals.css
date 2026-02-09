@@ -24,3 +24,10 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Direction-aware helpers
+   Only elements that opt-in via these classes will visually flip,
+   so logos, numbers, charts, and videos remain unaffected. */
+[dir="rtl"] .rtl-flip-x {
+  transform: scaleX(-1);
+}

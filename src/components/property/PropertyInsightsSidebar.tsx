@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Phone, MessageCircle, Star, UserCircle2, MapPin } from "lucide-react";
 import type { Property } from "@/components/home/types";
 import { PropertyCard } from "@/components/home/PropertyCard";
+import { useAppSelector } from "@/hooks/storeHooks";
 
 const SIMILAR_PROPERTIES: Property[] = [
   {
@@ -36,6 +37,7 @@ export function PropertyInsightsSidebar() {
   const [activeSimilar, setActiveSimilar] = useState(0);
   const total = SIMILAR_PROPERTIES.length;
   const current = SIMILAR_PROPERTIES[activeSimilar];
+  const isRtl = useAppSelector((state) => state.ui.language === "ar");
 
   const goTo = (index: number) => {
     const next = (index + total) % total;
@@ -171,24 +173,28 @@ export function PropertyInsightsSidebar() {
         </div>
 
         <div className="mt-2 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1 text-[11px] text-slate-500">
+          <div
+            className={`flex items-center gap-1 text-[11px] text-slate-500 ${
+              isRtl ? "flex-row-reverse" : ""
+            }`}
+          >
             <button
               type="button"
               onClick={() => goTo(activeSimilar - 1)}
               className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:bg-slate-50"
-              aria-label="Previous similar property"
+              aria-label={isRtl ? "Next similar property" : "Previous similar property"}
             >
-              ‹
+              {isRtl ? "›" : "‹"}
             </button>
             <button
               type="button"
               onClick={() => goTo(activeSimilar + 1)}
               className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:bg-slate-50"
-              aria-label="Next similar property"
+              aria-label={isRtl ? "Previous similar property" : "Next similar property"}
             >
-              ›
+              {isRtl ? "‹" : "›"}
             </button>
-            <span className="ml-1">
+            <span className={isRtl ? "mr-1" : "ml-1"}>
               {activeSimilar + 1} / {total}
             </span>
           </div>

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Bath, BedDouble, Heart, MapPin, Maximize2 } from "lucide-react";
+import { useAppSelector } from "@/hooks/storeHooks";
+import type { LanguageCode } from "@/lib/i18n";
 import type { Property } from "./types";
 
 export interface PropertyCardProps {
@@ -10,7 +12,14 @@ export interface PropertyCardProps {
   agentLabel?: string;
 }
 
-export function PropertyCard({ property, agentLabel = "Abdoun Real Estate" }: PropertyCardProps) {
+export function PropertyCard({
+  property,
+  agentLabel = "Abdoun Real Estate",
+}: PropertyCardProps) {
+  const language = useAppSelector(
+    (state) => state.ui.language,
+  ) as LanguageCode;
+
   return (
     <article className="group relative overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
       <div className="relative overflow-hidden">
@@ -76,7 +85,7 @@ export function PropertyCard({ property, agentLabel = "Abdoun Real Estate" }: Pr
 
       {/* Invisible overlay link to make the whole card clickable */}
       <Link
-        href="/property-details"
+        href={`/${language}/propertydeatils/${property.id}`}
         className="absolute inset-0 z-10"
         aria-label={`View details for ${property.title}`}
       />
