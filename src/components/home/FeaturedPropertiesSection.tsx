@@ -7,16 +7,23 @@ import { PropertyCard } from "./PropertyCard";
 export interface FeaturedPropertiesSectionProps {
   translations: FeaturedTranslations;
   properties: Property[];
+  isRtl?: boolean;
 }
 
 export function FeaturedPropertiesSection({
   translations: t,
   properties,
+  isRtl,
 }: FeaturedPropertiesSectionProps) {
   return (
-    <section className="container mx-auto px-4 py-10 md:px-8 md:py-14">
-      <div className="mb-6 flex flex-col items-start justify-between gap-4 md:mb-8 md:flex-row md:items-end">
-        <div>
+    <section
+      className="container mx-auto px-4 py-10 md:px-8 md:py-14"
+      dir={isRtl ? "rtl" : "ltr"}
+    >
+      <div
+        className={`mb-6 flex flex-col items-start justify-between gap-4 md:mb-8 md:flex-row md:items-end`}
+      >
+        <div className={isRtl ? "md:text-right" : ""}>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-600">
             {t.title}
           </p>

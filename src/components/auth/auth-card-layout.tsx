@@ -13,11 +13,16 @@ interface AuthCardLayoutProps {
 export function AuthCardLayout({ children }: AuthCardLayoutProps) {
   const language = useAppSelector((state) => state.ui.language);
   const t = useTranslations("auth");
+  const isRtl = language === "ar";
 
   return (
     <div className="min-h-screen bg-[#faf9f7] flex flex-col">
       {/* Top-right language selector - same as home page */}
-      <div className="absolute top-0 right-0 p-4 md:p-6">
+      <div
+        className={`absolute top-0 p-4 md:p-6 ${
+          isRtl ? "left-0 right-auto" : "right-0"
+        }`}
+      >
         <LanguageSelect
           id="auth-language"
           value={language as LanguageCode}

@@ -159,17 +159,17 @@ export function SiteHeader({ language }: SiteHeaderProps) {
   const currentMenu = activeMenu ? menuConfig[activeMenu] : null;
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/80 backdrop-blur">
+    <header
+      className="sticky top-0 z-30 border-b border-slate-100 bg-white/80 backdrop-blur relative"
+      dir={isRTL ? "rtl" : "ltr"}
+      onMouseLeave={handleClose}
+    >
       <div
-        className={`container mx-auto flex items-center justify-between gap-4 px-4 py-4 md:px-8 ${
-          isRTL ? "flex-row-reverse" : ""
-        }`}
+        className={`container mx-auto flex items-center justify-between gap-4 px-4 py-4 md:px-8`}
       >
         <Link
           href={`/${language}`}
-          className={`flex items-center gap-3 transition hover:opacity-90 ${
-            isRTL ? "flex-row-reverse text-right" : ""
-          }`}
+          className={`flex items-center gap-3 transition hover:opacity-90`}
           aria-label="Go to home page"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm">
@@ -185,12 +185,11 @@ export function SiteHeader({ language }: SiteHeaderProps) {
           </div>
         </Link>
 
-        {/* Desktop navigation + mega menu */}
-        <div
-          className={`relative hidden md:block ${isRTL ? "text-right" : ""}`}
-          onMouseLeave={handleClose}
-        >
-          <nav className="flex items-center gap-6 text-sm font-medium text-slate-600">
+        {/* Desktop navigation */}
+        <div className={`relative hidden md:block ${isRTL ? "text-right" : ""}`}>
+          <nav
+            className={`flex items-center gap-6 text-sm font-medium text-slate-600`}
+          >
             <button
               className={`cursor-pointer border-b-2 transition ${
                 activeMenu === "buy"
@@ -241,60 +240,11 @@ export function SiteHeader({ language }: SiteHeaderProps) {
               {t.footerQuickLinks.agents}
             </button>
           </nav>
-
-          {currentMenu && (
-            <div
-              className={`absolute left-1/2 top-full z-20 mt-2 w-[900px] max-w-[calc(100vw-2rem)] -translate-x-1/2 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl shadow-slate-900/5 ${
-                isRTL ? "text-right" : "text-left"
-              }`}
-              onMouseEnter={() => {
-                // keep open when hovering panel
-                if (activeMenu) {
-                  setActiveMenu(activeMenu);
-                }
-              }}
-            >
-              <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-600">
-                  {currentMenu.title}
-                </p>
-                <p className="max-w-2xl text-sm text-slate-600">
-                  {currentMenu.description}
-                </p>
-              </div>
-              <div
-                className={`grid gap-6 px-6 py-6 md:grid-cols-3 ${
-                  isRTL ? "md:text-right" : ""
-                }`}
-              >
-                {currentMenu.columns.map((column) => (
-                  <div key={column.heading} className="space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      {column.heading}
-                    </p>
-                    <ul className="space-y-2 text-sm">
-                      {column.items.map((item) => (
-                        <li key={item.label}>
-                          <Link
-                            href={item.href}
-                            className="flex cursor-pointer items-center justify-between rounded-lg px-2 py-1.5 text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
-                          >
-                            <span>{item.label}</span>
-                            <span className="text-xs text-slate-400">
-                              →
-                            </span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div
+          className={`flex items-center gap-3`}
+        >
           <LanguageSelect value={language} showFullLabels />
 
           <Link
@@ -305,6 +255,62 @@ export function SiteHeader({ language }: SiteHeaderProps) {
           </Link>
         </div>
       </div>
+
+      {currentMenu && (
+        <div
+          className="absolute inset-x-0 top-full z-20 border-b border-slate-100 bg-white shadow-[0_16px_30px_rgba(15,23,42,0.12)]"
+          onMouseEnter={() => {
+            // keep open when hovering panel
+            if (activeMenu) {
+              setActiveMenu(activeMenu);
+            }
+          }}
+        >
+          <div
+            className={`container mx-auto px-4 py-5 md:px-8 ${
+              isRTL ? "text-right" : "text-left"
+            }`}
+          >
+            <div className="mb-4 flex items-baseline justify-between gap-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-600">
+                {currentMenu.title}
+              </p>
+              <p className="hidden max-w-xl text-xs text-slate-500 md:block">
+                {currentMenu.description}
+              </p>
+            </div>
+
+            <div
+              className={`grid gap-6 md:grid-cols-3 ${
+                isRTL ? "md:text-right" : ""
+              }`}
+            >
+              {currentMenu.columns.map((column) => (
+                <div key={column.heading} className="space-y-3">
+                  <p className="text-sm font-semibold text-slate-800">
+                    {column.heading}
+                  </p>
+                  <ul className="space-y-1.5 text-sm">
+                    {column.items.map((item) => (
+                      <li key={item.label}>
+                        <Link
+                          href={item.href}
+                          className="flex cursor-pointer items-center justify-between rounded-md px-1.5 py-1 text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+                        >
+                          <span>{item.label}</span>
+                          <span className="text-xs text-slate-400 rtl-flip-x">
+                            →
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

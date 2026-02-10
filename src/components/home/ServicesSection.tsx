@@ -5,13 +5,18 @@ import { ServiceCard } from "./ServiceCard";
 
 export interface ServicesSectionProps {
   translations: ServicesTranslations;
+  isRtl?: boolean;
 }
 
-export function ServicesSection({ translations: t }: ServicesSectionProps) {
+export function ServicesSection({ translations: t, isRtl }: ServicesSectionProps) {
   return (
     <section className="bg-slate-50/50">
       <div className="container mx-auto px-4 py-16 md:px-8 md:py-20">
-        <header className="mx-auto text-center">
+        <header
+          className={`mx-auto text-center ${
+            isRtl ? "md:text-right" : ""
+          }`}
+        >
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-600">
             {t.title}
           </p>
@@ -25,7 +30,7 @@ export function ServicesSection({ translations: t }: ServicesSectionProps) {
 
         <div className="mt-12 grid gap-6 md:grid-cols-3 md:gap-8">
           {t.cards.map((card) => (
-            <ServiceCard key={card.title} item={card} />
+            <ServiceCard key={card.title} item={card} isRtl={isRtl} />
           ))}
         </div>
       </div>

@@ -15,14 +15,16 @@ export function HeroSection({ translations: t, isRtl }: HeroSectionProps) {
   const [activeTab, setActiveTab] = useState<HeroTabKey>("buy");
 
   return (
-    <section className="relative min-h-[420px] bg-slate-900 text-white md:min-h-[480px]">
+    <section
+      className="relative min-h-[420px] bg-slate-900 text-white md:min-h-[480px]"
+      dir={isRtl ? "rtl" : "ltr"}
+    >
       <div className="pointer-events-none absolute inset-0 z-0 min-h-[420px] md:min-h-[480px]">
         <Image
-          src="https://images.unsplash.com/photo-1743486780771-afd09eea3624?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-          alt="Luxury villa at sunset"
+          src="/hero-amman.png"
+          alt="Amman city skyline"
           fill
           priority
-          unoptimized
           quality={100}
           sizes="100vw"
           className="object-cover object-center opacity-90"
@@ -35,8 +37,8 @@ export function HeroSection({ translations: t, isRtl }: HeroSectionProps) {
       </div>
 
       <div
-        className={`relative z-10 mx-auto flex max-w-5xl flex-col items-center px-4 pb-20 pt-16 md:px-6 md:pb-24 md:pt-20 ${
-          isRtl ? "text-right" : "text-center"
+        className={`relative z-10 mx-auto flex max-w-5xl flex-col px-4 pb-20 pt-16 md:px-6 md:pb-24 md:pt-20 ${
+          isRtl ? "items-end text-right" : "items-center text-center"
         }`}
       >
         <div className="space-y-4 md:space-y-5">

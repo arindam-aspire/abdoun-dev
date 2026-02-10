@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { LanguageCode } from "@/lib/i18n";
 import { LANGUAGES } from "@/lib/i18n";
 import { Globe } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { Dropdown, type DropdownOption } from "./dropdown";
 
 const LANGUAGE_CODES: LanguageCode[] = LANGUAGES.map(
   (lang) => lang.code,
@@ -33,6 +34,16 @@ export function LanguageSelect({
 }: LanguageSelectProps) {
   const router = useRouter();
   const pathname = usePathname();
+   const isRtl = value === "ar";
+
+  const options: DropdownOption[] = useMemo(
+    () =>
+      LANGUAGES.map((lang) => ({
+        value: lang.code,
+        label: showFullLabels ? lang.label : lang.code.toUpperCase(),
+      })),
+    [showFullLabels],
+  );
 
   const handleChange = useCallback(
     (next: LanguageCode) => {
@@ -69,27 +80,28 @@ export function LanguageSelect({
   return (
     <div
       className={cn(
-        "flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm",
+        "inline-flex items-center",
+        isRtl ? "justify-end" : "justify-start",
         className,
       )}
     >
-      <Globe className="h-4 w-4 text-slate-500 shrink-0" aria-hidden />
       <label className="sr-only" htmlFor={id ?? "language-select"}>
         Select language
       </label>
-      <select
-        id={id ?? "language-select"}
+      <Dropdown
+        label={
+          <span className="flex items-center gap-2">
+            <Globe className="h-4 w-4 text-slate-500 shrink-0" aria-hidden />
+            <span className="text-xs font-medium text-slate-700">
+              {options.find((opt) => opt.value === value)?.label}
+            </span>
+          </span>
+        }
+        options={options}
         value={value}
-        onChange={(e) => handleChange(e.target.value as LanguageCode)}
-        className="bg-transparent text-xs font-medium text-slate-700 focus:outline-none cursor-pointer pr-1"
-        aria-label="Select language"
-      >
-        {LANGUAGES.map((lang) => (
-          <option key={lang.code} value={lang.code}>
-            {showFullLabels ? lang.label : lang.code.toUpperCase()}
-          </option>
-        ))}
-      </select>
+        onChange={(next) => handleChange(next as LanguageCode)}
+        align={isRtl ? "left" : "right"}
+      />
     </div>
   );
 }

@@ -10,7 +10,7 @@ export function SiteFooter({ language }: SiteFooterProps) {
   const t = homeTranslations[language];
 
   return (
-    <footer className="mt-12 border-t border-slate-800 bg-slate-950 text-slate-200">
+    <footer className="mt-12 border-t border-slate-800 bg-slate-900 text-slate-200">
       {/* Top multi-column area */}
       <div
         className={`mx-auto container ${
@@ -205,7 +205,7 @@ export function SiteFooter({ language }: SiteFooterProps) {
           </div>
         </div>
         {/* Middle link bar */}
-        <div className="border-t border-slate-800 bg-slate-950">
+        <div className="border-t border-slate-800 bg-slate-900">
           <div
             className={`mx-auto flex container flex-wrap items-center gap-4 px-4 py-3 text-[11px] text-slate-400 md:px-8 ${
               language === "ar" ? "justify-end" : ""
@@ -220,7 +220,7 @@ export function SiteFooter({ language }: SiteFooterProps) {
         </div>
 
         {/* Disclaimer strip */}
-        <div className="border-t border-slate-800 bg-slate-950">
+        <div className="border-t border-slate-800 bg-slate-900">
           <div
             className={`mx-auto container px-4 py-4 md:px-8 text-[10px] leading-relaxed text-slate-500 ${
               language === "ar" ? "text-right" : "text-left"
@@ -239,7 +239,7 @@ export function SiteFooter({ language }: SiteFooterProps) {
         </div>
 
         {/* Bottom dark bar */}
-        <div className="bg-black/90">
+        <div className="bg-slate-950">
           <div
             className={`mx-auto flex container flex-col gap-2 px-4 py-3 text-[11px] text-slate-300 md:flex-row md:items-center md:justify-between md:px-8 ${
               language === "ar" ? "text-right" : "text-left"

@@ -35,6 +35,20 @@ export default function LocalizedLoginPage() {
     router.push(`/${lang}/dashboard`);
   };
 
+  const handleGoogleSignIn = () => {
+    // Mock Google sign-in: in a real implementation, replace this with
+    // Google OAuth (e.g. NextAuth/Auth.js or your backend API).
+    dispatch(
+      login({
+        id: "google-demo",
+        name: "Google Demo User",
+        email: "google-demo@abdoun-realestate.com",
+        role: "user" as UserRole,
+      }),
+    );
+    router.push(`/${lang}/dashboard`);
+  };
+
   return (
     <AuthCardLayout>
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
@@ -116,6 +130,20 @@ export default function LocalizedLoginPage() {
           >
             {t("logIn")}
             <ArrowRight className="h-4 w-4 rtl-flip-x" aria-hidden />
+          </Button>
+          <span className="flex items-center justify-center text-center text-sm text-zinc-600">or</span>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="w-full mt-3 flex items-center justify-center gap-2 bg-white"
+            onClick={handleGoogleSignIn}
+          >
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-white">
+              <span className="text-xs font-bold text-sky-600">G</span>
+            </span>
+            <span>{t("continueWithGoogle")}</span>
           </Button>
         </form>
 

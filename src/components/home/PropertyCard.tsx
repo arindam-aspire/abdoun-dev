@@ -19,9 +19,14 @@ export function PropertyCard({
   const language = useAppSelector(
     (state) => state.ui.language,
   ) as LanguageCode;
+  const isRtl = language === "ar";
 
   return (
-    <article className="group relative overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+    <article
+      className={`group relative overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg ${
+        isRtl ? "text-right" : "text-left"
+      }`}
+    >
       <div className="relative overflow-hidden">
         <div className="relative h-52 w-full">
           <Image
@@ -33,14 +38,20 @@ export function PropertyCard({
           />
         </div>
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/40 via-slate-950/5 to-transparent opacity-80" />
-        <div className="absolute left-4 top-4 flex items-center gap-2">
+        <div
+          className={`absolute top-4 flex items-center gap-2 ${
+            isRtl ? "right-4 flex-row-reverse" : "left-4"
+          }`}
+        >
           <span className="rounded-full bg-emerald-500/95 px-3 py-1 text-xs font-semibold text-white shadow-sm">
             {property.badge}
           </span>
         </div>
         <button
           type="button"
-          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-white"
+          className={`absolute top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-white ${
+            isRtl ? "left-4" : "right-4"
+          }`}
           aria-label="Save property"
         >
           <Heart className="h-4 w-4" aria-hidden="true" />
@@ -48,7 +59,11 @@ export function PropertyCard({
       </div>
 
       <div className="space-y-3 px-4 py-4">
-        <div className="flex items-start justify-between gap-3">
+        <div
+          className={`flex items-start justify-between gap-3 ${
+            isRtl ? "flex-row-reverse" : ""
+          }`}
+        >
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
               {agentLabel}
@@ -62,12 +77,20 @@ export function PropertyCard({
           </p>
         </div>
 
-        <div className="flex items-center gap-1 text-xs text-slate-500">
+        <div
+          className={`flex items-center gap-1 text-xs text-slate-500 ${
+            isRtl ? "flex-row-reverse" : ""
+          }`}
+        >
           <MapPin className="h-3 w-3 shrink-0" />
           <span>{property.location}</span>
         </div>
 
-        <div className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+        <div
+          className={`flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-600 ${
+            isRtl ? "flex-row-reverse" : ""
+          }`}
+        >
           <div className="flex items-center gap-1.5">
             <BedDouble className="h-3.5 w-3.5 shrink-0" />
             <span>{property.beds} Beds</span>

@@ -49,8 +49,9 @@ export function HomeMain({ language }: HomeMainProps) {
       <FeaturedPropertiesSection
         translations={featuredTranslations}
         properties={MOCK_PROPERTIES}
+        isRtl={isRtl}
       />
-      <ServicesSection translations={servicesTranslations} />
+      <ServicesSection translations={servicesTranslations} isRtl={isRtl} />
     </>
   );
 }

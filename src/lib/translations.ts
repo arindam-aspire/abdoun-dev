@@ -55,6 +55,7 @@ const translations: Record<Language, TranslationDict> = {
       submitLogin: "Login",
       submitSignup: "Sign up",
       loginAsDemo: "Quick demo login",
+      continueWithGoogle: "Continue with Google",
     },
     dashboard: {
       welcomeUser: "Welcome to your buyer dashboard",
@@ -114,6 +115,7 @@ const translations: Record<Language, TranslationDict> = {
       submitLogin: "تسجيل الدخول",
       submitSignup: "إنشاء حساب",
       loginAsDemo: "تسجيل دخول تجريبي سريع",
+      continueWithGoogle: "تسجيل الدخول عبر جوجل",
     },
     dashboard: {
       welcomeUser: "مرحباً بك في لوحة المشتري",
@@ -172,6 +174,7 @@ const translations: Record<Language, TranslationDict> = {
       submitLogin: "Connexion",
       submitSignup: "Créer un compte",
       loginAsDemo: "Connexion démo rapide",
+      continueWithGoogle: "Continuer avec Google",
     },
     dashboard: {
       welcomeUser: "Bienvenue sur votre tableau de bord d’acheteur",
@@ -231,6 +234,7 @@ const translations: Record<Language, TranslationDict> = {
       submitLogin: "Iniciar sesión",
       submitSignup: "Registrarse",
       loginAsDemo: "Login demo rápido",
+      continueWithGoogle: "Continuar con Google",
     },
     dashboard: {
       welcomeUser: "Bienvenido a tu panel de comprador",

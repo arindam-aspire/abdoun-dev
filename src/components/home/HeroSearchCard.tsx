@@ -43,7 +43,9 @@ export function HeroSearchCard({
   return (
     <div className="mt-10 w-full max-w-5xl">
       <div className="rounded-3xl bg-white/95 p-4 shadow-2xl ring-1 ring-slate-100 backdrop-blur-sm md:p-5 lg:p-6">
-        <div className="mb-4 flex items-center gap-6 border-slate-200 text-sm font-medium text-slate-500">
+        <div
+          className={`mb-4 flex items-center gap-6 border-slate-200 text-sm font-medium text-slate-500`}
+        >
           {(["buy", "rent", "sell"] as const).map((tabKey) => (
             <button
               key={tabKey}
@@ -61,9 +63,7 @@ export function HeroSearchCard({
         </div>
 
         <div
-          className={`flex flex-col gap-3 pt-1 text-xs text-slate-700 md:flex-row md:items-center ${
-            isRtl ? "md:flex-row-reverse" : ""
-          }`}
+          className={`flex flex-col gap-3 pt-1 text-xs text-slate-700 md:flex-row md:items-center`}
         >
           {/* Location */}
           <div className="min-w-0 flex-[3]">
@@ -74,7 +74,9 @@ export function HeroSearchCard({
             >
               {t.locationLabel}
             </label>
-            <div className="flex h-14 items-center gap-2 rounded-full border-2 border-sky-300 bg-white px-4 shadow-[0_0_0_1px_rgba(15,23,42,0.02)] transition-colors focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-200">
+            <div
+              className={`flex h-14 items-center gap-2 rounded-full border-2 border-sky-300 bg-white px-4 shadow-[0_0_0_1px_rgba(15,23,42,0.02)] transition-colors focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-200`}
+            >
               <MapPin className="h-5 w-5 shrink-0 text-sky-500" />
               <input
                 type="text"
@@ -105,7 +107,7 @@ export function HeroSearchCard({
             </label>
             <button
               type="button"
-              className="flex h-14 w-full cursor-pointer items-center gap-2 rounded-full border-2 border-sky-300 bg-white px-4 text-left shadow-[0_0_0_1px_rgba(15,23,42,0.02)] transition-colors hover:border-sky-400 focus:outline-none focus-visible:border-sky-500 focus-visible:ring-2 focus-visible:ring-sky-200"
+              className={`flex h-14 w-full cursor-pointer items-center gap-2 rounded-full border-2 border-sky-300 bg-white px-4 text-left shadow-[0_0_0_1px_rgba(15,23,42,0.02)] transition-colors hover:border-sky-400 focus:outline-none focus-visible:border-sky-500 focus-visible:ring-2 focus-visible:ring-sky-200`}
               onClick={() => {
                 setIsBudgetOpen((open) => !open);
               }}
