@@ -35,11 +35,29 @@ export function BudgetRangeInputs({
   const renderSuggestions = (field: "min" | "max") => {
     const currentValue = field === "min" ? minBudget : maxBudget;
 
+    const filteredSuggestions = BUDGET_SUGGESTIONS.filter((value) => {
+      const numeric = Number(value);
+
+      if (field === "min") {
+        // For minimum: do not show the currently selected max value,
+        // and keep suggestions <= current max (if set).
+        if (maxBudget && value === maxBudget) return false;
+        if (maxBudget && numeric > Number(maxBudget)) return false;
+      } else {
+        // For maximum: do not show the currently selected min value,
+        // and keep suggestions >= current min (if set).
+        if (minBudget && value === minBudget) return false;
+        if (minBudget && numeric < Number(minBudget)) return false;
+      }
+
+      return true;
+    });
+
     if (activeField !== field) return null;
 
     return (
       <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 text-xs shadow-lg">
-        {BUDGET_SUGGESTIONS.map((value) => {
+        {filteredSuggestions.map((value) => {
           const label = new Intl.NumberFormat("en-US").format(Number(value));
           const isSelected = currentValue === value;
           return (
@@ -48,7 +66,7 @@ export function BudgetRangeInputs({
               type="button"
               className={`flex w-full cursor-pointer items-center justify-between px-3 py-1.5 text-left transition ${
                 isSelected
-                  ? "bg-emerald-50 text-emerald-700"
+                  ? "bg-sky-50 text-sky-700"
                   : "text-slate-800 hover:bg-slate-50"
               }`}
               onClick={() => {
@@ -62,7 +80,7 @@ export function BudgetRangeInputs({
             >
               <span>{label}</span>
               {isSelected && (
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-600">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-sky-600">
                   Selected
                 </span>
               )}
@@ -135,7 +153,7 @@ export function BudgetRangeInputs({
         </button>
         <button
           type="button"
-          className="inline-flex cursor-pointer items-center rounded-full bg-emerald-600 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-sm hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+          className="inline-flex cursor-pointer items-center rounded-full bg-sky-600 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-sm hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
           onClick={(event) => {
             event.stopPropagation();
             onDone();

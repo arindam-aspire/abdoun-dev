@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import type { LanguageCode } from "@/lib/i18n";
 import { homeTranslations } from "@/lib/i18n";
@@ -16,13 +16,31 @@ type MegaMenuKey = "buy" | "rent" | "sell" | "agents" | null;
 export function SiteHeader({ language }: SiteHeaderProps) {
   const t = homeTranslations[language];
   const [activeMenu, setActiveMenu] = useState<MegaMenuKey>(null);
+  const closeTimeoutRef = useRef<number | null>(null);
   const isRTL = language === "ar";
 
+  const cancelClose = () => {
+    if (closeTimeoutRef.current !== null) {
+      window.clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+  };
+
+  const scheduleClose = () => {
+    cancelClose();
+    closeTimeoutRef.current = window.setTimeout(() => {
+      setActiveMenu(null);
+      closeTimeoutRef.current = null;
+    }, 120);
+  };
+
   const handleOpen = (key: MegaMenuKey) => {
+    cancelClose();
     setActiveMenu(key);
   };
 
   const handleClose = () => {
+    cancelClose();
     setActiveMenu(null);
   };
 
@@ -186,7 +204,11 @@ export function SiteHeader({ language }: SiteHeaderProps) {
         </Link>
 
         {/* Desktop navigation */}
-        <div className={`relative hidden md:block ${isRTL ? "text-right" : ""}`}>
+        <div
+          className={`relative hidden md:block ${isRTL ? "text-right" : ""}`}
+          onMouseEnter={cancelClose}
+          onMouseLeave={scheduleClose}
+        >
           <nav
             className={`flex items-center gap-6 text-sm font-medium text-slate-600`}
           >
@@ -260,11 +282,9 @@ export function SiteHeader({ language }: SiteHeaderProps) {
         <div
           className="absolute inset-x-0 top-full z-20 border-b border-slate-100 bg-white shadow-[0_16px_30px_rgba(15,23,42,0.12)]"
           onMouseEnter={() => {
-            // keep open when hovering panel
-            if (activeMenu) {
-              setActiveMenu(activeMenu);
-            }
+            cancelClose();
           }}
+          onMouseLeave={scheduleClose}
         >
           <div
             className={`container mx-auto px-4 py-5 md:px-8 ${

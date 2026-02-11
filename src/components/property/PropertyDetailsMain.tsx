@@ -148,7 +148,7 @@ export function PropertyDetailsMain({ language }: PropertyDetailsMainProps) {
                     key={tab.key}
                     type="button"
                     onClick={() => handleTabClick(tab.key as typeof activeTab)}
-                    className={`flex items-center gap-1 rounded-full px-3 py-1 transition ${
+                  className={`flex items-center gap-1 rounded-full px-3 py-2 cursor-pointer transition ${
                       isActive
                         ? "bg-sky-600 text-white shadow-sm"
                         : "text-slate-600 hover:bg-slate-50"
