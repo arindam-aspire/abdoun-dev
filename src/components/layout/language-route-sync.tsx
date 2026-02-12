@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useParams } from "next/navigation";
 import type { LanguageCode } from "@/lib/i18n";
 import { LANGUAGES } from "@/lib/i18n";
-import { useAppDispatch } from "@/hooks/storeHooks";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { setLanguage } from "@/features/ui/uiSlice";
 
 const VALID_LANGUAGE_CODES: LanguageCode[] = LANGUAGES.map(
@@ -14,22 +14,22 @@ const VALID_LANGUAGE_CODES: LanguageCode[] = LANGUAGES.map(
 export function LanguageRouteSync() {
   const params = useParams<{ lang?: string }>();
   const dispatch = useAppDispatch();
+  const currentLanguage = useAppSelector((state) => state.ui.language);
+  const rawLang = params?.lang;
 
   useEffect(() => {
-    const rawLang = params?.lang;
     const fallback: LanguageCode = "en";
+    const nextLang =
+      rawLang && VALID_LANGUAGE_CODES.includes(rawLang as LanguageCode)
+        ? (rawLang as LanguageCode)
+        : fallback;
 
-    if (!rawLang) {
-      dispatch(setLanguage(fallback));
+    if (nextLang === currentLanguage) {
       return;
     }
 
-    const nextLang = VALID_LANGUAGE_CODES.includes(rawLang as LanguageCode)
-      ? (rawLang as LanguageCode)
-      : fallback;
-
     dispatch(setLanguage(nextLang));
-  }, [params, dispatch]);
+  }, [rawLang, currentLanguage, dispatch]);
 
   return null;
 }

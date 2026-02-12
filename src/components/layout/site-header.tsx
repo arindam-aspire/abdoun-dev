@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { LanguageCode } from "@/lib/i18n";
 import { homeTranslations } from "@/lib/i18n";
@@ -12,12 +12,47 @@ interface SiteHeaderProps {
 }
 
 type MegaMenuKey = "buy" | "rent" | "sell" | "agents" | null;
+const SHRINK_SCROLL_Y = 36;
+const EXPAND_SCROLL_Y = 12;
 
 export function SiteHeader({ language }: SiteHeaderProps) {
   const t = homeTranslations[language];
   const [activeMenu, setActiveMenu] = useState<MegaMenuKey>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
   const closeTimeoutRef = useRef<number | null>(null);
+  const rafRef = useRef<number | null>(null);
   const isRTL = language === "ar";
+
+  useEffect(() => {
+    const syncScrollState = () => {
+      const y = window.scrollY;
+
+      setIsScrolled((prev) => {
+        if (!prev && y >= SHRINK_SCROLL_Y) return true;
+        if (prev && y <= EXPAND_SCROLL_Y) return false;
+        return prev;
+      });
+    };
+
+    const onScroll = () => {
+      if (rafRef.current !== null) return;
+      rafRef.current = window.requestAnimationFrame(() => {
+        syncScrollState();
+        rafRef.current = null;
+      });
+    };
+
+    syncScrollState();
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafRef.current !== null) {
+        window.cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, []);
 
   const cancelClose = () => {
     if (closeTimeoutRef.current !== null) {
@@ -183,7 +218,9 @@ export function SiteHeader({ language }: SiteHeaderProps) {
       onMouseLeave={handleClose}
     >
       <div
-        className={`container mx-auto flex items-center justify-between gap-4 px-4 py-4 md:px-8`}
+        className={`container mx-auto flex items-center justify-between gap-4 px-4 transition-all duration-200 ${
+          isScrolled ? "py-2 md:px-8" : "py-4 md:px-8"
+        }`}
       >
         <Link
           href={`/${language}`}

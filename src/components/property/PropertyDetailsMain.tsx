@@ -22,7 +22,7 @@ const MOCK_DETAILED_PROPERTY: DetailedProperty = {
   subtitle: "Skyline-facing 4-bedroom penthouse with private terrace",
   badge: "Exclusive",
   image:
-    "https://images.unsplash.com/photo-1743486780771-afd09eea3624?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.1.0",
+    "https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=1800&auto=format&fit=crop",
   location: "Abdoun, Amman · West Amman skyline",
   price: "$1,250,000",
   beds: 4,
@@ -48,12 +48,12 @@ const MOCK_DETAILED_PROPERTY: DetailedProperty = {
     "Proximity to international schools & embassies",
   ],
   gallery: [
-    "https://images.unsplash.com/photo-1743486780771-afd09eea3624?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.1.0",
-    "https://images.pexels.com/photos/439391/pexels-photo-439391.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    "https://images.unsplash.com/photo-1743486780771-afd09eea3624?q=80&w=1200&auto=format&fit=crop&ixlib=rb-4.1.0",
-    "https://images.unsplash.com/photo-1743486780771-afd09eea3624?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.1.0",
-    "https://images.unsplash.com/photo-1743486780771-afd09eea3624?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.1.0",
-    "https://images.unsplash.com/photo-1743486780771-afd09eea3624?q=80&w=600&auto=format&fit=crop&ixlib=rb-4.1.0",
+    "https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=1800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1613977257363-707ba9348227?q=80&w=1800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1600566752355-35792bedcfea?q=80&w=1800&auto=format&fit=crop",
+    // "https://images.unsplash.com/photo-1616594039964-3f516d8e6ddb?q=80&w=1800&auto=format&fit=crop",
   ],
 };
 
@@ -105,18 +105,27 @@ export function PropertyDetailsMain({ language }: PropertyDetailsMainProps) {
 
   return (
     <div
-      className={`min-h-screen bg-gradient-to-b from-sky-50 via-white to-slate-50 text-slate-900 ${
+      className={`relative min-h-screen overflow-x-clip bg-gradient-to-b from-sky-50 via-white to-slate-50 text-slate-900 ${
         isRtl ? "text-right" : "text-left"
       }`}
     >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-24 -left-24 h-64 w-64 rounded-full bg-sky-200/30 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute top-[28rem] -right-20 h-56 w-56 rounded-full bg-slate-200/50 blur-3xl"
+      />
+
       <PropertyDetailsHero property={MOCK_DETAILED_PROPERTY} />
 
-      <main className="mx-auto container px-4 pb-12 md:px-8 md:pb-16">
+      <main className="relative z-10 mx-auto container px-4 pb-14 md:px-8 md:pb-20">
         {/* Sticky tab bar under header */}
-        <div className="sticky top-[72px] z-20 -mx-4 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur md:top-[73px] md:-mx-8 md:px-8">
+        <div className="sticky top-[72px] z-20 border-y border-slate-200/90 bg-slate-50/95 px-4 py-3 shadow-sm backdrop-blur md:top-14 md:px-8">
           <div className="flex justify-center md:justify-start">
             <div
-              className={`inline-flex items-center gap-1 rounded-full bg-white p-1 text-[11px] font-medium text-slate-600 shadow-sm ring-1 ring-slate-200/80 ${
+              className={`inline-flex items-center gap-1 rounded-2xl border border-slate-200/90 bg-white/90 p-1.5 text-[11px] font-medium text-slate-600 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur ${
                 isRtl ? "flex-row-reverse" : ""
               }`}
             >
@@ -148,10 +157,10 @@ export function PropertyDetailsMain({ language }: PropertyDetailsMainProps) {
                     key={tab.key}
                     type="button"
                     onClick={() => handleTabClick(tab.key as typeof activeTab)}
-                  className={`flex items-center gap-1 rounded-full px-3 py-2 cursor-pointer transition ${
+                    className={`flex items-center gap-1 rounded-xl px-3 py-2 cursor-pointer transition-all duration-200 ${
                       isActive
-                        ? "bg-sky-600 text-white shadow-sm"
-                        : "text-slate-600 hover:bg-slate-50"
+                        ? "bg-sky-600 text-white shadow-sm ring-1 ring-sky-500/70"
+                        : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-800"
                     }`}
                   >
                     <span
@@ -170,12 +179,12 @@ export function PropertyDetailsMain({ language }: PropertyDetailsMainProps) {
         </div>
 
         <div
-          className={`mt-6 grid gap-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] ${
+          className={`mt-8 grid gap-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] md:gap-7 ${
             isRtl ? "md:[direction:rtl]" : ""
           }`}
         >
-          <section className="space-y-0">
-            <section ref={overviewRef}>
+          <section className="space-y-5">
+            <section ref={overviewRef} className="scroll-mt-36">
               <PropertyHighlights
                 property={MOCK_DETAILED_PROPERTY}
                 stats={MOCK_STATS}
@@ -183,43 +192,50 @@ export function PropertyDetailsMain({ language }: PropertyDetailsMainProps) {
               <PropertyOverview property={MOCK_DETAILED_PROPERTY} />
             </section>
 
-            <section ref={amenitiesRef}>
+            <section ref={amenitiesRef} className="scroll-mt-36">
               <PropertyAmenities amenities={MOCK_DETAILED_PROPERTY.amenities} />
             </section>
 
-            <section ref={locationRef}>
+            <section ref={locationRef} className="scroll-mt-36">
               <PropertyNeighborhood />
             </section>
           </section>
 
           <div
             ref={sidebarRef}
-            className={isRtl ? "md:pl-0 md:pr-4" : "md:pl-4"}
+            className={`${isRtl ? "md:pl-0 md:pr-4" : "md:pl-4"} md:sticky md:top-[148px] self-start`}
           >
             {/* Price / actions moved below hero into right column */}
-            <div className="mb-4 rounded-2xl bg-white p-4 text-slate-900 shadow-sm ring-1 ring-slate-200 md:text-sm">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+            <div className="mb-4 overflow-hidden rounded-3xl border border-slate-200/90 bg-white text-slate-900 shadow-[0_18px_45px_rgba(15,23,42,0.08)] md:text-sm">
+              <div className="h-1.5 bg-gradient-to-r from-sky-400 via-sky-500 to-sky-600" />
+              <div className="p-4">
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
                 Asking price
-              </p>
-              <p className="mt-1 text-2xl font-semibold text-sky-600 md:text-3xl">
-                {MOCK_DETAILED_PROPERTY.price}
-              </p>
-              <p className="mt-1 text-[11px] text-slate-500">
-                Service charge on request. Flexible viewing times.
-              </p>
-              <div className="mt-3 flex w-full flex-col gap-2 sm:flex-row">
-                <button
-                  type="button"
-                  className="inline-flex flex-1 items-center justify-center rounded-full bg-sky-500 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
-                >
-                  Book private tour
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex flex-1 items-center justify-center rounded-full bg-white px-4 py-2 text-xs font-semibold text-sky-700 ring-1 ring-slate-200 hover:bg-slate-50"
-                >
-                  Download brochure
-                </button>
+                </p>
+                <p className="mt-1 text-2xl font-semibold text-sky-600 md:text-3xl">
+                  {MOCK_DETAILED_PROPERTY.price}
+                </p>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Service charge on request. Flexible viewing times.
+                </p>
+                <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-[11px] font-medium text-sky-700">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  Available for immediate viewing
+                </div>
+                <div className="mt-4 flex w-full flex-col gap-2 sm:flex-row">
+                  <button
+                    type="button"
+                    className="inline-flex flex-1 items-center justify-center rounded-full bg-sky-500 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+                  >
+                    Book private tour
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex flex-1 items-center justify-center rounded-full bg-white px-4 py-2 text-xs font-semibold text-sky-700 ring-1 ring-slate-200 hover:bg-slate-50"
+                  >
+                    Download brochure
+                  </button>
+                </div>
               </div>
             </div>
 
