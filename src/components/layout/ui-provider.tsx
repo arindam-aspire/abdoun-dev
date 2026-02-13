@@ -1,19 +1,20 @@
 "use client";
 
 import { useEffect } from "react";
+import { useLocale } from "next-intl";
 import { useAppSelector } from "@/hooks/storeHooks";
 
 export function UiProvider({ children }: { children: React.ReactNode }) {
   const theme = useAppSelector((state) => state.ui.theme);
-  const language = useAppSelector((state) => state.ui.language);
+  const locale = useLocale();
 
   useEffect(() => {
     if (typeof document === "undefined") return;
     const root = document.documentElement;
-    root.setAttribute("lang", language);
+    root.setAttribute("lang", locale);
     root.dataset.theme = theme;
-    root.dir = language === "ar" ? "rtl" : "ltr";
-  }, [theme, language]);
+    root.dir = locale === "ar" ? "rtl" : "ltr";
+  }, [theme, locale]);
 
   return <>{children}</>;
 }

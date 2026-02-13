@@ -1,0 +1,123 @@
+{
+  "common": {
+    "brand": "Abdoun Real Estate",
+    "home": "Home",
+    "login": "Login",
+    "signup": "Sign up",
+    "logout": "Logout",
+    "dashboard": "Dashboard",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "language": "Language",
+    "user": "User",
+    "agent": "Agent",
+    "admin": "Admin"
+  },
+  "home": {
+    "heroTitle": "Find your next property in Abdoun and beyond",
+    "heroSubtitle": "Browse curated listings, connect with trusted agents, and explore premium neighborhoods inspired by platforms like Zillow and Bayut.",
+    "ctaBrowse": "Browse listings (mock)",
+    "ctaGetStarted": "Get started",
+    "statsTitle": "Market snapshot (mock data)",
+    "heroTabs": {
+      "buy": "Buy",
+      "rent": "Rent",
+      "sell": "Sell"
+    },
+    "heroLocationLabel": "Location",
+    "heroLocationPlaceholder": "City, Zip, or Neighborhood",
+    "heroTypeLabel": "Type",
+    "heroBudgetLabel": "Budget",
+    "heroSearch": "Search",
+    "featuredTitle": "Featured Properties",
+    "featuredSubtitle": "Handpicked homes for every lifestyle",
+    "featuredViewAll": "View all properties ->",
+    "servicesTitle": "Our Services",
+    "servicesSubtitle": "From buying and selling to property management, our dedicated team supports you at every step.",
+    "servicesDescription": "Tailored solutions for every stage of your property journey.",
+    "servicesCards": {
+      "buying": "Buying a Home",
+      "selling": "Selling Property",
+      "management": "Property Management"
+    },
+    "propertyTabs": {
+      "overview": "Overview",
+      "amenities": "Amenities",
+      "location": "Location",
+      "reviews": "Reviews"
+    },
+    "footerDescription": "Premium real estate agency helping families and investors find exceptional properties across Amman's top neighborhoods.",
+    "footerQuickLinks": {
+      "buy": "Buy",
+      "rent": "Rent",
+      "sell": "Sell",
+      "agents": "Agents"
+    },
+    "footerCompany": {
+      "about": "About",
+      "contact": "Contact",
+      "careers": "Careers",
+      "privacy": "Privacy Policy"
+    },
+    "footerStayUpdatedTitle": "Stay Updated",
+    "footerStayUpdatedCopy": "Subscribe for the latest listings and market insights from Abdoun and beyond.",
+    "footerEmailPlaceholder": "Email address",
+    "footerSubscribe": "Subscribe",
+    "footerTerms": "Terms of Service",
+    "footerPrivacy": "Privacy Policy"
+  },
+  "auth": {
+    "loginTitle": "Sign in to your account",
+    "signupTitle": "Create your account",
+    "welcomeBack": "Welcome Back",
+    "loginSubtitle": "Log in to access your real estate dashboard",
+    "email": "Email",
+    "emailAddress": "Email Address",
+    "emailPlaceholder": "name@agency.com",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "forgotPassword": "Forgot Password?",
+    "logIn": "Log In",
+    "noAccountSignUp": "Don't have an account?",
+    "signUpLink": "Sign Up",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Enter your full name",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Re-enter your password",
+    "haveAccountSignIn": "Already have an account?",
+    "signInLink": "Sign In",
+    "signupSubtitle": "Create your account to access your real estate dashboard",
+    "copyright": "© 2024 Abdoun Real Estate Agency. All rights reserved.",
+    "role": "Role",
+    "chooseRole": "Choose a role",
+    "submitLogin": "Login",
+    "submitSignup": "Sign up",
+    "loginAsDemo": "Quick demo login",
+    "continueWithGoogle": "Continue with Google"
+  },
+  "dashboard": {
+    "welcomeUser": "Welcome to your buyer dashboard",
+    "welcomeAgent": "Welcome to your agent workspace",
+    "welcomeAdmin": "Welcome to the admin console",
+    "mockNotice": "All data shown here is mock data for UI and flows only."
+  },
+  "HomePage": {
+    "title": "Abdoun Real Estate",
+    "description": "URL-driven internationalization with next-intl and SSR."
+  },
+  "ServerExample": {
+    "heading": "Server Component Translation",
+    "body": "This text is rendered on the server with getTranslations."
+  },
+  "ClientExample": {
+    "heading": "Client Component Translation",
+    "body": "This text is rendered in a client component with useTranslations."
+  },
+  "LocaleSwitcher": {
+    "label": "Language",
+    "en": "English",
+    "ar": "Arabic",
+    "es": "Spanish",
+    "fr": "French"
+  }
+}

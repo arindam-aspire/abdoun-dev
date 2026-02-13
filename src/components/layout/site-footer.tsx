@@ -1,13 +1,13 @@
-import type { LanguageCode } from "@/lib/i18n";
-import { homeTranslations } from "@/lib/i18n";
+import { useTranslations } from "@/hooks/useTranslations";
+import type { AppLocale } from "@/i18n/routing";
 import { Building2 } from "lucide-react";
 
 interface SiteFooterProps {
-  language: LanguageCode;
+  language: AppLocale;
 }
 
 export function SiteFooter({ language }: SiteFooterProps) {
-  const t = homeTranslations[language];
+  const t = useTranslations("home");
 
   return (
     <footer className="mt-12 border-t border-slate-800 bg-slate-900 text-slate-200">
@@ -29,14 +29,14 @@ export function SiteFooter({ language }: SiteFooterProps) {
             </p>
             </div>
             <p className="text-xs leading-relaxed text-slate-400">
-              {t.footerDescription}
+              {t("footerDescription")}
             </p>
           </div>
 
           {/* Properties / links column */}
           <div className="space-y-3">
             <p className="text-sm font-semibold text-slate-100">
-              {t.footerQuickLinks.buy} / {t.footerQuickLinks.rent}
+              {t("footerQuickLinks.buy")} / {t("footerQuickLinks.rent")}
             </p>
             <div className="space-y-1">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -59,7 +59,7 @@ export function SiteFooter({ language }: SiteFooterProps) {
           {/* Company / network */}
           <div className="space-y-3">
             <p className="text-sm font-semibold text-slate-100">
-              {t.footerCompany.about}
+              {t("footerCompany.about")}
             </p>
             <p className="text-xs leading-relaxed text-slate-400">
               Abdoun Real Estate connects buyers, sellers, and investors with
@@ -78,9 +78,9 @@ export function SiteFooter({ language }: SiteFooterProps) {
           {/* Apps / newsletter */}
           <div className="space-y-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              {t.footerStayUpdatedTitle}
+              {t("footerStayUpdatedTitle")}
             </p>
-            <p>{t.footerStayUpdatedCopy}</p>
+            <p>{t("footerStayUpdatedCopy")}</p>
             <div
               className={`mt-1 flex flex-col gap-2 sm:flex-row ${
                 language === "ar" ? "sm:flex-row-reverse" : ""
@@ -88,11 +88,11 @@ export function SiteFooter({ language }: SiteFooterProps) {
             >
               <input
                 type="email"
-                placeholder={t.footerEmailPlaceholder}
+                placeholder={t("footerEmailPlaceholder")}
                 className="h-9 flex-1 rounded-full border border-slate-700 bg-slate-900/60 px-3 text-xs text-slate-100 placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-900"
               />
               <button className="h-9 rounded-full bg-sky-600 px-4 text-xs font-semibold text-white shadow-sm hover:bg-sky-500">
-                {t.footerSubscribe}
+                {t("footerSubscribe")}
               </button>
             </div>
             </div>
@@ -211,8 +211,8 @@ export function SiteFooter({ language }: SiteFooterProps) {
               language === "ar" ? "justify-end" : ""
             }`}
           >
-            <button className="hover:text-slate-200">{t.footerTerms}</button>
-            <button className="hover:text-slate-200">{t.footerPrivacy}</button>
+            <button className="hover:text-slate-200">{t("footerTerms")}</button>
+            <button className="hover:text-slate-200">{t("footerPrivacy")}</button>
             <button className="hover:text-slate-200">Blog</button>
             <button className="hover:text-slate-200">Help Center</button>
             <button className="hover:text-slate-200">Sell with us</button>

@@ -1,0 +1,123 @@
+{
+  "common": {
+    "brand": "Abdoun Immobilier",
+    "home": "Accueil",
+    "login": "Connexion",
+    "signup": "Creer un compte",
+    "logout": "Deconnexion",
+    "dashboard": "Tableau de bord",
+    "themeLight": "Clair",
+    "themeDark": "Sombre",
+    "language": "Langue",
+    "user": "Utilisateur",
+    "agent": "Agent",
+    "admin": "Admin"
+  },
+  "home": {
+    "heroTitle": "Trouvez votre prochain bien a Abdoun et ailleurs",
+    "heroSubtitle": "Parcourez des annonces selectionnees, echangez avec des agents de confiance et explorez des quartiers premium inspires de Zillow et Bayut.",
+    "ctaBrowse": "Parcourir les annonces (mock)",
+    "ctaGetStarted": "Commencer",
+    "statsTitle": "Apercu du marche (donnees fictives)",
+    "heroTabs": {
+      "buy": "Acheter",
+      "rent": "Louer",
+      "sell": "Vendre"
+    },
+    "heroLocationLabel": "Localisation",
+    "heroLocationPlaceholder": "Ville, code postal ou quartier",
+    "heroTypeLabel": "Type",
+    "heroBudgetLabel": "Budget",
+    "heroSearch": "Rechercher",
+    "featuredTitle": "Biens immobiliers en vedette",
+    "featuredSubtitle": "Des maisons selectionnees pour chaque style de vie",
+    "featuredViewAll": "Voir toutes les proprietes ->",
+    "servicesTitle": "Nos services",
+    "servicesSubtitle": "De l'achat et la vente a la gestion locative, notre equipe vous accompagne a chaque etape.",
+    "servicesDescription": "Des solutions sur mesure a chaque etape de votre projet immobilier.",
+    "servicesCards": {
+      "buying": "Achat de bien",
+      "selling": "Vente de bien",
+      "management": "Gestion de biens"
+    },
+    "propertyTabs": {
+      "overview": "Apercu",
+      "amenities": "Equipements",
+      "location": "Localisation",
+      "reviews": "Avis"
+    },
+    "footerDescription": "Agence immobiliere haut de gamme aidant les familles et les investisseurs a trouver des biens d'exception dans les meilleurs quartiers d'Amman.",
+    "footerQuickLinks": {
+      "buy": "Acheter",
+      "rent": "Louer",
+      "sell": "Vendre",
+      "agents": "Agents"
+    },
+    "footerCompany": {
+      "about": "A propos",
+      "contact": "Contact",
+      "careers": "Carrieres",
+      "privacy": "Politique de confidentialite"
+    },
+    "footerStayUpdatedTitle": "Restez informe",
+    "footerStayUpdatedCopy": "Abonnez-vous pour recevoir les dernieres annonces et analyses du marche a Abdoun et au-dela.",
+    "footerEmailPlaceholder": "Adresse e-mail",
+    "footerSubscribe": "S'abonner",
+    "footerTerms": "Conditions d'utilisation",
+    "footerPrivacy": "Politique de confidentialite"
+  },
+  "auth": {
+    "loginTitle": "Connectez-vous a votre compte",
+    "signupTitle": "Creez votre compte",
+    "welcomeBack": "Bon retour",
+    "loginSubtitle": "Connectez-vous pour acceder a votre tableau de bord immobilier",
+    "email": "E-mail",
+    "emailAddress": "Adresse e-mail",
+    "emailPlaceholder": "name@agency.com",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "Entrez votre mot de passe",
+    "forgotPassword": "Mot de passe oublie ?",
+    "logIn": "Connexion",
+    "noAccountSignUp": "Pas encore de compte ?",
+    "signUpLink": "Creer un compte",
+    "fullName": "Nom complet",
+    "fullNamePlaceholder": "Entrez votre nom complet",
+    "confirmPassword": "Confirmer le mot de passe",
+    "confirmPasswordPlaceholder": "Ressaisissez votre mot de passe",
+    "haveAccountSignIn": "Vous avez deja un compte ?",
+    "signInLink": "Connexion",
+    "signupSubtitle": "Creez votre compte pour acceder a votre tableau de bord immobilier",
+    "copyright": "© 2024 Abdoun Real Estate Agency. Tous droits reserves.",
+    "role": "Role",
+    "chooseRole": "Choisissez un role",
+    "submitLogin": "Connexion",
+    "submitSignup": "Creer un compte",
+    "loginAsDemo": "Connexion demo rapide",
+    "continueWithGoogle": "Continuer avec Google"
+  },
+  "dashboard": {
+    "welcomeUser": "Bienvenue sur votre tableau de bord d'acheteur",
+    "welcomeAgent": "Bienvenue dans votre espace agent",
+    "welcomeAdmin": "Bienvenue sur la console admin",
+    "mockNotice": "Toutes les donnees affichees ici sont fictives pour la demo UI."
+  },
+  "HomePage": {
+    "title": "Abdoun Immobilier",
+    "description": "Internationalisation basee sur l'URL avec next-intl et SSR."
+  },
+  "ServerExample": {
+    "heading": "Traduction de composant serveur",
+    "body": "Ce texte est rendu cote serveur avec getTranslations."
+  },
+  "ClientExample": {
+    "heading": "Traduction de composant client",
+    "body": "Ce texte est rendu dans un composant client avec useTranslations."
+  },
+  "LocaleSwitcher": {
+    "label": "Langue",
+    "en": "Anglais",
+    "ar": "Arabe",
+    "es": "Espagnol",
+    "fr": "Francais"
+  }
+}

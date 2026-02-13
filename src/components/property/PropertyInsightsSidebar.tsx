@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "next-intl";
 import { Phone, MessageCircle, Star, UserCircle2, MapPin } from "lucide-react";
 import type { Property } from "@/components/home/types";
 import { PropertyCard } from "@/components/home/PropertyCard";
-import { useAppSelector } from "@/hooks/storeHooks";
 
 const SIMILAR_PROPERTIES: Property[] = [
   {
@@ -37,7 +37,7 @@ export function PropertyInsightsSidebar() {
   const [activeSimilar, setActiveSimilar] = useState(0);
   const total = SIMILAR_PROPERTIES.length;
   const current = SIMILAR_PROPERTIES[activeSimilar];
-  const isRtl = useAppSelector((state) => state.ui.language === "ar");
+  const isRtl = useLocale() === "ar";
 
   const goTo = (index: number) => {
     const next = (index + total) % total;

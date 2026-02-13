@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Building2, FileBarChart2, ListChecks, Shield, UserCircle2 } from "lucide-react";
-import { MainLayout } from "@/components/layout/main-layout";
 import { useAppSelector } from "@/hooks/storeHooks";
 import type { UserRole } from "@/features/auth/authSlice";
 import { useTranslations } from "@/hooks/useTranslations";
@@ -27,15 +27,15 @@ function RoleBadge({ role }: { role: UserRole }) {
 
 export default function LocalizedDashboardPage() {
   const auth = useAppSelector((state) => state.auth);
-  const uiLanguage = useAppSelector((state) => state.ui.language);
+  const locale = useLocale();
   const router = useRouter();
   const tDash = useTranslations("dashboard");
 
   useEffect(() => {
     if (!auth.user) {
-      router.replace(`/${uiLanguage}/login`);
+      router.replace(`/${locale}/login`);
     }
-  }, [auth.user, router, uiLanguage]);
+  }, [auth.user, locale, router]);
 
   if (!auth.user) {
     return null;
@@ -51,7 +51,6 @@ export default function LocalizedDashboardPage() {
       : tDash("welcomeAdmin");
 
   return (
-    <MainLayout>
       <div className="space-y-6">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -161,7 +160,6 @@ export default function LocalizedDashboardPage() {
           </section>
         </div>
       </div>
-    </MainLayout>
   );
 }
 

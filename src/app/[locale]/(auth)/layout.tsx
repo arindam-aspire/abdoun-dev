@@ -1,17 +1,17 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useAppSelector } from "@/hooks/storeHooks";
-import type { LanguageCode } from "@/lib/i18n";
+import { useLocale } from "next-intl";
 import { useTranslations } from "@/hooks/useTranslations";
+import type { AppLocale } from "@/i18n/routing";
 import { LanguageSelect } from "@/components/ui/language-select";
 
 interface AuthCardLayoutProps {
   children: ReactNode;
 }
 
-export function AuthCardLayout({ children }: AuthCardLayoutProps) {
-  const language = useAppSelector((state) => state.ui.language);
+export default function AuthLayout({ children }: AuthCardLayoutProps) {
+  const language = useLocale() as AppLocale;
   const t = useTranslations("auth");
   const isRtl = language === "ar";
 
@@ -25,7 +25,7 @@ export function AuthCardLayout({ children }: AuthCardLayoutProps) {
       >
         <LanguageSelect
           id="auth-language"
-          value={language as LanguageCode}
+          value={language}
           showFullLabels
         />
       </div>

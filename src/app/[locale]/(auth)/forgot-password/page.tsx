@@ -2,17 +2,15 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { AuthCardLayout } from "@/components/auth/auth-card-layout";
 import { useTranslations } from "@/hooks/useTranslations";
 
 export default function LocalizedForgotPasswordPage() {
   const t = useTranslations("auth");
-  const params = useParams<{ lang: string }>();
-  const lang = params.lang || "en";
+  const params = useParams<{ locale: string }>();
+  const locale = params.locale || "en";
 
   return (
-    <AuthCardLayout>
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
+    <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
         <h1 className="text-center text-xl font-bold text-zinc-900 sm:text-2xl">
           Forgot Password
         </h1>
@@ -21,13 +19,12 @@ export default function LocalizedForgotPasswordPage() {
           signing in again.
         </p>
         <Link
-          href={`/${lang}/login`}
+          href={`/${locale}/login`}
           className="inline-flex h-11 w-full items-center justify-center rounded-md bg-sky-600 px-5 text-base font-medium text-white hover:bg-sky-700 mt-6"
         >
           {t("signInLink")}
         </Link>
       </div>
-    </AuthCardLayout>
   );
 }
 

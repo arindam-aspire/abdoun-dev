@@ -2,8 +2,8 @@
 
 import { Info, Map, Sparkles, Star } from "lucide-react";
 import { useRef, useState } from "react";
-import type { LanguageCode } from "@/lib/i18n";
-import { homeTranslations } from "@/lib/i18n";
+import { useTranslations } from "@/hooks/useTranslations";
+import type { AppLocale } from "@/i18n/routing";
 import { PropertyDetailsHero } from "./PropertyDetailsHero";
 import { PropertyHighlights } from "./PropertyHighlights";
 import { PropertyOverview } from "./PropertyOverview";
@@ -13,7 +13,7 @@ import { PropertyNeighborhood } from "./PropertyNeighborhood";
 import type { DetailedProperty, PropertyStat } from "./types";
 
 export interface PropertyDetailsMainProps {
-  language: LanguageCode;
+  language: AppLocale;
 }
 
 const MOCK_DETAILED_PROPERTY: DetailedProperty = {
@@ -77,7 +77,7 @@ const MOCK_STATS: PropertyStat[] = [
 
 export function PropertyDetailsMain({ language }: PropertyDetailsMainProps) {
   const isRtl = language === "ar";
-  const t = homeTranslations[language];
+  const t = useTranslations("home");
   const [activeTab, setActiveTab] = useState<
     "overview" | "amenities" | "location" | "reviews"
   >("overview");
@@ -132,22 +132,22 @@ export function PropertyDetailsMain({ language }: PropertyDetailsMainProps) {
               {[
                 {
                   key: "overview",
-                  label: t.propertyTabs.overview,
+                  label: t("propertyTabs.overview"),
                   icon: <Info className="h-3.5 w-3.5" />,
                 },
                 {
                   key: "amenities",
-                  label: t.propertyTabs.amenities,
+                  label: t("propertyTabs.amenities"),
                   icon: <Sparkles className="h-3.5 w-3.5" />,
                 },
                 {
                   key: "location",
-                  label: t.propertyTabs.location,
+                  label: t("propertyTabs.location"),
                   icon: <Map className="h-3.5 w-3.5" />,
                 },
                 {
                   key: "reviews",
-                  label: t.propertyTabs.reviews,
+                  label: t("propertyTabs.reviews"),
                   icon: <Star className="h-3.5 w-3.5" />,
                 },
               ].map((tab) => {

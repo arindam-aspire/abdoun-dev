@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { Building2, Mail, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useDispatch } from "react-redux";
-import { AuthCardLayout } from "@/components/auth/auth-card-layout";
 import { Button, Input, Label } from "@/components/ui";
 import { useTranslations } from "@/hooks/useTranslations";
 import { login } from "@/features/auth/authSlice";
@@ -14,8 +13,8 @@ import type { UserRole } from "@/features/auth/authSlice";
 export default function LocalizedLoginPage() {
   const t = useTranslations("auth");
   const router = useRouter();
-  const params = useParams<{ lang: string }>();
-  const lang = params.lang || "en";
+  const params = useParams<{ locale: string }>();
+  const locale = params.locale || "en";
   const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -32,7 +31,7 @@ export default function LocalizedLoginPage() {
         role: "user" as UserRole,
       }),
     );
-    router.push(`/${lang}/dashboard`);
+    router.push(`/${locale}/dashboard`);
   };
 
   const handleGoogleSignIn = () => {
@@ -46,16 +45,15 @@ export default function LocalizedLoginPage() {
         role: "user" as UserRole,
       }),
     );
-    router.push(`/${lang}/dashboard`);
+    router.push(`/${locale}/dashboard`);
   };
 
   return (
-    <AuthCardLayout>
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
+    <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
         {/* Logo - same as home page header, clickable to localized home */}
         <div className="flex justify-center">
           <Link
-            href={`/${lang}`}
+            href={`/${locale}`}
             className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm hover:bg-sky-700 transition-colors"
             aria-label="Go to home page"
           >
@@ -91,7 +89,7 @@ export default function LocalizedLoginPage() {
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="login-password">{t("password")}</Label>
               <Link
-                href={`/${lang}/forgot-password`}
+                href={`/${locale}/forgot-password`}
                 className="text-xs font-medium text-zinc-600 hover:text-zinc-900"
               >
                 {t("forgotPassword")}
@@ -150,14 +148,13 @@ export default function LocalizedLoginPage() {
         <p className="mt-6 text-center text-sm text-zinc-600">
           {t("noAccountSignUp")}{" "}
           <Link
-            href={`/${lang}/signup`}
+            href={`/${locale}/signup`}
             className="font-semibold text-zinc-900 hover:underline"
           >
             {t("signUpLink")}
           </Link>
         </p>
       </div>
-    </AuthCardLayout>
   );
 }
 

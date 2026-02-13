@@ -1,0 +1,123 @@
+{
+  "common": {
+    "brand": "Abdoun Bienes Raices",
+    "home": "Inicio",
+    "login": "Iniciar sesion",
+    "signup": "Registrarse",
+    "logout": "Cerrar sesion",
+    "dashboard": "Panel",
+    "themeLight": "Claro",
+    "themeDark": "Oscuro",
+    "language": "Idioma",
+    "user": "Usuario",
+    "agent": "Agente",
+    "admin": "Administrador"
+  },
+  "home": {
+    "heroTitle": "Encuentra tu proxima propiedad en Abdoun y mas alla",
+    "heroSubtitle": "Explora anuncios seleccionados, conectate con agentes confiables y descubre barrios premium inspirados en Zillow y Bayut.",
+    "ctaBrowse": "Ver propiedades (mock)",
+    "ctaGetStarted": "Empezar",
+    "statsTitle": "Resumen del mercado (datos ficticios)",
+    "heroTabs": {
+      "buy": "Comprar",
+      "rent": "Alquilar",
+      "sell": "Vender"
+    },
+    "heroLocationLabel": "Ubicacion",
+    "heroLocationPlaceholder": "Ciudad, codigo postal o barrio",
+    "heroTypeLabel": "Tipo",
+    "heroBudgetLabel": "Presupuesto",
+    "heroSearch": "Buscar",
+    "featuredTitle": "Propiedades destacadas",
+    "featuredSubtitle": "Hogares seleccionados para cada estilo de vida",
+    "featuredViewAll": "Ver todas las propiedades ->",
+    "servicesTitle": "Nuestros servicios",
+    "servicesSubtitle": "Desde la compra y venta hasta la gestion de propiedades, nuestro equipo te acompana en cada paso.",
+    "servicesDescription": "Soluciones a medida para cada etapa de tu trayectoria inmobiliaria.",
+    "servicesCards": {
+      "buying": "Compra de vivienda",
+      "selling": "Venta de propiedad",
+      "management": "Gestion de propiedades"
+    },
+    "propertyTabs": {
+      "overview": "Resumen",
+      "amenities": "Comodidades",
+      "location": "Ubicacion",
+      "reviews": "Opiniones"
+    },
+    "footerDescription": "Agencia inmobiliaria premium que ayuda a familias e inversores a encontrar propiedades excepcionales en los mejores barrios de Amman.",
+    "footerQuickLinks": {
+      "buy": "Comprar",
+      "rent": "Alquilar",
+      "sell": "Vender",
+      "agents": "Agentes"
+    },
+    "footerCompany": {
+      "about": "Sobre nosotros",
+      "contact": "Contacto",
+      "careers": "Empleo",
+      "privacy": "Politica de privacidad"
+    },
+    "footerStayUpdatedTitle": "Mantente informado",
+    "footerStayUpdatedCopy": "Suscribete para recibir las ultimas propiedades y analisis del mercado en Abdoun y mas alla.",
+    "footerEmailPlaceholder": "Correo electronico",
+    "footerSubscribe": "Suscribirse",
+    "footerTerms": "Terminos de servicio",
+    "footerPrivacy": "Politica de privacidad"
+  },
+  "auth": {
+    "loginTitle": "Inicia sesion en tu cuenta",
+    "signupTitle": "Crea tu cuenta",
+    "welcomeBack": "Bienvenido de nuevo",
+    "loginSubtitle": "Inicia sesion para acceder a tu panel inmobiliario",
+    "email": "Correo electronico",
+    "emailAddress": "Correo electronico",
+    "emailPlaceholder": "name@agency.com",
+    "password": "Contrasena",
+    "passwordPlaceholder": "Introduce tu contrasena",
+    "forgotPassword": "Olvidaste tu contrasena?",
+    "logIn": "Iniciar sesion",
+    "noAccountSignUp": "No tienes cuenta?",
+    "signUpLink": "Registrarse",
+    "fullName": "Nombre completo",
+    "fullNamePlaceholder": "Introduce tu nombre completo",
+    "confirmPassword": "Confirmar contrasena",
+    "confirmPasswordPlaceholder": "Vuelve a introducir tu contrasena",
+    "haveAccountSignIn": "Ya tienes cuenta?",
+    "signInLink": "Iniciar sesion",
+    "signupSubtitle": "Crea tu cuenta para acceder a tu panel inmobiliario",
+    "copyright": "© 2024 Abdoun Real Estate Agency. Todos los derechos reservados.",
+    "role": "Rol",
+    "chooseRole": "Elige un rol",
+    "submitLogin": "Iniciar sesion",
+    "submitSignup": "Registrarse",
+    "loginAsDemo": "Login demo rapido",
+    "continueWithGoogle": "Continuar con Google"
+  },
+  "dashboard": {
+    "welcomeUser": "Bienvenido a tu panel de comprador",
+    "welcomeAgent": "Bienvenido a tu espacio de agente",
+    "welcomeAdmin": "Bienvenido a la consola de administrador",
+    "mockNotice": "Todos los datos mostrados aqui son ficticios para la interfaz."
+  },
+  "HomePage": {
+    "title": "Abdoun Bienes Raices",
+    "description": "Internacionalizacion basada en URL con next-intl y SSR."
+  },
+  "ServerExample": {
+    "heading": "Traduccion de componente de servidor",
+    "body": "Este texto se renderiza en el servidor con getTranslations."
+  },
+  "ClientExample": {
+    "heading": "Traduccion de componente cliente",
+    "body": "Este texto se renderiza en un componente cliente con useTranslations."
+  },
+  "LocaleSwitcher": {
+    "label": "Idioma",
+    "en": "Ingles",
+    "ar": "Arabe",
+    "es": "Espanol",
+    "fr": "Frances"
+  }
+}

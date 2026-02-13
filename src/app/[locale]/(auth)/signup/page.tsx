@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { Building2, Mail, Eye, EyeOff, User, ArrowRight } from "lucide-react";
 import { useDispatch } from "react-redux";
-import { AuthCardLayout } from "@/components/auth/auth-card-layout";
 import { Button, Input, Label } from "@/components/ui";
 import { useTranslations } from "@/hooks/useTranslations";
 import { login } from "@/features/auth/authSlice";
@@ -14,8 +13,8 @@ import type { UserRole } from "@/features/auth/authSlice";
 export default function LocalizedSignupPage() {
   const t = useTranslations("auth");
   const router = useRouter();
-  const params = useParams<{ lang: string }>();
-  const lang = params.lang || "en";
+  const params = useParams<{ locale: string }>();
+  const locale = params.locale || "en";
   const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -44,12 +43,11 @@ export default function LocalizedSignupPage() {
         role: "user" as UserRole,
       }),
     );
-    router.push(`/${lang}/dashboard`);
+    router.push(`/${locale}/dashboard`);
   };
 
   return (
-    <AuthCardLayout>
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
+    <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
         {/* Logo - same as home page header */}
         <div className="flex justify-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm">
@@ -175,14 +173,13 @@ export default function LocalizedSignupPage() {
         <p className="mt-6 text-center text-sm text-zinc-600">
           {t("haveAccountSignIn")}{" "}
           <Link
-            href={`/${lang}/login`}
+            href={`/${locale}/login`}
             className="font-semibold text-zinc-900 hover:underline"
           >
             {t("signInLink")}
           </Link>
         </p>
       </div>
-    </AuthCardLayout>
   );
 }
 

@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import type { LanguageCode } from "@/lib/i18n";
-import { homeTranslations } from "@/lib/i18n";
+import { useTranslations } from "@/hooks/useTranslations";
+import type { AppLocale } from "@/i18n/routing";
 import { Building2 } from "lucide-react";
 import { LanguageSelect } from "@/components/ui/language-select";
 
 interface SiteHeaderProps {
-  language: LanguageCode;
+  language: AppLocale;
 }
 
 type MegaMenuKey = "buy" | "rent" | "sell" | "agents" | null;
@@ -16,7 +16,7 @@ const SHRINK_SCROLL_Y = 36;
 const EXPAND_SCROLL_Y = 12;
 
 export function SiteHeader({ language }: SiteHeaderProps) {
-  const t = homeTranslations[language];
+  const t = useTranslations("home");
   const [activeMenu, setActiveMenu] = useState<MegaMenuKey>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const closeTimeoutRef = useRef<number | null>(null);
@@ -88,7 +88,7 @@ export function SiteHeader({ language }: SiteHeaderProps) {
     }
   > = {
     buy: {
-      title: t.heroTabs.buy,
+      title: t("heroTabs.buy"),
       description:
         "Find your next home to purchase with advanced filters and real‑time insights.",
       columns: [
@@ -120,7 +120,7 @@ export function SiteHeader({ language }: SiteHeaderProps) {
       ],
     },
     rent: {
-      title: t.heroTabs.rent,
+      title: t("heroTabs.rent"),
       description:
         "Explore premium rentals, furnished options, and long‑term stays.",
       columns: [
@@ -150,7 +150,7 @@ export function SiteHeader({ language }: SiteHeaderProps) {
       ],
     },
     sell: {
-      title: t.heroTabs.sell,
+      title: t("heroTabs.sell"),
       description:
         "Get accurate pricing, expert guidance, and maximum visibility for your property.",
       columns: [
@@ -179,7 +179,7 @@ export function SiteHeader({ language }: SiteHeaderProps) {
       ],
     },
     agents: {
-      title: t.footerQuickLinks.agents,
+      title: t("footerQuickLinks.agents"),
       description:
         "Connect with top local agents who specialize in Abdoun and surrounding areas.",
       columns: [
@@ -259,7 +259,7 @@ export function SiteHeader({ language }: SiteHeaderProps) {
               onFocus={() => handleOpen("buy")}
               type="button"
             >
-              {t.heroTabs.buy}
+              {t("heroTabs.buy")}
             </button>
             <button
               className={`cursor-pointer border-b-2 transition ${
@@ -271,7 +271,7 @@ export function SiteHeader({ language }: SiteHeaderProps) {
               onFocus={() => handleOpen("rent")}
               type="button"
             >
-              {t.heroTabs.rent}
+              {t("heroTabs.rent")}
             </button>
             <button
               className={`cursor-pointer border-b-2 transition ${
@@ -283,7 +283,7 @@ export function SiteHeader({ language }: SiteHeaderProps) {
               onFocus={() => handleOpen("sell")}
               type="button"
             >
-              {t.heroTabs.sell}
+              {t("heroTabs.sell")}
             </button>
             <button
               className={`cursor-pointer border-b-2 transition ${
@@ -296,7 +296,7 @@ export function SiteHeader({ language }: SiteHeaderProps) {
               type="button"
             >
               {/* simple reuse of label */}
-              {t.footerQuickLinks.agents}
+              {t("footerQuickLinks.agents")}
             </button>
           </nav>
         </div>

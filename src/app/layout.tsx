@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import { hasLocale } from "next-intl";
+import { getLocale } from "next-intl/server";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import { routing } from "@/i18n/routing";
 import { AppShell } from "@/components/layout/app-shell";
-import { UiProvider } from "@/components/layout/ui-provider";
-import { LanguageRouteSync } from "@/components/layout/language-route-sync";
+import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,25 +18,30 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Abdoun Real Estate",
-  description: "Enterprise-grade Next.js front-end for Abdoun Real Estate.",
+  description: "URL-driven internationalization with next-intl and SSR.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const currentLocale = await getLocale();
+  const locale = hasLocale(routing.locales, currentLocale)
+    ? currentLocale
+    : routing.defaultLocale;
+  const direction = locale === "ar" ? "rtl" : "ltr";
+
   return (
-    <html lang="en">
+    <html lang={locale} dir={direction} suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-50 text-zinc-900`}
       >
         <AppShell>
-          <LanguageRouteSync />
-          <UiProvider>{children}</UiProvider>
+          {children}
         </AppShell>
       </body>
     </html>
   );
 }
-

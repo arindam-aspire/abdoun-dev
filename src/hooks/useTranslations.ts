@@ -1,10 +1,10 @@
 "use client";
 
-import { useAppSelector } from "@/hooks/storeHooks";
-import { t } from "@/lib/translations";
+import { useTranslations as useIntlTranslations } from "next-intl";
 
-export function useTranslations(namespace: Parameters<typeof t>[1]) {
-  const lang = useAppSelector((state) => state.ui.language);
-  return (key: string) => t(lang, namespace, key);
+type Namespace = "common" | "home" | "auth" | "dashboard";
+
+export function useTranslations(namespace: Namespace) {
+  return useIntlTranslations(namespace);
 }
 

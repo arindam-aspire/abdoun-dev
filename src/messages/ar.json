@@ -1,0 +1,123 @@
+{
+  "common": {
+    "brand": "عبدون للعقارات",
+    "home": "الرئيسية",
+    "login": "تسجيل الدخول",
+    "signup": "إنشاء حساب",
+    "logout": "تسجيل الخروج",
+    "dashboard": "لوحة التحكم",
+    "themeLight": "فاتح",
+    "themeDark": "داكن",
+    "language": "اللغة",
+    "user": "مستخدم",
+    "agent": "وكيل",
+    "admin": "مدير"
+  },
+  "home": {
+    "heroTitle": "ابحث عن عقارك القادم في عبدون وما حولها",
+    "heroSubtitle": "تصفح العقارات المختارة، تواصل مع الوسطاء الموثوقين، واستكشف الأحياء المميزة بإلهام من منصات مثل Zillow وBayut.",
+    "ctaBrowse": "تصفح العقارات (تجريبي)",
+    "ctaGetStarted": "ابدأ الآن",
+    "statsTitle": "نظرة على السوق (بيانات تجريبية)",
+    "heroTabs": {
+      "buy": "شراء",
+      "rent": "إيجار",
+      "sell": "بيع"
+    },
+    "heroLocationLabel": "الموقع",
+    "heroLocationPlaceholder": "المدينة أو الرمز البريدي أو الحي",
+    "heroTypeLabel": "النوع",
+    "heroBudgetLabel": "الميزانية",
+    "heroSearch": "بحث",
+    "featuredTitle": "العقارات المميزة",
+    "featuredSubtitle": "اختيارات خاصة تناسب أسلوب حياتك",
+    "featuredViewAll": "عرض كل العقارات <-",
+    "servicesTitle": "خدماتنا",
+    "servicesSubtitle": "من الشراء والبيع إلى إدارة العقارات، فريقنا المتخصص يرافقك في كل خطوة.",
+    "servicesDescription": "حلول مصممة خصيصا لكل مرحلة من رحلتك العقارية.",
+    "servicesCards": {
+      "buying": "شراء عقار",
+      "selling": "بيع عقار",
+      "management": "إدارة عقارات"
+    },
+    "propertyTabs": {
+      "overview": "نظرة عامة",
+      "amenities": "المرافق",
+      "location": "الموقع",
+      "reviews": "التقييمات"
+    },
+    "footerDescription": "شركة عقارية رائدة تساعد العائلات والمستثمرين في إيجاد أفضل العقارات في أحياء عمّان المرموقة.",
+    "footerQuickLinks": {
+      "buy": "شراء",
+      "rent": "إيجار",
+      "sell": "بيع",
+      "agents": "الوكلاء"
+    },
+    "footerCompany": {
+      "about": "من نحن",
+      "contact": "اتصل بنا",
+      "careers": "الوظائف",
+      "privacy": "سياسة الخصوصية"
+    },
+    "footerStayUpdatedTitle": "كن على اطلاع",
+    "footerStayUpdatedCopy": "اشترك للحصول على أحدث العروض العقارية وتحليلات السوق في عمّان وما حولها.",
+    "footerEmailPlaceholder": "البريد الإلكتروني",
+    "footerSubscribe": "اشترك",
+    "footerTerms": "شروط الاستخدام",
+    "footerPrivacy": "سياسة الخصوصية"
+  },
+  "auth": {
+    "loginTitle": "تسجيل الدخول إلى حسابك",
+    "signupTitle": "إنشاء حساب جديد",
+    "welcomeBack": "مرحبا بعودتك",
+    "loginSubtitle": "سجّل الدخول للوصول إلى لوحة العقارات",
+    "email": "البريد الإلكتروني",
+    "emailAddress": "البريد الإلكتروني",
+    "emailPlaceholder": "name@agency.com",
+    "password": "كلمة المرور",
+    "passwordPlaceholder": "أدخل كلمة المرور",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "logIn": "تسجيل الدخول",
+    "noAccountSignUp": "ليس لديك حساب؟",
+    "signUpLink": "إنشاء حساب",
+    "fullName": "الاسم الكامل",
+    "fullNamePlaceholder": "أدخل اسمك الكامل",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "confirmPasswordPlaceholder": "أعد إدخال كلمة المرور",
+    "haveAccountSignIn": "لديك حساب بالفعل؟",
+    "signInLink": "تسجيل الدخول",
+    "signupSubtitle": "أنشئ حسابك للوصول إلى لوحة العقارات",
+    "copyright": "© 2024 عبدون للعقارات. جميع الحقوق محفوظة.",
+    "role": "الدور",
+    "chooseRole": "اختر الدور",
+    "submitLogin": "تسجيل الدخول",
+    "submitSignup": "إنشاء حساب",
+    "loginAsDemo": "تسجيل دخول تجريبي سريع",
+    "continueWithGoogle": "تسجيل الدخول عبر جوجل"
+  },
+  "dashboard": {
+    "welcomeUser": "مرحباً بك في لوحة المشتري",
+    "welcomeAgent": "مرحباً بك في مساحة عمل الوكيل",
+    "welcomeAdmin": "مرحباً بك في لوحة التحكم الإدارية",
+    "mockNotice": "جميع البيانات المعروضة هنا تجريبية لأغراض الواجهة فقط."
+  },
+  "HomePage": {
+    "title": "عقارات عبدون",
+    "description": "دعم تعدد اللغات المعتمد على الرابط باستخدام next-intl و SSR."
+  },
+  "ServerExample": {
+    "heading": "ترجمة مكوّن الخادم",
+    "body": "يتم عرض هذا النص من الخادم باستخدام getTranslations."
+  },
+  "ClientExample": {
+    "heading": "ترجمة مكوّن العميل",
+    "body": "يتم عرض هذا النص داخل مكوّن عميل باستخدام useTranslations."
+  },
+  "LocaleSwitcher": {
+    "label": "اللغة",
+    "en": "الإنجليزية",
+    "ar": "العربية",
+    "es": "الإسبانية",
+    "fr": "الفرنسية"
+  }
+}

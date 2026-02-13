@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useLocale } from "next-intl";
 import { Bath, BedDouble, Heart, MapPin, Maximize2 } from "lucide-react";
-import { useAppSelector } from "@/hooks/storeHooks";
-import type { LanguageCode } from "@/lib/i18n";
+import type { AppLocale } from "@/i18n/routing";
 import type { Property } from "./types";
 
 export interface PropertyCardProps {
@@ -16,9 +16,7 @@ export function PropertyCard({
   property,
   agentLabel = "Abdoun Real Estate",
 }: PropertyCardProps) {
-  const language = useAppSelector(
-    (state) => state.ui.language,
-  ) as LanguageCode;
+  const language = useLocale() as AppLocale;
   const isRtl = language === "ar";
 
   return (
@@ -108,7 +106,7 @@ export function PropertyCard({
 
       {/* Invisible overlay link to make the whole card clickable */}
       <Link
-        href={`/${language}/propertydeatils/${property.id}`}
+        href={`/${language}/property-details/${property.id}`}
         className="absolute inset-0 z-10"
         aria-label={`View details for ${property.title}`}
       />

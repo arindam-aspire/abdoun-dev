@@ -15,6 +15,7 @@ export interface DropdownProps {
   options: DropdownOption[];
   value: string;
   onChange: (value: string) => void;
+  buttonId?: string;
   /** Optional alignment for the menu panel. Defaults to "right". */
   align?: "left" | "right";
 }
@@ -24,13 +25,17 @@ export function Dropdown({
   options,
   value,
   onChange,
+  buttonId,
   align = "right",
 }: DropdownProps) {
   const selected = options.find((option) => option.value === value);
 
   return (
     <Menu as="div" className="relative inline-block text-left">
-      <Menu.Button className="inline-flex w-full justify-center rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-medium text-zinc-900 shadow-sm hover:bg-zinc-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 gap-2 items-center">
+      <Menu.Button
+        id={buttonId}
+        className="inline-flex w-full justify-center rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-medium text-zinc-900 shadow-sm hover:bg-zinc-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 gap-2 items-center"
+      >
         {selected?.label ?? label}
         <ChevronDown className="h-4 w-4" aria-hidden="true" />
       </Menu.Button>
