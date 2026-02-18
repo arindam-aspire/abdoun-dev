@@ -15,7 +15,7 @@
   },
   "home": {
     "heroTitle": "ابحث عن عقارك القادم في عبدون وما حولها",
-    "heroSubtitle": "تصفح العقارات المختارة، تواصل مع الوسطاء الموثوقين، واستكشف الأحياء المميزة بإلهام من منصات مثل Zillow وBayut.",
+    "heroSubtitle": "",
     "ctaBrowse": "تصفح العقارات (تجريبي)",
     "ctaGetStarted": "ابدأ الآن",
     "statsTitle": "نظرة على السوق (بيانات تجريبية)",
@@ -32,6 +32,12 @@
     "featuredTitle": "العقارات المميزة",
     "featuredSubtitle": "اختيارات خاصة تناسب أسلوب حياتك",
     "featuredViewAll": "عرض كل العقارات <-",
+    "exclusiveTitle": "عقارات حصرية",
+    "exclusiveSubtitle": "عروض مميزة متاحة فقط عبر عبدون للعقارات",
+    "exclusiveViewAll": "عرض كل الحصرية ->",
+    "latestTitle": "أحدث العقارات",
+    "latestSubtitle": "وحدات وعقارات جديدة معروضة في السوق",
+    "latestViewAll": "عرض كل الأحدث ->",
     "servicesTitle": "خدماتنا",
     "servicesSubtitle": "من الشراء والبيع إلى إدارة العقارات، فريقنا المتخصص يرافقك في كل خطوة.",
     "servicesDescription": "حلول مصممة خصيصا لكل مرحلة من رحلتك العقارية.",
@@ -64,7 +70,34 @@
     "footerEmailPlaceholder": "البريد الإلكتروني",
     "footerSubscribe": "اشترك",
     "footerTerms": "شروط الاستخدام",
-    "footerPrivacy": "سياسة الخصوصية"
+    "footerPrivacy": "سياسة الخصوصية",
+    "bottomNav": {
+      "home": "الرئيسية",
+      "list": "قائمة",
+      "lands": "أراضي",
+      "team": "فريقنا",
+      "account": "حساب"
+    },
+    "nav": {
+      "listProperty": "أضف عقارك",
+      "ourTeam": "فريقنا",
+      "lands": "أراضي",
+      "commercial": "تجاري",
+      "residential": "سكني",
+      "commercialVillas": "فيلات",
+      "commercialOffices": "مكاتب / صالات عرض",
+      "commercialBuildings": "مباني تجارية",
+      "commercialInvestment": "فرص استثمارية",
+      "residentialVillas": "فيلات",
+      "residentialApartments": "شقق",
+      "residentialLuxurious": "عقارات فاخرة",
+      "residentialFarms": "مزارع"
+    },
+    "heroCategoryTabs": {
+      "commercial": "تجاري",
+      "realEstate": "سكني",
+      "land": "أراضي"
+    }
   },
   "auth": {
     "loginTitle": "تسجيل الدخول إلى حسابك",

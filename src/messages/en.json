@@ -32,6 +32,12 @@
     "featuredTitle": "Featured Properties",
     "featuredSubtitle": "Handpicked homes for every lifestyle",
     "featuredViewAll": "View all properties ->",
+    "exclusiveTitle": "Exclusive Properties",
+    "exclusiveSubtitle": "Premium listings available only through Abdoun Real Estate",
+    "exclusiveViewAll": "View all exclusive ->",
+    "latestTitle": "Latest Properties",
+    "latestSubtitle": "Newly listed homes and apartments on the market",
+    "latestViewAll": "View all latest ->",
     "servicesTitle": "Our Services",
     "servicesSubtitle": "From buying and selling to property management, our dedicated team supports you at every step.",
     "servicesDescription": "Tailored solutions for every stage of your property journey.",
@@ -64,7 +70,34 @@
     "footerEmailPlaceholder": "Email address",
     "footerSubscribe": "Subscribe",
     "footerTerms": "Terms of Service",
-    "footerPrivacy": "Privacy Policy"
+    "footerPrivacy": "Privacy Policy",
+    "bottomNav": {
+      "home": "Home",
+      "list": "List",
+      "lands": "Lands",
+      "team": "Team",
+      "account": "Account"
+    },
+    "nav": {
+      "listProperty": "List Your Property",
+      "ourTeam": "Our Team",
+      "lands": "Lands",
+      "commercial": "Commercial",
+      "residential": "Residential",
+      "commercialVillas": "Villas",
+      "commercialOffices": "Offices / Showrooms",
+      "commercialBuildings": "Commercial Buildings",
+      "commercialInvestment": "Investment Opportunities",
+      "residentialVillas": "Villas",
+      "residentialApartments": "Apartments",
+      "residentialLuxurious": "Luxurious Properties",
+      "residentialFarms": "Farms"
+    },
+    "heroCategoryTabs": {
+      "commercial": "Commercial",
+      "realEstate": "Residential",
+      "land": "Lands"
+    }
   },
   "auth": {
     "loginTitle": "Sign in to your account",

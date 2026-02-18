@@ -4,19 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "@/hooks/useTranslations";
 import type { AppLocale } from "@/i18n/routing";
-import { Building2 } from "lucide-react";
 import { LanguageSelect } from "@/components/ui/language-select";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 interface SiteHeaderProps {
   language: AppLocale;
 }
 
-type MegaMenuKey = "buy" | "rent" | "sell" | "agents" | null;
+type MegaMenuKey = "commercial" | "residential" | null;
 const SHRINK_SCROLL_Y = 36;
 const EXPAND_SCROLL_Y = 12;
 
 export function SiteHeader({ language }: SiteHeaderProps) {
   const t = useTranslations("home");
+  const tAuth = useTranslations("auth");
   const [activeMenu, setActiveMenu] = useState<MegaMenuKey>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const closeTimeoutRef = useRef<number | null>(null);
@@ -83,126 +84,33 @@ export function SiteHeader({ language }: SiteHeaderProps) {
     Exclude<MegaMenuKey, null>,
     {
       title: string;
-      description: string;
       columns: { heading: string; items: { label: string; href: string }[] }[];
     }
   > = {
-    buy: {
-      title: t("heroTabs.buy"),
-      description:
-        "Find your next home to purchase with advanced filters and real‑time insights.",
+    commercial: {
+      title: t("nav.commercial"),
       columns: [
         {
-          heading: "Search homes",
+          heading: t("nav.commercial"),
           items: [
-            { label: "Homes for sale", href: `/${language}/buy` },
-            { label: "New construction", href: `/${language}/buy/new` },
-            { label: "Luxury properties", href: `/${language}/buy/luxury` },
-            { label: "Off‑plan projects", href: `/${language}/buy/off-plan` },
-          ],
-        },
-        {
-          heading: "Tools",
-          items: [
-            { label: "Mortgage calculator", href: `/${language}/tools/mortgage` },
-            { label: "Affordability", href: `/${language}/tools/affordability` },
-            { label: "Neighborhood insights", href: `/${language}/neighborhoods` },
-          ],
-        },
-        {
-          heading: "Guides",
-          items: [
-            { label: "Buying in Abdoun", href: `/${language}/guides/buying` },
-            { label: "Closing process", href: `/${language}/guides/closing` },
-            { label: "Investment tips", href: `/${language}/guides/investing` },
+            { label: t("nav.commercialVillas"), href: `/${language}/commercial/villas` },
+            { label: t("nav.commercialOffices"), href: `/${language}/commercial/offices` },
+            { label: t("nav.commercialBuildings"), href: `/${language}/commercial/buildings` },
+            { label: t("nav.commercialInvestment"), href: `/${language}/commercial/investment` },
           ],
         },
       ],
     },
-    rent: {
-      title: t("heroTabs.rent"),
-      description:
-        "Explore premium rentals, furnished options, and long‑term stays.",
+    residential: {
+      title: t("nav.residential"),
       columns: [
         {
-          heading: "Browse rentals",
+          heading: t("nav.residential"),
           items: [
-            { label: "Apartments for rent", href: `/${language}/rent` },
-            { label: "Furnished rentals", href: `/${language}/rent/furnished` },
-            { label: "Short‑term stays", href: `/${language}/rent/short-term` },
-          ],
-        },
-        {
-          heading: "By lifestyle",
-          items: [
-            { label: "Family‑friendly", href: `/${language}/rent/family` },
-            { label: "Pet‑friendly", href: `/${language}/rent/pet-friendly` },
-            { label: "Near schools", href: `/${language}/rent/schools` },
-          ],
-        },
-        {
-          heading: "Resources",
-          items: [
-            { label: "Tenant guide", href: `/${language}/guides/renting` },
-            { label: "Rental checklist", href: `/${language}/guides/checklist` },
-          ],
-        },
-      ],
-    },
-    sell: {
-      title: t("heroTabs.sell"),
-      description:
-        "Get accurate pricing, expert guidance, and maximum visibility for your property.",
-      columns: [
-        {
-          heading: "Start selling",
-          items: [
-            { label: "Request a valuation", href: `/${language}/sell/valuation` },
-            { label: "List your property", href: `/${language}/sell` },
-            { label: "Developer services", href: `/${language}/sell/developers` },
-          ],
-        },
-        {
-          heading: "Pricing tools",
-          items: [
-            { label: "Market reports", href: `/${language}/market-reports` },
-            { label: "Recent sales", href: `/${language}/recent-sales` },
-          ],
-        },
-        {
-          heading: "Seller guides",
-          items: [
-            { label: "Preparing to sell", href: `/${language}/guides/selling` },
-            { label: "Marketing strategy", href: `/${language}/guides/marketing` },
-          ],
-        },
-      ],
-    },
-    agents: {
-      title: t("footerQuickLinks.agents"),
-      description:
-        "Connect with top local agents who specialize in Abdoun and surrounding areas.",
-      columns: [
-        {
-          heading: "Find an agent",
-          items: [
-            { label: "Browse agents", href: `/${language}/agents` },
-            { label: "Top‑rated agents", href: `/${language}/agents/top-rated` },
-            { label: "By neighborhood", href: `/${language}/agents/neighborhoods` },
-          ],
-        },
-        {
-          heading: "For agents",
-          items: [
-            { label: "Join Abdoun Real Estate", href: `/${language}/agents/join` },
-            { label: "Marketing toolkit", href: `/${language}/agents/marketing` },
-          ],
-        },
-        {
-          heading: "Resources",
-          items: [
-            { label: "Partner program", href: `/${language}/agents/partners` },
-            { label: "Training & events", href: `/${language}/agents/events` },
+            { label: t("nav.residentialVillas"), href: `/${language}/residential/villas` },
+            { label: t("nav.residentialApartments"), href: `/${language}/residential/apartments` },
+            { label: t("nav.residentialLuxurious"), href: `/${language}/residential/luxurious` },
+            { label: t("nav.residentialFarms"), href: `/${language}/residential/farms` },
           ],
         },
       ],
@@ -213,32 +121,20 @@ export function SiteHeader({ language }: SiteHeaderProps) {
 
   return (
     <header
-      className="sticky top-0 z-30 border-b border-slate-100 bg-white/80 backdrop-blur relative"
+      className="sticky top-0 z-30 border-b border-white/20 bg-[rgba(26,59,92,0.95)] text-white backdrop-blur relative"
       dir={isRTL ? "rtl" : "ltr"}
       onMouseLeave={handleClose}
     >
       <div
-        className={`container mx-auto flex items-center justify-between gap-4 px-4 transition-all duration-200 ${
+        className={`container mx-auto flex items-center justify-between gap-2 px-4 transition-all duration-200 md:gap-4 ${
           isScrolled ? "py-2 md:px-8" : "py-4 md:px-8"
         }`}
       >
-        <Link
-          href={`/${language}`}
-          className={`flex items-center gap-3 transition hover:opacity-90`}
-          aria-label="Go to home page"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm">
-            <Building2 className="h-5 w-5" aria-hidden="true" />
-          </div>
-          <div>
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-sky-600">
-              Abdoun Real Estate
-            </p>
-            {/* <p className="text-sm text-slate-500">
-              {t.heroSubtitle}
-            </p> */}
-          </div>
-        </Link>
+        <BrandLogo
+          locale={language}
+          priority
+          imageClassName={isScrolled ? "h-7 md:h-9" : "h-8 md:h-10"}
+        />
 
         {/* Desktop navigation */}
         <div
@@ -247,77 +143,79 @@ export function SiteHeader({ language }: SiteHeaderProps) {
           onMouseLeave={scheduleClose}
         >
           <nav
-            className={`flex items-center gap-6 text-sm font-medium text-slate-600`}
+            className={`flex items-center gap-6 text-sm font-medium text-white/80`}
           >
+            <Link
+              href={`/${language}/list`}
+              className="border-b-2 border-transparent transition hover:border-[var(--brand-accent)] hover:text-white"
+              onMouseEnter={handleClose}
+              onFocus={handleClose}
+            >
+              {t("nav.listProperty")}
+            </Link>
+            <Link
+              href={`/${language}/team`}
+              className="border-b-2 border-transparent transition hover:border-[var(--brand-accent)] hover:text-white"
+              onMouseEnter={handleClose}
+              onFocus={handleClose}
+            >
+              {t("nav.ourTeam")}
+            </Link>
+            <Link
+              href={`/${language}/lands`}
+              className="border-b-2 border-transparent transition hover:border-[var(--brand-accent)] hover:text-white"
+              onMouseEnter={handleClose}
+              onFocus={handleClose}
+            >
+              {t("nav.lands")}
+            </Link>
             <button
               className={`cursor-pointer border-b-2 transition ${
-                activeMenu === "buy"
-                  ? "border-sky-600 text-slate-900"
-                  : "border-transparent hover:border-slate-200 hover:text-slate-900"
+                activeMenu === "commercial"
+                  ? "border-[var(--brand-accent)] text-white"
+                  : "border-transparent hover:border-white/50 hover:text-white"
               }`}
-              onMouseEnter={() => handleOpen("buy")}
-              onFocus={() => handleOpen("buy")}
+              onMouseEnter={() => handleOpen("commercial")}
+              onFocus={() => handleOpen("commercial")}
               type="button"
             >
-              {t("heroTabs.buy")}
+              {t("nav.commercial")}
             </button>
             <button
               className={`cursor-pointer border-b-2 transition ${
-                activeMenu === "rent"
-                  ? "border-sky-600 text-slate-900"
-                  : "border-transparent hover:border-slate-200 hover:text-slate-900"
+                activeMenu === "residential"
+                  ? "border-[var(--brand-accent)] text-white"
+                  : "border-transparent hover:border-white/50 hover:text-white"
               }`}
-              onMouseEnter={() => handleOpen("rent")}
-              onFocus={() => handleOpen("rent")}
+              onMouseEnter={() => handleOpen("residential")}
+              onFocus={() => handleOpen("residential")}
               type="button"
             >
-              {t("heroTabs.rent")}
-            </button>
-            <button
-              className={`cursor-pointer border-b-2 transition ${
-                activeMenu === "sell"
-                  ? "border-sky-600 text-slate-900"
-                  : "border-transparent hover:border-slate-200 hover:text-slate-900"
-              }`}
-              onMouseEnter={() => handleOpen("sell")}
-              onFocus={() => handleOpen("sell")}
-              type="button"
-            >
-              {t("heroTabs.sell")}
-            </button>
-            <button
-              className={`cursor-pointer border-b-2 transition ${
-                activeMenu === "agents"
-                  ? "border-sky-600 text-slate-900"
-                  : "border-transparent hover:border-slate-200 hover:text-slate-900"
-              }`}
-              onMouseEnter={() => handleOpen("agents")}
-              onFocus={() => handleOpen("agents")}
-              type="button"
-            >
-              {/* simple reuse of label */}
-              {t("footerQuickLinks.agents")}
+              {t("nav.residential")}
             </button>
           </nav>
         </div>
 
-        <div
-          className={`flex items-center gap-3`}
-        >
-          <LanguageSelect value={language} showFullLabels />
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="hidden md:block">
+            <LanguageSelect value={language} showFullLabels />
+          </div>
+          <div className="md:hidden">
+            <LanguageSelect value={language} showFullLabels={false} />
+          </div>
 
           <Link
             href={`/${language}/login`}
-            className="hidden h-9 items-center rounded-full border border-slate-200 px-4 text-xs font-medium text-slate-700 hover:bg-slate-50 md:inline-flex"
+            className="inline-flex h-8 items-center rounded-full border border-[var(--brand-accent)] bg-[var(--brand-accent)] px-3 text-[11px] font-semibold text-[var(--brand-secondary)] hover:brightness-95 md:h-9 md:px-4 md:text-xs"
           >
-            Sign In
+            {tAuth("signInLink")}
           </Link>
         </div>
       </div>
 
       {currentMenu && (
         <div
-          className="absolute inset-x-0 top-full z-20 border-b border-slate-100 bg-white shadow-[0_16px_30px_rgba(15,23,42,0.12)]"
+          className="absolute inset-x-0 top-full z-20 border-b border-[var(--border-subtle)] bg-white shadow-[0_16px_30px_rgba(26,59,92,0.2)]"
           onMouseEnter={() => {
             cancelClose();
           }}
@@ -328,12 +226,9 @@ export function SiteHeader({ language }: SiteHeaderProps) {
               isRTL ? "text-right" : "text-left"
             }`}
           >
-            <div className="mb-4 flex items-baseline justify-between gap-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-600">
+            <div className="mb-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--brand-secondary)]">
                 {currentMenu.title}
-              </p>
-              <p className="hidden max-w-xl text-xs text-slate-500 md:block">
-                {currentMenu.description}
               </p>
             </div>
 
@@ -344,15 +239,15 @@ export function SiteHeader({ language }: SiteHeaderProps) {
             >
               {currentMenu.columns.map((column) => (
                 <div key={column.heading} className="space-y-3">
-                  <p className="text-sm font-semibold text-slate-800">
+                  {/* <p className="text-sm font-semibold text-[var(--brand-secondary)]">
                     {column.heading}
-                  </p>
+                  </p> */}
                   <ul className="space-y-1.5 text-sm">
                     {column.items.map((item) => (
                       <li key={item.label}>
                         <Link
                           href={item.href}
-                          className="flex cursor-pointer items-center justify-between rounded-md px-1.5 py-1 text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+                          className="flex cursor-pointer items-center justify-between rounded-md px-1.5 py-1 text-[var(--color-charcoal)] transition hover:bg-[var(--surface)] hover:text-[var(--brand-secondary)]"
                         >
                           <span>{item.label}</span>
                           <span className="text-xs text-slate-400 rtl-flip-x">

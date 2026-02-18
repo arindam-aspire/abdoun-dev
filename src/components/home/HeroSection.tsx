@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import type { HeroTabKey } from "./types";
 import type { HeroTranslations } from "./types";
+import { HeroCategoryTabs, type HeroCategoryTabKey } from "./HeroCategoryTabs";
 import { HeroSearchCard } from "./HeroSearchCard";
 
 export interface HeroSectionProps {
@@ -13,15 +14,18 @@ export interface HeroSectionProps {
 
 export function HeroSection({ translations: t, isRtl }: HeroSectionProps) {
   const [activeTab, setActiveTab] = useState<HeroTabKey>("buy");
+  const [activeCategoryTab, setActiveCategoryTab] =
+    useState<HeroCategoryTabKey>("realEstate");
 
   return (
     <section
-      className="relative min-h-[420px] bg-slate-900 text-white md:min-h-[480px]"
+      className="relative min-h-[420px] overflow-x-clip bg-[var(--brand-secondary)] text-white md:min-h-[480px]"
       dir={isRtl ? "rtl" : "ltr"}
     >
       <div className="pointer-events-none absolute inset-0 z-0 min-h-[420px] md:min-h-[480px]">
         <Image
-          src="/hero-amman.png"
+          // src="/hero-amman.png"
+          src="/slider-1.jpg"
           alt="Amman city skyline"
           fill
           priority
@@ -32,8 +36,12 @@ export function HeroSection({ translations: t, isRtl }: HeroSectionProps) {
       </div>
 
       <div className="pointer-events-none absolute inset-0 z-[2] opacity-40 mix-blend-screen">
-        <div className="absolute -left-20 top-24 h-80 w-80 rounded-full bg-sky-400/40 blur-3xl" />
-        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-indigo-500/30 blur-3xl" />
+        <div
+          className={`absolute top-24 h-80 w-80 rounded-full bg-[rgba(43,91,166,0.35)] blur-3xl ${
+            isRtl ? "-right-20" : "-left-20"
+          }`}
+        />
+        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-[rgba(253,185,19,0.2)] blur-3xl" />
       </div>
 
       <div
@@ -45,9 +53,15 @@ export function HeroSection({ translations: t, isRtl }: HeroSectionProps) {
           <h1 className="text-balance text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-5xl">
             {t.title}
           </h1>
-          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-slate-200 md:text-base">
-            {t.subtitle}
-          </p>
+        </div>
+
+        <div className="mt-8 w-full">
+          <HeroCategoryTabs
+            activeTab={activeCategoryTab}
+            onTabChange={setActiveCategoryTab}
+            labels={t.categoryTabs}
+            isRtl={isRtl}
+          />
         </div>
 
         <HeroSearchCard

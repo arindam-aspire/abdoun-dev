@@ -2,7 +2,12 @@
 
 import { useTranslations } from "@/hooks/useTranslations";
 import type { AppLocale } from "@/i18n/routing";
-import { MOCK_PROPERTIES, SERVICE_CARD_CONTENT } from "./constants";
+import {
+  MOCK_EXCLUSIVE_PROPERTIES,
+  MOCK_LATEST_PROPERTIES,
+  MOCK_PROPERTIES,
+  SERVICE_CARD_CONTENT,
+} from "./constants";
 import { FeaturedPropertiesSection } from "./FeaturedPropertiesSection";
 import { HeroSection } from "./HeroSection";
 import { ServicesSection } from "./ServicesSection";
@@ -23,6 +28,11 @@ export function HomeMain({ language }: HomeMainProps) {
       rent: t("heroTabs.rent"),
       sell: t("heroTabs.sell"),
     },
+    categoryTabs: {
+      commercial: t("heroCategoryTabs.commercial"),
+      realEstate: t("heroCategoryTabs.realEstate"),
+      land: t("heroCategoryTabs.land"),
+    },
     locationLabel: t("heroLocationLabel"),
     locationPlaceholder: t("heroLocationPlaceholder"),
     typeLabel: t("heroTypeLabel"),
@@ -34,6 +44,18 @@ export function HomeMain({ language }: HomeMainProps) {
     title: t("featuredTitle"),
     subtitle: t("featuredSubtitle"),
     viewAll: t("featuredViewAll"),
+  };
+
+  const exclusiveTranslations = {
+    title: t("exclusiveTitle"),
+    subtitle: t("exclusiveSubtitle"),
+    viewAll: t("exclusiveViewAll"),
+  };
+
+  const latestTranslations = {
+    title: t("latestTitle"),
+    subtitle: t("latestSubtitle"),
+    viewAll: t("latestViewAll"),
   };
 
   const servicesTranslations = {
@@ -50,6 +72,18 @@ export function HomeMain({ language }: HomeMainProps) {
   return (
     <>
       <HeroSection translations={heroTranslations} isRtl={isRtl} />
+      <FeaturedPropertiesSection
+        translations={exclusiveTranslations}
+        properties={MOCK_EXCLUSIVE_PROPERTIES}
+        isRtl={isRtl}
+        useCarouselOnOverflow
+      />
+      <FeaturedPropertiesSection
+        translations={latestTranslations}
+        properties={MOCK_LATEST_PROPERTIES}
+        isRtl={isRtl}
+        useCarouselOnOverflow
+      />
       <FeaturedPropertiesSection
         translations={featuredTranslations}
         properties={MOCK_PROPERTIES}

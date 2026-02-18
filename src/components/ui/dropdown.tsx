@@ -34,7 +34,7 @@ export function Dropdown({
     <Menu as="div" className="relative inline-block text-left">
       <Menu.Button
         id={buttonId}
-        className="inline-flex w-full justify-center rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-medium text-zinc-900 shadow-sm hover:bg-zinc-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 gap-2 items-center"
+        className="inline-flex w-full justify-center rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-medium text-zinc-900 shadow-sm hover:bg-zinc-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 gap-2 items-center"
       >
         {selected?.label ?? label}
         <ChevronDown className="h-4 w-4" aria-hidden="true" />

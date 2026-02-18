@@ -16,6 +16,7 @@ export interface HeroTranslations {
   title: string;
   subtitle: string;
   tabs: { buy: string; rent: string; sell: string };
+  categoryTabs: { commercial: string; realEstate: string; land: string };
   locationLabel: string;
   locationPlaceholder: string;
   typeLabel: string;

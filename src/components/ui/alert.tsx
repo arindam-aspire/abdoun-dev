@@ -14,7 +14,8 @@ const alertVariants = cva(
           "border-emerald-200 bg-emerald-50 text-emerald-900 [&>svg]:text-emerald-600",
         warning:
           "border-amber-200 bg-amber-50 text-amber-900 [&>svg]:text-amber-600",
-        info: "border-sky-200 bg-sky-50 text-sky-900 [&>svg]:text-sky-600",
+        info:
+          "border-[var(--brand-primary)] bg-[var(--surface)] text-[var(--brand-secondary)] [&>svg]:text-[var(--brand-primary)]",
       },
     },
     defaultVariants: {

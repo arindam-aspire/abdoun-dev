@@ -19,28 +19,28 @@ export function ServiceCard({ item, isRtl }: ServiceCardProps) {
 
   return (
     <div
-      className={`group relative rounded-2xl bg-white p-8 shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-all duration-300 hover:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 ${
+      className={`group relative rounded-2xl border border-[var(--border-subtle)] bg-white p-8 shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-all duration-300 hover:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 ${
         isRtl ? "text-right" : "text-left"
       }`}
     >
       {Icon && (
         <div
-          className={`mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-sky-50 text-sky-600 ${
+          className={`mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--surface)] text-[var(--brand-primary)] ${
             isRtl ? "ml-auto" : ""
           }`}
         >
           <Icon className="h-5 w-5" />
         </div>
       )}
-      <h3 className="text-lg font-semibold tracking-tight text-slate-900">
+      <h3 className="text-lg font-semibold tracking-tight text-[var(--brand-secondary)]">
         {item.title}
       </h3>
-      <p className="mt-3 text-sm leading-relaxed text-slate-500">
+      <p className="mt-3 text-sm leading-relaxed text-[rgba(51,51,51,0.8)]">
         {item.description}
       </p>
       <button
         type="button"
-        className={`mt-5 inline-flex items-center gap-1 text-sm font-medium text-sky-600 transition-colors hover:text-sky-700 ${
+        className={`mt-5 inline-flex items-center gap-1 text-sm font-medium text-[var(--brand-primary)] transition-colors hover:text-[var(--brand-secondary)] ${
           isRtl ? "flex-row-reverse" : ""
         }`}
       >

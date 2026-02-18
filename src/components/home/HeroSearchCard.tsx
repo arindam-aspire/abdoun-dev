@@ -41,10 +41,10 @@ export function HeroSearchCard({
   };
 
   return (
-    <div className="mt-10 w-full max-w-5xl">
-      <div className="rounded-3xl bg-white/95 p-4 shadow-2xl ring-1 ring-slate-100 backdrop-blur-sm md:p-5 lg:p-6">
+    <div className="mt-4 w-full max-w-5xl">
+      <div className="rounded-3xl bg-white/95 p-4 shadow-2xl ring-1 ring-[var(--border-subtle)] backdrop-blur-sm md:p-5 lg:p-6">
         <div
-          className={`mb-4 flex items-center gap-6 border-slate-200 text-sm font-medium text-slate-500`}
+          className={`mb-4 flex items-center gap-6 text-sm font-medium text-[rgba(51,51,51,0.7)]`}
         >
           {(["buy", "rent", "sell"] as const).map((tabKey) => (
             <button
@@ -53,8 +53,8 @@ export function HeroSearchCard({
               onClick={() => onTabChange(tabKey)}
               className={`relative cursor-pointer pb-1 capitalize transition ${
                 activeTab === tabKey
-                  ? "text-slate-900 after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:rounded-full after:bg-sky-500"
-                  : "hover:text-slate-900"
+                  ? "text-[var(--brand-secondary)] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:rounded-full after:bg-[var(--brand-accent)]"
+                  : "hover:text-[var(--brand-secondary)]"
               }`}
             >
               {t.tabs[tabKey]}
@@ -63,25 +63,25 @@ export function HeroSearchCard({
         </div>
 
         <div
-          className={`flex flex-col gap-3 pt-1 text-xs text-slate-700 md:flex-row md:items-center`}
+          className={`flex flex-col gap-3 pt-1 text-xs text-[var(--color-charcoal)] md:flex-row md:items-center`}
         >
           {/* Location */}
           <div className="min-w-0 flex-[3]">
             <label
-              className={`mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 ${
+              className={`mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[rgba(51,51,51,0.7)] ${
                 isRtl ? "text-right" : "text-left"
               }`}
             >
               {t.locationLabel}
             </label>
             <div
-              className={`flex h-14 items-center gap-2 rounded-full border-2 border-sky-300 bg-white px-4 shadow-[0_0_0_1px_rgba(15,23,42,0.02)] transition-colors focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-200`}
+              className={`flex h-14 items-center gap-2 rounded-full border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 shadow-[0_0_0_1px_rgba(26,59,92,0.03)] transition-colors focus-within:border-[var(--brand-primary)] focus-within:ring-2 focus-within:ring-[rgba(26,59,92,0.2)]`}
             >
-              <MapPin className="h-5 w-5 shrink-0 text-sky-500" />
+              <MapPin className="h-5 w-5 shrink-0 text-[var(--brand-primary)]" />
               <input
                 type="text"
                 placeholder={t.locationPlaceholder}
-                className={`w-full border-none bg-transparent text-base text-slate-800 outline-none placeholder:text-slate-400 ${
+                className={`w-full border-none bg-transparent text-base text-[var(--color-charcoal)] outline-none placeholder:text-[rgba(51,51,51,0.45)] ${
                   isRtl ? "text-right" : "text-left"
                 }`}
               />
@@ -99,7 +99,7 @@ export function HeroSearchCard({
           {/* Budget */}
           <div className="relative flex-[1.2]">
             <label
-              className={`mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 ${
+              className={`mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-[rgba(51,51,51,0.7)] ${
                 isRtl ? "text-right" : "text-left"
               }`}
             >
@@ -107,15 +107,15 @@ export function HeroSearchCard({
             </label>
             <button
               type="button"
-              className={`flex h-14 w-full cursor-pointer items-center gap-2 rounded-full border-2 border-sky-300 bg-white px-4 text-left shadow-[0_0_0_1px_rgba(15,23,42,0.02)] transition-colors hover:border-sky-400 focus:outline-none focus-visible:border-sky-500 focus-visible:ring-2 focus-visible:ring-sky-200`}
+              className={`flex h-14 w-full cursor-pointer items-center gap-2 rounded-full border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 text-left shadow-[0_0_0_1px_rgba(26,59,92,0.03)] transition-colors hover:border-[rgba(43,91,166,0.6)] focus:outline-none focus-visible:border-[var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[rgba(26,59,92,0.2)]`}
               onClick={() => {
                 setIsBudgetOpen((open) => !open);
               }}
             >
-              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-50 text-[10px] font-medium text-sky-600">
-                $
+              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--surface)] text-[10px] font-medium text-[var(--brand-secondary)]">
+                JD
               </span>
-              <span className="w-full truncate text-sm text-slate-800">
+              <span className="w-full truncate text-sm text-[var(--color-charcoal)]">
                 {formatBudgetLabel()}
               </span>
             </button>
@@ -147,7 +147,7 @@ export function HeroSearchCard({
           <div className="flex-none self-end pt-2 md:pt-5 md:self-auto">
             <button
               type="button"
-              className="inline-flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-sky-600 px-6 text-sm font-semibold text-white shadow-md hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 md:w-auto"
+              className="inline-flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--brand-accent)] px-6 text-sm font-semibold text-[var(--brand-secondary)] shadow-md hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(253,185,19,0.45)] md:w-auto"
             >
               {t.search}
             </button>

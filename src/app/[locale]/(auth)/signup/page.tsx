@@ -3,12 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
-import { Building2, Mail, Eye, EyeOff, User, ArrowRight } from "lucide-react";
+import { Mail, Eye, EyeOff, User, ArrowRight } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { Button, Input, Label } from "@/components/ui";
 import { useTranslations } from "@/hooks/useTranslations";
 import { login } from "@/features/auth/authSlice";
 import type { UserRole } from "@/features/auth/authSlice";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 export default function LocalizedSignupPage() {
   const t = useTranslations("auth");
@@ -47,12 +48,10 @@ export default function LocalizedSignupPage() {
   };
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
+      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
         {/* Logo - same as home page header */}
         <div className="flex justify-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm">
-            <Building2 className="h-7 w-7" aria-hidden />
-          </div>
+          <BrandLogo locale={locale} imageClassName="h-12 w-auto" />
         </div>
 
         <h1 className="mt-5 text-center text-xl font-bold text-zinc-900 sm:text-2xl">
@@ -110,7 +109,7 @@ export default function LocalizedSignupPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:ring-offset-2 rounded p-0.5"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-2 rounded p-0.5"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
@@ -139,7 +138,7 @@ export default function LocalizedSignupPage() {
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:ring-offset-2 rounded p-0.5"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-2 rounded p-0.5"
                 aria-label={
                   showConfirmPassword ? "Hide password" : "Show password"
                 }

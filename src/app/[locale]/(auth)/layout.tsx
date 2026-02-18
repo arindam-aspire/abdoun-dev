@@ -16,7 +16,7 @@ export default function AuthLayout({ children }: AuthCardLayoutProps) {
   const isRtl = language === "ar";
 
   return (
-    <div className="min-h-screen bg-[#faf9f7] flex flex-col">
+    <div className="min-h-screen bg-[var(--surface)] flex flex-col">
       {/* Top-right language selector - same as home page */}
       <div
         className={`absolute top-0 p-4 md:p-6 ${

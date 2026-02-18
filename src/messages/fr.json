@@ -15,7 +15,7 @@
   },
   "home": {
     "heroTitle": "Trouvez votre prochain bien a Abdoun et ailleurs",
-    "heroSubtitle": "Parcourez des annonces selectionnees, echangez avec des agents de confiance et explorez des quartiers premium inspires de Zillow et Bayut.",
+    "heroSubtitle": "",
     "ctaBrowse": "Parcourir les annonces (mock)",
     "ctaGetStarted": "Commencer",
     "statsTitle": "Apercu du marche (donnees fictives)",
@@ -32,6 +32,12 @@
     "featuredTitle": "Biens immobiliers en vedette",
     "featuredSubtitle": "Des maisons selectionnees pour chaque style de vie",
     "featuredViewAll": "Voir toutes les proprietes ->",
+    "exclusiveTitle": "Biens exclusifs",
+    "exclusiveSubtitle": "Annonces premium disponibles uniquement chez Abdoun Immobilier",
+    "exclusiveViewAll": "Voir tout l'exclusif ->",
+    "latestTitle": "Dernieres proprietes",
+    "latestSubtitle": "Maisons et appartements nouvellement mis sur le marche",
+    "latestViewAll": "Voir tout le recent ->",
     "servicesTitle": "Nos services",
     "servicesSubtitle": "De l'achat et la vente a la gestion locative, notre equipe vous accompagne a chaque etape.",
     "servicesDescription": "Des solutions sur mesure a chaque etape de votre projet immobilier.",
@@ -64,7 +70,34 @@
     "footerEmailPlaceholder": "Adresse e-mail",
     "footerSubscribe": "S'abonner",
     "footerTerms": "Conditions d'utilisation",
-    "footerPrivacy": "Politique de confidentialite"
+    "footerPrivacy": "Politique de confidentialite",
+    "bottomNav": {
+      "home": "Accueil",
+      "list": "Liste",
+      "lands": "Terrains",
+      "team": "Equipe",
+      "account": "Compte"
+    },
+    "nav": {
+      "listProperty": "Annoncer un bien",
+      "ourTeam": "Notre equipe",
+      "lands": "Terrains",
+      "commercial": "Commercial",
+      "residential": "Residentiel",
+      "commercialVillas": "Villas",
+      "commercialOffices": "Bureaux / Showrooms",
+      "commercialBuildings": "Batiments commerciaux",
+      "commercialInvestment": "Opportunites d'investissement",
+      "residentialVillas": "Villas",
+      "residentialApartments": "Appartements",
+      "residentialLuxurious": "Biens de luxe",
+      "residentialFarms": "Fermes"
+    },
+    "heroCategoryTabs": {
+      "commercial": "Commercial",
+      "realEstate": "Residentiel",
+      "land": "Terrains"
+    }
   },
   "auth": {
     "loginTitle": "Connectez-vous a votre compte",

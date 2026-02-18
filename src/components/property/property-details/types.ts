@@ -22,4 +22,3 @@ export interface PropertyStat {
   value: string;
   helper?: string;
 }
-

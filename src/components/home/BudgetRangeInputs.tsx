@@ -56,7 +56,7 @@ export function BudgetRangeInputs({
     if (activeField !== field) return null;
 
     return (
-      <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 text-xs shadow-lg">
+      <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-[var(--border-subtle)] bg-white py-1 text-xs shadow-lg">
         {filteredSuggestions.map((value) => {
           const label = new Intl.NumberFormat("en-US").format(Number(value));
           const isSelected = currentValue === value;
@@ -66,8 +66,8 @@ export function BudgetRangeInputs({
               type="button"
               className={`flex w-full cursor-pointer items-center justify-between px-3 py-1.5 text-left transition ${
                 isSelected
-                  ? "bg-sky-50 text-sky-700"
-                  : "text-slate-800 hover:bg-slate-50"
+                  ? "bg-[var(--surface)] text-[var(--brand-secondary)]"
+                  : "text-[var(--color-charcoal)] hover:bg-[var(--surface)]"
               }`}
               onClick={() => {
                 if (field === "min") {
@@ -80,7 +80,7 @@ export function BudgetRangeInputs({
             >
               <span>{label}</span>
               {isSelected && (
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-sky-600">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--brand-primary)]">
                   Selected
                 </span>
               )}
@@ -93,7 +93,7 @@ export function BudgetRangeInputs({
 
   return (
     <div
-      className="w-[320px] rounded-2xl border border-slate-100 bg-white p-3 text-xs shadow-xl ring-1 ring-black/5"
+      className="w-[320px] rounded-2xl border border-[var(--border-subtle)] bg-white p-3 text-xs shadow-xl ring-1 ring-black/5"
       onClick={() => setActiveField(null)}
     >
       <div className="mb-3 grid grid-cols-2 gap-3">
@@ -101,7 +101,7 @@ export function BudgetRangeInputs({
           className="relative"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[rgba(51,51,51,0.7)]">
             Minimum
           </div>
           <input
@@ -113,7 +113,7 @@ export function BudgetRangeInputs({
               setActiveField("min");
             }}
             placeholder="0"
-            className="h-9 w-full rounded-xl border border-slate-200 px-2 text-xs text-slate-800 outline-none ring-0 placeholder:text-slate-400 focus:border-sky-400 focus:ring-1 focus:ring-sky-200"
+            className="h-9 w-full rounded-xl border border-[var(--border-subtle)] px-2 text-xs text-[var(--color-charcoal)] outline-none ring-0 placeholder:text-[rgba(51,51,51,0.45)] focus:border-[var(--brand-primary)] focus:ring-1 focus:ring-[rgba(26,59,92,0.2)]"
           />
           {renderSuggestions("min")}
         </div>
@@ -121,7 +121,7 @@ export function BudgetRangeInputs({
           className="relative"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[rgba(51,51,51,0.7)]">
             Maximum
           </div>
           <input
@@ -133,7 +133,7 @@ export function BudgetRangeInputs({
               setActiveField("max");
             }}
             placeholder="400000"
-            className="h-9 w-full rounded-xl border border-slate-200 px-2 text-xs text-slate-800 outline-none ring-0 placeholder:text-slate-400 focus:border-sky-400 focus:ring-1 focus:ring-sky-200"
+            className="h-9 w-full rounded-xl border border-[var(--border-subtle)] px-2 text-xs text-[var(--color-charcoal)] outline-none ring-0 placeholder:text-[rgba(51,51,51,0.45)] focus:border-[var(--brand-primary)] focus:ring-1 focus:ring-[rgba(26,59,92,0.2)]"
           />
           {renderSuggestions("max")}
         </div>
@@ -142,7 +142,7 @@ export function BudgetRangeInputs({
       <div className="mt-3 flex items-center justify-between gap-3">
         <button
           type="button"
-          className="inline-flex cursor-pointer items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50"
+          className="inline-flex cursor-pointer items-center rounded-full border border-[var(--border-subtle)] bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--brand-secondary)] shadow-sm hover:bg-[var(--surface)]"
           onClick={(event) => {
             event.stopPropagation();
             onReset();
@@ -153,7 +153,7 @@ export function BudgetRangeInputs({
         </button>
         <button
           type="button"
-          className="inline-flex cursor-pointer items-center rounded-full bg-sky-600 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-sm hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+          className="inline-flex cursor-pointer items-center rounded-full bg-[var(--brand-accent)] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--brand-secondary)] shadow-sm hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(253,185,19,0.45)]"
           onClick={(event) => {
             event.stopPropagation();
             onDone();

@@ -20,7 +20,7 @@ export default function LocalizedForgotPasswordPage() {
         </p>
         <Link
           href={`/${locale}/login`}
-          className="inline-flex h-11 w-full items-center justify-center rounded-md bg-sky-600 px-5 text-base font-medium text-white hover:bg-sky-700 mt-6"
+          className="inline-flex h-11 w-full items-center justify-center rounded-md bg-[var(--brand-primary)] px-5 text-base font-medium text-white hover:bg-[var(--brand-secondary)] mt-6"
         >
           {t("signInLink")}
         </Link>

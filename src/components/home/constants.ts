@@ -5,7 +5,7 @@ export const MOCK_PROPERTIES: Property[] = [
   {
     id: 1,
     title: "Abdoun Heights Villa",
-    price: "$2,450,000",
+    price: "2,450,000 JD",
     badge: "For Sale",
     image:
       "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg?auto=compress&cs=tinysrgb&w=1200",
@@ -17,7 +17,7 @@ export const MOCK_PROPERTIES: Property[] = [
   {
     id: 2,
     title: "Skyline Penthouse",
-    price: "$3,200",
+    price: "3,200 JD",
     badge: "For Rent",
     image:
       "https://images.pexels.com/photos/439391/pexels-photo-439391.jpeg?auto=compress&cs=tinysrgb&w=1200",
@@ -29,7 +29,7 @@ export const MOCK_PROPERTIES: Property[] = [
   {
     id: 3,
     title: "Dabouq Modern Estate",
-    price: "$1,850,000",
+    price: "1,850,000 JD",
     badge: "For Sale",
     image:
       "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=1200",
@@ -41,7 +41,7 @@ export const MOCK_PROPERTIES: Property[] = [
   {
     id: 4,
     title: "Umm Uthaina City Residence",
-    price: "$980,000",
+    price: "980,000 JD",
     badge: "For Sale",
     image:
       "https://images.pexels.com/photos/439391/pexels-photo-439391.jpeg?auto=compress&cs=tinysrgb&w=1200",
@@ -53,7 +53,7 @@ export const MOCK_PROPERTIES: Property[] = [
   {
     id: 5,
     title: "Dair Ghbar Skyline Apartment",
-    price: "$2,100",
+    price: "2,100 JD",
     badge: "For Rent",
     image:
       "https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg?auto=compress&cs=tinysrgb&w=1200",
@@ -65,7 +65,7 @@ export const MOCK_PROPERTIES: Property[] = [
   {
     id: 6,
     title: "Abdali Business Loft",
-    price: "$3,750",
+    price: "3,750 JD",
     badge: "For Rent",
     image:
       "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=1200",
@@ -77,7 +77,7 @@ export const MOCK_PROPERTIES: Property[] = [
   {
     id: 7,
     title: "Khalda Family Villa",
-    price: "$1,350,000",
+    price: "1,350,000 JD",
     badge: "For Sale",
     image:
       "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg?auto=compress&cs=tinysrgb&w=1200",
@@ -87,6 +87,12 @@ export const MOCK_PROPERTIES: Property[] = [
     area: "3,800",
   },
 ];
+
+/** Exclusive listings (premium, agency-only). */
+export const MOCK_EXCLUSIVE_PROPERTIES: Property[] = MOCK_PROPERTIES.slice(0, 4);
+
+/** Newly listed properties. */
+export const MOCK_LATEST_PROPERTIES: Property[] = MOCK_PROPERTIES.slice(2, 6);
 
 /** Static copy for service cards (descriptions/cta). Titles come from i18n. */
 export const SERVICE_CARD_CONTENT: Omit<ServiceItem, "title">[] = [

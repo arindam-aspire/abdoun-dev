@@ -15,7 +15,7 @@
   },
   "home": {
     "heroTitle": "Encuentra tu proxima propiedad en Abdoun y mas alla",
-    "heroSubtitle": "Explora anuncios seleccionados, conectate con agentes confiables y descubre barrios premium inspirados en Zillow y Bayut.",
+    "heroSubtitle": "",
     "ctaBrowse": "Ver propiedades (mock)",
     "ctaGetStarted": "Empezar",
     "statsTitle": "Resumen del mercado (datos ficticios)",
@@ -32,6 +32,12 @@
     "featuredTitle": "Propiedades destacadas",
     "featuredSubtitle": "Hogares seleccionados para cada estilo de vida",
     "featuredViewAll": "Ver todas las propiedades ->",
+    "exclusiveTitle": "Propiedades exclusivas",
+    "exclusiveSubtitle": "Anuncios premium disponibles solo a traves de Abdoun Bienes Raices",
+    "exclusiveViewAll": "Ver todo exclusivo ->",
+    "latestTitle": "Ultimas propiedades",
+    "latestSubtitle": "Casas y apartamentos recien listados en el mercado",
+    "latestViewAll": "Ver todo lo ultimo ->",
     "servicesTitle": "Nuestros servicios",
     "servicesSubtitle": "Desde la compra y venta hasta la gestion de propiedades, nuestro equipo te acompana en cada paso.",
     "servicesDescription": "Soluciones a medida para cada etapa de tu trayectoria inmobiliaria.",
@@ -64,7 +70,34 @@
     "footerEmailPlaceholder": "Correo electronico",
     "footerSubscribe": "Suscribirse",
     "footerTerms": "Terminos de servicio",
-    "footerPrivacy": "Politica de privacidad"
+    "footerPrivacy": "Politica de privacidad",
+    "bottomNav": {
+      "home": "Inicio",
+      "list": "Lista",
+      "lands": "Terrenos",
+      "team": "Equipo",
+      "account": "Cuenta"
+    },
+    "nav": {
+      "listProperty": "Anuncia tu propiedad",
+      "ourTeam": "Nuestro equipo",
+      "lands": "Terrenos",
+      "commercial": "Comercial",
+      "residential": "Residencial",
+      "commercialVillas": "Villas",
+      "commercialOffices": "Oficinas / Showrooms",
+      "commercialBuildings": "Edificios comerciales",
+      "commercialInvestment": "Oportunidades de inversion",
+      "residentialVillas": "Villas",
+      "residentialApartments": "Apartamentos",
+      "residentialLuxurious": "Propiedades de lujo",
+      "residentialFarms": "Fincas"
+    },
+    "heroCategoryTabs": {
+      "commercial": "Comercial",
+      "realEstate": "Residencial",
+      "land": "Terrenos"
+    }
   },
   "auth": {
     "loginTitle": "Inicia sesion en tu cuenta",
