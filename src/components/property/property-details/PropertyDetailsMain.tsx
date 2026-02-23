@@ -109,11 +109,15 @@ export function PropertyDetailsMain({ language }: PropertyDetailsMainProps) {
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-24 -left-24 h-64 w-64 rounded-full bg-[var(--brand-primary)]/10 blur-3xl"
+        className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-[var(--brand-primary)]/10 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute top-[28rem] -right-20 h-56 w-56 rounded-full bg-[var(--brand-secondary)]/10 blur-3xl"
+        className="pointer-events-none absolute top-[28rem] -right-20 h-64 w-64 rounded-full bg-[var(--brand-secondary)]/10 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute bottom-0 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[var(--brand-accent)]/10 blur-3xl"
       />
 
       <PropertyDetailsHero property={MOCK_DETAILED_PROPERTY} isRtl={isRtl} />
@@ -126,12 +130,12 @@ export function PropertyDetailsMain({ language }: PropertyDetailsMainProps) {
         />
 
         <div
-          className={`mt-8 grid gap-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] md:gap-7 ${
+          className={`mt-8 grid gap-7 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] md:mt-10 md:gap-8 ${
             isRtl ? "md:[direction:rtl]" : ""
           }`}
         >
-          <section className="space-y-5">
-            <section ref={overviewRef} className="scroll-mt-36">
+          <section className="space-y-6 md:space-y-7">
+            <section ref={overviewRef} className="scroll-mt-36 md:scroll-mt-40">
               <PropertyHighlights
                 property={MOCK_DETAILED_PROPERTY}
                 stats={MOCK_STATS}
@@ -139,18 +143,18 @@ export function PropertyDetailsMain({ language }: PropertyDetailsMainProps) {
               <PropertyOverview property={MOCK_DETAILED_PROPERTY} />
             </section>
 
-            <section ref={amenitiesRef} className="scroll-mt-36">
+            <section ref={amenitiesRef} className="scroll-mt-36 md:scroll-mt-40">
               <PropertyAmenities amenities={MOCK_DETAILED_PROPERTY.amenities} />
             </section>
 
-            <section ref={locationRef} className="scroll-mt-36">
+            <section ref={locationRef} className="scroll-mt-36 md:scroll-mt-40">
               <PropertyNeighborhood />
             </section>
           </section>
 
           <div
             ref={sidebarRef}
-            className={`${isRtl ? "md:pl-0 md:pr-4" : "md:pl-4"} md:sticky md:top-[148px] self-start`}
+            className={`${isRtl ? "md:pl-0 md:pr-4" : "md:pl-4"} self-start md:sticky md:top-[124px]`}
           >
             <PropertyDetailsPriceCard price={MOCK_DETAILED_PROPERTY.price} />
             <PropertyInsightsSidebar />

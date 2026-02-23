@@ -47,26 +47,26 @@ export interface PropertyAmenitiesProps {
 
 export function PropertyAmenities({ amenities }: PropertyAmenitiesProps) {
   return (
-    <section className="mt-6 rounded-2xl border border-[var(--border-subtle)] bg-white/95 p-4 shadow-sm md:p-6">
-      <div className="mb-3 flex items-center justify-between gap-3">
+    <section className="mt-10 md:mt-12">
+      <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-charcoal)]/70">
-          World-class amenities
+          Features
         </p>
         <p className="text-[11px] text-[var(--color-charcoal)]/70">
           Thoughtfully selected for elevated everyday living.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 text-xs text-[var(--color-charcoal)] sm:grid-cols-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-[var(--border-subtle)] pt-4 text-xs text-[var(--color-charcoal)] sm:grid-cols-3 md:grid-cols-4">
         {amenities.map((item) => (
           <div
             key={item}
-            className="group flex items-center gap-2 rounded-xl bg-[var(--surface)] px-3 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ring-1 ring-[var(--border-subtle)] transition hover:-translate-y-0.5 hover:bg-[var(--brand-primary)]/5 hover:ring-[var(--brand-primary)]/20"
+            className="group flex items-center gap-2 py-1.5 transition-colors hover:text-[var(--brand-primary)]"
           >
             {(() => {
               const Icon = getAmenityIcon(item);
               return (
-                <span className="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
+                <span className="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] transition-colors group-hover:bg-[var(--brand-primary)]/15">
                   <Icon className="h-3.5 w-3.5" />
                 </span>
               );

@@ -1,0 +1,482 @@
+{
+  "info": {
+    "name": "Abdoun Real Estate - Auth API",
+    "description": "Authentication: login, signup (with OTP), refresh, logout, forgot password, and passwordless one-time code. Use with `NEXT_PUBLIC_API_BASE_URL` or your backend base URL. Token store keys: accessToken, refreshToken.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "abdoun-website"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "challengeId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "resetToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Login",
+      "item": [
+        {
+          "name": "Login (email + password)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.accessToken) pm.collectionVariables.set('accessToken', body.accessToken);",
+                  "  if (body.refreshToken) pm.collectionVariables.set('refreshToken', body.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" },
+              { "key": "Accept", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password1!\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Login with email and password. Returns accessToken and refreshToken. Frontend stores them (e.g. localStorage keys: accessToken, refreshToken) and sends Authorization: Bearer <accessToken> on protected requests."
+          },
+          "response": [
+            {
+              "name": "Success (200)",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIs...\",\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIs...\",\n  \"user\": {\n    \"id\": \"usr_1\",\n    \"name\": \"Demo User\",\n    \"email\": \"user@example.com\",\n    \"phone\": \"+962600000000\",\n    \"role\": \"user\"\n  }\n}"
+            },
+            {
+              "name": "Invalid credentials (401)",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"message\": \"Invalid credentials.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login (identifier: email or phone + password)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" },
+              { "key": "Accept", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"user@example.com\",\n  \"password\": \"Password1!\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Alternative: identifier can be email or phone. Used by AuthPopup manual login."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Signup",
+      "item": [
+        {
+          "name": "Signup (manual – request OTP)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.challengeId) pm.collectionVariables.set('challengeId', body.challengeId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" },
+              { "key": "Accept", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"+962791234567\",\n  \"password\": \"SecurePass1!\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/signup",
+            "description": "Register with full name, email, phone, password. If email already exists, nextStep is 'login'. Otherwise nextStep is 'otp' and client must call Verify signup OTP with challengeId."
+          },
+          "response": [
+            {
+              "name": "Success – OTP required (200)",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"nextStep\": \"otp\",\n  \"challengeId\": \"signup_abc123\",\n  \"expiresInSeconds\": 60,\n  \"message\": \"OTP sent to your email/phone.\"\n}"
+            },
+            {
+              "name": "Account exists – go to login (200)",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"nextStep\": \"login\",\n  \"message\": \"Account already exists. Please log in.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Signup – Verify OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.accessToken) pm.collectionVariables.set('accessToken', body.accessToken);",
+                  "  if (body.refreshToken) pm.collectionVariables.set('refreshToken', body.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" },
+              { "key": "Accept", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"challengeId\": \"{{challengeId}}\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/signup/verify-otp",
+            "description": "Verify OTP sent during signup. Use challengeId from Signup response. On success, may return tokens or just success; frontend then logs user in or redirects to login."
+          },
+          "response": [
+            {
+              "name": "Success (200)",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"accessToken\": \"eyJ...\",\n  \"refreshToken\": \"eyJ...\",\n  \"user\": { \"id\": \"usr_1\", \"name\": \"John Doe\", \"email\": \"john@example.com\", \"phone\": \"+962791234567\", \"role\": \"user\" }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Signup – Resend OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" },
+              { "key": "Accept", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"challengeId\": \"{{challengeId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/signup/resend-otp",
+            "description": "Resend OTP for the same signup challenge. Returns new expiresInSeconds (e.g. 60)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Token",
+      "item": [
+        {
+          "name": "Refresh token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.accessToken) pm.collectionVariables.set('accessToken', body.accessToken);",
+                  "  if (body.refreshToken) pm.collectionVariables.set('refreshToken', body.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" },
+              { "key": "Accept", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/refresh",
+            "description": "Exchange refresh token for new access and refresh tokens. Used by authApi interceptor on 401. Path configurable via refreshPath (default /auth/refresh)."
+          },
+          "response": [
+            {
+              "name": "Success (200)",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIs...\",\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIs...\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" },
+              { "key": "Accept", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/logout",
+            "description": "Invalidate refresh token. Client should clear tokens and redirect to login. refreshToken can be null if already cleared. Path configurable via logoutPath (default /auth/logout)."
+          },
+          "response": [
+            {
+              "name": "Success (200/204)",
+              "status": "OK",
+              "code": 200,
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Forgot password",
+      "item": [
+        {
+          "name": "Forgot password – Request OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.challengeId) pm.collectionVariables.set('challengeId', body.challengeId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" },
+              { "key": "Accept", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/forgot-password",
+            "description": "Send OTP to email (or identifier). Returns challengeId for verify step. Frontend forgot-password page is currently a stub; mock service implements full flow."
+          },
+          "response": [
+            {
+              "name": "Success (200)",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"challengeId\": \"reset_xyz\",\n  \"expiresInSeconds\": 60,\n  \"message\": \"If an account exists, OTP has been sent.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Forgot password – Verify OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.resetToken) pm.collectionVariables.set('resetToken', body.resetToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" },
+              { "key": "Accept", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"challengeId\": \"{{challengeId}}\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/forgot-password/verify-otp",
+            "description": "Verify OTP; returns resetToken to use in Set new password."
+          },
+          "response": [
+            {
+              "name": "Success (200)",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"resetToken\": \"reset_token_abc123\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Forgot password – Set new password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" },
+              { "key": "Accept", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resetToken\": \"{{resetToken}}\",\n  \"password\": \"NewSecurePass1!\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/forgot-password/reset",
+            "description": "Set new password using resetToken from verify OTP step. resetToken is one-time use."
+          },
+          "response": [
+            {
+              "name": "Success (200)",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Passwordless (one-time code)",
+      "item": [
+        {
+          "name": "Send one-time code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.challengeId) pm.collectionVariables.set('challengeId', body.challengeId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" },
+              { "key": "Accept", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"user@example.com\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/send-code",
+            "description": "Send one-time code to email or phone. identifier: email or E.164 phone. Used by AuthPopup 'Login with one-time code' flow."
+          },
+          "response": [
+            {
+              "name": "Success (200)",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"challengeId\": \"login_otp_abc\",\n  \"expiresInSeconds\": 60,\n  \"message\": \"If an account exists, a one-time code has been sent.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Verify one-time code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.accessToken) pm.collectionVariables.set('accessToken', body.accessToken);",
+                  "  if (body.refreshToken) pm.collectionVariables.set('refreshToken', body.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" },
+              { "key": "Accept", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"challengeId\": \"{{challengeId}}\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/verify-code",
+            "description": "Verify one-time code; returns tokens and optionally user. Client stores tokens and redirects."
+          },
+          "response": [
+            {
+              "name": "Success (200)",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"accessToken\": \"eyJ...\",\n  \"refreshToken\": \"eyJ...\",\n  \"user\": { \"id\": \"usr_1\", \"name\": \"User\", \"email\": \"user@example.com\", \"role\": \"user\" }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Protected (example)",
+      "item": [
+        {
+          "name": "Get current user (requires auth)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" },
+              { "key": "Accept", "value": "application/json", "type": "text" }
+            ],
+            "url": "{{baseUrl}}/auth/me",
+            "description": "Example protected endpoint. authApi client sends Authorization: Bearer <accessToken> automatically; on 401 it tries refresh then logout."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

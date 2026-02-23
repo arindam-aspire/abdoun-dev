@@ -68,6 +68,7 @@ export function HeroSection({ translations: t, isRtl }: HeroSectionProps) {
           translations={t}
           activeTab={activeTab}
           onTabChange={setActiveTab}
+          activeCategoryTab={activeCategoryTab}
           isRtl={isRtl}
         />
       </div>

@@ -41,10 +41,11 @@ export default function LocalizedSignupPage() {
         id: "1",
         name: fullName || "New User",
         email: email || "user@agency.com",
+        phone: "+962600000000",
         role: "user" as UserRole,
       }),
     );
-    router.push(`/${locale}/dashboard`);
+    router.push(`/${locale}`);
   };
 
   return (

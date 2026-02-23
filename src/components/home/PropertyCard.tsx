@@ -3,27 +3,34 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useLocale } from "next-intl";
-import { Bath, BedDouble, Heart, MapPin, Maximize2 } from "lucide-react";
+import { Bath, BedDouble, MapPin, Maximize2 } from "lucide-react";
 import type { AppLocale } from "@/i18n/routing";
 import type { Property } from "./types";
+import { FavouriteButton } from "@/components/favourites/FavouriteButton";
 
 export interface PropertyCardProps {
   property: Property;
   agentLabel?: string;
+  /** Use "minimal" on property details page for a borderless, soft look */
+  variant?: "default" | "minimal";
 }
 
 export function PropertyCard({
   property,
   agentLabel = "Abdoun Real Estate",
+  variant = "default",
 }: PropertyCardProps) {
   const language = useLocale() as AppLocale;
   const isRtl = language === "ar";
+  const isMinimal = variant === "minimal";
 
   return (
     <article
-      className={`group relative overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg ${
-        isRtl ? "flex h-full flex-col text-right" : "flex h-full flex-col text-left"
-      }`}
+      className={`group relative overflow-hidden bg-white transition ${
+        isMinimal
+          ? "rounded-lg shadow-[0_2px_12px_rgba(15,23,42,0.06)] hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)]"
+          : "rounded-2xl border border-[var(--border-subtle)] shadow-sm hover:-translate-y-1 hover:shadow-lg"
+      } ${isRtl ? "flex h-full flex-col text-right" : "flex h-full flex-col text-left"}`}
     >
       <div className="relative overflow-hidden">
         <div className="relative h-52 w-full">
@@ -41,19 +48,17 @@ export function PropertyCard({
             isRtl ? "right-4 flex-row-reverse" : "left-4"
           }`}
         >
-          <span className="rounded-full bg-[var(--brand-accent)] px-3 py-1 text-xs font-semibold text-[var(--brand-secondary)] shadow-sm">
+          <span className="rounded-full bg-[var(--brand-accent)] px-3 py-1 text-xs font-semibold text-[var(--brand-on-accent)] shadow-sm">
             {property.badge}
           </span>
         </div>
-        <button
-          type="button"
-          className={`absolute top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[var(--brand-secondary)] shadow-sm ring-1 ring-[var(--border-subtle)] hover:bg-white ${
-            isRtl ? "left-4" : "right-4"
-          }`}
-          aria-label="Save property"
-        >
-          <Heart className="h-4 w-4" aria-hidden="true" />
-        </button>
+        <FavouriteButton
+          propertyId={property.id}
+          className={`absolute top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[var(--brand-secondary)] shadow-sm hover:bg-white ${
+            isMinimal ? "" : "ring-1 ring-[var(--border-subtle)]"
+          } ${isRtl ? "left-4" : "right-4"}`}
+          iconClassName="h-4 w-4"
+        />
       </div>
 
       <div className="flex flex-1 flex-col gap-3 px-4 py-4">
@@ -85,9 +90,9 @@ export function PropertyCard({
         </div>
 
         <div
-          className={`flex items-center justify-between rounded-xl bg-[var(--surface)] px-3 py-2 text-[11px] text-[rgba(51,51,51,0.85)] ${
-            isRtl ? "mt-auto flex-row-reverse" : "mt-auto"
-          }`}
+          className={`flex items-center justify-between px-3 py-2 text-[11px] text-[rgba(51,51,51,0.85)] ${
+            isMinimal ? "bg-[var(--surface)]/60" : "rounded-xl bg-[var(--surface)]"
+          } ${isRtl ? "mt-auto flex-row-reverse" : "mt-auto"}`}
         >
           <div className="flex items-center gap-1.5">
             <BedDouble className="h-3.5 w-3.5 shrink-0" />

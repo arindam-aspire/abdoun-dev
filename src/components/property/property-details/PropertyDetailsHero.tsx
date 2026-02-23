@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { PropertyDetailsImageModal } from "./PropertyDetailsImageModal";
 import type { DetailedProperty } from "./types";
+import { FavouriteButton } from "@/components/favourites/FavouriteButton";
 import "./PropertyDetailsHero.css";
 
 export interface PropertyDetailsHeroProps {
@@ -29,7 +30,6 @@ export function PropertyDetailsHero({
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-
   const minSwipeDistance = 50;
 
   const goToNext = useCallback(() => {
@@ -108,13 +108,6 @@ export function PropertyDetailsHero({
     }
   };
 
-  // Three right-side thumbnails
-  const sideIndexes = useMemo(() => {
-    if (galleryImages.length <= 1) return [];
-    const count = Math.min(3, galleryImages.length - 1);
-    return Array.from({ length: count }, (_, i) => (activeIndex + 1 + i) % galleryImages.length);
-  }, [activeIndex, galleryImages.length]);
-
   return (
     <section
       className={`property-details-hero hero-section py-4 ${isRtl ? "hero-section--rtl" : ""}`}
@@ -160,12 +153,15 @@ export function PropertyDetailsHero({
             <span className="hero-badge hero-badge--primary">
               {property.badge}
             </span>
-            {property.status && (
-              <span className="hero-badge hero-badge--secondary">
-                {property.status}
-              </span>
-            )}
           </div>
+
+          <FavouriteButton
+            propertyId={property.id}
+            className={`absolute top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-[var(--brand-secondary)] shadow-sm ring-1 ring-[var(--border-subtle)] hover:bg-white hover:text-red-500 ${
+              isRtl ? "left-4" : "right-4"
+            }`}
+            iconClassName="h-5 w-5"
+          />
 
           {/* ─── Text overlay (bottom-left) ─── */}
           <div className="hero-content">
@@ -241,21 +237,23 @@ export function PropertyDetailsHero({
           )}
         </div>
 
-        {/* ─── RIGHT: Floating thumbnails ─── */}
+        {/* ─── RIGHT: Scrollable thumbnails (scroll on hover when more than visible) ─── */}
         {galleryImages.length > 1 && (
           <div className="hero-thumbs">
-            {sideIndexes.map((idx) => (
+            {galleryImages.map((src, idx) => (
               <button
-                key={galleryImages[idx] + idx}
+                key={src + idx}
                 type="button"
+                data-thumb-index={idx}
                 onClick={() => {
+                  goToIndex(idx);
                   openFullscreen(idx);
                 }}
-                className="hero-thumb"
+                className={`hero-thumb ${idx === activeIndex ? "hero-thumb--active" : ""}`}
                 aria-label={`View photo ${idx + 1}`}
               >
                 <Image
-                  src={galleryImages[idx]}
+                  src={src}
                   alt={`Property photo ${idx + 1}`}
                   fill
                   sizes="200px"

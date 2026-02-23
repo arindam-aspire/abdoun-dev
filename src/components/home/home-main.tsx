@@ -8,6 +8,7 @@ import {
   MOCK_PROPERTIES,
   SERVICE_CARD_CONTENT,
 } from "./constants";
+import { AboutUsSection } from "./AboutUsSection";
 import { FeaturedPropertiesSection } from "./FeaturedPropertiesSection";
 import { HeroSection } from "./HeroSection";
 import { ServicesSection } from "./ServicesSection";
@@ -26,17 +27,20 @@ export function HomeMain({ language }: HomeMainProps) {
     tabs: {
       buy: t("heroTabs.buy"),
       rent: t("heroTabs.rent"),
-      sell: t("heroTabs.sell"),
     },
     categoryTabs: {
       commercial: t("heroCategoryTabs.commercial"),
       realEstate: t("heroCategoryTabs.realEstate"),
       land: t("heroCategoryTabs.land"),
     },
-    locationLabel: t("heroLocationLabel"),
-    locationPlaceholder: t("heroLocationPlaceholder"),
+    cityLabel: t("heroCityLabel"),
+    cityPlaceholder: t("heroCityPlaceholder"),
+    areaLabel: t("heroAreaLabel"),
+    areaPlaceholder: t("heroAreaPlaceholder"),
     typeLabel: t("heroTypeLabel"),
     budgetLabel: t("heroBudgetLabel"),
+    budgetYearlyMinLabel: t("heroBudgetYearlyMinLabel"),
+    budgetYearlyMaxLabel: t("heroBudgetYearlyMaxLabel"),
     search: t("heroSearch"),
   };
 
@@ -56,6 +60,12 @@ export function HomeMain({ language }: HomeMainProps) {
     title: t("latestTitle"),
     subtitle: t("latestSubtitle"),
     viewAll: t("latestViewAll"),
+  };
+
+  const aboutUsTranslations = {
+    title: t("aboutUsTitle"),
+    content: t("aboutUsContent"),
+    seeMore: t("aboutUsSeeMore"),
   };
 
   const servicesTranslations = {
@@ -78,18 +88,13 @@ export function HomeMain({ language }: HomeMainProps) {
         isRtl={isRtl}
         useCarouselOnOverflow
       />
-      <FeaturedPropertiesSection
-        translations={latestTranslations}
-        properties={MOCK_LATEST_PROPERTIES}
-        isRtl={isRtl}
-        useCarouselOnOverflow
-      />
-      <FeaturedPropertiesSection
-        translations={featuredTranslations}
-        properties={MOCK_PROPERTIES}
+      <AboutUsSection
+        title={aboutUsTranslations.title}
+        content={aboutUsTranslations.content}
+        seeMoreLabel={aboutUsTranslations.seeMore}
+        seeMoreHref={`/${language}/about`}
         isRtl={isRtl}
       />
-      <ServicesSection translations={servicesTranslations} isRtl={isRtl} />
     </>
   );
 }

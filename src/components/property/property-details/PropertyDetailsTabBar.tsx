@@ -22,14 +22,14 @@ export function PropertyDetailsTabBar({
     { key: "overview", label: t("propertyTabs.overview"), icon: <Info className="h-3.5 w-3.5" /> },
     { key: "amenities", label: t("propertyTabs.amenities"), icon: <Sparkles className="h-3.5 w-3.5" /> },
     { key: "location", label: t("propertyTabs.location"), icon: <Map className="h-3.5 w-3.5" /> },
-    { key: "reviews", label: t("propertyTabs.reviews"), icon: <Star className="h-3.5 w-3.5" /> },
+    // { key: "reviews", label: t("propertyTabs.reviews"), icon: <Star className="h-3.5 w-3.5" /> },
   ];
 
   return (
-    <div className="sticky top-[52px] md:top-[52px] z-20 border-y border-[var(--border-subtle)] bg-[var(--surface)]/95 px-4 py-3 shadow-sm backdrop-blur md:top-14 md:px-8">
-      <div className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:justify-start">
+    <div className="sticky top-[52px] z-20 -mx-4 border-b border-[var(--border-subtle)] bg-white/95 px-4 py-3 backdrop-blur md:mx-0 md:px-0 md:py-3 md:top-16">
+      <div className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div
-          className={`inline-flex min-w-max items-center gap-1 rounded-2xl border border-[var(--border-subtle)] bg-white/90 p-1.5 text-[11px] font-medium text-[var(--color-charcoal)]/80 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur ${
+          className={`inline-flex min-w-max items-center gap-1 text-[11px] font-medium text-[var(--color-charcoal)]/80 ${
             isRtl ? "flex-row-reverse" : ""
           }`}
         >
@@ -40,16 +40,16 @@ export function PropertyDetailsTabBar({
                 key={tab.key}
                 type="button"
                 onClick={() => onTabChange(tab.key)}
-                className={`flex items-center gap-1 rounded-xl px-3 py-2 cursor-pointer transition-all duration-200 ${
+                className={`flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 ${
                   isActive
-                    ? "bg-[var(--brand-primary)] text-[var(--brand-on-primary)] shadow-sm ring-1 ring-[var(--brand-primary)]/70"
-                    : "text-[var(--color-charcoal)]/80 hover:bg-[var(--surface)] hover:text-[var(--color-charcoal)]"
+                    ? "border-[var(--brand-primary)] text-[var(--brand-primary)]"
+                    : "border-transparent text-[var(--color-charcoal)]/80 hover:text-[var(--color-charcoal)]"
                 }`}
               >
                 <span
                   className={`${
-                    isActive ? "text-[var(--brand-on-primary)]" : "text-[var(--brand-primary)]"
-                  } hidden xs:inline-flex`}
+                    isActive ? "text-[var(--brand-primary)]" : "text-[var(--color-charcoal)]/60"
+                  } inline-flex`}
                 >
                   {tab.icon}
                 </span>

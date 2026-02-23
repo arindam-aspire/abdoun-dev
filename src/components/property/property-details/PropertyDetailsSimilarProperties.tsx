@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useLocale } from "next-intl";
-import { MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Property } from "@/components/home/types";
 import { PropertyCard } from "@/components/home/PropertyCard";
 
@@ -45,22 +45,29 @@ export function PropertyDetailsSimilarProperties() {
   };
 
   return (
-    <section className="rounded-2xl border border-[var(--border-subtle)] bg-white p-4 text-xs text-[var(--color-charcoal)] shadow-sm md:p-5">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-[var(--brand-primary)]" />
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-charcoal)]/80">
-            Similar properties
-          </p>
-        </div>
-        <span className="text-[11px] text-[var(--color-charcoal)]/70">Curated for you</span>
+    <section
+      className="border-t border-[var(--border-subtle)] bg-[var(--surface)]/50 py-5 text-[var(--color-charcoal)] md:py-6"
+      aria-labelledby="similar-heading"
+    >
+      <div className="mb-4 flex items-center justify-between gap-2 px-4 md:px-5">
+        <h2
+          id="similar-heading"
+          className="text-sm font-semibold uppercase tracking-wider text-[var(--color-charcoal)]/80"
+        >
+          Similar properties
+        </h2>
+        <span className="text-xs text-[var(--color-charcoal)]/65">Curated for you</span>
       </div>
 
-      <div className="rounded-xl border border-[var(--border-subtle)]">
-        <PropertyCard property={current} agentLabel="Abdoun Real Estate" />
+      <div className="px-4 md:px-5">
+        <PropertyCard
+          property={current}
+          agentLabel="Abdoun Real Estate"
+          variant="minimal"
+        />
       </div>
 
-      <div className="mt-2 flex items-center justify-between gap-2">
+      <div className="mt-3 flex items-center justify-between gap-2 px-4 md:px-5">
         <div
           className={`flex items-center gap-1 text-[11px] text-[var(--color-charcoal)]/70 ${
             isRtl ? "flex-row-reverse" : ""
@@ -69,18 +76,18 @@ export function PropertyDetailsSimilarProperties() {
           <button
             type="button"
             onClick={() => goTo(activeSimilar - 1)}
-            className="flex h-6 w-6 items-center justify-center rounded-full border border-[var(--border-subtle)] text-[var(--color-charcoal)] hover:bg-[var(--surface)]"
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--brand-secondary)] text-[var(--brand-on-primary)] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-secondary)] focus-visible:ring-offset-2"
             aria-label={isRtl ? "Next similar property" : "Previous similar property"}
           >
-            {isRtl ? "›" : "‹"}
+            {isRtl ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
           </button>
           <button
             type="button"
             onClick={() => goTo(activeSimilar + 1)}
-            className="flex h-6 w-6 items-center justify-center rounded-full border border-[var(--border-subtle)] text-[var(--color-charcoal)] hover:bg-[var(--surface)]"
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--brand-secondary)] text-[var(--brand-on-primary)] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-secondary)] focus-visible:ring-offset-2"
             aria-label={isRtl ? "Previous similar property" : "Next similar property"}
           >
-            {isRtl ? "‹" : "›"}
+            {isRtl ? <ChevronLeft className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
           </button>
           <span className={isRtl ? "mr-1" : "ml-1"}>
             {activeSimilar + 1} / {total}
@@ -93,10 +100,10 @@ export function PropertyDetailsSimilarProperties() {
               key={property.id}
               type="button"
               onClick={() => setActiveSimilar(index)}
-              className={`h-1.5 w-3 rounded-full transition ${
+              className={`h-1.5 rounded-full transition ${
                 index === activeSimilar
-                  ? "bg-[var(--brand-primary)]"
-                  : "bg-[var(--border-subtle)] hover:opacity-80"
+                  ? "w-5 bg-[var(--brand-secondary)]"
+                  : "w-3 bg-[var(--border-subtle)] hover:opacity-80"
               }`}
               aria-label={`Go to similar property ${index + 1}`}
             />

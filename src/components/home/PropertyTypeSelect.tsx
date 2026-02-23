@@ -3,20 +3,13 @@
 import { useState } from "react";
 import { HeroDropdown } from "./HeroDropdown";
 
-const PROPERTY_TYPES = [
-  "Property Type",
-  "Apartment",
-  "Villa",
-  "Penthouse",
-  "Office",
-] as const;
-
-export type PropertyType = (typeof PROPERTY_TYPES)[number];
+export type PropertyType = string;
 
 export interface PropertyTypeSelectProps {
   label: string;
   isRtl: boolean;
   value: PropertyType;
+  options: PropertyType[];
   onChange: (value: PropertyType) => void;
 }
 
@@ -24,6 +17,7 @@ export function PropertyTypeSelect({
   label,
   isRtl,
   value,
+  options,
   onChange,
 }: PropertyTypeSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -57,7 +51,7 @@ export function PropertyTypeSelect({
       >
         <div className="w-64 rounded-2xl border border-[var(--border-subtle)] bg-white p-2 text-sm shadow-xl ring-1 ring-black/5">
           <div className="max-h-64 overflow-y-auto py-1">
-            {PROPERTY_TYPES.map((type) => (
+            {options.map((type) => (
               <button
                 key={type}
                 type="button"
@@ -72,11 +66,11 @@ export function PropertyTypeSelect({
                 }}
               >
                 <span>{type}</span>
-                {value === type && (
+                {/* {value === type && (
                   <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--brand-primary)]">
                     Selected
                   </span>
-                )}
+                )} */}
               </button>
             ))}
           </div>

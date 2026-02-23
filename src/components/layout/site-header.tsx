@@ -6,23 +6,35 @@ import { useTranslations } from "@/hooks/useTranslations";
 import type { AppLocale } from "@/i18n/routing";
 import { LanguageSelect } from "@/components/ui/language-select";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { AuthPopup } from "@/components/auth/AuthPopup";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import { logout } from "@/features/auth/authSlice";
 
 interface SiteHeaderProps {
   language: AppLocale;
 }
 
-type MegaMenuKey = "commercial" | "residential" | null;
 const SHRINK_SCROLL_Y = 36;
 const EXPAND_SCROLL_Y = 12;
 
 export function SiteHeader({ language }: SiteHeaderProps) {
   const t = useTranslations("home");
-  const tAuth = useTranslations("auth");
-  const [activeMenu, setActiveMenu] = useState<MegaMenuKey>(null);
+  const tCommon = useTranslations("common");
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((state) => state.auth.user);
   const [isScrolled, setIsScrolled] = useState(false);
-  const closeTimeoutRef = useRef<number | null>(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const rafRef = useRef<number | null>(null);
+  const profileRef = useRef<HTMLDivElement | null>(null);
   const isRTL = language === "ar";
+
+  const initials = user?.name
+    ?.split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "U";
 
   useEffect(() => {
     const syncScrollState = () => {
@@ -55,146 +67,67 @@ export function SiteHeader({ language }: SiteHeaderProps) {
     };
   }, []);
 
-  const cancelClose = () => {
-    if (closeTimeoutRef.current !== null) {
-      window.clearTimeout(closeTimeoutRef.current);
-      closeTimeoutRef.current = null;
-    }
-  };
+  useEffect(() => {
+    if (!isProfileOpen) return;
 
-  const scheduleClose = () => {
-    cancelClose();
-    closeTimeoutRef.current = window.setTimeout(() => {
-      setActiveMenu(null);
-      closeTimeoutRef.current = null;
-    }, 120);
-  };
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!profileRef.current) return;
+      if (!profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    };
 
-  const handleOpen = (key: MegaMenuKey) => {
-    cancelClose();
-    setActiveMenu(key);
-  };
-
-  const handleClose = () => {
-    cancelClose();
-    setActiveMenu(null);
-  };
-
-  const menuConfig: Record<
-    Exclude<MegaMenuKey, null>,
-    {
-      title: string;
-      columns: { heading: string; items: { label: string; href: string }[] }[];
-    }
-  > = {
-    commercial: {
-      title: t("nav.commercial"),
-      columns: [
-        {
-          heading: t("nav.commercial"),
-          items: [
-            { label: t("nav.commercialVillas"), href: `/${language}/commercial/villas` },
-            { label: t("nav.commercialOffices"), href: `/${language}/commercial/offices` },
-            { label: t("nav.commercialBuildings"), href: `/${language}/commercial/buildings` },
-            { label: t("nav.commercialInvestment"), href: `/${language}/commercial/investment` },
-          ],
-        },
-      ],
-    },
-    residential: {
-      title: t("nav.residential"),
-      columns: [
-        {
-          heading: t("nav.residential"),
-          items: [
-            { label: t("nav.residentialVillas"), href: `/${language}/residential/villas` },
-            { label: t("nav.residentialApartments"), href: `/${language}/residential/apartments` },
-            { label: t("nav.residentialLuxurious"), href: `/${language}/residential/luxurious` },
-            { label: t("nav.residentialFarms"), href: `/${language}/residential/farms` },
-          ],
-        },
-      ],
-    },
-  };
-
-  const currentMenu = activeMenu ? menuConfig[activeMenu] : null;
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isProfileOpen]);
 
   return (
     <header
       className="sticky top-0 z-30 border-b border-white/20 bg-[rgba(26,59,92,0.95)] text-white backdrop-blur relative"
       dir={isRTL ? "rtl" : "ltr"}
-      onMouseLeave={handleClose}
     >
       <div
         className={`container mx-auto flex items-center justify-between gap-2 px-4 transition-all duration-200 md:gap-4 ${
           isScrolled ? "py-2 md:px-8" : "py-4 md:px-8"
         }`}
       >
-        <BrandLogo
-          locale={language}
-          priority
-          imageClassName={isScrolled ? "h-7 md:h-9" : "h-8 md:h-10"}
-        />
+        <div className="flex items-center gap-2">
+          <BrandLogo
+            locale={language}
+            priority
+            imageClassName={isScrolled ? "h-7 md:h-9" : "h-8 md:h-10"}
+          />
+          <span className="inline-flex flex-col items-center rounded-full border border-[rgba(253,185,19,0.55)] bg-[rgba(253,185,19,0.12)] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-accent)] md:px-2.5 md:text-[11px] leading-tight">
+            <span>Since</span>
+            <span>1988</span>
+          </span>
+        </div>
 
         {/* Desktop navigation */}
-        <div
-          className={`relative hidden md:block ${isRTL ? "text-right" : ""}`}
-          onMouseEnter={cancelClose}
-          onMouseLeave={scheduleClose}
+        <nav
+          className={`relative hidden md:flex items-center gap-6 text-sm font-medium text-white/80 ${isRTL ? "text-right" : ""}`}
         >
-          <nav
-            className={`flex items-center gap-6 text-sm font-medium text-white/80`}
+          <Link
+            href={`/${language}/list`}
+            className="border-b-2 border-transparent transition hover:border-[var(--brand-accent)] hover:text-white"
           >
-            <Link
-              href={`/${language}/list`}
-              className="border-b-2 border-transparent transition hover:border-[var(--brand-accent)] hover:text-white"
-              onMouseEnter={handleClose}
-              onFocus={handleClose}
-            >
-              {t("nav.listProperty")}
-            </Link>
-            <Link
-              href={`/${language}/team`}
-              className="border-b-2 border-transparent transition hover:border-[var(--brand-accent)] hover:text-white"
-              onMouseEnter={handleClose}
-              onFocus={handleClose}
-            >
-              {t("nav.ourTeam")}
-            </Link>
-            <Link
-              href={`/${language}/lands`}
-              className="border-b-2 border-transparent transition hover:border-[var(--brand-accent)] hover:text-white"
-              onMouseEnter={handleClose}
-              onFocus={handleClose}
-            >
-              {t("nav.lands")}
-            </Link>
-            <button
-              className={`cursor-pointer border-b-2 transition ${
-                activeMenu === "commercial"
-                  ? "border-[var(--brand-accent)] text-white"
-                  : "border-transparent hover:border-white/50 hover:text-white"
-              }`}
-              onMouseEnter={() => handleOpen("commercial")}
-              onFocus={() => handleOpen("commercial")}
-              type="button"
-            >
-              {t("nav.commercial")}
-            </button>
-            <button
-              className={`cursor-pointer border-b-2 transition ${
-                activeMenu === "residential"
-                  ? "border-[var(--brand-accent)] text-white"
-                  : "border-transparent hover:border-white/50 hover:text-white"
-              }`}
-              onMouseEnter={() => handleOpen("residential")}
-              onFocus={() => handleOpen("residential")}
-              type="button"
-            >
-              {t("nav.residential")}
-            </button>
-          </nav>
-        </div>
+            {t("nav.listProperty")}
+          </Link>
+          <Link
+            href={`/${language}/team`}
+            className="border-b-2 border-transparent transition hover:border-[var(--brand-accent)] hover:text-white"
+          >
+            {t("nav.ourTeam")}
+          </Link>
+          <Link
+            href={`/${language}/about`}
+            className="border-b-2 border-transparent transition hover:border-[var(--brand-accent)] hover:text-white"
+          >
+            {t("nav.aboutUs")}
+          </Link>
+        </nav>
 
         <div className="flex items-center gap-2 md:gap-3">
           <div className="hidden md:block">
@@ -204,65 +137,94 @@ export function SiteHeader({ language }: SiteHeaderProps) {
             <LanguageSelect value={language} showFullLabels={false} />
           </div>
 
-          <Link
-            href={`/${language}/login`}
-            className="inline-flex h-8 items-center rounded-full border border-[var(--brand-accent)] bg-[var(--brand-accent)] px-3 text-[11px] font-semibold text-[var(--brand-secondary)] hover:brightness-95 md:h-9 md:px-4 md:text-xs"
+          {user ? (
+            <div className="relative" ref={profileRef}>
+              <button
+                type="button"
+                onClick={() => setIsProfileOpen((prev) => !prev)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/50 bg-white/20 text-xs font-bold text-white hover:bg-white/30 cursor-pointer"
+                aria-label="Profile menu"
+              >
+                {initials}
+              </button>
+              {isProfileOpen ? (
+                <div
+                  className={`absolute top-11 z-30 min-w-[240px] rounded-xl border border-[var(--border-subtle)] bg-white py-2 text-[var(--color-charcoal)] shadow-xl ${isRTL ? "left-0" : "right-0"}`}
+                >
+                  <div className="border-b border-[var(--border-subtle)] px-4 py-3">
+                    <p className="truncate text-sm font-semibold">{user.name}</p>
+                    <p className="mt-0.5 truncate text-xs text-zinc-500">{user.email}</p>
+                  </div>
+                  <nav className="py-1 px-2" aria-label="Account menu">
+                    <Link
+                      href={`/${language}/profile`}
+                      onClick={() => setIsProfileOpen(false)}
+                      className="block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                    >
+                      {tCommon("myProfile")}
+                    </Link>
+                    <Link
+                      href={`/${language}/favourites`}
+                      onClick={() => setIsProfileOpen(false)}
+                      className="block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                    >
+                      {tCommon("myFavourites")}
+                    </Link>
+                    <Link
+                      href={`/${language}/saved-searches`}
+                      onClick={() => setIsProfileOpen(false)}
+                      className="block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                    >
+                      {tCommon("mySavedSearches")}
+                    </Link>
+                    <Link
+                      href={`/${language}/recently-viewed`}
+                      onClick={() => setIsProfileOpen(false)}
+                      className="block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                    >
+                      {tCommon("myRecentlyViewed")}
+                    </Link>
+                    <Link
+                      href={`/${language}/account-settings`}
+                      onClick={() => setIsProfileOpen(false)}
+                      className="block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                    >
+                      {tCommon("myAccountSettings")}
+                    </Link>
+                  </nav>
+                  <div className="mt-1 border-t border-[var(--border-subtle)] px-3 pt-2 pb-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        dispatch(logout());
+                        setIsProfileOpen(false);
+                      }}
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                    >
+                      {tCommon("signOut")}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+<button
+            type="button"
+            onClick={() => setIsAuthOpen(true)}
+            suppressHydrationWarning
+            className="inline-flex h-8 items-center rounded-full border border-[var(--brand-accent)] bg-[var(--brand-accent)] px-3 text-[11px] font-semibold text-[var(--brand-secondary)] hover:brightness-95 md:h-9 md:px-4 md:text-xs cursor-pointer"
           >
-            {tAuth("signInLink")}
-          </Link>
+              {tCommon("signUpSignIn")}
+            </button>
+          )}
         </div>
       </div>
 
-      {currentMenu && (
-        <div
-          className="absolute inset-x-0 top-full z-20 border-b border-[var(--border-subtle)] bg-white shadow-[0_16px_30px_rgba(26,59,92,0.2)]"
-          onMouseEnter={() => {
-            cancelClose();
-          }}
-          onMouseLeave={scheduleClose}
-        >
-          <div
-            className={`container mx-auto px-4 py-5 md:px-8 ${
-              isRTL ? "text-right" : "text-left"
-            }`}
-          >
-            <div className="mb-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--brand-secondary)]">
-                {currentMenu.title}
-              </p>
-            </div>
-
-            <div
-              className={`grid gap-6 md:grid-cols-3 ${
-                isRTL ? "md:text-right" : ""
-              }`}
-            >
-              {currentMenu.columns.map((column) => (
-                <div key={column.heading} className="space-y-3">
-                  {/* <p className="text-sm font-semibold text-[var(--brand-secondary)]">
-                    {column.heading}
-                  </p> */}
-                  <ul className="space-y-1.5 text-sm">
-                    {column.items.map((item) => (
-                      <li key={item.label}>
-                        <Link
-                          href={item.href}
-                          className="flex cursor-pointer items-center justify-between rounded-md px-1.5 py-1 text-[var(--color-charcoal)] transition hover:bg-[var(--surface)] hover:text-[var(--brand-secondary)]"
-                        >
-                          <span>{item.label}</span>
-                          <span className="text-xs text-slate-400 rtl-flip-x">
-                            →
-                          </span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <AuthPopup
+        open={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        locale={language}
+      />
     </header>
   );
 }

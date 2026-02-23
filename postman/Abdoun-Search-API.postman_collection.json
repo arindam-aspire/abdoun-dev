@@ -1,0 +1,210 @@
+{
+  "info": {
+    "name": "Abdoun Real Estate - Search API",
+    "description": "Collection for Home Page search and Search Results page APIs. Use with `NEXT_PUBLIC_API_BASE_URL` or your backend base URL.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "abdoun-website"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "locale",
+      "value": "en",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Home Page Search",
+      "item": [
+        {
+          "name": "Search Properties (Home Hero)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/search?status=buy&category=residential&type=apartments&city=amman&locations=abdoun%2Cfifth-circle&budgetMin=100000&budgetMax=500000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "properties", "search"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "buy",
+                  "description": "Listing type: buy | rent"
+                },
+                {
+                  "key": "category",
+                  "value": "residential",
+                  "description": "residential | commercial | land (use 'lands' for land on Hero)"
+                },
+                {
+                  "key": "type",
+                  "value": "apartments",
+                  "description": "Slugified property type (e.g. apartments, villas, residential-lands)"
+                },
+                {
+                  "key": "city",
+                  "value": "amman",
+                  "description": "City name, lowercase"
+                },
+                {
+                  "key": "locations",
+                  "value": "abdoun,fifth-circle",
+                  "description": "Comma-separated area names, lowercase"
+                },
+                {
+                  "key": "budgetMin",
+                  "value": "100000",
+                  "description": "Min price (JD). Hero sends minPrice; API should accept budgetMin."
+                },
+                {
+                  "key": "budgetMax",
+                  "value": "500000",
+                  "description": "Max price (JD). Hero sends maxPrice; API should accept budgetMax."
+                }
+              ],
+              "variable": []
+            },
+            "description": "Same contract as Search Results; used when user submits the Hero search on the home page. All query params are optional; omit for unfiltered first page."
+          },
+          "response": []
+        }
+      ],
+      "description": "Requests triggered from the Home page hero search card. Params match the Search Results API; frontend navigates to /{locale}/search-result?params."
+    },
+    {
+      "name": "Search Results Page",
+      "item": [
+        {
+          "name": "Search Properties (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/search?status=rent&category=residential&type=villas&city=amman&locations=abdoun&budgetMin=1000&budgetMax=5000&page=1&pageSize=12",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "properties", "search"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "rent",
+                  "description": "buy | rent"
+                },
+                {
+                  "key": "category",
+                  "value": "residential",
+                  "description": "residential | commercial | land"
+                },
+                {
+                  "key": "type",
+                  "value": "villas",
+                  "description": "Slugified property type"
+                },
+                {
+                  "key": "city",
+                  "value": "amman",
+                  "description": "City name, lowercase"
+                },
+                {
+                  "key": "locations",
+                  "value": "abdoun",
+                  "description": "Comma-separated areas, lowercase"
+                },
+                {
+                  "key": "budgetMin",
+                  "value": "1000",
+                  "description": "Min price (JD)"
+                },
+                {
+                  "key": "budgetMax",
+                  "value": "5000",
+                  "description": "Max price (JD)"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (1-based). Default 1."
+                },
+                {
+                  "key": "pageSize",
+                  "value": "12",
+                  "description": "Items per page. Default 12."
+                }
+              ],
+              "variable": []
+            },
+            "description": "Search with pagination. Used by the Search Results page; filters and pagination applied server-side when backend is used."
+          },
+          "response": [
+            {
+              "name": "Success (200)",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/properties/search?page=1&pageSize=12",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "properties", "search"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "pageSize", "value": "12" }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"title\": \"Abdoun Heights Villa\",\n      \"price\": \"2,450,000 JD\",\n      \"status\": \"buy\",\n      \"category\": \"residential\",\n      \"searchPropertyType\": \"Villas\",\n      \"city\": \"Amman\",\n      \"areaName\": \"Abdoun\",\n      \"propertyType\": \"Villa\",\n      \"images\": [\"https://example.com/img1.jpg\"],\n      \"location\": \"Abdoun, Amman\",\n      \"beds\": 5,\n      \"baths\": 5,\n      \"area\": \"4,650\",\n      \"highlights\": \"Fully Furnished | Luxury 5BHK\",\n      \"badges\": [\"Verified\", \"For Sale\"],\n      \"handover\": \"Q2 2025\",\n      \"paymentPlan\": \"80/20\",\n      \"validatedDate\": \"19th of February\",\n      \"brokerName\": \"Abdoun Real Estate\"\n    }\n  ],\n  \"total\": 1,\n  \"page\": 1,\n  \"pageSize\": 12\n}"
+            }
+          ]
+        },
+        {
+          "name": "Search (Minimal Params)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/properties/search?page=1&pageSize=12",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "properties", "search"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "12" }
+              ]
+            },
+            "description": "No filters; returns first page of all listings."
+          },
+          "response": []
+        }
+      ],
+      "description": "Requests used by the Search Results page. Supports same filters as Home search plus page and pageSize."
+    }
+  ]
+}

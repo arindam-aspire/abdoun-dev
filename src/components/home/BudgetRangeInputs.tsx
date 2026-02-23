@@ -20,6 +20,11 @@ export interface BudgetRangeInputsProps {
   onChangeMax: (value: string) => void;
   onDone: () => void;
   onReset: () => void;
+  /** When provided (e.g. for rent), used instead of "Minimum" / "Maximum". */
+  minLabel?: string;
+  maxLabel?: string;
+  /** When provided (e.g. for rent yearly max), used as placeholder for max input. */
+  maxPlaceholder?: string;
 }
 
 export function BudgetRangeInputs({
@@ -29,6 +34,9 @@ export function BudgetRangeInputs({
   onChangeMax,
   onDone,
   onReset,
+  minLabel = "Minimum",
+  maxLabel = "Maximum",
+  maxPlaceholder = "400000",
 }: BudgetRangeInputsProps) {
   const [activeField, setActiveField] = useState<"min" | "max" | null>(null);
 
@@ -79,11 +87,11 @@ export function BudgetRangeInputs({
               }}
             >
               <span>{label}</span>
-              {isSelected && (
+              {/* {isSelected && (
                 <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--brand-primary)]">
                   Selected
                 </span>
-              )}
+              )} */}
             </button>
           );
         })}
@@ -102,7 +110,7 @@ export function BudgetRangeInputs({
           onClick={(event) => event.stopPropagation()}
         >
           <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[rgba(51,51,51,0.7)]">
-            Minimum
+            {minLabel}
           </div>
           <input
             type="number"
@@ -122,7 +130,7 @@ export function BudgetRangeInputs({
           onClick={(event) => event.stopPropagation()}
         >
           <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[rgba(51,51,51,0.7)]">
-            Maximum
+            {maxLabel}
           </div>
           <input
             type="number"
@@ -132,7 +140,7 @@ export function BudgetRangeInputs({
               onChangeMax(e.target.value);
               setActiveField("max");
             }}
-            placeholder="400000"
+            placeholder={maxPlaceholder}
             className="h-9 w-full rounded-xl border border-[var(--border-subtle)] px-2 text-xs text-[var(--color-charcoal)] outline-none ring-0 placeholder:text-[rgba(51,51,51,0.45)] focus:border-[var(--brand-primary)] focus:ring-1 focus:ring-[rgba(26,59,92,0.2)]"
           />
           {renderSuggestions("max")}

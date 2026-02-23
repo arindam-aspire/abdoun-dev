@@ -10,17 +10,21 @@ export interface Property {
   area: string;
 }
 
-export type HeroTabKey = "buy" | "rent" | "sell";
+export type HeroTabKey = "buy" | "rent";
 
 export interface HeroTranslations {
   title: string;
   subtitle: string;
-  tabs: { buy: string; rent: string; sell: string };
+  tabs: { buy: string; rent: string };
   categoryTabs: { commercial: string; realEstate: string; land: string };
-  locationLabel: string;
-  locationPlaceholder: string;
+  cityLabel: string;
+  cityPlaceholder: string;
+  areaLabel: string;
+  areaPlaceholder: string;
   typeLabel: string;
   budgetLabel: string;
+  budgetYearlyMinLabel: string;
+  budgetYearlyMaxLabel: string;
   search: string;
 }
 

@@ -23,16 +23,17 @@ export default function LocalizedLoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Demo login: accept any email/password and redirect to localized dashboard
+    // Demo login: accept any email/password and redirect to localized landing
     dispatch(
       login({
         id: "1",
         name: "Demo User",
         email: email || "demo@agency.com",
+        phone: "+962600000000",
         role: "user" as UserRole,
       }),
     );
-    router.push(`/${locale}/dashboard`);
+    router.push(`/${locale}`);
   };
 
   const handleGoogleSignIn = () => {
@@ -43,10 +44,11 @@ export default function LocalizedLoginPage() {
         id: "google-demo",
         name: "Google Demo User",
         email: "google-demo@abdoun-realestate.com",
+        phone: "+962600000000",
         role: "user" as UserRole,
       }),
     );
-    router.push(`/${locale}/dashboard`);
+    router.push(`/${locale}`);
   };
 
   return (

@@ -8,7 +8,7 @@ export function PropertyInsightsSidebar() {
   return (
     <aside className="space-y-4">
       <PropertyDetailsAgentSection />
-      <PropertyDetailsReviewSection />
+      {/* <PropertyDetailsReviewSection /> */}
       <PropertyDetailsSimilarProperties />
     </aside>
   );
