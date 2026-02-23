@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useRef } from "react";
 import { HeroDropdown } from "./HeroDropdown";
 
 export type PropertyType = string;
 
 export interface PropertyTypeSelectProps {
   label: string;
+  placeholder?: string;
   isRtl: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
+  onClose: () => void;
   value: PropertyType;
   options: PropertyType[];
   onChange: (value: PropertyType) => void;
@@ -15,12 +19,16 @@ export interface PropertyTypeSelectProps {
 
 export function PropertyTypeSelect({
   label,
+  placeholder = "Select type",
   isRtl,
+  isOpen,
+  onToggle,
+  onClose,
   value,
   options,
   onChange,
 }: PropertyTypeSelectProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   return (
     <div className="relative flex-[1.2]">
@@ -32,25 +40,45 @@ export function PropertyTypeSelect({
         {label}
       </label>
       <button
+        ref={triggerRef}
         type="button"
         className="flex h-14 w-full cursor-pointer items-center gap-2 rounded-full border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 text-left shadow-[0_0_0_1px_rgba(26,59,92,0.03)] transition-colors hover:border-[rgba(43,91,166,0.6)] focus:outline-none focus-visible:border-[var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[rgba(26,59,92,0.2)]"
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={onToggle}
       >
         <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--surface)] text-[10px] font-medium text-[var(--brand-secondary)]">
           PT
         </span>
-        <span className="w-full truncate text-sm text-[var(--color-charcoal)]">
-          {value}
+        <span
+          className={`w-full truncate text-sm text-[var(--color-charcoal)]`}
+        >
+          {value || placeholder}
         </span>
       </button>
 
       <HeroDropdown
         isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
+        onClose={onClose}
         align={isRtl ? "right" : "left"}
+        anchorRef={triggerRef}
+        portaled={false}
+        closeOnSelect
       >
         <div className="w-64 rounded-2xl border border-[var(--border-subtle)] bg-white p-2 text-sm shadow-xl ring-1 ring-black/5">
           <div className="max-h-64 overflow-y-auto py-1">
+            <button
+              type="button"
+              className={`flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)] ${
+                !value
+                  ? "bg-[var(--surface)] text-[var(--brand-secondary)]"
+                  : "text-[var(--color-charcoal)]"
+              }`}
+              onClick={() => {
+                onChange("");
+                onClose();
+              }}
+            >
+              <span>{placeholder}</span>
+            </button>
             {options.map((type) => (
               <button
                 key={type}
@@ -62,7 +90,7 @@ export function PropertyTypeSelect({
                 }`}
                 onClick={() => {
                   onChange(type);
-                  setIsOpen(false);
+                  onClose();
                 }}
               >
                 <span>{type}</span>

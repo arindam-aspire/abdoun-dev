@@ -27,6 +27,35 @@ export interface SearchFieldsTranslations {
   budgetYearlyMinLabel: string;
   budgetYearlyMaxLabel: string;
   advanceSearch: string;
+  advancedSearch: string;
+  clear: string;
+  furnitureStatus: string;
+  furnitureFurnished: string;
+  furnitureSemiFurnished: string;
+  furnitureUnfurnished: string;
+  bathrooms: string;
+  floorLevel: string;
+  parking: string;
+  propertyAge: string;
+  minArea: string;
+  maxArea: string;
+  bedrooms: string;
+  rooms: string;
+  minPlotArea: string;
+  maxPlotArea: string;
+  allRooms: string;
+  allBaths: string;
+  allParking: string;
+  selectFurnitureStatus: string;
+  selectFloorLevel: string;
+  selectPropertyAge: string;
+  garage: string;
+  maidsRoom: string;
+  heatingUnderfloor: string;
+  fireplace: string;
+  swimmingPool: string;
+  garden: string;
+  airConditioning: string;
 }
 
 export interface SearchFieldsProps {
@@ -46,12 +75,12 @@ export const CATEGORY_OPTIONS: {
 export const CATEGORY_TO_PROPERTY_TYPES: Record<CategoryKey, string[]> = {
   residential: ["Apartments", "Villas", "Buildings", "Farms"],
   commercial: [
-    "Offices",
-    "Showrooms",
     "Buildings",
-    "Warehouse",
-    "Businesses",
-    "Villas",
+    "Offices",
+    "Ready Businesses",
+    "Shops",
+    "Showrooms",
+    "Warehouses",
   ],
   land: [
     "Residential Lands",
@@ -85,6 +114,13 @@ export interface SearchResultListing {
   area: string;
   /** Optional acres (e.g. "10.05") for land/lot listings; shown with property type when present */
   acres?: string;
+  /** Optional for advanced filters */
+  furnitureStatus?: "furnished" | "semi-furnished" | "unfurnished";
+  floorLevel?: string;
+  parking?: number;
+  propertyAge?: string;
+  /** Amenities for checkbox filters */
+  amenities?: string[];
   highlights?: string;
   badges?: string[];
   handover?: string;

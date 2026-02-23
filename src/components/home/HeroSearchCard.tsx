@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import type { HeroTabKey, HeroTranslations } from "./types";
@@ -59,24 +59,34 @@ export function HeroSearchCard({
   activeCategoryTab,
   isRtl,
 }: HeroSearchCardProps) {
+  type HeroDropdownKey = "type" | "city" | "area" | "budget";
   const router = useRouter();
   const locale = useLocale();
   const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<
     Record<HeroCategoryTabKey, PropertyType>
   >({
-    realEstate: CATEGORY_TO_TYPES.realEstate[0],
-    commercial: CATEGORY_TO_TYPES.commercial[0],
-    land: CATEGORY_TO_TYPES.land[0],
+    realEstate: "",
+    commercial: "",
+    land: "",
   });
   const [selectedCity, setSelectedCity] = useState<string>("");
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
 
   const [minBudget, setMinBudget] = useState<string>("");
   const [maxBudget, setMaxBudget] = useState<string>("");
-  const [isBudgetOpen, setIsBudgetOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<HeroDropdownKey | null>(
+    null,
+  );
+  const budgetTriggerRef = useRef<HTMLButtonElement>(null);
   const propertyType = selectedPropertyTypes[activeCategoryTab];
 
   const areaOptions = selectedCity ? getAreasByCityName(selectedCity) : [];
+  const toggleDropdown = (key: HeroDropdownKey) => {
+    setOpenDropdown((current) => (current === key ? null : key));
+  };
+  const closeDropdown = (key: HeroDropdownKey) => {
+    setOpenDropdown((current) => (current === key ? null : current));
+  };
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -90,7 +100,9 @@ export function HeroSearchCard({
       );
     }
     params.set("category", CATEGORY_TO_PARAM[activeCategoryTab]);
-    params.set("type", slugify(propertyType));
+    if (propertyType) {
+      params.set("type", slugify(propertyType));
+    }
     params.set("status", activeTab);
     if (minBudget.trim()) params.set("minPrice", minBudget.trim());
     if (maxBudget.trim()) params.set("maxPrice", maxBudget.trim());
@@ -144,6 +156,9 @@ export function HeroSearchCard({
           <PropertyTypeSelect
             label={t.typeLabel}
             isRtl={isRtl}
+            isOpen={openDropdown === "type"}
+            onToggle={() => toggleDropdown("type")}
+            onClose={() => closeDropdown("type")}
             value={propertyType}
             options={CATEGORY_TO_TYPES[activeCategoryTab]}
             onChange={(value) => {
@@ -157,6 +172,9 @@ export function HeroSearchCard({
             label={t.cityLabel}
             placeholder={t.cityPlaceholder}
             value={selectedCity}
+            isOpen={openDropdown === "city"}
+            onToggle={() => toggleDropdown("city")}
+            onClose={() => closeDropdown("city")}
             onChange={(city) => {
               setSelectedCity(city);
               setSelectedAreas([]);
@@ -168,6 +186,9 @@ export function HeroSearchCard({
             label={t.areaLabel}
             placeholder={t.areaPlaceholder}
             selectedAreas={selectedAreas}
+            isOpen={openDropdown === "area"}
+            onToggle={() => toggleDropdown("area")}
+            onClose={() => closeDropdown("area")}
             onSelectionChange={setSelectedAreas}
             areaOptions={areaOptions}
             disabled={!selectedCity}
@@ -184,10 +205,11 @@ export function HeroSearchCard({
               {t.budgetLabel}
             </label>
             <button
+              ref={budgetTriggerRef}
               type="button"
               className={`flex h-14 w-full cursor-pointer items-center gap-2 rounded-full border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 text-left shadow-[0_0_0_1px_rgba(26,59,92,0.03)] transition-colors hover:border-[rgba(43,91,166,0.6)] focus:outline-none focus-visible:border-[var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[rgba(26,59,92,0.2)]`}
               onClick={() => {
-                setIsBudgetOpen((open) => !open);
+                toggleDropdown("budget");
               }}
             >
               <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--surface)] text-[10px] font-medium text-[var(--brand-secondary)]">
@@ -199,11 +221,13 @@ export function HeroSearchCard({
             </button>
 
             <HeroDropdown
-              isOpen={isBudgetOpen}
+              isOpen={openDropdown === "budget"}
               onClose={() => {
-                setIsBudgetOpen(false);
+                closeDropdown("budget");
               }}
               align={isRtl ? "right" : "left"}
+              anchorRef={budgetTriggerRef}
+              portaled={false}
             >
               <BudgetRangeInputs
                 minBudget={minBudget}
@@ -215,7 +239,7 @@ export function HeroSearchCard({
                   setMaxBudget("");
                 }}
                 onDone={() => {
-                  setIsBudgetOpen(false);
+                  closeDropdown("budget");
                 }}
                 minLabel={
                   activeTab === "rent" ? t.budgetYearlyMinLabel : undefined
