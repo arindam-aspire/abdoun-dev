@@ -62,6 +62,7 @@
     "propertyTabs": {
       "overview": "Resumen",
       "amenities": "Comodidades",
+      "features": "Caracteristicas",
       "location": "Ubicacion",
       "reviews": "Opiniones"
     },
@@ -179,6 +180,7 @@
     "filtersTitle": "Filtros de busqueda",
     "propertiesInAmman": "Propiedades en Amán.",
     "propertiesInLocation": "Propiedades en {location}",
+    "exclusivePropertiesTitle": "Propiedades exclusivas",
     "resultsTitle": "Resultados",
     "rent": "Alquilar",
     "buy": "Comprar",
@@ -240,6 +242,7 @@
     "call": "Llamar",
     "validatedOn": "La autenticidad de la propiedad se validó el",
     "resultsCount": "anuncios",
+    "noResults": "Ningún anuncio coincide con tu búsqueda.",
     "sortPopular": "Popular",
     "sortTruCheckFirst": "TruCheck™ primero",
     "sortNewest": "Más reciente",

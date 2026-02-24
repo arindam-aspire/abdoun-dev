@@ -173,6 +173,18 @@ function filterListingsBySearchParams(
   listings: typeof MOCK_SEARCH_RESULTS,
   searchParams: URLSearchParams,
 ): typeof MOCK_SEARCH_RESULTS {
+  const exclusiveParam = searchParams.get("exclusive");
+  const exclusiveOnly = exclusiveParam === "1" || exclusiveParam === "true";
+
+  let source = listings;
+  if (exclusiveOnly) {
+    source = listings.filter(
+      (listing) =>
+        listing.exclusive === true ||
+        (Array.isArray(listing.badges) && listing.badges.includes("Exclusive")),
+    );
+  }
+
   const status = getStatusParam(searchParams);
   const category = getCategoryParam(searchParams);
   const typeParam = (searchParams.get("type") ?? "").trim().toLowerCase();
@@ -181,7 +193,7 @@ function filterListingsBySearchParams(
   const budget = getBudgetFromParams(searchParams);
   const adv = getAdvancedParams(searchParams);
 
-  return listings.filter((listing) => {
+  return source.filter((listing) => {
     if (status) {
       if (!listing.status || listing.status !== status) return false;
     }
@@ -359,21 +371,27 @@ export function SearchResults({ resultsTitle }: SearchResultsProps) {
         }
         aria-label="Property listings"
       >
-        {listings.map((listing) => (
-          <li key={listing.id} className="min-h-0">
-            {view === "list" ? (
-              <SearchResultListCard
-                listing={listing}
-                translations={listCardTranslations}
-              />
-            ) : (
-              <SearchResultPropertyCard
-                listing={listing}
-                translations={cardTranslations}
-              />
-            )}
+        {totalItems === 0 ? (
+          <li className="col-span-full py-12 text-center text-[var(--color-charcoal)]/80">
+            {t("noResults")}
           </li>
-        ))}
+        ) : (
+          listings.map((listing) => (
+            <li key={listing.id} className="min-h-0">
+              {view === "list" ? (
+                <SearchResultListCard
+                  listing={listing}
+                  translations={listCardTranslations}
+                />
+              ) : (
+                <SearchResultPropertyCard
+                  listing={listing}
+                  translations={cardTranslations}
+                />
+              )}
+            </li>
+          ))
+        )}
       </ul>
 
       {totalPages > 1 && (

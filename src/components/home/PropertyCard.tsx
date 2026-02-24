@@ -111,7 +111,7 @@ export function PropertyCard({
 
       {/* Invisible overlay link to make the whole card clickable */}
       <Link
-        href={`/${language}/property-details/${property.id}`}
+        href={`/${language}/property-details/${property.id}${property.badge === "Exclusive" ? "?exclusive=1" : ""}`}
         className="absolute inset-0 z-10"
         aria-label={`View details for ${property.title}`}
         target="_blank"

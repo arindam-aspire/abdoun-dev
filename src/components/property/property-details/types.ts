@@ -5,6 +5,8 @@ export interface DetailedProperty {
   badge: string;
   image: string;
   location: string;
+  /** Optional video URL (e.g. MP4) shown as first item in the hero gallery */
+  video?: string;
   price: string;
   beds: number;
   baths: number;
@@ -15,7 +17,13 @@ export interface DetailedProperty {
   description: string;
   amenities: string[];
   gallery?: string[];
+  /** Agent/broker name for contact modals */
+  brokerName?: string;
 }
+
+export type HeroMediaItem =
+  | { type: "image"; url: string }
+  | { type: "video"; url: string };
 
 export interface PropertyStat {
   label: string;

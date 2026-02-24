@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Property } from "./types";
 import type { FeaturedTranslations } from "./types";
@@ -143,12 +144,21 @@ export function FeaturedPropertiesSection({
             </h2>
           </div>
           <div className={`flex items-center gap-2 ${isRtl ? "flex-row-reverse" : ""}`}>
-            <button
-              type="button"
-              className="text-sm font-semibold text-[var(--brand-primary)] hover:text-[var(--brand-secondary)]"
-            >
-              {t.viewAll}
-            </button>
+            {t.viewAllHref != null ? (
+              <Link
+                href={t.viewAllHref}
+                className="text-sm font-semibold text-[var(--brand-primary)] hover:text-[var(--brand-secondary)]"
+              >
+                {t.viewAll}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className="text-sm font-semibold text-[var(--brand-primary)] hover:text-[var(--brand-secondary)]"
+              >
+                {t.viewAll}
+              </button>
+            )}
           </div>
         </div>
 

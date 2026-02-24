@@ -88,14 +88,20 @@ export function SearchResultListCard({
     return () => clearInterval(interval);
   }, [isHovered, totalImages]);
 
-  const detailsHref = `/${locale}/property-details/${listing.id}`;
+  const detailsHref =
+    `/${locale}/property-details/${listing.id}` +
+    (listing.exclusive || listing.badges?.includes("Exclusive") ? "?exclusive=1" : "");
   const linkProps = {
     target: "_blank" as const,
     rel: "noopener noreferrer",
   };
 
   const developerName = listing.brokerName ?? "";
-  const showVerified = listing.badges?.includes("Verified") ?? false;
+  const isExclusiveListing =
+    listing.exclusive === true || (Array.isArray(listing.badges) && listing.badges.includes("Exclusive"));
+  const showVerified =
+    Array.isArray(listing.badges) && listing.badges.includes("Verified");
+  const showExclusive = isExclusiveListing;
 
   return (
     <article
@@ -132,20 +138,25 @@ export function SearchResultListCard({
           )}
         </div>
 
-        {/* Verified badge (same as grid view) */}
-        {showVerified && (
-          <div
-            className={cn(
-              "absolute top-2 z-10",
-              isRtl ? "right-2" : "left-2",
-            )}
-          >
+        {/* Badges: Exclusive and/or Verified */}
+        <div
+          className={cn(
+            "absolute top-2 z-10 flex flex-wrap items-center gap-1.5",
+            isRtl ? "right-2" : "left-2",
+          )}
+        >
+          {showExclusive && (
+            <span className="inline-flex rounded-md bg-[var(--brand-accent)] px-2 py-1 text-[11px] font-semibold text-[var(--brand-secondary)] shadow-sm">
+              Exclusive
+            </span>
+          )}
+          {showVerified && (
             <span className="inline-flex items-center gap-1 rounded-md bg-black/60 px-2 py-1 text-[11px] font-medium text-white">
               <CheckCircle2 className="h-3 w-3 text-white" />
               Verified
             </span>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Favourite button (same as grid view) */}
         <FavouriteButton

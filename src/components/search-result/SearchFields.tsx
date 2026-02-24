@@ -483,6 +483,8 @@ export function SearchFields({
 
   const syncToUrl = useCallback(() => {
     const params = new URLSearchParams();
+    const exclusiveParam = searchParams.get("exclusive");
+    if (exclusiveParam === "1" || exclusiveParam === "true") params.set("exclusive", "1");
     params.set("status", status);
     params.set("category", category);
     if (propertyType) params.set("type", slugify(propertyType));
@@ -596,6 +598,9 @@ export function SearchFields({
     showElectricityNearbyAmenity,
     pathname,
     router,
+    // Intentionally omit searchParams: reading it inside to preserve exclusive=1.
+    // Including it caused syncToUrl to be recreated after router.replace, retriggering
+    // the effect and causing repeated navigations.
   ]);
 
   const isFirstMount = useRef(true);

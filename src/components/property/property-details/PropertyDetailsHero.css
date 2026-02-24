@@ -60,6 +60,86 @@
   cursor: pointer;
 }
 
+.property-details-hero .hero-slide__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  cursor: pointer;
+}
+
+.property-details-hero .hero-slide--video-wrap {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.property-details-hero .hero-slide--video-wrap:focus {
+  outline: 2px solid var(--brand-accent);
+  outline-offset: 2px;
+}
+
+/* Center play/pause overlay — does not block native controls (overlay has pointer-events: none; only button is clickable) */
+.property-details-hero .hero-video-play-center {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.property-details-hero .hero-video-play-center--visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.property-details-hero .hero-video-play-center--visible .hero-video-play-button {
+  pointer-events: auto;
+}
+
+.property-details-hero .hero-video-play-center--hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.property-details-hero .hero-video-play-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 50%;
+  padding: 0;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(0, 0, 0, 0.42);
+  transition: background 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.property-details-hero .hero-video-play-button:hover {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.property-details-hero .hero-video-play-button:active {
+  transform: scale(0.94);
+}
+
+@media (min-width: 768px) {
+  .property-details-hero .hero-video-play-button {
+    width: 62px;
+    height: 62px;
+  }
+}
+
 .property-details-hero .hero-gradient {
   position: absolute;
   pointer-events: none;
@@ -241,24 +321,6 @@
   .property-details-hero .hero-content__subtitle {
     font-size: 15px;
   }
-}
-
-.property-details-hero .hero-content__location {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 2px;
-  font-size: 12px;
-  color: rgba(241, 245, 249, 0.85);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
-}
-
-.property-details-hero .hero-content__location-icon {
-  width: 14px;
-  height: 14px;
-  color: var(--brand-accent);
-  flex-shrink: 0;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
 }
 
 .property-details-hero .hero-nav {
@@ -456,6 +518,27 @@
   transform: scale(1.06);
 }
 
+.property-details-hero .hero-thumb__play {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: inherit;
+}
+
+.property-details-hero .hero-thumb__play::after {
+  content: "";
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 14px 0 14px 24px;
+  border-color: transparent transparent transparent rgba(255, 255, 255, 0.95);
+  margin-left: 4px;
+}
+
 .property-details-hero .hero-mobile-strip {
   display: flex;
   gap: 10px;
@@ -500,6 +583,27 @@
   object-fit: cover;
 }
 
+.property-details-hero .hero-mobile-thumb__play {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: inherit;
+}
+
+.property-details-hero .hero-mobile-thumb__play::after {
+  content: "";
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 10px 0 10px 16px;
+  border-color: transparent transparent transparent rgba(255, 255, 255, 0.95);
+  margin-left: 2px;
+}
+
 @media (max-width: 767px) {
   .property-details-hero .hero-main {
     aspect-ratio: 4 / 3;
@@ -534,14 +638,6 @@
     -webkit-box-orient: vertical;
   }
 
-  .property-details-hero .hero-content__location {
-    font-size: 11px;
-    max-width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
   .property-details-hero .hero-nav {
     bottom: 12px;
     left: 16px;
@@ -555,6 +651,11 @@
   .property-details-hero.hero-section--rtl .hero-nav {
     left: 16px;
     right: 16px;
+  }
+
+  .property-details-hero .hero-video-play-button {
+    width: 48px;
+    height: 48px;
   }
 }
 
@@ -581,4 +682,5 @@
   .property-details-hero .hero-counter {
     font-size: 10px;
   }
+
 }

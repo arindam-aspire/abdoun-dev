@@ -2,12 +2,14 @@
 
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useRef, useEffect } from "react";
+import type { HeroMediaItem } from "./types";
 import "./PropertyDetailsImageModal.css";
 
 export interface PropertyDetailsImageModalProps {
   open: boolean;
   onClose: () => void;
-  images: string[];
+  media: HeroMediaItem[];
   activeIndex: number;
   onPrev: () => void;
   onNext: () => void;
@@ -18,14 +20,28 @@ export interface PropertyDetailsImageModalProps {
 export function PropertyDetailsImageModal({
   open,
   onClose,
-  images,
+  media,
   activeIndex,
   onPrev,
   onNext,
   title,
   isRtl = false,
 }: PropertyDetailsImageModalProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (!open || !videoRef.current) return;
+    const item = media[activeIndex];
+    if (item?.type === "video") {
+      videoRef.current.src = item.url;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [open, activeIndex, media]);
+
   if (!open) return null;
+
+  const activeItem = media[activeIndex];
+  if (!activeItem) return null;
 
   return (
     <div
@@ -53,24 +69,36 @@ export function PropertyDetailsImageModal({
         className="property-image-modal__stage"
         onClick={(e) => e.stopPropagation()}
       >
-        <Image
-          src={images[activeIndex]}
-          alt={`${title} full screen photo ${activeIndex + 1}`}
-          fill
-          unoptimized
-          quality={100}
-          sizes="100vw"
-          className="property-image-modal__img"
-          priority
-        />
+        {activeItem?.type === "video" ? (
+          <video
+            ref={videoRef}
+            src={activeItem.url}
+            className="property-image-modal__img property-image-modal__video"
+            controls
+            loop
+            playsInline
+            muted={false}
+          />
+        ) : (
+          <Image
+            src={activeItem?.url ?? ""}
+            alt={`${title} full screen photo ${activeIndex + 1}`}
+            fill
+            unoptimized
+            quality={100}
+            sizes="100vw"
+            className="property-image-modal__img"
+            priority
+          />
+        )}
 
-        {images.length > 1 && (
+        {media.length > 1 && (
           <>
             <button
               type="button"
               className="property-image-modal__arrow property-image-modal__arrow--prev"
               onClick={onPrev}
-              aria-label="Previous photo"
+              aria-label="Previous"
             >
               {isRtl ? (
                 <ChevronRight className="property-image-modal__arrow-icon" />
@@ -82,7 +110,7 @@ export function PropertyDetailsImageModal({
               type="button"
               className="property-image-modal__arrow property-image-modal__arrow--next"
               onClick={onNext}
-              aria-label="Next photo"
+              aria-label="Next"
             >
               {isRtl ? (
                 <ChevronLeft className="property-image-modal__arrow-icon" />

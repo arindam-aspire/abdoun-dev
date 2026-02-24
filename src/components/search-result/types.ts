@@ -128,4 +128,6 @@ export interface SearchResultListing {
   validatedDate?: string;
   brokerName: string;
   brokerLogo?: string;
+  /** When true, listing appears when search has ?exclusive=1 (exclusive-only view). */
+  exclusive?: boolean;
 }

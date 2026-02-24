@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { AppLocale } from "@/i18n/routing";
 import { PropertyDetailsHero } from "./PropertyDetailsHero";
 import { PropertyHighlights } from "./PropertyHighlights";
@@ -15,9 +16,11 @@ import type { PropertyDetailsTabKey } from "./PropertyDetailsTabBar";
 
 export interface PropertyDetailsMainProps {
   language: AppLocale;
+  /** Property ID from route (e.g. "1", "2"). Used to pick mock data. */
+  propertyId?: string;
 }
 
-const MOCK_DETAILED_PROPERTY: DetailedProperty = {
+const MOCK_DETAILED_PROPERTY_EXCLUSIVE: DetailedProperty = {
   id: 1,
   title: "The Azure Penthouse",
   subtitle: "Skyline-facing 4-bedroom penthouse with private terrace",
@@ -25,6 +28,7 @@ const MOCK_DETAILED_PROPERTY: DetailedProperty = {
   image:
     "https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=1800&auto=format&fit=crop",
   location: "Abdoun, Amman · West Amman skyline",
+  video: "/7578547-uhd_3840_2160_30fps.mp4",
   price: "1,250,000 JD",
   beds: 4,
   baths: 5,
@@ -48,15 +52,111 @@ const MOCK_DETAILED_PROPERTY: DetailedProperty = {
     "Lobby concierge & 24/7 security",
     "Proximity to international schools & embassies",
   ],
+  brokerName: "Abdoun Real Estate",
   gallery: [
     "https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=1800&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1613977257363-707ba9348227?q=80&w=1800&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1800&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1800&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1600566752355-35792bedcfea?q=80&w=1800&auto=format&fit=crop",
-    // "https://images.unsplash.com/photo-1616594039964-3f516d8e6ddb?q=80&w=1800&auto=format&fit=crop",
   ],
 };
+
+const MOCK_DETAILED_PROPERTY_STANDARD: DetailedProperty = {
+  id: 2,
+  title: "Sunrise Gardens Villa",
+  subtitle: "Family villa with garden and pool in a quiet compound",
+  badge: "For Sale",
+  image:
+    "https://images.unsplash.com/photo-1613977257363-707ba9348227?q=80&w=1800&auto=format&fit=crop",
+  location: "Dabouq, Amman",
+  video: "/7578547-uhd_3840_2160_30fps.mp4",
+  price: "685,000 JD",
+  beds: 5,
+  baths: 4,
+  area: "6,200",
+  orientation: "East",
+  floor: "Ground + 1",
+  status: "Ready to move",
+  description:
+    "A spacious family villa set in a gated compound with landscaped gardens and a private pool. Ideal for families seeking space and privacy, with a large living area, modern kitchen, and multiple terraces.",
+  amenities: [
+    "Private rooftop plunge pool",
+    "Dual living & dining lounges",
+    "Chef's show kitchen & prep kitchen",
+    "Panoramic floor-to-ceiling windows",
+    "Smart home climate & lighting",
+    "En-suite bedrooms with walk-in wardrobes",
+    "Private study / library corner",
+    "Dedicated maid's room with service entrance",
+    "Three allocated parking bays",
+    "Residents' indoor fitness studio",
+    "Lobby concierge & 24/7 security",
+    "Proximity to international schools & embassies",
+  ],
+  brokerName: "Abdoun Real Estate",
+  gallery: [
+    "https://images.unsplash.com/photo-1613977257363-707ba9348227?q=80&w=1800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1600566752355-35792bedcfea?q=80&w=1800&auto=format&fit=crop"
+  ],
+};
+
+const MOCK_DETAILED_PROPERTY_EXCLUSIVE_2: DetailedProperty = {
+  id: 3,
+  title: "Abdoun Skyline Residence",
+  subtitle: "Panoramic views and premium finish in Abdoun",
+  badge: "Exclusive",
+  image:
+    "https://images.unsplash.com/photo-1613977257363-707ba9348227?q=80&w=1800&auto=format&fit=crop",
+  location: "Abdoun, Amman",
+  video: "/7578547-uhd_3840_2160_30fps.mp4",
+  price: "2,100,000 JD",
+  beds: 4,
+  baths: 4,
+  area: "5,200",
+  orientation: "South",
+  floor: "High floor",
+  status: "Q2 2025",
+  description:
+    "An exclusive high-rise residence with panoramic Amman views, premium finishes, and direct access to Abdoun's best amenities. Ideal for investors and families seeking a turnkey luxury lifestyle.",
+  amenities: [
+    "Private rooftop plunge pool",
+    "Dual living & dining lounges",
+    "Chef's show kitchen & prep kitchen",
+    "Panoramic floor-to-ceiling windows",
+    "Smart home climate & lighting",
+    "En-suite bedrooms with walk-in wardrobes",
+    "Private study / library corner",
+    "Dedicated maid's room with service entrance",
+    "Three allocated parking bays",
+    "Residents' indoor fitness studio",
+    "Lobby concierge & 24/7 security",
+    "Proximity to international schools & embassies",
+  ],
+  brokerName: "Abdoun Real Estate",
+  gallery: [
+    "https://images.unsplash.com/photo-1613977257363-707ba9348227?q=80&w=1800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1600566752355-35792bedcfea?q=80&w=1800&auto=format&fit=crop"
+  ],
+};
+
+const MOCK_DETAILED_PROPERTIES: Record<string, DetailedProperty> = {
+  "1": MOCK_DETAILED_PROPERTY_EXCLUSIVE,
+  "2": MOCK_DETAILED_PROPERTY_STANDARD,
+  "3": MOCK_DETAILED_PROPERTY_EXCLUSIVE_2,
+};
+
+function getPropertyById(id: string): DetailedProperty {
+  const found = MOCK_DETAILED_PROPERTIES[id];
+  if (found) return found;
+  return MOCK_DETAILED_PROPERTY_STANDARD;
+}
 
 const MOCK_STATS: PropertyStat[] = [
   {
@@ -76,8 +176,19 @@ const MOCK_STATS: PropertyStat[] = [
   },
 ];
 
-export function PropertyDetailsMain({ language }: PropertyDetailsMainProps) {
+export function PropertyDetailsMain({ language, propertyId = "1" }: PropertyDetailsMainProps) {
+  const searchParams = useSearchParams();
   const isRtl = language === "ar";
+  const property = getPropertyById(propertyId);
+  const exclusiveFromUrl = searchParams.get("exclusive") === "1";
+  const isExclusiveByBadge = property.badge?.toLowerCase() === "exclusive";
+  const isExclusive = exclusiveFromUrl || isExclusiveByBadge;
+
+  const displayProperty =
+    exclusiveFromUrl && !isExclusiveByBadge
+      ? { ...property, badge: "Exclusive" as const, video: property.video ?? "/7578547-uhd_3840_2160_30fps.mp4" }
+      : property;
+
   const [activeTab, setActiveTab] = useState<PropertyDetailsTabKey>("overview");
 
   const overviewRef = useRef<HTMLElement | null>(null);
@@ -101,6 +212,9 @@ export function PropertyDetailsMain({ language }: PropertyDetailsMainProps) {
     }
   };
 
+  const displayTab: PropertyDetailsTabKey =
+    !isExclusive && activeTab === "location" ? "overview" : activeTab;
+
   return (
     <div
       className={`relative min-h-screen overflow-x-clip bg-gradient-to-b from-[var(--surface)] via-white to-[var(--surface)] text-[var(--color-charcoal)] ${
@@ -120,13 +234,14 @@ export function PropertyDetailsMain({ language }: PropertyDetailsMainProps) {
         className="pointer-events-none absolute bottom-0 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[var(--brand-accent)]/10 blur-3xl"
       />
 
-      <PropertyDetailsHero property={MOCK_DETAILED_PROPERTY} isRtl={isRtl} />
+      <PropertyDetailsHero property={displayProperty} isRtl={isRtl} />
 
       <main className="relative z-10 mx-auto container px-4 pb-14 md:px-8 md:pb-20">
         <PropertyDetailsTabBar
-          activeTab={activeTab}
+          activeTab={displayTab}
           onTabChange={handleTabChange}
           isRtl={isRtl}
+          showLocationTab={isExclusive}
         />
 
         <div
@@ -137,27 +252,35 @@ export function PropertyDetailsMain({ language }: PropertyDetailsMainProps) {
           <section className="space-y-6 md:space-y-7">
             <section ref={overviewRef} className="scroll-mt-36 md:scroll-mt-40">
               <PropertyHighlights
-                property={MOCK_DETAILED_PROPERTY}
+                property={displayProperty}
                 stats={MOCK_STATS}
               />
-              <PropertyOverview property={MOCK_DETAILED_PROPERTY} />
+              <PropertyOverview property={displayProperty} />
             </section>
 
             <section ref={amenitiesRef} className="scroll-mt-36 md:scroll-mt-40">
-              <PropertyAmenities amenities={MOCK_DETAILED_PROPERTY.amenities} />
+              <PropertyAmenities amenities={displayProperty.amenities} />
             </section>
 
-            <section ref={locationRef} className="scroll-mt-36 md:scroll-mt-40">
-              <PropertyNeighborhood />
-            </section>
+            {isExclusive && (
+              <section ref={locationRef} className="scroll-mt-36 md:scroll-mt-40">
+                <PropertyNeighborhood />
+              </section>
+            )}
           </section>
 
           <div
             ref={sidebarRef}
             className={`${isRtl ? "md:pl-0 md:pr-4" : "md:pl-4"} self-start md:sticky md:top-[124px]`}
           >
-            <PropertyDetailsPriceCard price={MOCK_DETAILED_PROPERTY.price} />
-            <PropertyInsightsSidebar />
+            <PropertyDetailsPriceCard price={displayProperty.price} />
+            <PropertyInsightsSidebar
+              listing={{
+                id: displayProperty.id,
+                title: displayProperty.title,
+                brokerName: displayProperty.brokerName ?? "Abdoun Real Estate",
+              }}
+            />
           </div>
         </div>
       </main>

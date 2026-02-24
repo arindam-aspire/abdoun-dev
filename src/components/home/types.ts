@@ -32,6 +32,8 @@ export interface FeaturedTranslations {
   title: string;
   subtitle: string;
   viewAll: string;
+  /** If set, "View all" is a link to this href (e.g. search results). */
+  viewAllHref?: string;
 }
 
 export type ServiceCardIcon = "home" | "trending-up" | "building";

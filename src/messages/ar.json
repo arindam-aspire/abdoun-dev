@@ -62,6 +62,7 @@
     "propertyTabs": {
       "overview": "نظرة عامة",
       "amenities": "المرافق",
+      "features": "المميزات",
       "location": "الموقع",
       "reviews": "التقييمات"
     },
@@ -179,6 +180,7 @@
     "filtersTitle": "فلاتر البحث",
     "propertiesInAmman": "عقارات في عمان.",
     "propertiesInLocation": "عقارات في {location}",
+    "exclusivePropertiesTitle": "عقارات حصرية",
     "resultsTitle": "النتائج",
     "rent": "إيجار",
     "buy": "شراء",
@@ -240,6 +242,7 @@
     "call": "اتصال",
     "validatedOn": "تم التحقق من صحة العقار في",
     "resultsCount": "إعلان",
+    "noResults": "لا توجد إعلانات تطابق بحثك.",
     "sortPopular": "الأكثر شيوعاً",
     "sortTruCheckFirst": "TruCheck™ أولاً",
     "sortNewest": "الأحدث",

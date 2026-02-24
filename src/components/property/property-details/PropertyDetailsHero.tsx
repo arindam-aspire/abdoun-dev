@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { PropertyDetailsImageModal } from "./PropertyDetailsImageModal";
-import type { DetailedProperty } from "./types";
+import type { DetailedProperty, HeroMediaItem } from "./types";
 import { FavouriteButton } from "@/components/favourites/FavouriteButton";
 import "./PropertyDetailsHero.css";
 
@@ -25,43 +25,87 @@ export function PropertyDetailsHero({
     [property.gallery, property.image],
   );
 
+  const mediaItems: HeroMediaItem[] = useMemo(() => {
+    const items: HeroMediaItem[] = [];
+    if (property.video) {
+      items.push({ type: "video", url: property.video });
+    }
+    galleryImages.forEach((url) => items.push({ type: "image", url }));
+    return items;
+  }, [property.video, galleryImages]);
+
+  /** When main shows video, gallery shows only images (no video thumb). Otherwise full media. */
+  const galleryThumbItems: HeroMediaItem[] = useMemo(
+    () =>
+      property.video
+        ? galleryImages.map((url) => ({ type: "image" as const, url }))
+        : mediaItems,
+    [property.video, galleryImages, mediaItems],
+  );
+
+  /** Index in mediaItems for the modal. When main is video, thumb index i = media index i+1. */
+  const mediaIndexForThumb = useCallback(
+    (thumbIndex: number) => (property.video ? thumbIndex + 1 : thumbIndex),
+    [property.video],
+  );
+
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const minSwipeDistance = 50;
 
+  const hasVideo = Boolean(property.video);
+  const showVideoInMain = hasVideo;
+
   const goToNext = useCallback(() => {
-    setActiveIndex((prev) => (prev + 1) % galleryImages.length);
-  }, [galleryImages.length]);
+    setActiveIndex((prev) => (prev + 1) % mediaItems.length);
+  }, [mediaItems.length]);
 
   const goToPrev = useCallback(() => {
     setActiveIndex(
-      (prev) => (prev - 1 + galleryImages.length) % galleryImages.length,
+      (prev) => (prev - 1 + mediaItems.length) % mediaItems.length,
     );
-  }, [galleryImages.length]);
+  }, [mediaItems.length]);
 
   const goToIndex = useCallback((index: number) => {
     setActiveIndex(index);
   }, []);
 
-  const openFullscreen = useCallback((index: number) => {
-    setActiveIndex(index);
-    setIsFullscreenOpen(true);
-    setIsAutoPlaying(false);
-  }, []);
+  const openFullscreen = useCallback(
+    (index: number) => {
+      setActiveIndex(index);
+      if (showVideoInMain && index === 0) {
+        return;
+      }
+      setIsFullscreenOpen(true);
+      setIsAutoPlaying(false);
+    },
+    [showVideoInMain],
+  );
 
   const closeFullscreen = useCallback(() => {
     setIsFullscreenOpen(false);
   }, []);
 
-  // Auto-play
+  const toggleVideoPlayPause = useCallback(() => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play().catch(() => {});
+    } else {
+      videoRef.current.pause();
+    }
+  }, []);
+
+  // Auto-play (only when main area is image carousel, not when it's the single video)
   useEffect(() => {
-    if (galleryImages.length <= 1 || !isAutoPlaying) return;
+    if (showVideoInMain || mediaItems.length <= 1 || !isAutoPlaying) return;
     const timer = window.setInterval(goToNext, 5000);
     return () => window.clearInterval(timer);
-  }, [galleryImages.length, isAutoPlaying, goToNext]);
+  }, [showVideoInMain, mediaItems.length, isAutoPlaying, goToNext]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -89,7 +133,7 @@ export function PropertyDetailsHero({
     };
   }, [isFullscreenOpen]);
 
-  // Touch / swipe
+  // Touch / swipe (only for image carousel, not when main is video)
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
@@ -97,7 +141,7 @@ export function PropertyDetailsHero({
   const onTouchMove = (e: React.TouchEvent) =>
     setTouchEnd(e.targetTouches[0].clientX);
   const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
+    if (showVideoInMain || !touchStart || !touchEnd) return;
     const d = touchStart - touchEnd;
     if (d > minSwipeDistance) {
       goToNext();
@@ -114,35 +158,76 @@ export function PropertyDetailsHero({
       dir={isRtl ? "rtl" : "ltr"}
     >
       <div className="hero-container container mx-auto px-4 md:px-8">
-        {/* ─── LEFT: Main image carousel ─── */}
+        {/* ─── LEFT: Main — video only when present, else image carousel ─── */}
         <div
-          className="hero-main"
+          className={`hero-main ${showVideoInMain ? "hero-main--video" : ""}`}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          {/* Images */}
-          {galleryImages.map((src, index) => {
-            const isActive = index === activeIndex;
-            return (
+          {showVideoInMain ? (
+            <div className="hero-slide hero-slide--active hero-slide--video-wrap">
+              <video
+                ref={videoRef}
+                src={property.video}
+                className="hero-slide__img hero-slide__video"
+                controls
+                loop
+                playsInline
+                muted={false}
+                preload="metadata"
+                aria-label={`${property.title} video`}
+                onPlay={() => setIsVideoPlaying(true)}
+                onPause={() => setIsVideoPlaying(false)}
+              />
+              {/* Center play/pause — same action as native controls */}
               <div
-                key={src + index}
-                className={`hero-slide ${isActive ? "hero-slide--active" : ""}`}
-                onClick={() => openFullscreen(index)}
+                className={`hero-video-play-center ${!isVideoPlaying ? "hero-video-play-center--visible" : "hero-video-play-center--hidden"}`}
+                aria-hidden="true"
               >
-                <Image
-                  src={src}
-                  alt={property.title}
-                  fill
-                  priority={index === 0}
-                  unoptimized
-                  quality={100}
-                  sizes="(min-width: 768px) 70vw, 100vw"
-                  className="hero-slide__img"
-                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleVideoPlayPause();
+                  }}
+                  className="hero-video-play-button"
+                  aria-label={isVideoPlaying ? "Pause video" : "Play video"}
+                >
+                  {isVideoPlaying ? (
+                    <Pause className="h-8 w-8 md:h-9 md:w-9" strokeWidth={2} />
+                  ) : (
+                    <Play className="h-8 w-8 md:h-9 md:w-9" strokeWidth={2} />
+                  )}
+                </button>
               </div>
-            );
-          })}
+            </div>
+          ) : (
+            <>
+              {/* Image carousel (no video case) */}
+              {mediaItems.map((item, index) => {
+                const isActive = index === activeIndex;
+                return (
+                  <div
+                    key={item.type + item.url + index}
+                    className={`hero-slide ${isActive ? "hero-slide--active" : ""}`}
+                    onClick={() => openFullscreen(index)}
+                  >
+                    <Image
+                      src={item.url}
+                      alt={property.title}
+                      fill
+                      priority={index === 0}
+                      unoptimized
+                      quality={100}
+                      sizes="(min-width: 768px) 70vw, 100vw"
+                      className="hero-slide__img"
+                    />
+                  </div>
+                );
+              })}
+            </>
+          )}
 
           {/* Soft gradient overlay — bottom-left only */}
           <div className="hero-gradient hero-gradient--left" />
@@ -170,18 +255,13 @@ export function PropertyDetailsHero({
             </p>
             <h1 className="hero-content__title">{property.title}</h1>
             <p className="hero-content__subtitle">{property.subtitle}</p>
-            <div className="hero-content__location">
-              <MapPin className="hero-content__location-icon" />
-              <span>{property.location}</span>
-            </div>
           </div>
 
-          {/* ─── Navigation (bottom-right) ─── */}
-          {galleryImages.length > 1 && (
+          {/* ─── Navigation (bottom-right) — only for image carousel ─── */}
+          {!showVideoInMain && mediaItems.length > 1 && (
             <div className="hero-nav">
-              {/* Dots */}
               <div className="hero-dots">
-                {galleryImages.map((_, i) => (
+                {mediaItems.map((_, i) => (
                   <button
                     key={i}
                     type="button"
@@ -195,12 +275,10 @@ export function PropertyDetailsHero({
                 ))}
               </div>
 
-              {/* Counter */}
               <span className="hero-counter">
-                {activeIndex + 1} / {galleryImages.length}
+                {activeIndex + 1} / {mediaItems.length}
               </span>
 
-              {/* Arrows */}
               <div className="hero-arrows">
                 <button
                   type="button"
@@ -237,51 +315,58 @@ export function PropertyDetailsHero({
           )}
         </div>
 
-        {/* ─── RIGHT: Scrollable thumbnails (scroll on hover when more than visible) ─── */}
-        {galleryImages.length > 1 && (
+        {/* ─── RIGHT: Scrollable thumbnails (images only when main is video) ─── */}
+        {galleryThumbItems.length > 0 && (
           <div className="hero-thumbs">
-            {galleryImages.map((src, idx) => (
-              <button
-                key={src + idx}
-                type="button"
-                data-thumb-index={idx}
-                onClick={() => {
-                  goToIndex(idx);
-                  openFullscreen(idx);
-                }}
-                className={`hero-thumb ${idx === activeIndex ? "hero-thumb--active" : ""}`}
-                aria-label={`View photo ${idx + 1}`}
-              >
-                <Image
-                  src={src}
-                  alt={`Property photo ${idx + 1}`}
-                  fill
-                  sizes="200px"
-                  className="hero-thumb__img"
-                  unoptimized
-                />
-              </button>
-            ))}
+            {galleryThumbItems.map((item, idx) => {
+              const mediaIndex = mediaIndexForThumb(idx);
+              return (
+                <button
+                  key={item.type + item.url + idx}
+                  type="button"
+                  data-thumb-index={idx}
+                  onClick={() => {
+                    goToIndex(mediaIndex);
+                    setIsFullscreenOpen(true);
+                    setIsAutoPlaying(false);
+                  }}
+                  className={`hero-thumb ${mediaIndex === activeIndex ? "hero-thumb--active" : ""}`}
+                  aria-label={`View photo ${idx + 1}`}
+                >
+                  <Image
+                    src={item.url}
+                    alt={`Property photo ${idx + 1}`}
+                    fill
+                    sizes="200px"
+                    className="hero-thumb__img"
+                    unoptimized
+                  />
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
 
       {/* ─── Mobile thumbnail strip ─── */}
-      {galleryImages.length > 1 && (
+      {galleryThumbItems.length > 0 && (
         <div className="hero-mobile-strip">
-          {galleryImages.map((src, index) => {
-            const isActive = index === activeIndex;
+          {galleryThumbItems.map((item, index) => {
+            const mediaIndex = mediaIndexForThumb(index);
+            const isActive = mediaIndex === activeIndex;
             return (
               <button
-                key={src + index}
+                key={item.type + item.url + index}
                 type="button"
                 onClick={() => {
-                  openFullscreen(index);
+                  goToIndex(mediaIndex);
+                  setIsFullscreenOpen(true);
+                  setIsAutoPlaying(false);
                 }}
                 className={`hero-mobile-thumb ${isActive ? "hero-mobile-thumb--active" : ""}`}
               >
                 <Image
-                  src={src}
+                  src={item.url}
                   alt={`Photo ${index + 1}`}
                   fill
                   sizes="80px"
@@ -297,7 +382,7 @@ export function PropertyDetailsHero({
       <PropertyDetailsImageModal
         open={isFullscreenOpen}
         onClose={closeFullscreen}
-        images={galleryImages}
+        media={mediaItems}
         activeIndex={activeIndex}
         onPrev={goToPrev}
         onNext={goToNext}

@@ -62,6 +62,7 @@
     "propertyTabs": {
       "overview": "Apercu",
       "amenities": "Equipements",
+      "features": "Caracteristiques",
       "location": "Localisation",
       "reviews": "Avis"
     },
@@ -179,6 +180,7 @@
     "filtersTitle": "Filtres de recherche",
     "propertiesInAmman": "Propriétés à Amman.",
     "propertiesInLocation": "Propriétés à {location}",
+    "exclusivePropertiesTitle": "Biens exclusifs",
     "resultsTitle": "Resultats",
     "rent": "Louer",
     "buy": "Acheter",
@@ -240,6 +242,7 @@
     "call": "Appeler",
     "validatedOn": "L'authenticité du bien a été validée le",
     "resultsCount": "annonces",
+    "noResults": "Aucune annonce ne correspond à votre recherche.",
     "sortPopular": "Populaire",
     "sortTruCheckFirst": "TruCheck™ en premier",
     "sortNewest": "Plus récent",

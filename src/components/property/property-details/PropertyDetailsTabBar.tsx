@@ -1,6 +1,6 @@
 "use client";
 
-import { Info, Map, Sparkles, Star } from "lucide-react";
+import { Info, Map, Sparkles } from "lucide-react";
 import { useTranslations } from "@/hooks/useTranslations";
 
 export type PropertyDetailsTabKey = "overview" | "amenities" | "location" | "reviews";
@@ -9,20 +9,24 @@ export interface PropertyDetailsTabBarProps {
   activeTab: PropertyDetailsTabKey;
   onTabChange: (tab: PropertyDetailsTabKey) => void;
   isRtl?: boolean;
+  /** When true, the Map/Location tab is shown (for exclusive properties). */
+  showLocationTab?: boolean;
 }
 
 export function PropertyDetailsTabBar({
   activeTab,
   onTabChange,
   isRtl = false,
+  showLocationTab = false,
 }: PropertyDetailsTabBarProps) {
   const t = useTranslations("home");
 
   const tabs: { key: PropertyDetailsTabKey; label: string; icon: React.ReactNode }[] = [
     { key: "overview", label: t("propertyTabs.overview"), icon: <Info className="h-3.5 w-3.5" /> },
-    { key: "amenities", label: t("propertyTabs.amenities"), icon: <Sparkles className="h-3.5 w-3.5" /> },
-    { key: "location", label: t("propertyTabs.location"), icon: <Map className="h-3.5 w-3.5" /> },
-    // { key: "reviews", label: t("propertyTabs.reviews"), icon: <Star className="h-3.5 w-3.5" /> },
+    { key: "amenities", label: t("propertyTabs.features"), icon: <Sparkles className="h-3.5 w-3.5" /> },
+    ...(showLocationTab
+      ? [{ key: "location" as const, label: t("propertyTabs.location"), icon: <Map className="h-3.5 w-3.5" /> }]
+      : []),
   ];
 
   return (

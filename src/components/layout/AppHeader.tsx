@@ -234,7 +234,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
             <button
               type="button"
               onClick={() => setIsAuthOpen(true)}
-              className="inline-flex h-8 items-center rounded-full border border-[var(--brand-accent)] bg-[var(--brand-accent)] px-3 text-[11px] font-semibold text-[var(--brand-secondary)] hover:brightness-95 md:h-9 md:px-4 md:text-xs cursor-pointer"
+              className="inline-flex h-8 items-center rounded-full text-[var(--brand-accent)] border border-[var(--brand-accent)] bg-transparent px-3 text-[11px] font-semibold transition-all duration-200 hover:bg-[var(--brand-accent)]/15 hover:border-yellow-300 md:h-9 md:px-4 md:text-xs cursor-pointer"
             >
               {tCommon("signUpSignIn")}
             </button>

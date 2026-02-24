@@ -54,6 +54,7 @@ export function HomeMain({ language }: HomeMainProps) {
     title: t("exclusiveTitle"),
     subtitle: t("exclusiveSubtitle"),
     viewAll: t("exclusiveViewAll"),
+    viewAllHref: `/${language}/search-result?exclusive=1`,
   };
 
   const latestTranslations = {

@@ -59,6 +59,16 @@
   object-position: center;
 }
 
+.property-image-modal__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  background: #000;
+}
+
 .property-image-modal__arrow {
   position: absolute;
   top: 50%;

@@ -20,7 +20,7 @@ export function PropertyDetailsPriceCard({ price }: PropertyDetailsPriceCardProp
           Available for immediate viewing
         </div>
       </div>
-      <div className="mt-4 flex w-full flex-col gap-2 px-4 md:px-5">
+      {/* <div className="mt-4 flex w-full flex-col gap-2 px-4 md:px-5">
         <button
           type="button"
           className="inline-flex items-center justify-center rounded-full bg-[var(--brand-accent)] px-4 py-2.5 text-xs font-semibold text-[var(--brand-on-accent)] shadow-sm hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-accent)]/50"
@@ -33,7 +33,7 @@ export function PropertyDetailsPriceCard({ price }: PropertyDetailsPriceCardProp
         >
           Download brochure
         </button>
-      </div>
+      </div> */}
       <div className="mt-4 grid grid-cols-2 gap-3 px-4 md:px-5">
         <div className="py-2 text-center">
           <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--color-charcoal)]/65">

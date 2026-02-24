@@ -16,6 +16,10 @@ function getPageTitle(
   t: (key: string, values?: Record<string, string>) => string,
   searchParams: URLSearchParams,
 ): string {
+  const exclusiveParam = searchParams.get("exclusive");
+  if (exclusiveParam === "1" || exclusiveParam === "true") {
+    return t("exclusivePropertiesTitle");
+  }
   const cityParam = searchParams.get("city")?.trim();
   const locationsParam = searchParams.get("locations");
   if (!cityParam && !locationsParam) {

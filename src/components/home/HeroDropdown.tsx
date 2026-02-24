@@ -64,7 +64,7 @@ export function HeroDropdown({
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: globalThis.MouseEvent) => {
       const target = event.target as Node;
       const inPanel = containerRef.current?.contains(target);
       const inAnchor = anchorRef?.current?.contains(target);
