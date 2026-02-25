@@ -10,6 +10,7 @@ import { AuthPopup } from "@/components/auth/AuthPopup";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { logout } from "@/features/auth/authSlice";
 import { clearProfileForUser } from "@/features/profile/profileSlice";
+import { clearAuthSession } from "@/lib/auth/sessionCookies";
 import { useLocale } from "next-intl";
 import { usePathname } from "next/navigation";
 import {
@@ -304,6 +305,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                       type="button"
                       onClick={() => {
                         dispatch(clearProfileForUser(user.id));
+                        clearAuthSession();
                         dispatch(logout());
                         setIsProfileOpen(false);
                       }}

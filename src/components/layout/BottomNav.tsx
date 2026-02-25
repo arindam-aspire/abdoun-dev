@@ -21,15 +21,16 @@ export function BottomNav() {
   const basePath = `/${locale}`;
 
   const items = [
-    { href: basePath, label: t("bottomNav.home"), icon: Home, match: () => pathname === basePath || pathname === `${basePath}/` },
-    { href: `${basePath}/list`, label: t("bottomNav.list"), icon: List, match: () => pathname.startsWith(`${basePath}/list`) },
-    { href: `${basePath}/lands`, label: t("bottomNav.lands"), icon: MapPin, match: () => pathname.startsWith(`${basePath}/lands`) },
-    { href: `${basePath}/team`, label: t("bottomNav.team"), icon: Users, match: () => pathname.startsWith(`${basePath}/team`) },
+    { key: "home", href: basePath, label: t("bottomNav.home"), icon: Home, match: () => pathname === basePath || pathname === `${basePath}/` },
+    { key: "list", href: `${basePath}/list`, label: t("bottomNav.list"), icon: List, match: () => pathname.startsWith(`${basePath}/list`) },
+    { key: "lands", href: `${basePath}/lands`, label: t("bottomNav.lands"), icon: MapPin, match: () => pathname.startsWith(`${basePath}/lands`) },
+    { key: "team", href: `${basePath}/team`, label: t("bottomNav.team"), icon: Users, match: () => pathname.startsWith(`${basePath}/team`) },
     {
-      href: auth.user ? `${basePath}/dashboard` : `${basePath}/login`,
+      key: "account",
+      href: auth.user ? `${basePath}/dashboard` : basePath,
       label: t("bottomNav.account"),
       icon: User,
-      match: () => pathname.startsWith(`${basePath}/dashboard`) || pathname.startsWith(`${basePath}/login`),
+      match: () => pathname.startsWith(`${basePath}/dashboard`),
     },
   ];
 
@@ -44,11 +45,11 @@ export function BottomNav() {
       }}
       dir={isRtl ? "rtl" : "ltr"}
     >
-      {items.map(({ href, label, icon: Icon, match }) => {
+      {items.map(({ key, href, label, icon: Icon, match }) => {
         const active = match();
         return (
           <Link
-            key={href}
+            key={key}
             href={href}
             className={`
               flex min-w-0 flex-1 flex-col items-center justify-center gap-1

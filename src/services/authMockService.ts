@@ -1,5 +1,11 @@
 export type SocialProvider = "google" | "apple" | "facebook";
 
+export const MOCK_ADMIN_CREDENTIALS = {
+  email: "admin@abdoun.com",
+  password: "Admin@123",
+  name: "Admin User",
+};
+
 export interface SignupPayload {
   fullName: string;
   email: string;
@@ -104,6 +110,30 @@ export async function mockManualLogin(identifier: string, password: string) {
   }
 
   return { success: true };
+}
+
+export async function mockAdminEmailPasswordLogin(
+  email: string,
+  password: string,
+) {
+  await delay(700);
+  const normalizedEmail = email.trim().toLowerCase();
+  const expectedEmail = MOCK_ADMIN_CREDENTIALS.email.toLowerCase();
+
+  if (
+    normalizedEmail !== expectedEmail ||
+    password !== MOCK_ADMIN_CREDENTIALS.password
+  ) {
+    throw new Error("Only admin can login with valid email and password.");
+  }
+
+  return {
+    id: "admin_001",
+    name: MOCK_ADMIN_CREDENTIALS.name,
+    email: MOCK_ADMIN_CREDENTIALS.email,
+    phone: "+962600000000",
+    role: "admin" as const,
+  };
 }
 
 export async function mockSendOneTimeLink(email: string) {

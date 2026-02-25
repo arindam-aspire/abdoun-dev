@@ -11,6 +11,7 @@ import { ProfileModal } from "@/components/profile/ProfileModal";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { logout } from "@/features/auth/authSlice";
 import { clearProfileForUser } from "@/features/profile/profileSlice";
+import { clearAuthSession } from "@/lib/auth/sessionCookies";
 
 interface SiteHeaderProps {
   language: AppLocale;
@@ -238,6 +239,7 @@ export function SiteHeader({ language }: SiteHeaderProps) {
                       type="button"
                       onClick={() => {
                         dispatch(clearProfileForUser(user.id));
+                        clearAuthSession();
                         dispatch(logout());
                         setIsProfileOpen(false);
                       }}

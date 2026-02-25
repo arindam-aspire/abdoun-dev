@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { X, ArrowLeft } from "lucide-react";
 import { DialogRoot } from "@/components/ui/dialog";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
@@ -16,7 +16,9 @@ import {
 } from "@/components/auth/popup-steps";
 import { useForgotPasswordFlow, useOtpTimer, useSignupFlow } from "@/hooks/useAuthForms";
 import { useTranslations } from "@/hooks/useTranslations";
+import { persistAuthSession } from "@/lib/auth/sessionCookies";
 import {
+  mockAdminEmailPasswordLogin,
   mockManualLogin,
   mockSendOneTimeCode,
   mockVerifyOneTimeCode,
@@ -44,6 +46,7 @@ function isEmailOrPhone(value: string) {
 
 export function AuthPopup({ open, locale, onClose }: AuthPopupProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const t = useTranslations("auth");
@@ -110,14 +113,15 @@ export function AuthPopup({ open, locale, onClose }: AuthPopupProps) {
   }, [onClose, open, user]);
 
   const completeAuth = (args?: { name?: string; email?: string; id?: string }) => {
-    dispatch(
-      login({
-        id: args?.id ?? `mock_${Date.now()}`,
-        name: args?.name ?? "Mock User",
-        email: args?.email ?? "mock.user@abdoun",
-        role: "user",
-      }),
-    );
+    const nextUser = {
+      id: args?.id ?? `mock_${Date.now()}`,
+      name: args?.name ?? "Mock User",
+      email: args?.email ?? "mock.user@abdoun",
+      role: "user" as const,
+    };
+
+    persistAuthSession(nextUser);
+    dispatch(login(nextUser));
     onClose();
   };
 
@@ -158,6 +162,22 @@ export function AuthPopup({ open, locale, onClose }: AuthPopupProps) {
     setLoading(true);
     setMessage(null);
     try {
+      if (trimmedIdentifier.includes("@")) {
+        try {
+          const adminUser = await mockAdminEmailPasswordLogin(
+            trimmedIdentifier,
+            password,
+          );
+          persistAuthSession(adminUser);
+          dispatch(login(adminUser));
+          onClose();
+          router.push(`/${locale}/dashboard`);
+          return;
+        } catch {
+          // Fall back to regular mock user login.
+        }
+      }
+
       await mockManualLogin(trimmedIdentifier, password);
       completeAuth({
         id: "manual_login",
