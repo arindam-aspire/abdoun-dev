@@ -91,7 +91,7 @@ export function LanguageSelect({
         label={
           <span className="flex items-center gap-2">
             <Globe className="h-4 w-4 text-slate-500 shrink-0" aria-hidden />
-            <span className="text-xs font-medium text-slate-700">
+            <span className="text-size-xs fw-medium text-slate-700">
               {options.find((opt) => opt.value === value)?.label}
             </span>
           </span>
@@ -104,3 +104,4 @@ export function LanguageSelect({
     </div>
   );
 }
+

@@ -76,7 +76,7 @@ export interface DialogTitleProps {
 export function DialogTitle({ children, className }: DialogTitleProps) {
   return (
     <Dialog.Title
-      className={cn("text-lg font-semibold leading-6 text-zinc-900", className)}
+      className={cn("text-size-lg fw-semibold leading-6 text-zinc-900", className)}
     >
       {children}
     </Dialog.Title>
@@ -94,7 +94,7 @@ export function DialogDescription({
 }: DialogDescriptionProps) {
   return (
     <Dialog.Description
-      className={cn("mt-2 text-sm text-zinc-500", className)}
+      className={cn("mt-2 text-size-sm text-zinc-500", className)}
     >
       {children}
     </Dialog.Description>
@@ -118,3 +118,4 @@ export function DialogFooter({ children, className }: DialogFooterProps) {
     </div>
   );
 }
+

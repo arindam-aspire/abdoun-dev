@@ -66,7 +66,7 @@ export function AuthPopupOneTimeCodeStep({
       ) : (
         <>
           {otcDebugOtp ? (
-            <p className="rounded bg-zinc-100 px-3 py-2 text-xs">
+            <p className="rounded bg-zinc-100 px-3 py-2 text-size-xs">
               Demo OTP: {otcDebugOtp}
             </p>
           ) : null}
@@ -85,3 +85,4 @@ export function AuthPopupOneTimeCodeStep({
     </div>
   );
 }
+

@@ -46,17 +46,17 @@ export function PropertyDetailsSimilarProperties() {
 
   return (
     <section
-      className="border-t border-[var(--border-subtle)] bg-[var(--surface)]/50 py-5 text-[var(--color-charcoal)] md:py-6"
+      className="border-t border-subtle bg-surface/50 py-5 text-charcoal md:py-6"
       aria-labelledby="similar-heading"
     >
       <div className="mb-4 flex items-center justify-between gap-2 px-4 md:px-5">
         <h2
           id="similar-heading"
-          className="text-sm font-semibold uppercase tracking-wider text-[var(--color-charcoal)]/80"
+          className="text-size-sm fw-semibold uppercase tracking-wider text-charcoal/80"
         >
           Similar properties
         </h2>
-        <span className="text-xs text-[var(--color-charcoal)]/65">Curated for you</span>
+        <span className="text-size-xs text-charcoal/65">Curated for you</span>
       </div>
 
       <div className="px-4 md:px-5">
@@ -69,25 +69,37 @@ export function PropertyDetailsSimilarProperties() {
 
       <div className="mt-3 flex items-center justify-between gap-2 px-4 md:px-5">
         <div
-          className={`flex items-center gap-1 text-[11px] text-[var(--color-charcoal)]/70 ${
+          className={`flex items-center gap-1 text-size-11 text-charcoal/70 ${
             isRtl ? "flex-row-reverse" : ""
           }`}
         >
           <button
             type="button"
             onClick={() => goTo(activeSimilar - 1)}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--brand-secondary)] text-[var(--brand-on-primary)] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-secondary)] focus-visible:ring-offset-2"
-            aria-label={isRtl ? "Next similar property" : "Previous similar property"}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-on-primary hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
+            aria-label={
+              isRtl ? "Next similar property" : "Previous similar property"
+            }
           >
-            {isRtl ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+            {isRtl ? (
+              <ChevronRight className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronLeft className="h-3.5 w-3.5" />
+            )}
           </button>
           <button
             type="button"
             onClick={() => goTo(activeSimilar + 1)}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--brand-secondary)] text-[var(--brand-on-primary)] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-secondary)] focus-visible:ring-offset-2"
-            aria-label={isRtl ? "Previous similar property" : "Next similar property"}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-on-primary hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
+            aria-label={
+              isRtl ? "Previous similar property" : "Next similar property"
+            }
           >
-            {isRtl ? <ChevronLeft className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+            {isRtl ? (
+              <ChevronLeft className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5" />
+            )}
           </button>
           <span className={isRtl ? "mr-1" : "ml-1"}>
             {activeSimilar + 1} / {total}
@@ -102,8 +114,8 @@ export function PropertyDetailsSimilarProperties() {
               onClick={() => setActiveSimilar(index)}
               className={`h-1.5 rounded-full transition ${
                 index === activeSimilar
-                  ? "w-5 bg-[var(--brand-secondary)]"
-                  : "w-3 bg-[var(--border-subtle)] hover:opacity-80"
+                  ? "w-5 bg-secondary"
+                  : "w-3 bg-border-subtle hover:opacity-80"
               }`}
               aria-label={`Go to similar property ${index + 1}`}
             />
@@ -113,3 +125,5 @@ export function PropertyDetailsSimilarProperties() {
     </section>
   );
 }
+
+

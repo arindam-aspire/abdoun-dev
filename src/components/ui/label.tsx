@@ -15,7 +15,7 @@ export function Label({
   return (
     <label
       className={cn(
-        "text-sm font-medium text-zinc-700 leading-none peer-disabled:opacity-70 peer-disabled:cursor-not-allowed",
+        "text-size-sm fw-medium text-zinc-700 leading-none peer-disabled:opacity-70 peer-disabled:cursor-not-allowed",
         className,
       )}
       {...rest}
@@ -25,3 +25,4 @@ export function Label({
     </label>
   );
 }
+

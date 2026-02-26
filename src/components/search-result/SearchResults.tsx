@@ -397,7 +397,7 @@ export function SearchResults({ resultsTitle }: SearchResultsProps) {
       </ul>
 
       {totalPages > 1 && (
-        <div className="mt-8 border-t border-[var(--border-subtle)] pt-6">
+        <div className="mt-8 border-t border-subtle pt-6">
           <Pagination
             currentPage={page}
             totalPages={totalPages}
@@ -419,3 +419,5 @@ export function SearchResults({ resultsTitle }: SearchResultsProps) {
     </section>
   );
 }
+
+

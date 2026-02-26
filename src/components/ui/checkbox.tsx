@@ -28,7 +28,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           {...rest}
         />
         {error && (
-          <p id="checkbox-error" className="text-sm text-red-600" role="alert">
+          <p id="checkbox-error" className="text-size-sm text-red-600" role="alert">
             {error}
           </p>
         )}
@@ -40,3 +40,4 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
 Checkbox.displayName = "Checkbox";
 
 export { Checkbox };
+

@@ -64,7 +64,7 @@ export function BudgetRangeInputs({
     if (activeField !== field) return null;
 
     return (
-      <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-[var(--border-subtle)] bg-white py-1 text-xs shadow-lg">
+      <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-subtle bg-white py-1 text-size-xs shadow-lg">
         {filteredSuggestions.map((value) => {
           const label = new Intl.NumberFormat("en-US").format(Number(value));
           const isSelected = currentValue === value;
@@ -74,8 +74,8 @@ export function BudgetRangeInputs({
               type="button"
               className={`flex w-full cursor-pointer items-center justify-between px-3 py-1.5 text-left transition ${
                 isSelected
-                  ? "bg-[var(--surface)] text-[var(--brand-secondary)]"
-                  : "text-[var(--color-charcoal)] hover:bg-[var(--surface)]"
+                  ? "bg-surface text-secondary"
+                  : "text-charcoal hover:bg-surface"
               }`}
               onClick={() => {
                 if (field === "min") {
@@ -88,7 +88,7 @@ export function BudgetRangeInputs({
             >
               <span>{label}</span>
               {/* {isSelected && (
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--brand-primary)]">
+                <span className="text-size-2xs fw-semibold uppercase tracking-wide text-primary">
                   Selected
                 </span>
               )} */}
@@ -101,15 +101,12 @@ export function BudgetRangeInputs({
 
   return (
     <div
-      className="min-w-[260px] w-full max-w-[min(320px,calc(100vw-2rem))] rounded-2xl border border-[var(--border-subtle)] bg-white p-3 text-xs shadow-xl ring-1 ring-black/5"
+      className="min-w-[260px] w-full max-w-[min(320px,calc(100vw-2rem))] rounded-2xl border border-subtle bg-white p-3 text-xs shadow-xl ring-1 ring-black/5"
       onClick={() => setActiveField(null)}
     >
       <div className="mb-3 grid grid-cols-2 gap-3">
-        <div
-          className="relative"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[rgba(51,51,51,0.7)]">
+        <div className="relative" onClick={(event) => event.stopPropagation()}>
+          <div className="mb-1 text-size-2xs fw-semibold uppercase tracking-[0.16em] text-[rgba(51,51,51,0.7)]">
             {minLabel}
           </div>
           <input
@@ -121,15 +118,12 @@ export function BudgetRangeInputs({
               setActiveField("min");
             }}
             placeholder="0"
-            className="h-9 w-full rounded-xl border border-[var(--border-subtle)] px-2 text-xs text-[var(--color-charcoal)] outline-none ring-0 placeholder:text-[rgba(51,51,51,0.45)] focus:border-[var(--brand-primary)] focus:ring-1 focus:ring-[rgba(26,59,92,0.2)]"
+            className="h-9 w-full rounded-xl border border-subtle px-2 text-size-xs text-charcoal outline-none ring-0 placeholder:text-[rgba(51,51,51,0.45)] focus:border-primary focus:ring-1 focus:ring-[rgba(26,59,92,0.2)]"
           />
           {renderSuggestions("min")}
         </div>
-        <div
-          className="relative"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[rgba(51,51,51,0.7)]">
+        <div className="relative" onClick={(event) => event.stopPropagation()}>
+          <div className="mb-1 text-size-2xs fw-semibold uppercase tracking-[0.16em] text-[rgba(51,51,51,0.7)]">
             {maxLabel}
           </div>
           <input
@@ -141,7 +135,7 @@ export function BudgetRangeInputs({
               setActiveField("max");
             }}
             placeholder={maxPlaceholder}
-            className="h-9 w-full rounded-xl border border-[var(--border-subtle)] px-2 text-xs text-[var(--color-charcoal)] outline-none ring-0 placeholder:text-[rgba(51,51,51,0.45)] focus:border-[var(--brand-primary)] focus:ring-1 focus:ring-[rgba(26,59,92,0.2)]"
+            className="h-9 w-full rounded-xl border border-subtle px-2 text-size-xs text-charcoal outline-none ring-0 placeholder:text-[rgba(51,51,51,0.45)] focus:border-primary focus:ring-1 focus:ring-[rgba(26,59,92,0.2)]"
           />
           {renderSuggestions("max")}
         </div>
@@ -150,7 +144,7 @@ export function BudgetRangeInputs({
       <div className="mt-3 flex items-center justify-between gap-3">
         <button
           type="button"
-          className="inline-flex cursor-pointer items-center rounded-full border border-[var(--border-subtle)] bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--brand-secondary)] shadow-sm hover:bg-[var(--surface)]"
+          className="inline-flex cursor-pointer items-center rounded-full border border-subtle bg-white px-3 py-1.5 text-size-11 fw-semibold uppercase tracking-[0.16em] text-secondary shadow-sm hover:bg-surface"
           onClick={(event) => {
             event.stopPropagation();
             onReset();
@@ -161,7 +155,7 @@ export function BudgetRangeInputs({
         </button>
         <button
           type="button"
-          className="inline-flex cursor-pointer items-center rounded-full bg-[var(--brand-accent)] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--brand-secondary)] shadow-sm hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(253,185,19,0.45)]"
+          className="inline-flex cursor-pointer items-center rounded-full bg-accent px-4 py-1.5 text-size-11 fw-semibold uppercase tracking-[0.16em] text-secondary shadow-sm hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(253,185,19,0.45)]"
           onClick={(event) => {
             event.stopPropagation();
             onDone();
@@ -174,4 +168,6 @@ export function BudgetRangeInputs({
     </div>
   );
 }
+
+
 

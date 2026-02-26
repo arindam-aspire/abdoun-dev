@@ -106,7 +106,7 @@ export function SearchResultListCard({
   return (
     <article
       className={cn(
-        "group flex overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-white shadow-sm transition hover:shadow-md",
+        "group flex overflow-hidden rounded-xl border border-subtle bg-white shadow-sm transition hover:shadow-md",
         "min-h-0 flex-col md:flex-row",
       )}
       dir={isRtl ? "rtl" : "ltr"}
@@ -118,7 +118,7 @@ export function SearchResultListCard({
         href={detailsHref}
         {...linkProps}
         className={cn(
-          "relative flex-shrink-0 overflow-hidden bg-[var(--color-charcoal)]/5",
+          "relative flex-shrink-0 overflow-hidden bg-charcoal-5",
           "w-full md:w-[min(50%,420px)]",
           "aspect-[4/3] md:min-h-[220px] md:aspect-[4/3]",
           "rounded-t-xl md:rounded-t-none",
@@ -146,12 +146,12 @@ export function SearchResultListCard({
           )}
         >
           {showExclusive && (
-            <span className="inline-flex rounded-md bg-[var(--brand-accent)] px-2 py-1 text-[11px] font-semibold text-[var(--brand-secondary)] shadow-sm">
+            <span className="inline-flex rounded-md bg-accent px-2 py-1 text-size-11 fw-semibold text-secondary shadow-sm">
               Exclusive
             </span>
           )}
           {showVerified && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-black/60 px-2 py-1 text-[11px] font-medium text-white">
+            <span className="inline-flex items-center gap-1 rounded-md bg-black/60 px-2 py-1 text-size-11 fw-medium text-white">
               <CheckCircle2 className="h-3 w-3 text-white" />
               Verified
             </span>
@@ -162,7 +162,7 @@ export function SearchResultListCard({
         <FavouriteButton
           propertyId={listing.id}
           className={cn(
-            "absolute top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[var(--color-charcoal)] shadow-sm ring-1 ring-[var(--border-subtle)] hover:bg-white hover:text-red-500",
+            "absolute top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-charcoal shadow-sm ring-1 ring-subtle hover:bg-white hover:text-red-500",
             isRtl ? "left-2" : "right-2",
           )}
           iconClassName="h-5 w-5"
@@ -174,7 +174,7 @@ export function SearchResultListCard({
               type="button"
               onClick={goPrev}
               className={cn(
-                "absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-[var(--color-charcoal)] shadow-sm ring-1 ring-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:bg-white",
+                "absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-charcoal shadow-sm ring-1 ring-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:bg-white",
                 isRtl && "left-auto right-2",
               )}
               aria-label="Previous image"
@@ -185,7 +185,7 @@ export function SearchResultListCard({
               type="button"
               onClick={goNext}
               className={cn(
-                "absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-[var(--color-charcoal)] shadow-sm ring-1 ring-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:bg-white",
+                "absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-charcoal shadow-sm ring-1 ring-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:bg-white",
                 isRtl && "right-auto left-2",
               )}
               aria-label="Next image"
@@ -220,7 +220,7 @@ export function SearchResultListCard({
         {/* Broker name on image (subtle, same as grid) */}
         <div
           className={cn(
-            "absolute bottom-8 left-1/2 z-0 -translate-x-1/2 text-[10px] font-medium text-white/70",
+            "absolute bottom-8 left-1/2 z-0 -translate-x-1/2 text-size-2xs fw-medium text-white/70",
             isRtl && "translate-x-1/2",
           )}
         >
@@ -239,14 +239,14 @@ export function SearchResultListCard({
           <Link
             href={detailsHref}
             {...linkProps}
-            className="block outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 rounded-lg -m-1 p-1"
+            className="block outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg -m-1 p-1"
             aria-label={`View details for ${listing.title}`}
           >
-            <h3 className="text-xl font-bold leading-tight text-[var(--color-charcoal)]">
+            <h3 className="text-size-xl fw-bold leading-tight text-charcoal">
               {listing.title}
             </h3>
             {developerName && (
-              <p className="mt-0.5 text-sm text-[var(--color-charcoal)]/80">
+              <p className="mt-0.5 text-size-sm text-charcoal/80">
                 {t.byDeveloper(developerName)}
               </p>
             )}
@@ -259,23 +259,23 @@ export function SearchResultListCard({
               isRtl && "flex-row-reverse justify-end",
             )}
           >
-            <div className="rounded-lg bg-[var(--color-charcoal)]/5 px-3 py-2 min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-charcoal)]/60">
+            <div className="rounded-lg bg-charcoal-5 px-3 py-2 min-w-0">
+              <p className="text-size-2xs fw-semibold uppercase tracking-wider text-charcoal/60">
                 {t.launchPrice}
               </p>
-              <p className="text-sm font-bold text-[var(--color-charcoal)]">
+              <p className="text-size-sm fw-bold text-charcoal">
                 {listing.price}
               </p>
             </div>
             {listing.paymentPlan && (
-              <div className="rounded-lg bg-[var(--color-charcoal)]/5 px-3 py-2 min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-charcoal)]/60">
+              <div className="rounded-lg bg-charcoal-5 px-3 py-2 min-w-0">
+                <p className="text-size-2xs fw-semibold uppercase tracking-wider text-charcoal/60">
                   {t.paymentPlan}
                 </p>
-                <p className="flex items-center gap-1 text-sm font-bold text-[var(--color-charcoal)]">
+                <p className="flex items-center gap-1 text-size-sm fw-bold text-charcoal">
                   <span>{listing.paymentPlan}</span>
                   <span
-                    className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-charcoal)]/20 text-[var(--color-charcoal)]"
+                    className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-charcoal-20 text-charcoal"
                     title={t.paymentPlanInfo}
                     aria-label={t.paymentPlanInfo}
                   >
@@ -285,24 +285,24 @@ export function SearchResultListCard({
               </div>
             )}
             {listing.handover && (
-              <div className="rounded-lg bg-[var(--color-charcoal)]/5 px-3 py-2 min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-charcoal)]/60">
+              <div className="rounded-lg bg-charcoal-5 px-3 py-2 min-w-0">
+                <p className="text-size-2xs fw-semibold uppercase tracking-wider text-charcoal/60">
                   {t.handover}
                 </p>
-                <p className="text-sm font-bold text-[var(--color-charcoal)]">
+                <p className="text-size-sm fw-bold text-charcoal">
                   {listing.handover}
                 </p>
               </div>
             )}
           </div>
 
-          <p className="mt-2 text-sm text-[var(--color-charcoal)]">
+          <p className="mt-2 text-size-sm text-charcoal">
             {listing.searchPropertyType ?? listing.propertyType}
           </p>
 
           {/* Area (sqft or acres) */}
           {(listing.area || listing.acres) && (
-            <p className="mt-0.5 text-sm text-[var(--color-charcoal)]/80">
+            <p className="mt-0.5 text-size-sm text-charcoal/80">
               {listing.acres
                 ? `${listing.acres} acres`
                 : `${listing.area} sqft`}
@@ -311,12 +311,12 @@ export function SearchResultListCard({
 
           <div
             className={cn(
-              "mt-1 flex items-start gap-1.5 text-sm text-[var(--color-charcoal)]/90",
+              "mt-1 flex items-start gap-1.5 text-size-sm text-charcoal/90",
               isRtl && "flex-row-reverse justify-end",
             )}
           >
             <MapPin
-              className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand-primary)]"
+              className="mt-0.5 h-4 w-4 shrink-0 text-primary"
               aria-hidden
             />
             <span className="line-clamp-2">{listing.location}</span>
@@ -326,7 +326,7 @@ export function SearchResultListCard({
         {/* Bottom row: Call, Email, WhatsApp (same as grid) + Developer branding */}
         <div
           className={cn(
-            "mt-4 flex flex-col gap-3 border-t border-[var(--border-subtle)] pt-4",
+            "mt-4 flex flex-col gap-3 border-t border-subtle pt-4",
             isRtl && "items-end",
           )}
         >
@@ -342,7 +342,7 @@ export function SearchResultListCard({
                 e.preventDefault();
                 setEmailModalOpen(true);
               }}
-              className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center gap-1 rounded-md bg-[var(--brand-secondary)]/12 px-1.5 text-[11px] font-semibold text-[var(--brand-secondary)] hover:bg-[var(--brand-secondary)]/18"
+              className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center gap-1 rounded-md bg-secondary/12 px-1.5 text-size-11 fw-semibold text-secondary hover:bg-secondary/18"
             >
               <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden />
               <span className="truncate">{t.email}</span>
@@ -353,7 +353,7 @@ export function SearchResultListCard({
                 e.preventDefault();
                 setContactModalOpen(true);
               }}
-              className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center gap-1 rounded-md bg-[var(--brand-secondary)]/12 px-1.5 text-[11px] font-semibold text-[var(--brand-secondary)] hover:bg-[var(--brand-secondary)]/18"
+              className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center gap-1 rounded-md bg-secondary/12 px-1.5 text-size-11 fw-semibold text-secondary hover:bg-secondary/18"
             >
               <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden />
               <span className="truncate">{t.call}</span>
@@ -364,7 +364,7 @@ export function SearchResultListCard({
                 e.preventDefault();
                 setWhatsappModalOpen(true);
               }}
-              className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center gap-1 rounded-md bg-[var(--brand-secondary)]/12 text-[var(--brand-secondary)] hover:bg-[var(--brand-secondary)]/18"
+              className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center gap-1 rounded-md bg-secondary/12 text-secondary hover:bg-secondary/18"
               aria-label={t.whatsapp}
             >
               <WhatsAppIcon className="h-4 w-4 shrink-0" aria-hidden />
@@ -373,7 +373,7 @@ export function SearchResultListCard({
           {developerName && (
             <div
               className={cn(
-                "rounded-lg bg-[var(--color-charcoal)]/8 px-3 py-2 text-sm font-medium text-[var(--color-charcoal)]",
+                "rounded-lg bg-charcoal-8 px-3 py-2 text-size-sm fw-medium text-charcoal",
                 isRtl && "mr-0",
               )}
             >
@@ -445,3 +445,6 @@ export function SearchResultListCard({
     </article>
   );
 }
+
+
+

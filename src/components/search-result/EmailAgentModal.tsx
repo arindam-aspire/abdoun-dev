@@ -72,14 +72,14 @@ export function EmailAgentModal({
     >
       <div dir={isRtl ? "rtl" : "ltr"} className="text-left">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 pt-5 pb-4">
-          <h2 className="text-lg font-bold text-[var(--color-charcoal)]">
+        <div className="flex items-center justify-between border-b border-subtle px-5 pt-5 pb-4">
+          <h2 className="text-size-lg fw-bold text-charcoal">
             {t.title}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-charcoal)]/60 hover:bg-black/5 hover:text-[var(--color-charcoal)]"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-charcoal/60 hover:bg-black/5 hover:text-charcoal"
             aria-label="Close"
           >
             <X className="h-5 w-5" aria-hidden />
@@ -88,7 +88,7 @@ export function EmailAgentModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="px-5 py-4">
-          <label className="mb-1.5 block text-sm font-medium text-[var(--color-charcoal)]">
+          <label className="mb-1.5 block text-size-sm fw-medium text-charcoal">
             {t.enterName} *
           </label>
           <Input
@@ -96,11 +96,11 @@ export function EmailAgentModal({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={t.enterName}
-            className="mb-4 border-[var(--border-subtle)]"
+            className="mb-4 border-subtle"
             required
           />
 
-          <label className="mb-1.5 block text-sm font-medium text-[var(--color-charcoal)]">
+          <label className="mb-1.5 block text-size-sm fw-medium text-charcoal">
             {t.enterEmail} *
           </label>
           <Input
@@ -108,20 +108,20 @@ export function EmailAgentModal({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder={t.enterEmail}
-            className="mb-4 border-[var(--border-subtle)]"
+            className="mb-4 border-subtle"
             required
           />
 
-          <label className="mb-1.5 block text-sm font-medium text-[var(--color-charcoal)]">
+          <label className="mb-1.5 block text-size-sm fw-medium text-charcoal">
             {t.phone}
           </label>
           <div
             className={cn(
-              "mb-4 flex overflow-hidden rounded-md border border-[var(--border-subtle)]",
+              "mb-4 flex overflow-hidden rounded-md border border-subtle",
               isRtl && "flex-row-reverse",
             )}
           >
-            <span className="flex items-center border-[var(--border-subtle)] bg-[var(--surface)] px-3 text-sm text-[var(--color-charcoal)]/80 [border-inline-end-width:1px]">
+            <span className="flex items-center border-subtle bg-surface px-3 text-size-sm text-charcoal/80 [border-inline-end-width:1px]">
               +962
             </span>
             <input
@@ -129,18 +129,18 @@ export function EmailAgentModal({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder=""
-              className="flex flex-1 border-0 bg-white px-3 py-2 text-sm text-[var(--color-charcoal)] outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-inset"
+              className="flex flex-1 border-0 bg-white px-3 py-2 text-size-sm text-charcoal outline-none focus:ring-2 focus:ring-primary focus:ring-inset"
             />
           </div>
 
-          <label className="mb-1.5 block text-sm font-medium text-[var(--color-charcoal)]">
+          <label className="mb-1.5 block text-size-sm fw-medium text-charcoal">
             {t.messageLabel}
           </label>
           <Textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder={defaultMessage}
-            className="mb-4 min-h-[100px] border-[var(--border-subtle)]"
+            className="mb-4 min-h-[100px] border-subtle"
             rows={4}
           />
 
@@ -155,14 +155,14 @@ export function EmailAgentModal({
               onChange={(e) => setKeepInformed(e.target.checked)}
               className="mt-0.5 shrink-0"
             />
-            <span className="text-sm text-[var(--color-charcoal)]/80">
+            <span className="text-size-sm text-charcoal/80">
               {t.keepMeInformed}
             </span>
           </label>
 
           <button
             type="submit"
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--brand-secondary)] py-3 text-sm font-semibold text-white hover:brightness-95"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-secondary py-3 text-size-sm fw-semibold text-white hover:brightness-95"
           >
             <Mail className="h-5 w-5 shrink-0" aria-hidden />
             {t.sendEmail}
@@ -172,3 +172,5 @@ export function EmailAgentModal({
     </DialogRoot>
   );
 }
+
+

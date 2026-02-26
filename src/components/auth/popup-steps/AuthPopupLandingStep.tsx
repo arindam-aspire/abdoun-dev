@@ -59,7 +59,7 @@ export function AuthPopupLandingStep({
         {t("loginWithApple")}
       </Button>
 
-      <div className="py-1 text-center text-md text-zinc-700 sm:text-md">
+      <div className="py-1 text-center text-size-base text-zinc-700 sm:text-size-base">
         {t("or")}
       </div>
 
@@ -86,7 +86,7 @@ export function AuthPopupLandingStep({
 
       <button
         type="button"
-        className="mt-2 w-full cursor-pointer text-center text-md font-semibold text-sky-800 hover:text-sky-900 sm:mt-4 sm:text-md"
+        className="mt-2 w-full cursor-pointer text-center text-size-base fw-semibold text-sky-800 hover:text-sky-900 sm:mt-4 sm:text-size-base"
         onClick={onGoSignup}
       >
         {t("newHereCreate")}
@@ -94,3 +94,5 @@ export function AuthPopupLandingStep({
     </div>
   );
 }
+
+

@@ -41,7 +41,7 @@ export interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> {
 export function CardTitle({ className, children, ...rest }: CardTitleProps) {
   return (
     <h3
-      className={cn("text-lg font-semibold leading-none tracking-tight", className)}
+      className={cn("text-size-lg fw-semibold leading-none tracking-tight", className)}
       {...rest}
     >
       {children}
@@ -59,7 +59,7 @@ export function CardDescription({
   ...rest
 }: CardDescriptionProps) {
   return (
-    <p className={cn("text-sm text-zinc-500", className)} {...rest}>
+    <p className={cn("text-size-sm text-zinc-500", className)} {...rest}>
       {children}
     </p>
   );
@@ -87,3 +87,4 @@ export function CardFooter({ className, children, ...rest }: CardFooterProps) {
     </div>
   );
 }
+

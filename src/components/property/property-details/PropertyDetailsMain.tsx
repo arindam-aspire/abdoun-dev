@@ -60,6 +60,7 @@ const MOCK_DETAILED_PROPERTY_EXCLUSIVE: DetailedProperty = {
     "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1800&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1600566752355-35792bedcfea?q=80&w=1800&auto=format&fit=crop",
   ],
+  propertyType: "Penthouse",
 };
 
 const MOCK_DETAILED_PROPERTY_STANDARD: DetailedProperty = {
@@ -102,6 +103,7 @@ const MOCK_DETAILED_PROPERTY_STANDARD: DetailedProperty = {
     "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1800&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1600566752355-35792bedcfea?q=80&w=1800&auto=format&fit=crop"
   ],
+  propertyType: "Penthouse",
 };
 
 const MOCK_DETAILED_PROPERTY_EXCLUSIVE_2: DetailedProperty = {
@@ -142,8 +144,9 @@ const MOCK_DETAILED_PROPERTY_EXCLUSIVE_2: DetailedProperty = {
     "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1800&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1800&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1800&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1600566752355-35792bedcfea?q=80&w=1800&auto=format&fit=crop"
+    "https://images.unsplash.com/photo-1600566752355-35792bedcfea?q=80&w=1800&auto=format&fit=crop",
   ],
+  propertyType: "Penthouse",
 };
 
 const MOCK_DETAILED_PROPERTIES: Record<string, DetailedProperty> = {
@@ -217,21 +220,21 @@ export function PropertyDetailsMain({ language, propertyId = "1" }: PropertyDeta
 
   return (
     <div
-      className={`relative min-h-screen overflow-x-clip bg-gradient-to-b from-[var(--surface)] via-white to-[var(--surface)] text-[var(--color-charcoal)] ${
+      className={`relative min-h-screen overflow-x-clip bg-gradient-to-b from-surface via-white to-surface text-charcoal ${
         isRtl ? "text-right" : "text-left"
       }`}
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-[var(--brand-primary)]/10 blur-3xl"
+        className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute top-[28rem] -right-20 h-64 w-64 rounded-full bg-[var(--brand-secondary)]/10 blur-3xl"
+        className="pointer-events-none absolute top-[28rem] -right-20 h-64 w-64 rounded-full bg-secondary/10 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute bottom-0 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[var(--brand-accent)]/10 blur-3xl"
+        className="pointer-events-none absolute bottom-0 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-accent/10 blur-3xl"
       />
 
       <PropertyDetailsHero property={displayProperty} isRtl={isRtl} />
@@ -288,3 +291,6 @@ export function PropertyDetailsMain({ language, propertyId = "1" }: PropertyDeta
     </div>
   );
 }
+
+
+

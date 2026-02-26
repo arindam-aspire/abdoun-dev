@@ -23,7 +23,7 @@ export function SearchResultViewToggle({
   return (
     <div
       className={cn(
-        "inline-flex shrink-0 rounded-2xl bg-[var(--surface)] p-1 ring-1 ring-[var(--border-subtle)] min-h-[44px] sm:min-h-0",
+        "inline-flex shrink-0 rounded-2xl bg-surface p-1 ring-1 ring-subtle min-h-11 sm:min-h-0",
         isRtl && "flex-row-reverse",
       )}
       dir={isRtl ? "rtl" : "ltr"}
@@ -36,10 +36,10 @@ export function SearchResultViewToggle({
         aria-selected={value === "grid"}
         onClick={() => onSelect("grid")}
         className={cn(
-          "inline-flex cursor-pointer items-center gap-1 sm:gap-1.5 rounded-xl px-3 py-2 sm:px-5 text-sm font-medium capitalize transition min-h-[40px] sm:min-h-0",
+          "inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-5 py-2 text-size-sm fw-medium capitalize transition min-h-10 sm:min-h-0",
           value === "grid"
-            ? "bg-[var(--brand-secondary)] text-white shadow-sm"
-            : "text-[rgba(51,51,51,0.7)] hover:text-[var(--brand-secondary)]",
+            ? "bg-secondary text-white shadow-sm"
+            : "text-[rgba(51,51,51,0.7)] hover:text-secondary",
         )}
       >
         <LayoutGrid className="h-4 w-4 shrink-0" aria-hidden />
@@ -51,10 +51,10 @@ export function SearchResultViewToggle({
         aria-selected={value === "list"}
         onClick={() => onSelect("list")}
         className={cn(
-          "inline-flex cursor-pointer items-center gap-1 sm:gap-1.5 rounded-xl px-3 py-2 sm:px-5 text-sm font-medium capitalize transition min-h-[40px] sm:min-h-0",
+          "inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-5 py-2 text-size-sm fw-medium capitalize transition min-h-10 sm:min-h-0",
           value === "list"
-            ? "bg-[var(--brand-secondary)] text-white shadow-sm"
-            : "text-[rgba(51,51,51,0.7)] hover:text-[var(--brand-secondary)]",
+            ? "bg-secondary text-white shadow-sm"
+            : "text-[rgba(51,51,51,0.7)] hover:text-secondary",
         )}
       >
         <List className="h-4 w-4 shrink-0" aria-hidden />
@@ -63,3 +63,5 @@ export function SearchResultViewToggle({
     </div>
   );
 }
+
+

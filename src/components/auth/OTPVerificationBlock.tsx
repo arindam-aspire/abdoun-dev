@@ -87,7 +87,7 @@ export function OTPVerificationBlock({
               onKeyDown={(e) => handleKeyDown(i, e)}
               onPaste={handlePaste}
               className={cn(
-                "h-12 w-11 rounded-lg border bg-white text-center text-lg font-semibold tabular-nums transition-colors sm:h-14 sm:w-12",
+                "h-12 w-11 rounded-lg border bg-white text-center text-size-lg fw-semibold tabular-nums transition-colors sm:h-14 sm:w-12",
                 "focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1",
                 otpError
                   ? "border-red-400 focus:border-red-500 focus:ring-red-500"
@@ -98,19 +98,19 @@ export function OTPVerificationBlock({
           ))}
         </div>
         {otpError ? (
-          <p className="text-sm text-red-600" role="alert">
+          <p className="text-size-sm text-red-600" role="alert">
             {otpError}
           </p>
         ) : null}
       </div>
 
-      <div className="flex items-center justify-between rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
+      <div className="flex items-center justify-between rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-size-xs text-zinc-600">
         <span>
           {secondsLeft > 0 ? `Resend in ${secondsLeft}s` : "You can resend OTP now"}
         </span>
         <button
           type="button"
-          className="font-medium text-sky-700 disabled:text-zinc-400"
+          className="fw-medium text-sky-700 disabled:text-zinc-400"
           disabled={!canResend || loading}
           onClick={onResend}
         >
@@ -131,3 +131,4 @@ export function OTPVerificationBlock({
     </div>
   );
 }
+

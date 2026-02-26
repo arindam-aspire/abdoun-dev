@@ -320,10 +320,10 @@ export function AuthPopup({ open, locale, onClose }: AuthPopupProps) {
       open={open}
       onClose={onClose}
       containerClassName="p-0 sm:p-4"
-      className="h-[100dvh] w-full max-w-none overflow-hidden rounded-none border border-[var(--border-subtle)] bg-gray-400 p-0 sm:h-[92dvh] sm:max-h-[760px] sm:max-w-[460px] sm:rounded-xl"
+      className="h-[100dvh] w-full max-w-none overflow-hidden rounded-none border border-subtle bg-gray-400 p-0 sm:h-[92dvh] sm:max-h-[760px] sm:max-w-[460px] sm:rounded-xl"
     >
       <div
-        className="relative flex h-full flex-col bg-gradient-to-b from-white via-[var(--surface)] to-[var(--surface)] p-4 sm:p-6"
+        className="relative flex h-full flex-col bg-gradient-to-b from-white via-surface to-surface p-4 sm:p-6"
         dir={isRTL ? "rtl" : "ltr"}
       >
         <div className="flex items-center justify-between">
@@ -332,7 +332,7 @@ export function AuthPopup({ open, locale, onClose }: AuthPopupProps) {
               <button
                 type="button"
                 onClick={handleBack}
-                className="inline-flex items-center gap-1 text-sm font-medium text-zinc-600 hover:text-zinc-900 cursor-pointer"
+                className="inline-flex items-center gap-1 text-size-sm fw-medium text-zinc-600 hover:text-zinc-900 cursor-pointer"
               >
                 <ArrowLeft className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} /> {t("back")}
               </button>
@@ -352,7 +352,7 @@ export function AuthPopup({ open, locale, onClose }: AuthPopupProps) {
           <BrandLogo locale={locale} imageClassName="h-12 w-auto" />
         </div>
 
-        <h2 className="mt-2 mb-4 text-center text-lg leading-tight font-bold text-zinc-900 sm:mt-5 md:text-3xl">
+        <h2 className="mt-2 mb-4 text-center text-size-lg leading-tight fw-bold text-zinc-900 sm:mt-5 md:text-size-3xl">
           {view === "signup" ? t("signupLandingTitle") : t("loginTitle")}
         </h2>
 
@@ -480,3 +480,6 @@ export function AuthPopup({ open, locale, onClose }: AuthPopupProps) {
     </DialogRoot>
   );
 }
+
+
+

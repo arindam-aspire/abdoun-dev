@@ -69,7 +69,7 @@ export function AuthPopupSignupStep({
             {t("loginWithApple")}
           </Button>
 
-          <div className="py-1 text-center text-md text-zinc-700 sm:text-md">
+          <div className="py-1 text-center text-size-base text-zinc-700 sm:text-size-base">
             {t("or")}
           </div>
 
@@ -84,20 +84,20 @@ export function AuthPopupSignupStep({
             <Mail className="h-5 w-5" /> {t("joinWithEmail")}
           </Button>
 
-          <p className="px-2 text-center text-sm text-zinc-700">
+          <p className="px-2 text-center text-size-sm text-zinc-700">
             {t("signupTermsPrefix")}{" "}
-            <span className="font-semibold underline">
+            <span className="fw-semibold underline">
               {t("termsAndConditions")}
             </span>{" "}
             {t("and")}{" "}
-            <span className="font-semibold underline">
+            <span className="fw-semibold underline">
               {t("privacyPolicy")}
             </span>
           </p>
 
           <button
             type="button"
-            className="mt-2 cursor-pointer w-full text-center text-md font-semibold text-sky-800 hover:text-sky-900 sm:mt-4 sm:text-md"
+            className="mt-2 cursor-pointer w-full text-center text-size-base fw-semibold text-sky-800 hover:text-sky-900 sm:mt-4 sm:text-size-base"
             onClick={onBackToLogin}
           >
             {t("alreadyHaveAccountLogin")}
@@ -158,7 +158,7 @@ export function AuthPopupSignupStep({
           </Button>
           <button
             type="button"
-            className="mt-2 w-full cursor-pointer text-center text-md font-semibold text-sky-800 hover:text-sky-900 sm:mt-4 sm:text-md"
+            className="mt-2 w-full cursor-pointer text-center text-size-base fw-semibold text-sky-800 hover:text-sky-900 sm:mt-4 sm:text-size-base"
             onClick={onBackToLogin}
           >
             {t("alreadyHaveAccountLogin")}
@@ -169,7 +169,7 @@ export function AuthPopupSignupStep({
       {signup.screen === "otp" ? (
         <>
           {signup.debugOtp ? (
-            <p className="rounded bg-zinc-100 px-3 py-2 text-xs">
+            <p className="rounded bg-zinc-100 px-3 py-2 text-size-xs">
               Demo OTP: {signup.debugOtp}
             </p>
           ) : null}
@@ -188,3 +188,5 @@ export function AuthPopupSignupStep({
     </div>
   );
 }
+
+

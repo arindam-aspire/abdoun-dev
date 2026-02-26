@@ -16,7 +16,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         <textarea
           ref={ref}
           className={cn(
-            "flex min-h-[80px] w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm transition-colors",
+            "flex min-h-[80px] w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-size-sm text-zinc-900 shadow-sm transition-colors",
             "placeholder:text-zinc-400",
             "focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2 focus:border-transparent",
             "disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-zinc-50",
@@ -32,7 +32,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {error && (
           <p
             id="textarea-error"
-            className="mt-1.5 text-sm text-red-600"
+            className="mt-1.5 text-size-sm text-red-600"
             role="alert"
           >
             {error}
@@ -46,3 +46,4 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 Textarea.displayName = "Textarea";
 
 export { Textarea };
+

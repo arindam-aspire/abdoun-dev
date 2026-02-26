@@ -30,10 +30,10 @@ export function PropertyDetailsTabBar({
   ];
 
   return (
-    <div className="sticky top-[52px] z-20 -mx-4 border-b border-[var(--border-subtle)] bg-white/95 px-4 py-3 backdrop-blur md:mx-0 md:px-0 md:py-3 md:top-16">
+    <div className="sticky top-[52px] z-20 -mx-4 border-b border-subtle bg-white/95 px-4 py-3 backdrop-blur md:mx-0 md:px-0 md:py-3 md:top-16">
       <div className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div
-          className={`inline-flex min-w-max items-center gap-1 text-[11px] font-medium text-[var(--color-charcoal)]/80 ${
+          className={`inline-flex min-w-max items-center gap-1 text-size-11 fw-medium text-charcoal/80 ${
             isRtl ? "flex-row-reverse" : ""
           }`}
         >
@@ -44,15 +44,15 @@ export function PropertyDetailsTabBar({
                 key={tab.key}
                 type="button"
                 onClick={() => onTabChange(tab.key)}
-                className={`flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 ${
+                className={`flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                   isActive
-                    ? "border-[var(--brand-primary)] text-[var(--brand-primary)]"
-                    : "border-transparent text-[var(--color-charcoal)]/80 hover:text-[var(--color-charcoal)]"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-charcoal/80 hover:text-charcoal"
                 }`}
               >
                 <span
                   className={`${
-                    isActive ? "text-[var(--brand-primary)]" : "text-[var(--color-charcoal)]/60"
+                    isActive ? "text-primary" : "text-charcoal/60"
                   } inline-flex`}
                 >
                   {tab.icon}
@@ -66,3 +66,5 @@ export function PropertyDetailsTabBar({
     </div>
   );
 }
+
+

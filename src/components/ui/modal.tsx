@@ -19,14 +19,14 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
     >
       <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 md:px-6">
         {title ? (
-          <p className="text-sm font-semibold text-slate-900">{title}</p>
+          <p className="text-size-sm fw-semibold text-slate-900">{title}</p>
         ) : (
           <span />
         )}
         <button
           type="button"
           onClick={onClose}
-          className="text-sm font-medium text-slate-500 hover:text-slate-900"
+          className="text-size-sm fw-medium text-slate-500 hover:text-slate-900"
         >
           Close
         </button>
@@ -38,4 +38,5 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
     </DialogRoot>
   );
 }
+
 

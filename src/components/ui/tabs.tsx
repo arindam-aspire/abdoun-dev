@@ -38,7 +38,7 @@ export function Tabs({
             key={tab.id}
             className={({ selected }) =>
               cn(
-                "inline-flex items-center justify-center rounded-sm px-3 py-1.5 text-sm font-medium transition-colors",
+                "inline-flex items-center justify-center rounded-sm px-3 py-1.5 text-size-sm fw-medium transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2",
                 selected
                   ? "bg-white text-zinc-900 shadow-sm"
@@ -60,3 +60,4 @@ export function Tabs({
     </TabGroup>
   );
 }
+

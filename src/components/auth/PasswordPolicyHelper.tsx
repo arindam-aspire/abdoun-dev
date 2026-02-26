@@ -9,12 +9,12 @@ interface PasswordPolicyHelperProps {
 }
 
 const itemClass = (ok: boolean) =>
-  `text-xs ${ok ? "text-emerald-600" : "text-zinc-500"}`;
+  `text-size-xs ${ok ? "text-emerald-600" : "text-zinc-500"}`;
 
 export function PasswordPolicyHelper({ checks }: PasswordPolicyHelperProps) {
   return (
     <div className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
-      <p className="text-xs font-medium text-zinc-700">Password policy:</p>
+      <p className="text-size-xs fw-medium text-zinc-700">Password policy:</p>
       <ul className="mt-2 space-y-1">
         <li className={itemClass(checks.minLength)}>At least 8 characters</li>
         <li className={itemClass(checks.upper)}>One uppercase letter</li>
@@ -25,3 +25,4 @@ export function PasswordPolicyHelper({ checks }: PasswordPolicyHelperProps) {
     </div>
   );
 }
+

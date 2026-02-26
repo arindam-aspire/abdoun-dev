@@ -49,10 +49,10 @@ export function PropertyAmenities({ amenities }: PropertyAmenitiesProps) {
   return (
     <section className="mt-10 md:mt-12">
       <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-charcoal)]/70">
+        <p className="text-size-xs fw-semibold uppercase tracking-[0.18em] text-charcoal/70">
           Features
         </p>
-        <p className="text-[11px] text-[var(--color-charcoal)]/70">
+        <p className="text-size-11 text-charcoal/70">
           Thoughtfully selected for elevated everyday living.
         </p>
       </div>
@@ -61,12 +61,12 @@ export function PropertyAmenities({ amenities }: PropertyAmenitiesProps) {
         {amenities.map((item) => (
           <div
             key={item}
-            className="group flex items-center gap-2 py-1.5 transition-colors hover:text-[var(--brand-primary)]"
+            className="group flex items-center gap-2 py-1.5 transition-colors hover:text-primary"
           >
             {(() => {
               const Icon = getAmenityIcon(item);
               return (
-                <span className="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] transition-colors group-hover:bg-[var(--brand-primary)]/15">
+                <span className="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
                   <Icon className="h-3.5 w-3.5" />
                 </span>
               );
@@ -78,3 +78,5 @@ export function PropertyAmenities({ amenities }: PropertyAmenitiesProps) {
     </section>
   );
 }
+
+

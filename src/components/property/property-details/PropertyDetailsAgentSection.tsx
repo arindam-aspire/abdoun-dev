@@ -49,17 +49,17 @@ export function PropertyDetailsAgentSection({ listing }: PropertyDetailsAgentSec
   const tCall = tSearch("call");
 
   return (
-    <section className="border-t border-[var(--border-subtle)] bg-[var(--surface)]/50 py-5 md:py-6">
+    <section className="border-t border-subtle bg-surface/50 py-5 md:py-6">
       <div className={cn("flex items-center gap-3 px-4 md:px-5", isRtl && "flex-row-reverse")}>
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-secondary)]/10 text-[var(--brand-secondary)]">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-secondary">
           <UserCircle2 className="h-6 w-6" />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-charcoal)]/70">
+          <p className="text-size-xs fw-semibold uppercase tracking-[0.18em] text-charcoal/70">
             Listing agent
           </p>
-          <p className="text-sm font-semibold text-[var(--color-charcoal)]">{DEFAULT_AGENT_NAME}</p>
-          <p className="text-[11px] text-[var(--color-charcoal)]/70">
+          <p className="text-size-sm fw-semibold text-charcoal">{DEFAULT_AGENT_NAME}</p>
+          <p className="text-size-11 text-charcoal/70">
             {DEFAULT_AGENT_SPECIALTY}
           </p>
         </div>
@@ -68,14 +68,14 @@ export function PropertyDetailsAgentSection({ listing }: PropertyDetailsAgentSec
       {/* Call, Email, WhatsApp – same as Search Results page */}
       <div
         className={cn(
-          "mt-4 grid grid-cols-3 gap-2 px-4 text-xs md:px-5",
+          "mt-4 grid grid-cols-3 gap-2 px-4 text-size-xs md:px-5",
           isRtl && "grid-flow-dense",
         )}
       >
         <button
           type="button"
           onClick={() => setEmailModalOpen(true)}
-          className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center gap-1 rounded-full bg-[var(--brand-secondary)]/12 px-2 text-[11px] font-semibold text-[var(--brand-secondary)] hover:bg-[var(--brand-secondary)]/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-secondary)]/50"
+          className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center gap-1 rounded-full bg-secondary/12 px-2 text-size-11 fw-semibold text-secondary hover:bg-secondary/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50"
         >
           <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden />
           <span className="truncate">{tEmail}</span>
@@ -83,7 +83,7 @@ export function PropertyDetailsAgentSection({ listing }: PropertyDetailsAgentSec
         <button
           type="button"
           onClick={() => setContactModalOpen(true)}
-          className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center gap-1 rounded-full bg-[var(--brand-secondary)]/12 px-2 text-[11px] font-semibold text-[var(--brand-secondary)] hover:bg-[var(--brand-secondary)]/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-secondary)]/50"
+          className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center gap-1 rounded-full bg-secondary/12 px-2 text-size-11 fw-semibold text-secondary hover:bg-secondary/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50"
         >
           <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden />
           <span className="truncate">{tCall}</span>
@@ -91,16 +91,16 @@ export function PropertyDetailsAgentSection({ listing }: PropertyDetailsAgentSec
         <button
           type="button"
           onClick={() => setWhatsappModalOpen(true)}
-          className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center rounded-full bg-[var(--brand-secondary)]/12 text-[var(--brand-secondary)] hover:bg-[var(--brand-secondary)]/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-secondary)]/50"
+          className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center rounded-full bg-secondary/12 text-secondary hover:bg-secondary/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50"
           aria-label="WhatsApp"
         >
           <WhatsAppIcon className="h-4 w-4 shrink-0" />
         </button>
       </div>
 
-      <p className="mt-3 px-4 text-[11px] leading-relaxed text-[var(--color-charcoal)]/75 md:px-5">
+      <p className="mt-3 px-4 text-size-11 leading-relaxed text-charcoal/75 md:px-5">
         Our concierge team confirms viewing slots within
-        <span className="font-semibold text-[var(--color-charcoal)]"> 2 hours</span> and
+        <span className="fw-semibold text-charcoal"> 2 hours</span> and
         shares all details via WhatsApp and email.
       </p>
 
@@ -162,3 +162,5 @@ export function PropertyDetailsAgentSection({ listing }: PropertyDetailsAgentSec
     </section>
   );
 }
+
+

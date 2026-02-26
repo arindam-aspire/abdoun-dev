@@ -60,14 +60,14 @@ export function WhatsAppContactModal({
       containerClassName="p-4"
     >
       <div dir={isRtl ? "rtl" : "ltr"} className="text-left">
-        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 pt-5 pb-4">
-          <h2 className="text-lg font-bold text-[var(--color-charcoal)]">
+        <div className="flex items-center justify-between border-b border-subtle px-5 pt-5 pb-4">
+          <h2 className="text-size-lg fw-bold text-charcoal">
             {t.title}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-charcoal)]/60 hover:bg-black/5 hover:text-[var(--color-charcoal)]"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-charcoal/60 hover:bg-black/5 hover:text-charcoal"
             aria-label="Close"
           >
             <X className="h-5 w-5" aria-hidden />
@@ -75,39 +75,39 @@ export function WhatsAppContactModal({
         </div>
 
         <div className="px-5 py-4">
-          <p className="text-sm font-medium text-[var(--color-charcoal)]">
+          <p className="text-size-sm fw-medium text-charcoal">
             {listing.brokerName}
           </p>
 
           {/* WhatsApp with icon (same layout and color as Call modal) */}
           <div
             className={cn(
-              "mt-3 flex items-center gap-3 rounded-xl bg-[var(--brand-secondary)]/10 p-3",
+              "mt-3 flex items-center gap-3 rounded-xl bg-secondary/10 p-3",
               isRtl && "flex-row-reverse",
             )}
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-secondary)]/20">
-              <WhatsAppIcon className="h-5 w-5 text-[var(--brand-secondary)]" aria-hidden />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary/20">
+              <WhatsAppIcon className="h-5 w-5 text-secondary" aria-hidden />
             </div>
             <a
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
               onClick={onClose}
-              className="text-base font-bold text-[var(--brand-secondary)] hover:underline"
+              className="text-size-base fw-bold text-secondary hover:underline"
             >
               {DEFAULT_PHONE_DISPLAY}
             </a>
           </div>
 
-          <p className="mt-2 text-sm text-[var(--color-charcoal)]/80">
+          <p className="mt-2 text-size-sm text-charcoal/80">
             {t.agentLabel}: {t.agentName}
           </p>
 
-          <p className="mt-3 text-sm text-[var(--color-charcoal)]/80">
+          <p className="mt-3 text-size-sm text-charcoal/80">
             {t.quoteReference}{" "}
             <span
-              className="font-semibold text-[var(--brand-primary)] underline"
+              className="fw-semibold text-primary underline"
               title={propertyRef}
             >
               {propertyRef}
@@ -119,3 +119,5 @@ export function WhatsAppContactModal({
     </DialogRoot>
   );
 }
+
+

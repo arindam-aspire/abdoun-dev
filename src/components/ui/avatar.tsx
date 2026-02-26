@@ -9,9 +9,9 @@ export interface AvatarProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 const sizeClasses = {
-  sm: "h-8 w-8 text-xs",
-  md: "h-10 w-10 text-sm",
-  lg: "h-12 w-12 text-base",
+  sm: "h-8 w-8 text-size-xs",
+  md: "h-10 w-10 text-size-sm",
+  lg: "h-12 w-12 text-size-base",
 };
 
 function getInitials(name: string): string {
@@ -37,7 +37,7 @@ export function Avatar({
   return (
     <span
       className={cn(
-        "relative flex shrink-0 overflow-hidden rounded-full bg-zinc-200 text-zinc-600 font-medium",
+        "relative flex shrink-0 overflow-hidden rounded-full bg-zinc-200 text-zinc-600 fw-medium",
         sizeClasses[size],
         className,
       )}
@@ -58,3 +58,4 @@ export function Avatar({
     </span>
   );
 }
+

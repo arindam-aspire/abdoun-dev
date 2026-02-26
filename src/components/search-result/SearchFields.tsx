@@ -26,11 +26,11 @@ import { SaveSearchModal } from "./SaveSearchModal";
 export type { SearchFieldsProps, SearchFieldsTranslations } from "./types";
 
 const dropdownPanelClass =
-  "min-w-48 rounded-xl border border-[var(--border-subtle)] bg-white p-2 shadow-xl ring-1 ring-black/5";
+  "min-w-48 rounded-xl border border-subtle bg-white p-2 shadow-xl ring-1 ring-black/5";
 
 /** Same as dropdownPanelClass but matches trigger width and scrolls when many options */
 const advancedDropdownPanelClass =
-  "w-full rounded-xl border border-[var(--border-subtle)] bg-white p-2 shadow-xl ring-1 ring-black/5 max-h-56 overflow-y-auto";
+  "w-full rounded-xl border border-subtle bg-white p-2 shadow-xl ring-1 ring-black/5 max-h-56 overflow-y-auto";
 const PROPERTY_TYPE_PLACEHOLDER = "Select type";
 
 const slugify = (value: string) =>
@@ -675,7 +675,7 @@ export function SearchFields({
 
   return (
     <section
-      className="min-w-0 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-[var(--border-subtle)] sm:p-4"
+      className="min-w-0 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-subtle sm:p-4"
       dir={isRtl ? "rtl" : "ltr"}
     >
       <div
@@ -686,7 +686,7 @@ export function SearchFields({
         {/* Rent / Buy tabs (same style as HeroSearchCard) */}
         <div
           className={cn(
-            "col-span-2 inline-flex shrink-0 rounded-2xl bg-[var(--surface)] p-1 ring-1 ring-[var(--border-subtle)] md:col-span-auto",
+            "col-span-2 md:col-span-auto inline-flex shrink-0 rounded-2xl bg-surface p-1 ring-1 ring-subtle",
             isRtl && "flex-row-reverse",
           )}
           dir={isRtl ? "rtl" : "ltr"}
@@ -699,10 +699,10 @@ export function SearchFields({
                 setStatus(tabKey);
               }}
               className={cn(
-                "cursor-pointer rounded-xl px-5 py-2 text-sm font-medium capitalize transition",
+                "cursor-pointer rounded-xl px-5 py-2 text-size-sm fw-medium capitalize transition",
                 status === tabKey
-                  ? "bg-[var(--brand-secondary)] text-white shadow-sm"
-                  : "text-[rgba(51,51,51,0.7)] hover:text-[var(--brand-secondary)]",
+                  ? "bg-secondary text-white shadow-sm"
+                  : "text-[rgba(51,51,51,0.7)] hover:text-secondary",
               )}
             >
               {t[tabKey]}
@@ -717,8 +717,8 @@ export function SearchFields({
             type="button"
             onClick={() => toggleTopDropdown(categoryOpen, setCategoryOpen)}
             className={cn(
-              "flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 py-2 text-sm text-[var(--color-charcoal)] transition hover:border-[rgba(43,91,166,0.6)]",
-              categoryOpen && "border-[var(--brand-secondary)]",
+              "flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 py-2 text-size-sm text-charcoal transition hover:border-[rgba(43,91,166,0.6)]",
+              categoryOpen && "border-secondary",
               isRtl && "flex-row-reverse",
             )}
           >
@@ -743,10 +743,10 @@ export function SearchFields({
                     setCategoryOpen(false);
                   }}
                   className={cn(
-                    "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
+                    "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
                     category === key
-                      ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium"
-                      : "text-[var(--color-charcoal)]",
+                      ? "bg-surface text-secondary fw-medium"
+                      : "text-charcoal",
                     isRtl && "flex-row-reverse text-right",
                   )}
                 >
@@ -769,11 +769,11 @@ export function SearchFields({
               toggleTopDropdown(propertyTypeOpen, setPropertyTypeOpen)
             }
             className={cn(
-              "flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 py-2 text-sm transition hover:border-[rgba(43,91,166,0.6)]",
+              "flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 py-2 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
               propertyType
-                ? "text-[var(--color-charcoal)]"
+                ? "text-charcoal"
                 : "text-[rgba(51,51,51,0.5)]",
-              propertyTypeOpen && "border-[var(--brand-secondary)]",
+              propertyTypeOpen && "border-secondary",
               isRtl && "flex-row-reverse",
             )}
           >
@@ -795,10 +795,10 @@ export function SearchFields({
                   setPropertyTypeOpen(false);
                 }}
                 className={cn(
-                  "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
+                  "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
                   !propertyType
-                    ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium"
-                    : "text-[var(--color-charcoal)]",
+                    ? "bg-surface text-secondary fw-medium"
+                    : "text-charcoal",
                   isRtl && "flex-row-reverse text-right",
                 )}
               >
@@ -813,10 +813,10 @@ export function SearchFields({
                     setPropertyTypeOpen(false);
                   }}
                   className={cn(
-                    "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
+                    "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
                     propertyType === type
-                      ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium"
-                      : "text-[var(--color-charcoal)]",
+                      ? "bg-surface text-secondary fw-medium"
+                      : "text-charcoal",
                     isRtl && "flex-row-reverse text-right",
                   )}
                 >
@@ -837,11 +837,11 @@ export function SearchFields({
             type="button"
             onClick={() => toggleTopDropdown(cityOpen, setCityOpen)}
             className={cn(
-              "flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 py-2 text-sm transition hover:border-[rgba(43,91,166,0.6)]",
+              "flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 py-2 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
               city
-                ? "text-[var(--color-charcoal)]"
+                ? "text-charcoal"
                 : "text-[rgba(51,51,51,0.5)]",
-              cityOpen && "border-[var(--brand-secondary)]",
+              cityOpen && "border-secondary",
               isRtl && "flex-row-reverse",
             )}
           >
@@ -855,7 +855,7 @@ export function SearchFields({
             anchorRef={cityTriggerRef}
             closeOnSelect
           >
-            <div className="min-w-48 max-h-64 overflow-y-auto rounded-xl border border-[var(--border-subtle)] bg-white p-2 shadow-xl ring-1 ring-black/5">
+            <div className="min-w-48 max-h-64 overflow-y-auto rounded-xl border border-subtle bg-white p-2 shadow-xl ring-1 ring-black/5">
               <button
                 type="button"
                 onClick={() => {
@@ -864,10 +864,10 @@ export function SearchFields({
                   setCityOpen(false);
                 }}
                 className={cn(
-                  "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
+                  "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
                   !city
-                    ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium"
-                    : "text-[var(--color-charcoal)]",
+                    ? "bg-surface text-secondary fw-medium"
+                    : "text-charcoal",
                   isRtl && "flex-row-reverse text-right",
                 )}
               >
@@ -883,10 +883,10 @@ export function SearchFields({
                     setCityOpen(false);
                   }}
                   className={cn(
-                    "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
+                    "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
                     city === cityOption.name
-                      ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium"
-                      : "text-[var(--color-charcoal)]",
+                      ? "bg-surface text-secondary fw-medium"
+                      : "text-charcoal",
                     isRtl && "flex-row-reverse text-right",
                   )}
                 >
@@ -908,16 +908,16 @@ export function SearchFields({
               toggleTopDropdown(areasOpen, setAreasOpen);
             }}
             className={cn(
-              "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 bg-white px-4 py-2 text-sm transition",
+              "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 bg-white px-4 py-2 text-size-sm transition",
               !city
-                ? "cursor-not-allowed border-[rgba(43,91,166,0.2)] bg-[var(--surface)]/50 text-[rgba(51,51,51,0.5)]"
+                ? "cursor-not-allowed border-[rgba(43,91,166,0.2)] bg-surface/50 text-[rgba(51,51,51,0.5)]"
                 : "border-[rgba(43,91,166,0.35)] hover:border-[rgba(43,91,166,0.6)]",
               selectedAreas.length > 0
-                ? "text-[var(--color-charcoal)]"
+                ? "text-charcoal"
                 : !city
                   ? "text-[rgba(51,51,51,0.5)]"
                   : "text-[rgba(51,51,51,0.5)]",
-              areasOpen && city && "border-[var(--brand-secondary)]",
+              areasOpen && city && "border-secondary",
               isRtl && "flex-row-reverse",
             )}
           >
@@ -937,7 +937,7 @@ export function SearchFields({
                 <span className="min-w-0 truncate">
                   {selectedAreas.slice(0, 2).join(", ")}
                 </span>
-                <span className="inline-flex shrink-0 items-center gap-1 font-medium text-[var(--brand-secondary)]">
+                <span className="inline-flex shrink-0 items-center gap-1 fw-medium text-secondary">
                   <MoreHorizontal className="h-4 w-4 shrink-0" aria-hidden />
                   {t.areasMoreLabel(selectedAreas.length - 2)}
                 </span>
@@ -951,7 +951,7 @@ export function SearchFields({
             align={isRtl ? "right" : "left"}
             anchorRef={areasTriggerRef}
           >
-            <div className="min-w-48 max-h-64 overflow-y-auto rounded-xl border border-[var(--border-subtle)] bg-white p-2 shadow-xl ring-1 ring-black/5">
+            <div className="min-w-48 max-h-64 overflow-y-auto rounded-xl border border-subtle bg-white p-2 shadow-xl ring-1 ring-black/5">
               <button
                 type="button"
                 onClick={() => {
@@ -965,8 +965,8 @@ export function SearchFields({
                   }
                 }}
                 className={cn(
-                  "flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm font-medium transition hover:bg-[var(--surface)]",
-                  "text-[var(--brand-secondary)]",
+                  "flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-size-sm fw-medium transition hover:bg-surface",
+                  "text-secondary",
                   isRtl && "text-right",
                 )}
               >
@@ -975,17 +975,17 @@ export function SearchFields({
                   ? t.areasDeselectAll
                   : t.areasSelectAll}
               </button>
-              <div className="my-1 border-t border-[var(--border-subtle)]" />
+              <div className="my-1 border-t border-subtle" />
               {areaOptions.map((areaName) => {
                 const isSelected = selectedAreas.includes(areaName);
                 return (
                   <label
                     key={areaName}
                     className={cn(
-                      "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
+                      "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
                       isSelected
-                        ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium"
-                        : "text-[var(--color-charcoal)]",
+                        ? "bg-surface text-secondary fw-medium"
+                        : "text-charcoal",
                       isRtl && "flex-row-reverse text-right",
                     )}
                   >
@@ -1000,7 +1000,7 @@ export function SearchFields({
                               : [...prev, areaName],
                           );
                         }}
-                        className="h-4 w-4 cursor-pointer rounded border-[var(--border-subtle)] text-[var(--brand-secondary)] focus:ring-[var(--brand-primary)]"
+                        className="h-4 w-4 cursor-pointer rounded border-subtle text-secondary focus:ring-primary"
                       />
                       <span>{areaName}</span>
                     </span>
@@ -1018,15 +1018,15 @@ export function SearchFields({
             type="button"
             onClick={() => toggleTopDropdown(isBudgetOpen, setIsBudgetOpen)}
             className={cn(
-              "flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 py-2 text-sm text-[var(--color-charcoal)] transition hover:border-[rgba(43,91,166,0.6)]",
-              isBudgetOpen && "border-[var(--brand-secondary)]",
+              "flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 py-2 text-size-sm text-charcoal transition hover:border-[rgba(43,91,166,0.6)]",
+              isBudgetOpen && "border-secondary",
               isRtl && "flex-row-reverse",
             )}
           >
-            <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--surface)] text-[10px] font-medium text-[var(--brand-secondary)]">
+            <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface text-size-2xs fw-medium text-secondary">
               JD
             </span>
-            <span className="min-w-0 truncate text-sm">
+            <span className="min-w-0 truncate text-size-sm">
               {formatBudgetLabel()}
             </span>
             <ChevronDown className="h-4 w-4 shrink-0" aria-hidden />
@@ -1065,7 +1065,7 @@ export function SearchFields({
             type="button"
             onClick={() => setAdvancedSearchOpen((o) => !o)}
             className={cn(
-              "flex h-11 w-full shrink-0 cursor-pointer items-center justify-center rounded-xl border-2 border-[var(--brand-secondary)] bg-[var(--brand-secondary)] px-4 py-2 text-sm font-medium text-white transition hover:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 md:w-auto md:px-5",
+            "flex h-11 w-full shrink-0 cursor-pointer items-center justify-center rounded-xl border-2 border-secondary bg-secondary px-5 py-2 text-size-sm fw-medium text-white transition hover:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:w-auto md:px-5",
               isRtl && "flex-row-reverse",
             )}
           >
@@ -1082,7 +1082,7 @@ export function SearchFields({
               handleClearAll();
             }}
             className={cn(
-              "flex h-11 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-xl border-2 border-[var(--border-subtle)] bg-white px-3 py-2 text-sm font-medium text-[var(--color-charcoal)] transition hover:border-[var(--brand-secondary)]/50 hover:bg-[var(--surface)] md:flex-none md:px-4",
+              "flex h-11 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-xl border-2 border-subtle bg-white px-4 py-2 text-size-sm fw-medium text-charcoal transition hover:border-secondary/50 hover:bg-surface",
               isRtl && "flex-row-reverse",
             )}
           >
@@ -1111,7 +1111,7 @@ export function SearchFields({
       {advancedSearchOpen && (
         <div
           className={cn(
-            "mt-4 border-t border-[var(--border-subtle)] pt-4",
+            "mt-4 border-t border-subtle pt-4",
             isRtl && "text-right",
           )}
         >
@@ -1125,7 +1125,7 @@ export function SearchFields({
             {/* Residential + Commercial: Furniture Status */}
             {showFurnitureStatus && (
               <div className="relative min-w-0" dir={isRtl ? "rtl" : "ltr"}>
-                <label className="mb-1 block text-xs font-medium text-[var(--color-charcoal)]/80">
+                <label className="mb-1 block text-size-xs fw-medium text-charcoal/80">
                   {t.furnitureStatus}
                 </label>
                 <button
@@ -1135,9 +1135,9 @@ export function SearchFields({
                     toggleAdvancedDropdown(advFurnitureOpen, setAdvFurnitureOpen)
                   }
                   className={cn(
-                    "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-sm transition hover:border-[rgba(43,91,166,0.6)]",
-                    furnitureStatus ? "text-[var(--color-charcoal)]" : "text-[rgba(51,51,51,0.5)]",
-                    advFurnitureOpen && "border-[var(--brand-secondary)]",
+                    "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
+                    furnitureStatus ? "text-charcoal" : "text-[rgba(51,51,51,0.5)]",
+                    advFurnitureOpen && "border-secondary",
                     isRtl && "flex-row-reverse",
                   )}
                 >
@@ -1165,8 +1165,8 @@ export function SearchFields({
                         setAdvFurnitureOpen(false);
                       }}
                       className={cn(
-                        "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
-                        !furnitureStatus ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium" : "text-[var(--color-charcoal)]",
+                        "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
+                        !furnitureStatus ? "bg-surface text-secondary fw-medium" : "text-charcoal",
                         isRtl && "flex-row-reverse text-right",
                       )}
                     >
@@ -1185,8 +1185,8 @@ export function SearchFields({
                           setAdvFurnitureOpen(false);
                         }}
                         className={cn(
-                          "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
-                          furnitureStatus === value ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium" : "text-[var(--color-charcoal)]",
+                          "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
+                          furnitureStatus === value ? "bg-surface text-secondary fw-medium" : "text-charcoal",
                           isRtl && "flex-row-reverse text-right",
                         )}
                       >
@@ -1201,7 +1201,7 @@ export function SearchFields({
             {/* Residential only: Bedrooms */}
             {showBedrooms && (
               <div className="relative min-w-0" dir={isRtl ? "rtl" : "ltr"}>
-                <label className="mb-1 block text-xs font-medium text-[var(--color-charcoal)]/80">
+                <label className="mb-1 block text-size-xs fw-medium text-charcoal/80">
                   {t.bedrooms}
                 </label>
                 <button
@@ -1211,9 +1211,9 @@ export function SearchFields({
                     toggleAdvancedDropdown(advBedroomsOpen, setAdvBedroomsOpen)
                   }
                   className={cn(
-                    "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-sm transition hover:border-[rgba(43,91,166,0.6)]",
-                    bedrooms ? "text-[var(--color-charcoal)]" : "text-[rgba(51,51,51,0.5)]",
-                    advBedroomsOpen && "border-[var(--brand-secondary)]",
+                    "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
+                    bedrooms ? "text-charcoal" : "text-[rgba(51,51,51,0.5)]",
+                    advBedroomsOpen && "border-secondary",
                     isRtl && "flex-row-reverse",
                   )}
                 >
@@ -1235,8 +1235,8 @@ export function SearchFields({
                         setAdvBedroomsOpen(false);
                       }}
                       className={cn(
-                        "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
-                        !bedrooms ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium" : "text-[var(--color-charcoal)]",
+                        "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
+                        !bedrooms ? "bg-surface text-secondary fw-medium" : "text-charcoal",
                         isRtl && "flex-row-reverse text-right",
                       )}
                     >
@@ -1251,8 +1251,8 @@ export function SearchFields({
                           setAdvBedroomsOpen(false);
                         }}
                         className={cn(
-                          "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
-                          bedrooms === n ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium" : "text-[var(--color-charcoal)]",
+                          "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
+                          bedrooms === n ? "bg-surface text-secondary fw-medium" : "text-charcoal",
                           isRtl && "flex-row-reverse text-right",
                         )}
                       >
@@ -1267,7 +1267,7 @@ export function SearchFields({
             {/* Commercial only: Rooms */}
             {showRooms && (
               <div className="relative min-w-0" dir={isRtl ? "rtl" : "ltr"}>
-                <label className="mb-1 block text-xs font-medium text-[var(--color-charcoal)]/80">
+                <label className="mb-1 block text-size-xs fw-medium text-charcoal/80">
                   {t.rooms}
                 </label>
                 <button
@@ -1277,9 +1277,9 @@ export function SearchFields({
                     toggleAdvancedDropdown(advRoomsOpen, setAdvRoomsOpen)
                   }
                   className={cn(
-                    "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-sm transition hover:border-[rgba(43,91,166,0.6)]",
-                    rooms ? "text-[var(--color-charcoal)]" : "text-[rgba(51,51,51,0.5)]",
-                    advRoomsOpen && "border-[var(--brand-secondary)]",
+                    "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
+                    rooms ? "text-charcoal" : "text-[rgba(51,51,51,0.5)]",
+                    advRoomsOpen && "border-secondary",
                     isRtl && "flex-row-reverse",
                   )}
                 >
@@ -1301,8 +1301,8 @@ export function SearchFields({
                         setAdvRoomsOpen(false);
                       }}
                       className={cn(
-                        "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
-                        !rooms ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium" : "text-[var(--color-charcoal)]",
+                        "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
+                        !rooms ? "bg-surface text-secondary fw-medium" : "text-charcoal",
                         isRtl && "flex-row-reverse text-right",
                       )}
                     >
@@ -1317,8 +1317,8 @@ export function SearchFields({
                           setAdvRoomsOpen(false);
                         }}
                         className={cn(
-                          "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
-                          rooms === n ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium" : "text-[var(--color-charcoal)]",
+                          "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
+                          rooms === n ? "bg-surface text-secondary fw-medium" : "text-charcoal",
                           isRtl && "flex-row-reverse text-right",
                         )}
                       >
@@ -1333,7 +1333,7 @@ export function SearchFields({
             {/* Residential + Commercial: Bathrooms */}
             {showBathrooms && (
               <div className="relative min-w-0" dir={isRtl ? "rtl" : "ltr"}>
-                <label className="mb-1 block text-xs font-medium text-[var(--color-charcoal)]/80">
+                <label className="mb-1 block text-size-xs fw-medium text-charcoal/80">
                   {t.bathrooms}
                 </label>
                 <button
@@ -1343,9 +1343,9 @@ export function SearchFields({
                     toggleAdvancedDropdown(advBathroomsOpen, setAdvBathroomsOpen)
                   }
                   className={cn(
-                    "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-sm transition hover:border-[rgba(43,91,166,0.6)]",
-                    bathrooms ? "text-[var(--color-charcoal)]" : "text-[rgba(51,51,51,0.5)]",
-                    advBathroomsOpen && "border-[var(--brand-secondary)]",
+                    "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
+                    bathrooms ? "text-charcoal" : "text-[rgba(51,51,51,0.5)]",
+                    advBathroomsOpen && "border-secondary",
                     isRtl && "flex-row-reverse",
                   )}
                 >
@@ -1367,8 +1367,8 @@ export function SearchFields({
                         setAdvBathroomsOpen(false);
                       }}
                       className={cn(
-                        "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
-                        !bathrooms ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium" : "text-[var(--color-charcoal)]",
+                        "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
+                        !bathrooms ? "bg-surface text-secondary fw-medium" : "text-charcoal",
                         isRtl && "flex-row-reverse text-right",
                       )}
                     >
@@ -1383,8 +1383,8 @@ export function SearchFields({
                           setAdvBathroomsOpen(false);
                         }}
                         className={cn(
-                          "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
-                          bathrooms === n ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium" : "text-[var(--color-charcoal)]",
+                          "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
+                          bathrooms === n ? "bg-surface text-secondary fw-medium" : "text-charcoal",
                           isRtl && "flex-row-reverse text-right",
                         )}
                       >
@@ -1399,7 +1399,7 @@ export function SearchFields({
             {/* Residential + Commercial: Floor Level */}
             {showFloorLevel && (
               <div className="relative min-w-0" dir={isRtl ? "rtl" : "ltr"}>
-                <label className="mb-1 block text-xs font-medium text-[var(--color-charcoal)]/80">
+                <label className="mb-1 block text-size-xs fw-medium text-charcoal/80">
                   {t.floorLevel}
                 </label>
                 <button
@@ -1409,9 +1409,9 @@ export function SearchFields({
                     toggleAdvancedDropdown(advFloorOpen, setAdvFloorOpen)
                   }
                   className={cn(
-                    "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-sm transition hover:border-[rgba(43,91,166,0.6)]",
-                    floorLevel ? "text-[var(--color-charcoal)]" : "text-[rgba(51,51,51,0.5)]",
-                    advFloorOpen && "border-[var(--brand-secondary)]",
+                    "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
+                    floorLevel ? "text-charcoal" : "text-[rgba(51,51,51,0.5)]",
+                    advFloorOpen && "border-secondary",
                     isRtl && "flex-row-reverse",
                   )}
                 >
@@ -1433,8 +1433,8 @@ export function SearchFields({
                         setAdvFloorOpen(false);
                       }}
                       className={cn(
-                        "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
-                        !floorLevel ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium" : "text-[var(--color-charcoal)]",
+                        "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
+                        !floorLevel ? "bg-surface text-secondary fw-medium" : "text-charcoal",
                         isRtl && "flex-row-reverse text-right",
                       )}
                     >
@@ -1449,8 +1449,8 @@ export function SearchFields({
                           setAdvFloorOpen(false);
                         }}
                         className={cn(
-                          "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
-                          floorLevel === opt ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium" : "text-[var(--color-charcoal)]",
+                          "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
+                          floorLevel === opt ? "bg-surface text-secondary fw-medium" : "text-charcoal",
                           isRtl && "flex-row-reverse text-right",
                         )}
                       >
@@ -1465,7 +1465,7 @@ export function SearchFields({
             {/* Residential + Commercial: Parking */}
             {showParking && (
               <div className="relative min-w-0" dir={isRtl ? "rtl" : "ltr"}>
-                <label className="mb-1 block text-xs font-medium text-[var(--color-charcoal)]/80">
+                <label className="mb-1 block text-size-xs fw-medium text-charcoal/80">
                   {t.parking}
                 </label>
                 <button
@@ -1475,9 +1475,9 @@ export function SearchFields({
                     toggleAdvancedDropdown(advParkingOpen, setAdvParkingOpen)
                   }
                   className={cn(
-                    "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-sm transition hover:border-[rgba(43,91,166,0.6)]",
-                    parking ? "text-[var(--color-charcoal)]" : "text-[rgba(51,51,51,0.5)]",
-                    advParkingOpen && "border-[var(--brand-secondary)]",
+                    "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
+                    parking ? "text-charcoal" : "text-[rgba(51,51,51,0.5)]",
+                    advParkingOpen && "border-secondary",
                     isRtl && "flex-row-reverse",
                   )}
                 >
@@ -1499,8 +1499,8 @@ export function SearchFields({
                         setAdvParkingOpen(false);
                       }}
                       className={cn(
-                        "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
-                        !parking ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium" : "text-[var(--color-charcoal)]",
+                        "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
+                        !parking ? "bg-surface text-secondary fw-medium" : "text-charcoal",
                         isRtl && "flex-row-reverse text-right",
                       )}
                     >
@@ -1515,8 +1515,8 @@ export function SearchFields({
                           setAdvParkingOpen(false);
                         }}
                         className={cn(
-                          "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
-                          parking === n ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium" : "text-[var(--color-charcoal)]",
+                          "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
+                          parking === n ? "bg-surface text-secondary fw-medium" : "text-charcoal",
                           isRtl && "flex-row-reverse text-right",
                         )}
                       >
@@ -1532,7 +1532,7 @@ export function SearchFields({
             {showAreaRange && (
               <>
                 <div className="min-w-0" dir={isRtl ? "rtl" : "ltr"}>
-                  <label className="mb-1 block text-xs font-medium text-[var(--color-charcoal)]/80">
+                  <label className="mb-1 block text-size-xs fw-medium text-charcoal/80">
                     {t.minArea}
                   </label>
                   <input
@@ -1541,11 +1541,11 @@ export function SearchFields({
                     placeholder={t.minArea}
                     value={minArea}
                     onChange={(e) => setMinArea(e.target.value)}
-                    className="h-11 w-full rounded-xl border-2 border-[var(--border-subtle)] bg-[var(--surface)]/60 px-3 text-sm text-[var(--color-charcoal)] placeholder:text-[var(--color-charcoal)]/50 focus:border-[var(--brand-secondary)] focus:outline-none"
+                    className="h-11 w-full rounded-xl border-2 border-subtle bg-surface/60 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:border-secondary focus:outline-none"
                   />
                 </div>
                 <div className="min-w-0" dir={isRtl ? "rtl" : "ltr"}>
-                  <label className="mb-1 block text-xs font-medium text-[var(--color-charcoal)]/80">
+                  <label className="mb-1 block text-size-xs fw-medium text-charcoal/80">
                     {t.maxArea}
                   </label>
                   <input
@@ -1554,7 +1554,7 @@ export function SearchFields({
                     placeholder={t.maxArea}
                     value={maxArea}
                     onChange={(e) => setMaxArea(e.target.value)}
-                    className="h-11 w-full rounded-xl border-2 border-[var(--border-subtle)] bg-[var(--surface)]/60 px-3 text-sm text-[var(--color-charcoal)] placeholder:text-[var(--color-charcoal)]/50 focus:border-[var(--brand-secondary)] focus:outline-none"
+                    className="h-11 w-full rounded-xl border-2 border-subtle bg-surface/60 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:border-secondary focus:outline-none"
                   />
                 </div>
               </>
@@ -1563,7 +1563,7 @@ export function SearchFields({
             {/* Residential + Commercial: Property Age */}
             {showPropertyAge && (
               <div className="relative min-w-0" dir={isRtl ? "rtl" : "ltr"}>
-                <label className="mb-1 block text-xs font-medium text-[var(--color-charcoal)]/80">
+                <label className="mb-1 block text-size-xs fw-medium text-charcoal/80">
                   {t.propertyAge}
                 </label>
                 <button
@@ -1576,9 +1576,9 @@ export function SearchFields({
                     )
                   }
                   className={cn(
-                    "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-sm transition hover:border-[rgba(43,91,166,0.6)]",
-                    propertyAge ? "text-[var(--color-charcoal)]" : "text-[rgba(51,51,51,0.5)]",
-                    advPropertyAgeOpen && "border-[var(--brand-secondary)]",
+                    "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
+                    propertyAge ? "text-charcoal" : "text-[rgba(51,51,51,0.5)]",
+                    advPropertyAgeOpen && "border-secondary",
                     isRtl && "flex-row-reverse",
                   )}
                 >
@@ -1610,8 +1610,8 @@ export function SearchFields({
                         setAdvPropertyAgeOpen(false);
                       }}
                       className={cn(
-                        "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
-                        !propertyAge ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium" : "text-[var(--color-charcoal)]",
+                        "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
+                        !propertyAge ? "bg-surface text-secondary fw-medium" : "text-charcoal",
                         isRtl && "flex-row-reverse text-right",
                       )}
                     >
@@ -1626,8 +1626,8 @@ export function SearchFields({
                           setAdvPropertyAgeOpen(false);
                         }}
                         className={cn(
-                          "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
-                          propertyAge === opt ? "bg-[var(--surface)] text-[var(--brand-secondary)] font-medium" : "text-[var(--color-charcoal)]",
+                          "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
+                          propertyAge === opt ? "bg-surface text-secondary fw-medium" : "text-charcoal",
                           isRtl && "flex-row-reverse text-right",
                         )}
                       >
@@ -1643,7 +1643,7 @@ export function SearchFields({
             {showPlotAreaRange && (
               <>
                 <div className="min-w-0" dir={isRtl ? "rtl" : "ltr"}>
-                  <label className="mb-1 block text-xs font-medium text-[var(--color-charcoal)]/80">
+                  <label className="mb-1 block text-size-xs fw-medium text-charcoal/80">
                     {t.minPlotArea}
                   </label>
                   <input
@@ -1652,11 +1652,11 @@ export function SearchFields({
                     placeholder={t.minPlotArea}
                     value={minPlotArea}
                     onChange={(e) => setMinPlotArea(e.target.value)}
-                    className="h-11 w-full rounded-xl border-2 border-[var(--border-subtle)] bg-[var(--surface)]/60 px-3 text-sm text-[var(--color-charcoal)] placeholder:text-[var(--color-charcoal)]/50 focus:border-[var(--brand-secondary)] focus:outline-none"
+                    className="h-11 w-full rounded-xl border-2 border-subtle bg-surface/60 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:border-secondary focus:outline-none"
                   />
                 </div>
                 <div className="min-w-0" dir={isRtl ? "rtl" : "ltr"}>
-                  <label className="mb-1 block text-xs font-medium text-[var(--color-charcoal)]/80">
+                  <label className="mb-1 block text-size-xs fw-medium text-charcoal/80">
                     {t.maxPlotArea}
                   </label>
                   <input
@@ -1665,7 +1665,7 @@ export function SearchFields({
                     placeholder={t.maxPlotArea}
                     value={maxPlotArea}
                     onChange={(e) => setMaxPlotArea(e.target.value)}
-                    className="h-11 w-full rounded-xl border-2 border-[var(--border-subtle)] bg-[var(--surface)]/60 px-3 text-sm text-[var(--color-charcoal)] placeholder:text-[var(--color-charcoal)]/50 focus:border-[var(--brand-secondary)] focus:outline-none"
+                    className="h-11 w-full rounded-xl border-2 border-subtle bg-surface/60 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:border-secondary focus:outline-none"
                   />
                 </div>
               </>
@@ -1673,7 +1673,7 @@ export function SearchFields({
 
             {showGovernorate && (
               <div className="min-w-0" dir={isRtl ? "rtl" : "ltr"}>
-                <label className="mb-1 block text-xs font-medium text-[var(--color-charcoal)]/80">
+                <label className="mb-1 block text-size-xs fw-medium text-charcoal/80">
                   Governorate
                 </label>
                 <input
@@ -1681,14 +1681,14 @@ export function SearchFields({
                   placeholder="Governorate"
                   value={governorate}
                   onChange={(e) => setGovernorate(e.target.value)}
-                  className="h-11 w-full rounded-xl border-2 border-[var(--border-subtle)] bg-[var(--surface)]/60 px-3 text-sm text-[var(--color-charcoal)] placeholder:text-[var(--color-charcoal)]/50 focus:border-[var(--brand-secondary)] focus:outline-none"
+                  className="h-11 w-full rounded-xl border-2 border-subtle bg-surface/60 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:border-secondary focus:outline-none"
                 />
               </div>
             )}
 
             {showDirectorate && (
               <div className="min-w-0" dir={isRtl ? "rtl" : "ltr"}>
-                <label className="mb-1 block text-xs font-medium text-[var(--color-charcoal)]/80">
+                <label className="mb-1 block text-size-xs fw-medium text-charcoal/80">
                   Directorate
                 </label>
                 <input
@@ -1696,14 +1696,14 @@ export function SearchFields({
                   placeholder="Directorate"
                   value={directorate}
                   onChange={(e) => setDirectorate(e.target.value)}
-                  className="h-11 w-full rounded-xl border-2 border-[var(--border-subtle)] bg-[var(--surface)]/60 px-3 text-sm text-[var(--color-charcoal)] placeholder:text-[var(--color-charcoal)]/50 focus:border-[var(--brand-secondary)] focus:outline-none"
+                  className="h-11 w-full rounded-xl border-2 border-subtle bg-surface/60 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:border-secondary focus:outline-none"
                 />
               </div>
             )}
 
             {showVillage && (
               <div className="min-w-0" dir={isRtl ? "rtl" : "ltr"}>
-                <label className="mb-1 block text-xs font-medium text-[var(--color-charcoal)]/80">
+                <label className="mb-1 block text-size-xs fw-medium text-charcoal/80">
                   Village
                 </label>
                 <input
@@ -1711,14 +1711,14 @@ export function SearchFields({
                   placeholder="Village"
                   value={village}
                   onChange={(e) => setVillage(e.target.value)}
-                  className="h-11 w-full rounded-xl border-2 border-[var(--border-subtle)] bg-[var(--surface)]/60 px-3 text-sm text-[var(--color-charcoal)] placeholder:text-[var(--color-charcoal)]/50 focus:border-[var(--brand-secondary)] focus:outline-none"
+                  className="h-11 w-full rounded-xl border-2 border-subtle bg-surface/60 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:border-secondary focus:outline-none"
                 />
               </div>
             )}
 
             {showParcelName && (
               <div className="min-w-0" dir={isRtl ? "rtl" : "ltr"}>
-                <label className="mb-1 block text-xs font-medium text-[var(--color-charcoal)]/80">
+                <label className="mb-1 block text-size-xs fw-medium text-charcoal/80">
                   Parcel Name
                 </label>
                 <input
@@ -1726,19 +1726,19 @@ export function SearchFields({
                   placeholder="Parcel Name"
                   value={parcelName}
                   onChange={(e) => setParcelName(e.target.value)}
-                  className="h-11 w-full rounded-xl border-2 border-[var(--border-subtle)] bg-[var(--surface)]/60 px-3 text-sm text-[var(--color-charcoal)] placeholder:text-[var(--color-charcoal)]/50 focus:border-[var(--brand-secondary)] focus:outline-none"
+                  className="h-11 w-full rounded-xl border-2 border-subtle bg-surface/60 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:border-secondary focus:outline-none"
                 />
               </div>
             )}
           </div>
 
           {amenityOptions.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-[var(--border-subtle)] pt-4">
+            <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-subtle pt-4">
               {amenityOptions.map(({ key, label, checked, set }) => (
                 <label
                   key={key}
                   className={cn(
-                    "flex cursor-pointer items-center gap-2 text-sm text-[var(--color-charcoal)]",
+                    "flex cursor-pointer items-center gap-2 text-size-sm text-charcoal",
                     isRtl && "flex-row-reverse",
                   )}
                 >
@@ -1746,7 +1746,7 @@ export function SearchFields({
                     type="checkbox"
                     checked={checked}
                     onChange={(e) => set(e.target.checked)}
-                    className="h-4 w-4 cursor-pointer rounded border-[var(--border-subtle)] text-[var(--brand-secondary)] focus:ring-[var(--brand-primary)]"
+                    className="h-4 w-4 cursor-pointer rounded border-subtle text-secondary focus:ring-primary"
                   />
                   <span>{label}</span>
                 </label>
@@ -1770,3 +1770,5 @@ export function SearchFields({
     </section>
   );
 }
+
+

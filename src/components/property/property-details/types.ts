@@ -19,6 +19,7 @@ export interface DetailedProperty {
   gallery?: string[];
   /** Agent/broker name for contact modals */
   brokerName?: string;
+  propertyType:string
 }
 
 export type HeroMediaItem =

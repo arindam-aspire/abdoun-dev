@@ -19,7 +19,7 @@ export function HeroSection({ translations: t, isRtl }: HeroSectionProps) {
 
   return (
     <section
-      className="relative min-h-[420px] overflow-x-clip bg-[var(--brand-secondary)] text-white md:min-h-[480px]"
+      className="relative min-h-[420px] overflow-x-clip bg-secondary text-white md:min-h-[480px]"
       dir={isRtl ? "rtl" : "ltr"}
     >
       <div className="pointer-events-none absolute inset-0 z-0 min-h-[420px] md:min-h-[480px]">
@@ -50,7 +50,7 @@ export function HeroSection({ translations: t, isRtl }: HeroSectionProps) {
         }`}
       >
         <div className="space-y-4 md:space-y-5">
-          <h1 className="text-balance text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-5xl">
+          <h1 className="text-balance text-size-3xl fw-semibold leading-tight tracking-tight sm:text-size-4xl md:text-size-5xl">
             {t.title}
           </h1>
         </div>
@@ -75,3 +75,5 @@ export function HeroSection({ translations: t, isRtl }: HeroSectionProps) {
     </section>
   );
 }
+
+

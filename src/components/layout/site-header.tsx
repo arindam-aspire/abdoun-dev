@@ -104,7 +104,7 @@ export function SiteHeader({ language }: SiteHeaderProps) {
             priority
             imageClassName={isScrolled ? "h-7 md:h-9" : "h-8 md:h-10"}
           />
-          <span className="inline-flex flex-col items-center rounded-full border border-[rgba(253,185,19,0.55)] bg-[rgba(253,185,19,0.12)] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-accent)] md:px-2.5 md:text-[11px] leading-tight">
+          <span className="inline-flex flex-col items-center rounded-full border border-[rgba(253,185,19,0.55)] bg-[rgba(253,185,19,0.12)] px-2 py-1 text-size-2xs fw-semibold uppercase tracking-[0.12em] text-accent md:px-2.5 md:text-size-11 leading-tight">
             <span>Since</span>
             <span>1988</span>
           </span>
@@ -112,23 +112,23 @@ export function SiteHeader({ language }: SiteHeaderProps) {
 
         {/* Desktop navigation */}
         <nav
-          className={`relative hidden md:flex items-center gap-6 text-sm font-medium text-white/80 ${isRTL ? "text-right" : ""}`}
+          className={`relative hidden md:flex items-center gap-6 text-size-sm fw-medium text-white/80 ${isRTL ? "text-right" : ""}`}
         >
           <Link
             href={`/${language}/list`}
-            className="border-b-2 border-transparent transition hover:border-[var(--brand-accent)] hover:text-white"
+            className="border-b-2 border-transparent transition hover:border-accent hover:text-white"
           >
             {t("nav.listProperty")}
           </Link>
           <Link
             href={`/${language}/team`}
-            className="border-b-2 border-transparent transition hover:border-[var(--brand-accent)] hover:text-white"
+            className="border-b-2 border-transparent transition hover:border-accent hover:text-white"
           >
             {t("nav.ourTeam")}
           </Link>
           <Link
             href={`/${language}/about`}
-            className="border-b-2 border-transparent transition hover:border-[var(--brand-accent)] hover:text-white"
+            className="border-b-2 border-transparent transition hover:border-accent hover:text-white"
           >
             {t("nav.aboutUs")}
           </Link>
@@ -154,38 +154,38 @@ export function SiteHeader({ language }: SiteHeaderProps) {
               <button
                 type="button"
                 onClick={() => setIsProfileOpen((prev) => !prev)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/50 bg-white/20 text-xs font-bold text-white hover:bg-white/30 cursor-pointer"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/50 bg-white/20 text-size-xs fw-bold text-white hover:bg-white/30 cursor-pointer"
                 aria-label="Profile menu"
               >
                 {initials}
               </button>
               {isProfileOpen ? (
                 <div
-                  className={`absolute top-11 z-30 min-w-[240px] rounded-xl border border-[var(--border-subtle)] bg-white py-2 text-[var(--color-charcoal)] shadow-xl ${isRTL ? "left-0" : "right-0"}`}
+                  className={`absolute top-11 z-30 min-w-[240px] rounded-xl border border-subtle bg-white py-2 text-charcoal shadow-xl ${isRTL ? "left-0" : "right-0"}`}
                 >
-                  <div className="border-b border-[var(--border-subtle)] px-4 py-3">
-                    <p className="truncate text-sm font-semibold">{user.name}</p>
-                    <p className="mt-0.5 truncate text-xs text-zinc-500">{user.email}</p>
+                  <div className="border-b border-subtle px-4 py-3">
+                    <p className="truncate text-size-sm fw-semibold">{user.name}</p>
+                    <p className="mt-0.5 truncate text-size-xs text-zinc-500">{user.email}</p>
                   </div>
                   <nav className="py-1 px-2" aria-label="Account menu">
                     <Link
                       href={`/${language}/favourites`}
                       onClick={() => setIsProfileOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                      className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
                     >
                       {tCommon("myFavourites")}
                     </Link>
                     <Link
                       href={`/${language}/saved-searches`}
                       onClick={() => setIsProfileOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                      className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
                     >
                       {tCommon("mySavedSearches")}
                     </Link>
                     <Link
                       href={`/${language}/recently-viewed`}
                       onClick={() => setIsProfileOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                      className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
                     >
                       {tCommon("myRecentlyViewed")}
                     </Link>
@@ -234,7 +234,7 @@ export function SiteHeader({ language }: SiteHeaderProps) {
                       ) : null}
                     </div>
                   </nav>
-                  <div className="mt-1 border-t border-[var(--border-subtle)] px-3 pt-2 pb-2">
+                  <div className="mt-1 border-t border-subtle px-3 pt-2 pb-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -243,7 +243,7 @@ export function SiteHeader({ language }: SiteHeaderProps) {
                         dispatch(logout());
                         setIsProfileOpen(false);
                       }}
-                      className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-size-sm fw-semibold text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
                     >
                       {tCommon("signOut")}
                     </button>
@@ -257,7 +257,7 @@ export function SiteHeader({ language }: SiteHeaderProps) {
             type="button"
             onClick={() => setIsAuthOpen(true)}
             suppressHydrationWarning
-            className="inline-flex h-8 items-center rounded-full border border-[var(--brand-accent)] bg-[var(--brand-accent)] px-3 text-[11px] font-semibold text-[var(--brand-secondary)] hover:brightness-95 md:h-9 md:px-4 md:text-xs cursor-pointer"
+            className="inline-flex h-8 items-center rounded-full border border-accent bg-accent px-3 text-size-11 fw-semibold text-secondary hover:brightness-95 md:h-9 md:px-4 md:text-size-xs cursor-pointer"
           >
               {tCommon("signUpSignIn")}
             </button>
@@ -278,4 +278,6 @@ export function SiteHeader({ language }: SiteHeaderProps) {
     </header>
   );
 }
+
+
 

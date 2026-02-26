@@ -29,7 +29,7 @@ export function PropertyCard({
       className={`group relative overflow-hidden bg-white transition ${
         isMinimal
           ? "rounded-lg shadow-[0_2px_12px_rgba(15,23,42,0.06)] hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)]"
-          : "rounded-2xl border border-[var(--border-subtle)] shadow-sm hover:-translate-y-1 hover:shadow-lg"
+          : "rounded-2xl border border-subtle shadow-sm hover:-translate-y-1 hover:shadow-lg"
       } ${isRtl ? "flex h-full flex-col text-right" : "flex h-full flex-col text-left"}`}
     >
       <div className="relative overflow-hidden">
@@ -48,14 +48,14 @@ export function PropertyCard({
             isRtl ? "right-4 flex-row-reverse" : "left-4"
           }`}
         >
-          <span className="rounded-full bg-[var(--brand-accent)] px-3 py-1 text-xs font-semibold text-[var(--brand-on-accent)] shadow-sm">
+          <span className="rounded-full bg-accent px-3 py-1 text-size-xs fw-semibold text-on-accent shadow-sm">
             {property.badge}
           </span>
         </div>
         <FavouriteButton
           propertyId={property.id}
-          className={`absolute top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[var(--brand-secondary)] shadow-sm hover:bg-white ${
-            isMinimal ? "" : "ring-1 ring-[var(--border-subtle)]"
+          className={`absolute top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-secondary shadow-sm hover:bg-white ${
+            isMinimal ? "" : "ring-1 ring-subtle"
           } ${isRtl ? "left-4" : "right-4"}`}
           iconClassName="h-4 w-4"
         />
@@ -68,20 +68,20 @@ export function PropertyCard({
           }`}
         >
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[rgba(51,51,51,0.7)]">
+            <p className="text-size-xs fw-semibold uppercase tracking-[0.16em] text-[rgba(51,51,51,0.7)]">
               {agentLabel}
             </p>
-            <h3 className="mt-1 h-10 overflow-hidden text-sm font-semibold leading-5 text-[var(--brand-secondary)]">
+            <h3 className="mt-1 h-10 overflow-hidden text-size-sm fw-semibold leading-5 text-secondary">
               {property.title}
             </h3>
           </div>
-          <p className="shrink-0 text-sm font-semibold text-[var(--brand-secondary)]">
+          <p className="shrink-0 text-size-sm fw-semibold text-secondary">
             {property.price}
           </p>
         </div>
 
         <div
-          className={`flex items-center gap-1 text-xs text-[rgba(51,51,51,0.75)] ${
+          className={`flex items-center gap-1 text-size-xs text-[rgba(51,51,51,0.75)] ${
             isRtl ? "flex-row-reverse" : ""
           }`}
         >
@@ -90,8 +90,8 @@ export function PropertyCard({
         </div>
 
         <div
-          className={`flex items-center justify-between px-3 py-2 text-[11px] text-[rgba(51,51,51,0.85)] ${
-            isMinimal ? "bg-[var(--surface)]/60" : "rounded-xl bg-[var(--surface)]"
+          className={`flex items-center justify-between px-3 py-2 text-size-11 text-[rgba(51,51,51,0.85)] ${
+            isMinimal ? "bg-surface/60" : "rounded-xl bg-surface"
           } ${isRtl ? "mt-auto flex-row-reverse" : "mt-auto"}`}
         >
           <div className="flex items-center gap-1.5">
@@ -120,3 +120,5 @@ export function PropertyCard({
     </article>
   );
 }
+
+

@@ -166,14 +166,14 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
         </div>
 
         <nav
-          className={`hidden md:flex items-center justify-center gap-6 text-sm font-medium text-white/80 ${isRTL ? "flex-row-reverse" : ""}`}
+          className={`hidden md:flex items-center justify-center gap-6 text-size-sm fw-medium text-white/80 ${isRTL ? "flex-row-reverse" : ""}`}
           aria-label="Main navigation"
         >
           {navItems.map((item) => (
             <Link
               key={item.id}
               href={`/${activeLanguage}${item.path}`}
-              className="border-b-2 border-transparent transition hover:border-[var(--brand-accent)] hover:text-white"
+              className="border-b-2 border-transparent transition hover:border-accent hover:text-white"
             >
               {t(item.labelKey)}
             </Link>
@@ -204,7 +204,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
               <button
                 type="button"
                 onClick={() => setIsProfileOpen((prev) => !prev)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/50 bg-white/20 text-xs font-bold text-white hover:bg-white/30 cursor-pointer"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/50 bg-white/20 text-size-xs fw-bold text-white hover:bg-white/30 cursor-pointer"
                 aria-label="Profile menu"
               >
                 {initials}
@@ -212,13 +212,13 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
               {isProfileOpen ? (
                 <div
                   className={cn(
-                    "absolute top-11 z-30 min-w-[240px] rounded-xl border border-[var(--border-subtle)] bg-white py-2 text-[var(--color-charcoal)] shadow-xl",
+                    "absolute top-11 z-30 min-w-[240px] rounded-xl border border-subtle bg-white py-2 text-charcoal shadow-xl",
                     isRTL ? "left-0" : "right-0",
                   )}
                 >
-                  <div className="border-b border-[var(--border-subtle)] px-4 py-3">
-                    <p className="truncate text-sm font-semibold">{user.name}</p>
-                    <p className="mt-0.5 truncate text-xs text-zinc-500">
+                  <div className="border-b border-subtle px-4 py-3">
+                    <p className="truncate text-size-sm fw-semibold">{user.name}</p>
+                    <p className="mt-0.5 truncate text-size-xs text-zinc-500">
                       {user.email}
                     </p>
                   </div>
@@ -226,21 +226,21 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                     <Link
                       href={`/${activeLanguage}/favourites`}
                       onClick={() => setIsProfileOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                      className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
                     >
                       {tCommon("myFavourites")}
                     </Link>
                     <Link
                       href={`/${activeLanguage}/saved-searches`}
                       onClick={() => setIsProfileOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                      className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
                     >
                       {tCommon("mySavedSearches")}
                     </Link>
                     <Link
                       href={`/${activeLanguage}/recently-viewed`}
                       onClick={() => setIsProfileOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                      className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
                     >
                       {tCommon("myRecentlyViewed")}
                     </Link>
@@ -300,7 +300,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                       ) : null}
                     </div>
                   </nav>
-                  <div className="mt-1 border-t border-[var(--border-subtle)] px-3 pt-2 pb-2">
+                  <div className="mt-1 border-t border-subtle px-3 pt-2 pb-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -309,7 +309,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                         dispatch(logout());
                         setIsProfileOpen(false);
                       }}
-                      className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-size-sm fw-semibold text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
                     >
                       {tCommon("signOut")}
                     </button>
@@ -322,7 +322,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
             <button
               type="button"
               onClick={() => setIsAuthOpen(true)}
-              className="inline-flex h-8 items-center rounded-full text-[var(--brand-accent)] border border-[var(--brand-accent)] bg-transparent px-3 text-[11px] font-semibold transition-all duration-200 hover:bg-[var(--brand-accent)]/15 hover:border-yellow-300 md:h-9 md:px-4 md:text-xs cursor-pointer"
+              className="inline-flex h-8 items-center rounded-full text-accent border border-accent bg-transparent px-3 text-size-11 fw-semibold transition-all duration-200 hover:bg-accent/15 hover:border-yellow-300 md:h-9 md:px-4 md:text-size-xs cursor-pointer"
             >
               {tCommon("signUpSignIn")}
             </button>
@@ -518,3 +518,5 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
     </header>
   );
 }
+
+

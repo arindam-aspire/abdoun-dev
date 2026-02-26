@@ -10,40 +10,40 @@ export function SiteFooter({ language }: SiteFooterProps) {
   const t = useTranslations("home");
 
   return (
-    <footer className="mt-12 overflow-x-clip border-t border-[var(--brand-secondary)] bg-[var(--brand-secondary)] text-white">
+    <footer className="mt-12 overflow-x-clip border-t border-secondary bg-secondary text-white">
       {/* Top multi-column area */}
       <div
         className={`mx-auto container ${
           language === "ar" ? "text-right" : "text-left"
         }`}
       >
-        <div className="px-4 py-12 md:px-8 grid gap-10 md:gap-14 text-sm text-white/85 md:grid-cols-4">
+        <div className="px-4 py-12 md:px-8 grid gap-10 md:gap-14 text-size-sm text-white/85 md:grid-cols-4">
           {/* Brand / description */}
           <div className="space-y-3">
             <BrandLogo locale={language} imageClassName="h-8 w-auto" />
-            <p className="text-xs leading-relaxed text-white/70">
+            <p className="text-size-xs leading-relaxed text-white/70">
               {t("footerDescription")}
             </p>
           </div>
 
           {/* Properties / links column */}
           <div className="space-y-3">
-            <p className="text-sm font-semibold text-white">
+            <p className="text-size-sm fw-semibold text-white">
               {t("footerQuickLinks.buy")} / {t("footerQuickLinks.rent")}
             </p>
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
+              <p className="text-size-xs fw-semibold uppercase tracking-[0.18em] text-white/70">
                 Properties in Amman
               </p>
-              <p className="text-xs leading-relaxed text-white/70">
+              <p className="text-size-xs leading-relaxed text-white/70">
                 Abdoun | Dabouq | Dair Ghbar | Khalda | Abdali | Umm Uthaina
               </p>
             </div>
             <div className="space-y-1 pt-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
+              <p className="text-size-xs fw-semibold uppercase tracking-[0.18em] text-white/70">
                 New Projects
               </p>
-              <p className="text-xs leading-relaxed text-white/70">
+              <p className="text-size-xs leading-relaxed text-white/70">
                 Luxury villas | Branded residences | Serviced apartments
               </p>
             </div>
@@ -51,18 +51,18 @@ export function SiteFooter({ language }: SiteFooterProps) {
 
           {/* Company / network */}
           <div className="space-y-3">
-            <p className="text-sm font-semibold text-white">
+            <p className="text-size-sm fw-semibold text-white">
               {t("footerCompany.about")}
             </p>
-            <p className="text-xs leading-relaxed text-white/70">
+            <p className="text-size-xs leading-relaxed text-white/70">
               Abdoun Real Estate connects buyers, sellers, and investors with
               curated properties across West Amman and beyond.
             </p>
             <div className="space-y-1 pt-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
+              <p className="text-size-xs fw-semibold uppercase tracking-[0.18em] text-white/70">
                 More from our network
               </p>
-              <p className="text-xs text-white/70">
+              <p className="text-size-xs text-white/70">
                 Market Insights | Neighborhood Guides
               </p>
             </div>
@@ -70,7 +70,7 @@ export function SiteFooter({ language }: SiteFooterProps) {
 
           {/* Apps / newsletter */}
           <div className="space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
+            <p className="text-size-xs fw-semibold uppercase tracking-[0.18em] text-white/70">
               {t("footerStayUpdatedTitle")}
             </p>
             <p>{t("footerStayUpdatedCopy")}</p>
@@ -82,9 +82,9 @@ export function SiteFooter({ language }: SiteFooterProps) {
               <input
                 type="email"
                 placeholder={t("footerEmailPlaceholder")}
-                className="h-9 min-w-0 flex-1 rounded-full border border-white/30 bg-white/10 px-3 text-xs text-white placeholder:text-white/60 focus:border-[var(--brand-accent)] focus:outline-none focus:ring-2 focus:ring-[rgba(253,185,19,0.35)]"
+                className="h-9 min-w-0 flex-1 rounded-full border border-white/30 bg-white/10 px-3 text-size-xs text-white placeholder:text-white/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-[rgba(253,185,19,0.35)]"
               />
-              <button className="h-9 shrink-0 rounded-full bg-[var(--brand-accent)] px-4 text-xs font-semibold text-[var(--brand-secondary)] shadow-sm hover:brightness-95">
+              <button className="h-9 shrink-0 rounded-full bg-accent px-4 text-size-xs fw-semibold text-secondary shadow-sm hover:brightness-95">
                 {t("footerSubscribe")}
               </button>
             </div>
@@ -99,7 +99,7 @@ export function SiteFooter({ language }: SiteFooterProps) {
               language === "ar" ? "flex-row-reverse" : ""
             }`}
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70 flex-shrink-0">
+            <p className="text-size-xs fw-semibold uppercase tracking-[0.18em] text-white/70 flex-shrink-0">
               Get the app
             </p>
             <a
@@ -116,9 +116,9 @@ export function SiteFooter({ language }: SiteFooterProps) {
                   d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L12.001 12l5.697-3.491zM5.864 2.658L16.802 8.99l-2.302 2.302-8.636-8.636z"
                 />
               </svg>
-              <span className="text-[10px] font-medium text-white leading-tight">
+              <span className="text-size-2xs fw-medium text-white leading-tight">
                 <span className="block">Get it on</span>
-                <span className="block font-semibold">Google Play</span>
+                <span className="block fw-semibold">Google Play</span>
               </span>
             </a>
             <a
@@ -135,9 +135,9 @@ export function SiteFooter({ language }: SiteFooterProps) {
                   d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"
                 />
               </svg>
-              <span className="text-[10px] font-medium text-white leading-tight">
+              <span className="text-size-2xs fw-medium text-white leading-tight">
                 <span className="block">Available on the</span>
-                <span className="block font-semibold">App Store</span>
+                <span className="block fw-semibold">App Store</span>
               </span>
             </a>
             <a
@@ -205,9 +205,9 @@ export function SiteFooter({ language }: SiteFooterProps) {
           </div>
         </div>
         {/* Middle link bar */}
-        <div className="border-t border-white/15 bg-[var(--brand-secondary)]">
+        <div className="border-t border-white/15 bg-secondary">
           <div
-            className={`mx-auto flex container flex-wrap items-center gap-4 px-4 py-3 text-[11px] text-white/70 md:px-8 ${
+            className={`mx-auto flex container flex-wrap items-center gap-4 px-4 py-3 text-size-11 text-white/70 md:px-8 ${
               language === "ar" ? "justify-end" : ""
             }`}
           >
@@ -220,9 +220,9 @@ export function SiteFooter({ language }: SiteFooterProps) {
         </div>
 
         {/* Disclaimer strip */}
-        <div className="border-t border-white/15 bg-[var(--brand-secondary)]">
+        <div className="border-t border-white/15 bg-secondary">
           <div
-            className={`mx-auto container px-4 py-4 md:px-8 text-[10px] leading-relaxed text-white/60 ${
+            className={`mx-auto container px-4 py-4 md:px-8 text-size-2xs leading-relaxed text-white/60 ${
               language === "ar" ? "text-right" : "text-left"
             }`}
           >
@@ -241,7 +241,7 @@ export function SiteFooter({ language }: SiteFooterProps) {
         {/* Bottom dark bar */}
         <div className="bg-[#10253b]">
           <div
-            className={`mx-auto flex container flex-col gap-2 px-4 py-3 text-[11px] text-white/85 md:flex-row md:items-center md:justify-between md:px-8 ${
+            className={`mx-auto flex container flex-col gap-2 px-4 py-3 text-size-11 text-white/85 md:flex-row md:items-center md:justify-between md:px-8 ${
               language === "ar" ? "text-right" : "text-left"
             }`}
           >
@@ -251,7 +251,7 @@ export function SiteFooter({ language }: SiteFooterProps) {
                 ? "عبدون العقارية، جميع الحقوق محفوظة."
                 : "All rights reserved."}
             </p>
-            <p className="text-[10px] text-white/70">
+            <p className="text-size-2xs text-white/70">
               All trademarks and logos belong to their respective owners.
             </p>
           </div>
@@ -259,4 +259,6 @@ export function SiteFooter({ language }: SiteFooterProps) {
     </footer>
   );
 }
+
+
 

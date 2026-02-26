@@ -16,9 +16,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           type={type}
           ref={ref}
           className={cn(
-            "flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm transition-colors",
+            "flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-size-sm text-zinc-900 shadow-sm transition-colors",
             "placeholder:text-zinc-400",
-            "focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-2 focus:border-transparent",
+            "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:border-transparent",
             "disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-zinc-50",
             "aria-invalid:border-red-500 aria-invalid:ring-red-500/20",
             error && "border-red-500 ring-2 ring-red-500/20",
@@ -29,7 +29,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           {...rest}
         />
         {error && (
-          <p id="input-error" className="mt-1.5 text-sm text-red-600" role="alert">
+          <p id="input-error" className="mt-1.5 text-size-sm text-red-600" role="alert">
             {error}
           </p>
         )}
@@ -41,3 +41,5 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 Input.displayName = "Input";
 
 export { Input };
+
+

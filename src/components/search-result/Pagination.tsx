@@ -116,15 +116,15 @@ export function Pagination({
       aria-label="Pagination"
     >
       {totalItems != null && startItem != null && endItem != null && (
-        <p className="order-2 text-sm text-[var(--color-charcoal)]/70 sm:order-1">
-          {t.showing} <span className="font-medium">{startItem}</span> {t.to}{" "}
-          <span className="font-medium">{endItem}</span> {t.of}{" "}
-          <span className="font-medium">{totalItems}</span> {t.results}
+        <p className="order-2 text-size-sm text-charcoal/70 sm:order-1">
+          {t.showing} <span className="fw-medium">{startItem}</span> {t.to}{" "}
+          <span className="fw-medium">{endItem}</span> {t.of}{" "}
+          <span className="fw-medium">{totalItems}</span> {t.results}
         </p>
       )}
 
       <div className="order-1 flex items-center gap-1 sm:order-2">
-        <span className="mr-2 hidden text-sm text-[var(--color-charcoal)]/70 sm:inline">
+        <span className="mr-2 hidden text-size-sm text-charcoal/70 sm:inline">
           {t.page} {currentPage} {t.of} {totalPages}
         </span>
 
@@ -133,9 +133,9 @@ export function Pagination({
           onClick={() => setPage(currentPage - 1)}
           disabled={!hasPrev}
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-white text-[var(--color-charcoal)] transition",
+            "flex h-10 w-10 items-center justify-center rounded-lg border border-subtle bg-white text-charcoal transition",
             hasPrev
-              ? "hover:bg-[var(--surface)] hover:border-[var(--brand-primary)]/30 hover:text-[var(--brand-primary)]"
+              ? "hover:bg-surface hover:border-primary/30 hover:text-primary"
               : "cursor-not-allowed opacity-50",
           )}
           aria-label={t.previous}
@@ -148,7 +148,7 @@ export function Pagination({
             page === "ellipsis" ? (
               <span
                 key={`ellipsis-${i}`}
-                className="flex h-10 w-10 items-center justify-center text-sm text-[var(--color-charcoal)]/50"
+                className="flex h-10 w-10 items-center justify-center text-size-sm text-charcoal/50"
                 aria-hidden
               >
                 …
@@ -159,10 +159,10 @@ export function Pagination({
                 type="button"
                 onClick={() => setPage(page)}
                 className={cn(
-                  "flex h-10 min-w-[2.5rem] items-center justify-center rounded-lg border text-sm font-medium transition",
+                  "flex h-10 min-w-[2.5rem] items-center justify-center rounded-lg border text-size-sm fw-medium transition",
                   page === currentPage
-                    ? "border-[var(--brand-secondary)] bg-[var(--brand-secondary)] text-white"
-                    : "border-[var(--border-subtle)] bg-white text-[var(--color-charcoal)] hover:border-[var(--brand-primary)]/30 hover:bg-[var(--surface)] hover:text-[var(--brand-primary)]",
+                    ? "border-secondary bg-secondary text-white"
+                    : "border-subtle bg-white text-charcoal hover:border-primary/30 hover:bg-surface hover:text-primary",
                 )}
                 aria-label={`${t.page} ${page}`}
                 aria-current={page === currentPage ? "page" : undefined}
@@ -178,9 +178,9 @@ export function Pagination({
           onClick={() => setPage(currentPage + 1)}
           disabled={!hasNext}
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-white text-[var(--color-charcoal)] transition",
+            "flex h-10 w-10 items-center justify-center rounded-lg border border-subtle bg-white text-charcoal transition",
             hasNext
-              ? "hover:bg-[var(--surface)] hover:border-[var(--brand-primary)]/30 hover:text-[var(--brand-primary)]"
+              ? "hover:bg-surface hover:border-primary/30 hover:text-primary"
               : "cursor-not-allowed opacity-50",
           )}
           aria-label={t.next}
@@ -191,3 +191,5 @@ export function Pagination({
     </nav>
   );
 }
+
+

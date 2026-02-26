@@ -28,16 +28,16 @@ export function HeroCategoryTabs({
       }`}
       dir={isRtl ? "rtl" : "ltr"}
     >
-      <div className="mx-auto inline-flex min-w-max rounded-2xl bg-white/95 p-1.5 shadow-lg ring-1 ring-[var(--border-subtle)] backdrop-blur-sm">
+      <div className="mx-auto inline-flex min-w-max rounded-2xl bg-white/95 p-1.5 shadow-lg ring-1 ring-subtle backdrop-blur-sm">
         {tabs.map(({ key, label }) => (
           <button
             key={key}
             type="button"
             onClick={() => onTabChange(key)}
-            className={`relative cursor-pointer rounded-xl px-3 py-2 text-xs font-medium transition sm:px-5 sm:py-2.5 sm:text-sm ${
+            className={`relative cursor-pointer rounded-xl px-3 py-2 text-size-xs fw-medium transition sm:px-5 sm:py-2.5 sm:text-size-sm ${
               activeTab === key
-                ? "bg-[var(--brand-secondary)] text-white shadow-sm"
-                : "text-[var(--color-charcoal)] hover:bg-white/80 hover:text-[var(--brand-secondary)]"
+                ? "bg-secondary text-white shadow-sm"
+                : "text-charcoal hover:bg-white/80 hover:text-secondary"
             }`}
           >
             {label}
@@ -47,3 +47,5 @@ export function HeroCategoryTabs({
     </div>
   );
 }
+
+

@@ -127,19 +127,16 @@ export function FeaturedPropertiesSection({
   };
 
   return (
-    <section
-      className="bg-[var(--surface)]"
-      dir={isRtl ? "rtl" : "ltr"}
-    >
+    <section className="bg-surface" dir={isRtl ? "rtl" : "ltr"}>
       <div className="container mx-auto px-4 py-10 md:px-8 md:py-14">
         <div
           className={`mb-6 flex flex-col items-start justify-between gap-4 md:mb-8 md:flex-row md:items-end`}
         >
           <div className={isRtl ? "md:text-right" : ""}>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand-primary)]">
+            <p className="text-size-xs fw-semibold uppercase tracking-[0.18em] text-primary">
               {t.title}
             </p>
-            <h2 className="mt-2 text-xl font-semibold text-[var(--brand-secondary)] md:text-2xl">
+            <h2 className="mt-2 text-size-xl fw-semibold text-secondary md:text-size-2xl">
               {t.subtitle}
             </h2>
           </div>
@@ -147,14 +144,14 @@ export function FeaturedPropertiesSection({
             {t.viewAllHref != null ? (
               <Link
                 href={t.viewAllHref}
-                className="text-sm font-semibold text-[var(--brand-primary)] hover:text-[var(--brand-secondary)]"
+                className="text-size-sm fw-semibold text-primary hover:text-secondary"
               >
                 {t.viewAll}
               </Link>
             ) : (
               <button
                 type="button"
-                className="text-sm font-semibold text-[var(--brand-primary)] hover:text-[var(--brand-secondary)]"
+                className="text-size-sm fw-semibold text-primary hover:text-secondary"
               >
                 {t.viewAll}
               </button>
@@ -168,8 +165,8 @@ export function FeaturedPropertiesSection({
               <div
                 className={`pointer-events-none absolute inset-y-0 z-10 hidden w-20 md:block ${
                   isRtl
-                    ? "right-0 bg-gradient-to-l from-[var(--surface)] to-transparent"
-                    : "left-0 bg-gradient-to-r from-[var(--surface)] to-transparent"
+                    ? "right-0 bg-gradient-to-l from-surface to-transparent"
+                    : "left-0 bg-gradient-to-r from-surface to-transparent"
                 }`}
               />
             )}
@@ -177,8 +174,8 @@ export function FeaturedPropertiesSection({
               <div
                 className={`pointer-events-none absolute inset-y-0 z-10 hidden w-20 md:block ${
                   isRtl
-                    ? "left-0 bg-gradient-to-r from-[var(--surface)] to-transparent"
-                    : "right-0 bg-gradient-to-l from-[var(--surface)] to-transparent"
+                    ? "left-0 bg-gradient-to-r from-surface to-transparent"
+                    : "right-0 bg-gradient-to-l from-surface to-transparent"
                 }`}
               />
             )}
@@ -188,7 +185,7 @@ export function FeaturedPropertiesSection({
                 type="button"
                 aria-label="Previous properties"
                 onClick={() => scrollByPage("prev")}
-                className={`absolute top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-white text-[var(--brand-secondary)] shadow-md transition hover:bg-[var(--surface)] md:inline-flex ${
+                className={`cursor-pointer absolute top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-subtle bg-white text-secondary shadow-md transition hover:bg-surface md:inline-flex ${
                   isRtl ? "right-0 translate-x-1/2" : "left-0 -translate-x-1/2"
                 }`}
               >
@@ -200,7 +197,7 @@ export function FeaturedPropertiesSection({
                 type="button"
                 aria-label="Next properties"
                 onClick={() => scrollByPage("next")}
-                className={`absolute top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-white text-[var(--brand-secondary)] shadow-md transition hover:bg-[var(--surface)] md:inline-flex ${
+                className={`cursor-pointer absolute top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-subtle bg-white text-secondary shadow-md transition hover:bg-surface md:inline-flex ${
                   isRtl ? "left-0 -translate-x-1/2" : "right-0 translate-x-1/2"
                 }`}
               >
@@ -233,3 +230,6 @@ export function FeaturedPropertiesSection({
     </section>
   );
 }
+
+
+

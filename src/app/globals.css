@@ -36,7 +36,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans);
 }
 
 /* Direction-aware helpers
@@ -44,4 +44,65 @@ body {
    so logos, numbers, charts, and videos remain unaffected. */
 [dir="rtl"] .rtl-flip-x {
   transform: scaleX(-1);
+}
+
+@layer utilities {
+  .font-ui { font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif; }
+  .font-display { font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+  .fw-medium { font-weight: 500; }
+  .fw-semibold { font-weight: 600; }
+  .fw-bold { font-weight: 700; }
+
+  .text-size-2xs { font-size: 10px; line-height: 14px; }
+  .text-size-11 { font-size: 11px; line-height: 16px; }
+  .text-size-xs { font-size: 12px; line-height: 16px; }
+  .text-size-sm { font-size: 14px; line-height: 20px; }
+  .text-size-base { font-size: 16px; line-height: 24px; }
+  .text-size-15 { font-size: 15px; line-height: 22px; }
+  .text-size-lg { font-size: 18px; line-height: 28px; }
+  .text-size-xl { font-size: 20px; line-height: 28px; }
+  .text-size-2xl { font-size: 24px; line-height: 32px; }
+  .text-size-3xl { font-size: 30px; line-height: 36px; }
+  .text-size-4xl { font-size: 36px; line-height: 40px; }
+  .text-size-5xl { font-size: 48px; line-height: 1; }
+  .text-size-6xl { font-size: 60px; line-height: 1; }
+  .text-size-8xl { font-size: 96px; line-height: 1; }
+
+  .text-primary { color: var(--brand-primary); }
+  .text-secondary { color: var(--brand-secondary); }
+  .text-accent { color: var(--brand-accent); }
+  .text-on-primary { color: var(--brand-on-primary); }
+  .text-on-accent { color: var(--brand-on-accent); }
+  .text-charcoal { color: var(--color-charcoal); }
+
+  .bg-primary { background-color: var(--brand-primary); }
+  .bg-secondary { background-color: var(--brand-secondary); }
+  .bg-accent { background-color: var(--brand-accent); }
+  .bg-surface { background-color: var(--surface); }
+  .bg-border-subtle { background-color: var(--border-subtle); }
+  .bg-charcoal-5 { background-color: color-mix(in srgb, var(--color-charcoal) 5%, transparent); }
+  .bg-charcoal-8 { background-color: color-mix(in srgb, var(--color-charcoal) 8%, transparent); }
+  .bg-charcoal-20 { background-color: color-mix(in srgb, var(--color-charcoal) 20%, transparent); }
+
+  .border-primary { border-color: var(--brand-primary); }
+  .border-secondary { border-color: var(--brand-secondary); }
+  .border-accent { border-color: var(--brand-accent); }
+  .border-subtle { border-color: var(--border-subtle); }
+  .border-charcoal-20 { border-color: color-mix(in srgb, var(--color-charcoal) 20%, transparent); }
+
+  .ring-primary { --tw-ring-color: var(--brand-primary); }
+  .ring-secondary { --tw-ring-color: var(--brand-secondary); }
+  .ring-subtle { --tw-ring-color: var(--border-subtle); }
+
+  .hover\:text-primary:hover { color: var(--brand-primary); }
+  .hover\:text-secondary:hover { color: var(--brand-secondary); }
+  .hover\:text-accent:hover { color: var(--brand-accent); }
+
+  .focus\:ring-primary:focus { --tw-ring-color: var(--brand-primary); }
+  .focus-visible\:ring-primary:focus-visible { --tw-ring-color: var(--brand-primary); }
+  .focus-visible\:ring-secondary:focus-visible { --tw-ring-color: var(--brand-secondary); }
+  .focus-visible\:ring-accent-50:focus-visible { --tw-ring-color: color-mix(in srgb, var(--brand-accent) 50%, transparent); }
+
+  .fill-accent { fill: var(--brand-accent); }
 }

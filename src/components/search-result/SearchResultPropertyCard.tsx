@@ -86,7 +86,7 @@ export function SearchResultPropertyCard({
   return (
     <article
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-white shadow-sm transition hover:shadow-md",
+        "group relative flex h-full flex-col overflow-hidden rounded-xl border border-subtle bg-white shadow-sm transition hover:shadow-md",
       )}
       dir={isRtl ? "rtl" : "ltr"}
     >
@@ -118,12 +118,12 @@ export function SearchResultPropertyCard({
           )}
         >
           {showExclusive && (
-            <span className="inline-flex rounded-md bg-[var(--brand-accent)] px-2 py-1 text-[11px] font-semibold text-[var(--brand-secondary)] shadow-sm">
+            <span className="inline-flex rounded-md bg-accent px-2 py-1 text-size-11 fw-semibold text-secondary shadow-sm">
               Exclusive
             </span>
           )}
           {showVerified && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-black/60 px-2 py-1 text-[11px] font-medium text-white">
+            <span className="inline-flex items-center gap-1 rounded-md bg-black/60 px-2 py-1 text-size-11 fw-medium text-white">
               <CheckCircle2 className="h-3 w-3 text-white" />
               Verified
             </span>
@@ -134,7 +134,7 @@ export function SearchResultPropertyCard({
         <FavouriteButton
           propertyId={listing.id}
           className={cn(
-            "absolute top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[var(--color-charcoal)] shadow-sm ring-1 ring-[var(--border-subtle)] hover:bg-white hover:text-red-500",
+            "absolute top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-charcoal shadow-sm ring-1 ring-subtle hover:bg-white hover:text-red-500",
             isRtl ? "left-2" : "right-2",
           )}
           iconClassName="h-5 w-5"
@@ -147,7 +147,7 @@ export function SearchResultPropertyCard({
               type="button"
               onClick={goPrev}
               className={cn(
-                "absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-[var(--color-charcoal)] shadow-sm ring-1 ring-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:bg-white",
+                "absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-charcoal shadow-sm ring-1 ring-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:bg-white",
                 isRtl && "left-auto right-2",
               )}
               aria-label="Previous image"
@@ -158,7 +158,7 @@ export function SearchResultPropertyCard({
               type="button"
               onClick={goNext}
               className={cn(
-                "absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-[var(--color-charcoal)] shadow-sm ring-1 ring-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:bg-white",
+                "absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-charcoal shadow-sm ring-1 ring-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:bg-white",
                 isRtl && "right-auto left-2",
               )}
               aria-label="Next image"
@@ -194,7 +194,7 @@ export function SearchResultPropertyCard({
         {/* Broker name on image (subtle) */}
         <div
           className={cn(
-            "absolute bottom-8 left-1/2 z-0 -translate-x-1/2 text-[10px] font-medium text-white/70",
+            "absolute bottom-8 left-1/2 z-0 -translate-x-1/2 text-size-2xs fw-medium text-white/70",
             isRtl && "translate-x-1/2",
           )}
         >
@@ -212,27 +212,27 @@ export function SearchResultPropertyCard({
         <Link
           href={detailsHref}
           {...linkProps}
-          className="block outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 rounded-lg -m-1 p-1"
+          className="block outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg -m-1 p-1"
           aria-label={`View details for ${listing.title}`}
         >
-          <p className="text-base font-bold leading-tight text-[var(--color-charcoal)]">
+          <p className="text-size-base fw-bold leading-tight text-charcoal">
             {listing.price}
           </p>
-          <p className="mt-0.5 text-xs text-[var(--color-charcoal)]/80 line-clamp-1">
+          <p className="mt-0.5 text-size-xs text-charcoal/80 line-clamp-1">
             {listing.acres
               ? `${listing.acres} acres - ${listing.propertyType}`
               : `${listing.area} sqft - ${listing.propertyType}`}
           </p>
           <div
             className={cn(
-              "mt-1 flex items-center gap-1 text-[11px] text-[var(--color-charcoal)]/75",
+              "mt-1 flex items-center gap-1 text-size-11 text-charcoal/75",
               isRtl && "flex-row-reverse justify-end",
             )}
           >
-            <MapPin className="h-3 w-3 shrink-0 text-[var(--brand-primary)]" aria-hidden />
+            <MapPin className="h-3 w-3 shrink-0 text-primary" aria-hidden />
             <span className="truncate">{listing.location}</span>
           </div>
-          <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-charcoal)]/60">
+          <p className="mt-1 text-size-2xs fw-semibold uppercase tracking-wider text-charcoal/60">
             {listing.brokerName}
           </p>
         </Link>
@@ -240,7 +240,7 @@ export function SearchResultPropertyCard({
         {/* Call, Email, WhatsApp – open contact modal */}
         <div
           className={cn(
-            "mt-2 grid grid-cols-3 gap-1.5 border-t border-[var(--border-subtle)] pt-2",
+            "mt-2 grid grid-cols-3 gap-1.5 border-t border-subtle pt-2",
           )}
         >
           <button
@@ -250,7 +250,7 @@ export function SearchResultPropertyCard({
               e.stopPropagation();
               setEmailModalOpen(true);
             }}
-            className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center gap-1 rounded-md bg-[var(--brand-secondary)]/12 px-1.5 text-[11px] font-semibold text-[var(--brand-secondary)] hover:bg-[var(--brand-secondary)]/18"
+            className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center gap-1 rounded-md bg-secondary/12 px-1.5 text-size-11 fw-semibold text-secondary hover:bg-secondary/18"
           >
             <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden />
             <span className="truncate">{t.email}</span>
@@ -262,7 +262,7 @@ export function SearchResultPropertyCard({
               e.stopPropagation();
               setContactModalOpen(true);
             }}
-            className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center gap-1 rounded-md bg-[var(--brand-secondary)]/12 px-1.5 text-[11px] font-semibold text-[var(--brand-secondary)] hover:bg-[var(--brand-secondary)]/18"
+            className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center gap-1 rounded-md bg-secondary/12 px-1.5 text-size-11 fw-semibold text-secondary hover:bg-secondary/18"
           >
             <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden />
             <span className="truncate">{t.call}</span>
@@ -274,7 +274,7 @@ export function SearchResultPropertyCard({
               e.stopPropagation();
               setWhatsappModalOpen(true);
             }}
-            className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center rounded-md bg-[var(--brand-secondary)]/12 text-[var(--brand-secondary)] hover:bg-[var(--brand-secondary)]/18"
+            className="inline-flex h-9 min-w-0 cursor-pointer items-center justify-center rounded-md bg-secondary/12 text-secondary hover:bg-secondary/18"
             aria-label="WhatsApp"
           >
             <svg
@@ -347,3 +347,5 @@ export function SearchResultPropertyCard({
     </article>
   );
 }
+
+

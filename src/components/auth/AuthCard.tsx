@@ -22,10 +22,11 @@ export function AuthCard({ locale, title, subtitle, children }: AuthCardProps) {
         </Link>
       </div>
 
-      <h1 className="mt-5 text-center text-xl font-bold text-zinc-900 sm:text-2xl">{title}</h1>
-      {subtitle ? <p className="mt-2 text-center text-sm text-zinc-600">{subtitle}</p> : null}
+      <h1 className="mt-5 text-center text-size-xl fw-bold text-zinc-900 sm:text-size-2xl">{title}</h1>
+      {subtitle ? <p className="mt-2 text-center text-size-sm text-zinc-600">{subtitle}</p> : null}
 
       <div className="mt-6">{children}</div>
     </div>
   );
 }
+

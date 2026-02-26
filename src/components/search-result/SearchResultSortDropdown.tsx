@@ -14,7 +14,7 @@ export const SORT_OPTIONS: { value: SortKey; labelKey: string }[] = [
 ];
 
 const dropdownPanelClass =
-  "min-w-[180px] rounded-xl border border-[var(--border-subtle)] bg-white p-2 shadow-xl ring-1 ring-black/5";
+  "min-w-[180px] rounded-xl border border-subtle bg-white p-2 shadow-xl ring-1 ring-black/5";
 
 export interface SearchResultSortDropdownProps {
   value: SortKey;
@@ -48,7 +48,7 @@ export function SearchResultSortDropdown({
         aria-haspopup="listbox"
         aria-label={getLabel("sortNewest")}
       >
-        <Menu className="h-4 w-4 shrink-0 text-[var(--color-charcoal)]/60" aria-hidden />
+        <Menu className="h-4 w-4 shrink-0 text-charcoal/60" aria-hidden />
         {getLabel(currentLabelKey)}
         <ChevronDown className="h-4 w-4 shrink-0" aria-hidden />
       </button>
@@ -72,10 +72,10 @@ export function SearchResultSortDropdown({
                   setOpen(false);
                 }}
                 className={cn(
-                  "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[var(--surface)]",
+                  "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
                   value === opt.value
-                    ? "bg-[var(--surface)] font-medium text-[var(--brand-secondary)]"
-                    : "text-[var(--color-charcoal)]",
+                    ? "bg-surface fw-medium text-secondary"
+                    : "text-charcoal",
                   isRtl && "flex-row-reverse text-right",
                 )}
               >
@@ -88,3 +88,5 @@ export function SearchResultSortDropdown({
     </div>
   );
 }
+
+

@@ -27,7 +27,7 @@ export function AuthPopupField({
 }: AuthPopupFieldProps) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="text-base font-semibold text-zinc-800">
+      <Label htmlFor={id} className="text-size-base fw-semibold text-zinc-800">
         {label}
       </Label>
       <div className="relative">
@@ -39,7 +39,7 @@ export function AuthPopupField({
           onChange={(event) => onChange(event.target.value)}
           onFocus={onFocus}
           error={error}
-          className="h-14 rounded-full border-2 border-[rgba(43,91,166,0.35)] bg-white px-5 text-base text-zinc-900 placeholder:text-zinc-500 focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[rgba(26,59,92,0.2)] focus:ring-offset-0"
+          className="h-14 rounded-full border-2 border-[rgba(43,91,166,0.35)] bg-white px-5 text-size-base text-zinc-900 placeholder:text-zinc-500 focus:border-primary focus:ring-2 focus:ring-[rgba(26,59,92,0.2)] focus:ring-offset-0"
         />
         {rightAdornment ? (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -50,3 +50,5 @@ export function AuthPopupField({
     </div>
   );
 }
+
+

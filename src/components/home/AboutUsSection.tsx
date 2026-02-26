@@ -18,18 +18,18 @@ export function AboutUsSection({
   isRtl,
 }: AboutUsSectionProps) {
   return (
-    <section className="bg-[var(--surface)] border-t border-[var(--border-subtle)]">
+    <section className="bg-surface border-t border-subtle">
       <div className="container mx-auto px-4 py-10 md:px-8 md:py-10">
         <header
           className={`mx-auto ${
             isRtl ? "md:text-right" : "md:text-left"
           }`}
         >
-          <h2 className="text-2xl font-semibold leading-tight text-[var(--brand-secondary)] md:text-3xl md:leading-snug">
+          <h2 className="text-size-2xl fw-semibold leading-tight text-secondary md:text-size-3xl md:leading-snug">
             {title}
           </h2>
           <p
-            className={`mt-4 text-sm leading-relaxed text-[rgba(51,51,51,0.8)] md:text-base ${
+            className={`mt-4 text-size-sm leading-relaxed text-[rgba(51,51,51,0.8)] md:text-size-base ${
               isRtl ? "text-right" : "text-left"
             }`}
           >
@@ -38,7 +38,7 @@ export function AboutUsSection({
           {seeMoreLabel && seeMoreHref && (
             <Link
               href={seeMoreHref}
-              className="mt-6 inline-flex items-center rounded-full bg-[var(--brand-secondary)] px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-90 transition-opacity"
+              className="mt-6 inline-flex items-center rounded-full bg-secondary px-5 py-2.5 text-size-sm fw-medium text-white shadow-sm hover:opacity-90 transition-opacity"
             >
               {seeMoreLabel}
             </Link>
@@ -48,3 +48,5 @@ export function AboutUsSection({
     </section>
   );
 }
+
+

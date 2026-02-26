@@ -15,7 +15,8 @@ export function AuthField({ id, label, error, helperText, ...rest }: AuthFieldPr
         {label}
       </Label>
       <Input id={id} error={error} {...rest} />
-      {!error && helperText ? <p className="text-xs text-zinc-500">{helperText}</p> : null}
+      {!error && helperText ? <p className="text-size-xs text-zinc-500">{helperText}</p> : null}
     </div>
   );
 }
+

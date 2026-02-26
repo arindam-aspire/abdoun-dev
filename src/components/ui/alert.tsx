@@ -15,7 +15,7 @@ const alertVariants = cva(
         warning:
           "border-amber-200 bg-amber-50 text-amber-900 [&>svg]:text-amber-600",
         info:
-          "border-[var(--brand-primary)] bg-[var(--surface)] text-[var(--brand-secondary)] [&>svg]:text-[var(--brand-primary)]",
+          "border-primary bg-surface text-secondary [&>svg]:text-primary",
       },
     },
     defaultVariants: {
@@ -49,7 +49,7 @@ export interface AlertTitleProps extends HTMLAttributes<HTMLHeadingElement> {
 export function AlertTitle({ className, children, ...rest }: AlertTitleProps) {
   return (
     <h5
-      className={cn("mb-1 font-medium leading-none tracking-tight", className)}
+      className={cn("mb-1 fw-medium leading-none tracking-tight", className)}
       {...rest}
     >
       {children}
@@ -68,8 +68,10 @@ export function AlertDescription({
   ...rest
 }: AlertDescriptionProps) {
   return (
-    <div className={cn("text-sm [&_p]:leading-relaxed", className)} {...rest}>
+    <div className={cn("text-size-sm [&_p]:leading-relaxed", className)} {...rest}>
       {children}
     </div>
   );
 }
+
+

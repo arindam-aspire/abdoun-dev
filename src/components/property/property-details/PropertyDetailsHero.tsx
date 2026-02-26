@@ -242,7 +242,7 @@ export function PropertyDetailsHero({
 
           <FavouriteButton
             propertyId={property.id}
-            className={`absolute top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-[var(--brand-secondary)] shadow-sm ring-1 ring-[var(--border-subtle)] hover:bg-white hover:text-red-500 ${
+            className={`absolute top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-secondary shadow-sm ring-1 ring-subtle hover:bg-white hover:text-red-500 ${
               isRtl ? "left-4" : "right-4"
             }`}
             iconClassName="h-5 w-5"
@@ -392,3 +392,4 @@ export function PropertyDetailsHero({
     </section>
   );
 }
+

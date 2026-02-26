@@ -47,7 +47,7 @@ export function AuthPopupForgotStep({
       {forgot.step === "otp" ? (
         <>
           {forgot.debugOtp ? (
-            <p className="rounded bg-zinc-100 px-3 py-2 text-xs">
+            <p className="rounded bg-zinc-100 px-3 py-2 text-size-xs">
               Demo OTP: {forgot.debugOtp}
             </p>
           ) : null}
@@ -109,3 +109,4 @@ export function AuthPopupForgotStep({
     </div>
   );
 }
+

@@ -77,7 +77,7 @@ export function AuthPopupEmailStep({
       />
       <button
         type="button"
-        className="text-sm text-sky-800 hover:underline"
+        className="text-size-sm text-sky-800 hover:underline"
         onClick={onForgotPassword}
       >
         {t("forgotPassword")}
@@ -93,7 +93,7 @@ export function AuthPopupEmailStep({
         {loading ? "Logging in..." : t("logIn")}
       </Button>
 
-      <div className="py-1 text-center text-md text-zinc-700 sm:text-md">
+      <div className="py-1 text-center text-size-base text-zinc-700 sm:text-size-base">
         {t("or")}
       </div>
       <Button
@@ -108,7 +108,7 @@ export function AuthPopupEmailStep({
       </Button>
       <button
         type="button"
-        className="mt-2 w-full cursor-pointer text-center text-md font-semibold text-sky-800 hover:text-sky-900 sm:mt-3 sm:text-md"
+        className="mt-2 w-full cursor-pointer text-center text-size-base fw-semibold text-sky-800 hover:text-sky-900 sm:mt-3 sm:text-size-base"
         onClick={onGoSignup}
       >
         {t("newHereCreate")}
@@ -116,3 +116,5 @@ export function AuthPopupEmailStep({
     </div>
   );
 }
+
+
