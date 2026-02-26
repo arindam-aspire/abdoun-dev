@@ -15,6 +15,12 @@ import {
   mockVerifySignupOtp,
   type SocialProvider,
 } from "@/services/authMockService";
+import {
+  DEFAULT_COUNTRY_CODE,
+  isValidInternationalPhone,
+  normalizePhoneNumber,
+  splitPhoneNumber,
+} from "@/lib/phone";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^\+?[1-9]\d{7,14}$/;
@@ -59,7 +65,8 @@ export function useSignupFlow(locale: string) {
   const [screen, setScreen] = useState<"landing" | "manual" | "otp">("landing");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phoneCountryCode, setPhoneCountryCode] = useState(DEFAULT_COUNTRY_CODE);
+  const [phoneLocalNumber, setPhoneLocalNumber] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [challengeId, setChallengeId] = useState("");
@@ -85,8 +92,8 @@ export function useSignupFlow(locale: string) {
     value.trim() ? undefined : "Full name is required.";
   const validateEmail = (value: string) =>
     EMAIL_REGEX.test(value.trim()) ? undefined : "Enter a valid email.";
-  const validatePhone = (value: string) =>
-    PHONE_REGEX.test(value.replace(/[\s()-]/g, "").trim())
+  const validatePhone = (countryCode: string, localNumber: string) =>
+    isValidInternationalPhone(normalizePhoneNumber(countryCode, localNumber))
       ? undefined
       : "Enter a valid phone.";
   const validatePasswordField = (value: string) =>
@@ -114,7 +121,13 @@ export function useSignupFlow(locale: string) {
     } else if (field === "email") {
       setFieldError("email", validateEmail(valueOverride ?? email));
     } else if (field === "phone") {
-      setFieldError("phone", validatePhone(valueOverride ?? phone));
+      const parsedPhone = valueOverride
+        ? splitPhoneNumber(valueOverride, phoneCountryCode)
+        : { countryCode: phoneCountryCode, localNumber: phoneLocalNumber };
+      setFieldError(
+        "phone",
+        validatePhone(parsedPhone.countryCode, parsedPhone.localNumber),
+      );
     } else if (field === "password") {
       setFieldError("password", validatePasswordField(valueOverride ?? password));
     } else {
@@ -156,7 +169,7 @@ export function useSignupFlow(locale: string) {
     const nextErrors: Record<string, string> = {};
     const fullNameError = validateFullName(fullName);
     const emailError = validateEmail(email);
-    const phoneError = validatePhone(phone);
+    const phoneError = validatePhone(phoneCountryCode, phoneLocalNumber);
     const passwordError = validatePasswordField(password);
 
     if (fullNameError) nextErrors.fullName = fullNameError;
@@ -174,7 +187,7 @@ export function useSignupFlow(locale: string) {
       const result = await mockSignupWithManual({
         fullName: fullName.trim(),
         email: email.trim(),
-        phone: phone.trim(),
+        phone: normalizePhoneNumber(phoneCountryCode, phoneLocalNumber),
         password,
       });
 
@@ -215,7 +228,10 @@ export function useSignupFlow(locale: string) {
           id: `signup_${challengeId}`,
           name: fullName.trim() || "New User",
           email: email.trim() || "new.user@mock.abdoun",
-          phone: phone.trim() || undefined,
+          phone:
+            phoneLocalNumber.trim()
+              ? normalizePhoneNumber(phoneCountryCode, phoneLocalNumber)
+              : undefined,
           role: "user",
         }),
       );
@@ -253,7 +269,9 @@ export function useSignupFlow(locale: string) {
     fields: {
       fullName,
       email,
-      phone,
+      phone: normalizePhoneNumber(phoneCountryCode, phoneLocalNumber),
+      phoneCountryCode,
+      phoneLocalNumber,
       password,
       otp,
     },
@@ -274,9 +292,26 @@ export function useSignupFlow(locale: string) {
         }
       },
       setPhone: (value: string) => {
-        setPhone(value);
+        const parsedPhone = splitPhoneNumber(value, phoneCountryCode);
+        setPhoneCountryCode(parsedPhone.countryCode);
+        setPhoneLocalNumber(parsedPhone.localNumber);
         if (touched.phone) {
-          setFieldError("phone", validatePhone(value));
+          setFieldError(
+            "phone",
+            validatePhone(parsedPhone.countryCode, parsedPhone.localNumber),
+          );
+        }
+      },
+      setPhoneCountryCode: (value: string) => {
+        setPhoneCountryCode(value);
+        if (touched.phone) {
+          setFieldError("phone", validatePhone(value, phoneLocalNumber));
+        }
+      },
+      setPhoneLocalNumber: (value: string) => {
+        setPhoneLocalNumber(value);
+        if (touched.phone) {
+          setFieldError("phone", validatePhone(phoneCountryCode, value));
         }
       },
       setPassword: (value: string) => {

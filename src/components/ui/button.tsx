@@ -8,7 +8,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "bg-secondary text-on-primary hover:brightness-95 focus-visible:ring-secondary",
+          "bg-secondary text-white hover:brightness-95 focus-visible:ring-secondary",
         accent:
           "bg-accent text-on-accent hover:brightness-95 focus-visible:ring-primary",
         outline:

@@ -5,8 +5,10 @@ export interface DetailedProperty {
   badge: string;
   image: string;
   location: string;
-  /** Optional video URL (e.g. MP4) shown as first item in the hero gallery */
+  /** Optional hosted video URL (e.g. MP4) shown in media gallery */
   video?: string;
+  /** Optional YouTube link shown when available */
+  youtubeUrl?: string;
   price: string;
   beds: number;
   baths: number;

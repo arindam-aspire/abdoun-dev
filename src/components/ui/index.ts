@@ -19,6 +19,7 @@ export { LanguageSelect } from "./language-select";
 export type { LanguageSelectProps } from "./language-select";
 export { Dropdown } from "./dropdown";
 export type { DropdownProps, DropdownOption } from "./dropdown";
+export { PhoneNumberInput } from "./phone-number-input";
 
 // Layout & structure
 export {

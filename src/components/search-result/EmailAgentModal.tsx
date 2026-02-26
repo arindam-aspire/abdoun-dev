@@ -6,8 +6,14 @@ import { DialogRoot } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { PhoneNumberInput } from "@/components/ui/phone-number-input";
 import { cn } from "@/lib/cn";
 import { useTranslations } from "@/hooks/useTranslations";
+import {
+  DEFAULT_COUNTRY_CODE,
+  normalizePhoneNumber,
+  splitPhoneNumber,
+} from "@/lib/phone";
 
 export interface EmailAgentModalTranslations {
   title: string;
@@ -49,7 +55,9 @@ export function EmailAgentModal({
 
   const [name, setName] = useState(() => initialValues?.name ?? "");
   const [email, setEmail] = useState(() => initialValues?.email ?? "");
-  const [phone, setPhone] = useState(() => initialValues?.phone ?? "");
+  const initialPhone = splitPhoneNumber(initialValues?.phone ?? "", DEFAULT_COUNTRY_CODE);
+  const [phoneCountryCode, setPhoneCountryCode] = useState(initialPhone.countryCode);
+  const [phoneNumber, setPhoneNumber] = useState(initialPhone.localNumber);
   const [message, setMessage] = useState(() => defaultMessage);
   const [keepInformed, setKeepInformed] = useState(true);
 
@@ -57,7 +65,7 @@ export function EmailAgentModal({
     e.preventDefault();
     const subject = encodeURIComponent(`Inquiry: ${listing.title}`);
     const body = encodeURIComponent(
-      `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\n\n${message}`,
+      `Name: ${name}\nEmail: ${email}\nPhone: ${normalizePhoneNumber(phoneCountryCode, phoneNumber)}\n\n${message}`,
     );
     window.location.href = `mailto:contact@abdoun.com?subject=${subject}&body=${body}`;
     onClose();
@@ -112,26 +120,21 @@ export function EmailAgentModal({
             required
           />
 
-          <label className="mb-1.5 block text-size-sm fw-medium text-charcoal">
-            {t.phone}
-          </label>
-          <div
-            className={cn(
-              "mb-4 flex overflow-hidden rounded-md border border-subtle",
-              isRtl && "flex-row-reverse",
-            )}
-          >
-            <span className="flex items-center border-subtle bg-surface px-3 text-size-sm text-charcoal/80 [border-inline-end-width:1px]">
-              +962
-            </span>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder=""
-              className="flex flex-1 border-0 bg-white px-3 py-2 text-size-sm text-charcoal outline-none focus:ring-2 focus:ring-primary focus:ring-inset"
-            />
-          </div>
+          <PhoneNumberInput
+            idPrefix="email-agent"
+            label={t.phone}
+            countryCode={phoneCountryCode}
+            localNumber={phoneNumber}
+            onCountryCodeChange={setPhoneCountryCode}
+            onLocalNumberChange={setPhoneNumber}
+            isRtl={isRtl}
+            placeholder=""
+            className="mb-4"
+            labelClassName="text-sm font-medium text-[var(--color-charcoal)]"
+            rowClassName="grid-cols-[9.5rem_1fr]"
+            selectClassName="border-[var(--border-subtle)]"
+            inputClassName="border-[var(--border-subtle)]"
+          />
 
           <label className="mb-1.5 block text-size-sm fw-medium text-charcoal">
             {t.messageLabel}

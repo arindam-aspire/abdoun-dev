@@ -1,12 +1,17 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Mail, Lock, Eye, EyeOff, Phone } from "lucide-react";
 import { useTranslations } from "@/hooks/useTranslations";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { InlineEditableField } from "@/components/profile/InlineEditableField";
+import { PhoneNumberInput } from "@/components/ui/phone-number-input";
 import { cn } from "@/lib/cn";
+import {
+  DEFAULT_COUNTRY_CODE,
+  normalizePhoneNumber,
+  splitPhoneNumber,
+} from "@/lib/phone";
 
 export interface SignInSecurityTabProps {
   email: string;
@@ -40,6 +45,14 @@ export function SignInSecurityTab({
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [phoneCountryCode, setPhoneCountryCode] = useState(DEFAULT_COUNTRY_CODE);
+  const [phoneLocalNumber, setPhoneLocalNumber] = useState("");
+
+  useEffect(() => {
+    const parsedPhone = splitPhoneNumber(phone, DEFAULT_COUNTRY_CODE);
+    setPhoneCountryCode(parsedPhone.countryCode);
+    setPhoneLocalNumber(parsedPhone.localNumber);
+  }, [phone]);
 
   const maskedEmail =
     email && email.length > 3
@@ -79,17 +92,16 @@ export function SignInSecurityTab({
   }, [newPassword, confirmPassword, currentPassword, onPasswordChange]);
 
   const handleSavePhone = useCallback(
-    async (value: string) => {
+    async () => {
       if (!onPhoneUpdate) return;
-      const nextPhone = value.trim();
-      if (!nextPhone) {
+      if (!phoneLocalNumber.trim()) {
         setPhoneError("Phone number is required.");
         return;
       }
       setPhoneError(null);
-      await onPhoneUpdate(nextPhone);
+      await onPhoneUpdate(normalizePhoneNumber(phoneCountryCode, phoneLocalNumber));
     },
-    [onPhoneUpdate],
+    [onPhoneUpdate, phoneCountryCode, phoneLocalNumber],
   );
 
   return (
@@ -110,7 +122,7 @@ export function SignInSecurityTab({
           <button
             type="button"
             onClick={() => setShowEmail((prev) => !prev)}
-            className="rounded px-2 py-1 text-xs font-medium text-[var(--brand-primary)] hover:underline"
+            className="rounded px-2 py-1 text-xs font-medium text-primary hover:underline"
           >
             {showEmail ? t("close") : t("viewEmail")}
           </button>
@@ -123,13 +135,19 @@ export function SignInSecurityTab({
           <Phone className="h-4 w-4 shrink-0 text-zinc-500" />
           {t("phoneNumber")}
         </div>
-        <InlineEditableField
-          label={""}
-          value={phone}
+        <PhoneNumberInput
+          idPrefix="security-phone"
+          label=""
+          countryCode={phoneCountryCode}
+          localNumber={phoneLocalNumber}
+          onCountryCodeChange={setPhoneCountryCode}
+          onLocalNumberChange={setPhoneLocalNumber}
           placeholder={t("phonePlaceholder")}
-          onSave={handleSavePhone}
-          isRtl={isRtl}
+          className="space-y-0"
         />
+        <Button type="button" size="sm" className="mt-3 text-white" onClick={() => void handleSavePhone()}>
+          {t("save")}
+        </Button>
         {phoneError ? (
           <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
             {phoneError}

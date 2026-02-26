@@ -2,6 +2,7 @@ import { Mail } from "lucide-react";
 import { Button } from "@/components/ui";
 import { AuthPopupField, OTPVerificationBlock, PasswordPolicyHelper } from "@/components/auth";
 import { AuthProviderLogo } from "@/components/auth/popup-steps/AuthProviderLogo";
+import { PhoneNumberInput } from "@/components/ui/phone-number-input";
 import type { SignupFlowState } from "@/components/auth/popup-steps/types";
 import type { useTranslations } from "@/hooks/useTranslations";
 
@@ -126,14 +127,21 @@ export function AuthPopupSignupStep({
             onFocus={onFocusEmail}
             error={signup.errors.email}
           />
-          <AuthPopupField
-            id="signup-phone"
+          <PhoneNumberInput
+            idPrefix="signup"
             label={t("phonePlaceholder")}
-            placeholder={t("phonePlaceholder")}
-            value={signup.fields.phone}
-            onChange={signup.actions.setPhone}
+            countryCode={signup.fields.phoneCountryCode}
+            localNumber={signup.fields.phoneLocalNumber}
+            onCountryCodeChange={signup.actions.setPhoneCountryCode}
+            onLocalNumberChange={signup.actions.setPhoneLocalNumber}
             onFocus={onFocusPhone}
+            placeholder={t("phonePlaceholder")}
             error={signup.errors.phone}
+            required
+            rowClassName="grid-cols-[10rem_1fr]"
+            selectClassName="h-14 rounded-full border-2 border-[rgba(43,91,166,0.35)] px-4 text-base focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[rgba(26,59,92,0.2)] focus:ring-offset-0"
+            inputClassName="h-14 rounded-full border-2 border-[rgba(43,91,166,0.35)] bg-white px-5 text-base text-zinc-900 placeholder:text-zinc-500 focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[rgba(26,59,92,0.2)] focus:ring-offset-0"
+            labelClassName="text-base font-semibold text-zinc-800"
           />
           <AuthPopupField
             id="signup-password"

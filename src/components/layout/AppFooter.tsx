@@ -6,20 +6,37 @@ import React from "react";
 export default function AppFooter(): React.JSX.Element {
   const locale = useLocale() as AppLocale;
   const t = useTranslations("home");
+  const isArabic = locale === "ar";
   return (
     <footer
       className={`overflow-x-clip border-t border-secondary bg-secondary text-white py-6 ${
         locale === "ar" ? "text-right" : "text-left"
       }`}
     >
-      <div className="container mx-auto flex items-center sm:flex-row flex-col py-4 px-4 md:px-8">
-        <Link
-          href={`/${locale}/about`}
-          className="text-white/70 hover:text-white"
+      <div className="container mx-auto flex flex-col gap-5 py-4 px-4 md:px-8">
+        <div
+          className={`flex w-full flex-wrap items-center gap-6 ${
+            isArabic ? "justify-end flex-row-reverse" : "justify-start"
+          }`}
         >
-          {t("nav.aboutUs")}
-        </Link>
-        <span className="mt-4 flex w-full flex-col items-center gap-3 sm:ml-auto sm:mt-0 sm:w-auto sm:items-end md:flex-row md:items-center">
+          <Link
+            href={`/${locale}/about`}
+            className="text-white/70 hover:text-white"
+          >
+            {t("nav.aboutUs")}
+          </Link>
+          <Link
+            href={`/${locale}/ourservices`}
+            className="text-white/70 hover:text-white"
+          >
+            {t("servicesTitle")}
+          </Link>
+        </div>
+        <span
+          className={`flex w-full flex-col items-center gap-3 sm:w-auto md:flex-row md:items-center ${
+            isArabic ? "sm:items-start md:flex-row-reverse" : "sm:items-end md:self-end"
+          }`}
+        >
           <span className="flex w-full flex-wrap items-center justify-center gap-2 sm:w-auto sm:justify-start">
             <a
               href="https://www.facebook.com/"
@@ -132,9 +149,7 @@ export default function AppFooter(): React.JSX.Element {
       {/* Terms, Privacy Policy and Copyright on the same line */}
       <div className="border-t border-white/15 bg-secondary">
         <div
-          className={`mx-auto flex container flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 text-size-11 text-white/70 md:px-8 ${
-            locale === "ar" ? "flex-row-reverse" : ""
-          }`}
+          className={`mx-auto flex container flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 text-[11px] text-white/70 md:px-8`}
         >
           <span className="flex items-center gap-x-4 gap-y-2 flex-wrap">
             <Link

@@ -8,8 +8,14 @@ import { useProfile } from "@/hooks/useProfile";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { PhoneNumberInput } from "@/components/ui/phone-number-input";
 import { cn } from "@/lib/cn";
 import type { ProfileData } from "@/services/authMockService";
+import {
+  DEFAULT_COUNTRY_CODE,
+  normalizePhoneNumber,
+  splitPhoneNumber,
+} from "@/lib/phone";
 
 const ACCEPT_IMAGE = "image/jpeg,image/png,image/gif,image/webp";
 const MAX_IMAGE_MB = 4;
@@ -62,6 +68,8 @@ export function ProfileForm({
   const [initial, setInitial] = useState<Partial<ProfileData>>({});
   const [saving, setSaving] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [phoneCountryCode, setPhoneCountryCode] = useState(DEFAULT_COUNTRY_CODE);
+  const [phoneLocalNumber, setPhoneLocalNumber] = useState("");
 
   const syncFromProfile = useCallback(() => {
     if (!profileData?.profile) return;
@@ -75,6 +83,9 @@ export function ProfileForm({
     };
     setInitial(next);
     setForm({ ...next });
+    const parsedPhone = splitPhoneNumber(next.phone ?? "", DEFAULT_COUNTRY_CODE);
+    setPhoneCountryCode(parsedPhone.countryCode);
+    setPhoneLocalNumber(parsedPhone.localNumber);
     setPhotoError(null);
   }, [profileData?.profile]);
 
@@ -269,16 +280,27 @@ export function ProfileForm({
             />
           </div>
           <div>
-            <Label htmlFor="profile-phone" className="mb-1.5 block">
-              {t("phoneNumber")}
-            </Label>
-            <Input
-              id="profile-phone"
-              type="tel"
-              value={form.phone ?? ""}
-              onChange={handleChange("phone")}
-              placeholder="+1 (555) 000-0000"
-              autoComplete="tel"
+            <PhoneNumberInput
+              idPrefix="profile"
+              label={t("phoneNumber")}
+              countryCode={phoneCountryCode}
+              localNumber={phoneLocalNumber}
+              onCountryCodeChange={(value) => {
+                setPhoneCountryCode(value);
+                setForm((prev) => ({
+                  ...prev,
+                  phone: normalizePhoneNumber(value, phoneLocalNumber),
+                }));
+              }}
+              onLocalNumberChange={(value) => {
+                setPhoneLocalNumber(value);
+                setForm((prev) => ({
+                  ...prev,
+                  phone: normalizePhoneNumber(phoneCountryCode, value),
+                }));
+              }}
+              placeholder={t("phonePlaceholder")}
+              required
             />
           </div>
           <div>
