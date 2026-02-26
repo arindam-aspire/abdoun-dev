@@ -6,6 +6,7 @@ import profileReducer from "@/features/profile/profileSlice";
 import favouritesReducer from "@/features/favourites/favouritesSlice";
 import compareReducer from "@/features/compare/compareSlice";
 import savedSearchesReducer from "@/features/savedSearches/savedSearchesSlice";
+import adminAgentsReducer from "@/features/admin-agents/adminAgentsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +17,7 @@ export const store = configureStore({
     favourites: favouritesReducer,
     compare: compareReducer,
     savedSearches: savedSearchesReducer,
+    adminAgents: adminAgentsReducer,
   },
 });
 

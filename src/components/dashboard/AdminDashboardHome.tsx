@@ -16,6 +16,9 @@ import {
   Users,
   UserSquare2,
 } from "lucide-react";
+import Link from "next/link";
+import { useLocale } from "next-intl";
+import type { AppLocale } from "@/i18n/routing";
 
 type KpiCard = {
   label: string;
@@ -166,7 +169,7 @@ function SparkBars({ values }: { values: number[] }) {
       {values.map((value, index) => (
         <div key={`${value}-${index}`} className="flex-1">
           <div
-            className="w-full rounded-t-sm bg-[var(--brand-primary)]/80 transition-all"
+            className="w-full rounded-t-sm bg-primary opacity-80 transition-all"
             style={{ height: `${Math.max(10, (value / max) * 100)}%` }}
             title={String(value)}
           />
@@ -185,38 +188,55 @@ function ChartCard({
   subtitle: string;
   values: number[];
 }) {
+  const latest = values[values.length - 1] ?? 0;
+  const previous = values[values.length - 2] ?? latest;
+  const delta = latest - previous;
+  const total = values.reduce((sum, value) => sum + value, 0);
+
   return (
-    <section className="rounded-2xl border border-[var(--border-subtle)] bg-white p-4 shadow-sm md:p-5">
-      <h3 className="text-sm font-semibold text-[var(--color-charcoal)]">{title}</h3>
-      <p className="mt-1 text-xs text-[var(--color-charcoal)]/65">{subtitle}</p>
+    <section className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-charcoal">{title}</h3>
+          <p className="mt-1 text-xs text-charcoal/65">{subtitle}</p>
+        </div>
+        <div className="rounded-lg bg-surface px-2.5 py-1.5 text-right">
+          <p className="text-xs text-charcoal/65">Latest</p>
+          <p className="text-sm font-semibold text-charcoal">{latest}</p>
+        </div>
+      </div>
       <div className="mt-4">
         <SparkBars values={values} />
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+        <div className="rounded-lg border border-subtle bg-surface px-2.5 py-2">
+          <p className="text-charcoal/65">Total</p>
+          <p className="mt-0.5 font-semibold text-charcoal">{total}</p>
+        </div>
+        <div className="rounded-lg border border-subtle bg-surface px-2.5 py-2">
+          <p className="text-charcoal/65">MoM delta</p>
+          <p className={`mt-0.5 font-semibold ${delta >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
+            {delta >= 0 ? `+${delta}` : delta}
+          </p>
+        </div>
       </div>
     </section>
   );
 }
 
 export function AdminDashboardHome() {
+  const locale = useLocale() as AppLocale;
+
   return (
     <div className="space-y-6">
-      <header className="rounded-2xl border border-[var(--border-subtle)] bg-white p-5 shadow-sm md:p-6">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--brand-primary)]">
-              Admin Console
-            </p>
-            <h1 className="mt-2 text-2xl font-semibold text-[var(--color-charcoal)] md:text-3xl">
-              Admin Dashboard
-            </h1>
-            <p className="mt-2 text-sm text-[var(--color-charcoal)]/70">
-              Overview of platform growth, moderation queue, and operational actions.
-            </p>
-          </div>
-          <div className="hidden rounded-xl bg-[var(--surface)] px-3 py-2 text-xs text-[var(--color-charcoal)]/70 md:block">
-            Updated just now
-          </div>
-        </div>
-      </header>
+      <div className="px-1">
+        <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
+          Admin Dashboard
+        </h1>
+        <p className="mt-1 text-size-sm text-charcoal/70">
+          Overview of platform growth, moderation queue, and operational actions.
+        </p>
+      </div>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {KPI_CARDS.map((item) => {
@@ -224,13 +244,13 @@ export function AdminDashboardHome() {
           return (
             <article
               key={item.label}
-              className="rounded-2xl border border-[var(--border-subtle)] bg-white p-4 shadow-sm"
+              className="rounded-2xl border border-subtle bg-white p-4 shadow-sm"
             >
               <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-[var(--color-charcoal)]/70">{item.label}</p>
-                <Icon className="h-4 w-4 text-[var(--brand-secondary)]" />
+                <p className="text-xs font-medium text-charcoal/70">{item.label}</p>
+                <Icon className="h-4 w-4 text-secondary" />
               </div>
-              <p className="mt-3 text-2xl font-semibold text-[var(--color-charcoal)]">{item.value}</p>
+              <p className="mt-3 text-2xl font-semibold text-charcoal">{item.value}</p>
               <p className="mt-1 text-xs text-emerald-700">{item.delta}</p>
             </article>
           );
@@ -256,53 +276,53 @@ export function AdminDashboardHome() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <article className="rounded-2xl border border-[var(--border-subtle)] bg-white p-4 shadow-sm md:p-5">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-charcoal)]">
+        <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-charcoal">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
             Alerts panel
           </h2>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] p-3">
-              <p className="text-xs font-semibold text-[var(--color-charcoal)]">Pending agent KYC approvals</p>
+            <div className="rounded-xl border border-subtle bg-surface p-3">
+              <p className="text-xs font-semibold text-charcoal">Pending agent KYC approvals</p>
               <p className="mt-2 text-2xl font-semibold text-amber-700">21</p>
-              <p className="mt-1 text-xs text-[var(--color-charcoal)]/70">Needs manual verification</p>
+              <p className="mt-1 text-xs text-charcoal/70">Needs manual verification</p>
             </div>
-            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] p-3">
-              <p className="text-xs font-semibold text-[var(--color-charcoal)]">Pending property approvals</p>
+            <div className="rounded-xl border border-subtle bg-surface p-3">
+              <p className="text-xs font-semibold text-charcoal">Pending property approvals</p>
               <p className="mt-2 text-2xl font-semibold text-amber-700">35</p>
-              <p className="mt-1 text-xs text-[var(--color-charcoal)]/70">Awaiting moderation</p>
+              <p className="mt-1 text-xs text-charcoal/70">Awaiting moderation</p>
             </div>
-            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] p-3">
-              <p className="text-xs font-semibold text-[var(--color-charcoal)]">Subscription expiries</p>
+            <div className="rounded-xl border border-subtle bg-surface p-3">
+              <p className="text-xs font-semibold text-charcoal">Subscription expiries</p>
               <p className="mt-2 text-2xl font-semibold text-rose-700">14</p>
-              <p className="mt-1 text-xs text-[var(--color-charcoal)]/70">Expiring within 7 days</p>
+              <p className="mt-1 text-xs text-charcoal/70">Expiring within 7 days</p>
             </div>
           </div>
         </article>
 
-        <article className="rounded-2xl border border-[var(--border-subtle)] bg-white p-4 shadow-sm md:p-5">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-charcoal)]">
-            <ShieldCheck className="h-4 w-4 text-[var(--brand-secondary)]" />
+        <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-charcoal">
+            <ShieldCheck className="h-4 w-4 text-secondary" />
             Quick actions
           </h2>
           <div className="mt-4 space-y-2">
-            <button
-              type="button"
-              className="flex w-full items-center justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--color-charcoal)] transition hover:bg-[var(--brand-primary)]/5"
+            <Link
+              href={`/${locale}/agents`}
+              className="flex w-full items-center justify-between rounded-xl border border-subtle bg-surface px-3 py-2 text-sm text-charcoal transition hover:bg-primary/5"
             >
               <span>Review agents</span>
               <UserPlus className="h-4 w-4" />
-            </button>
+            </Link>
             <button
               type="button"
-              className="flex w-full items-center justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--color-charcoal)] transition hover:bg-[var(--brand-primary)]/5"
+              className="flex w-full items-center justify-between rounded-xl border border-subtle bg-surface px-3 py-2 text-sm text-charcoal transition hover:bg-primary/5"
             >
               <span>Review listings</span>
               <Building2 className="h-4 w-4" />
             </button>
             <button
               type="button"
-              className="flex w-full items-center justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--color-charcoal)] transition hover:bg-[var(--brand-primary)]/5"
+              className="flex w-full items-center justify-between rounded-xl border border-subtle bg-surface px-3 py-2 text-sm text-charcoal transition hover:bg-primary/5"
             >
               <span>View leads</span>
               <BarChart3 className="h-4 w-4" />
@@ -312,12 +332,12 @@ export function AdminDashboardHome() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <article className="rounded-2xl border border-[var(--border-subtle)] bg-white p-4 shadow-sm md:p-5">
+        <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-[var(--color-charcoal)]">
+            <h2 className="text-sm font-semibold text-charcoal">
               Moderation queue
             </h2>
-            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border-subtle)] bg-[var(--surface)] px-2 py-1 text-[11px] text-[var(--color-charcoal)]/75">
+            <span className="inline-flex items-center gap-1 rounded-full border border-subtle bg-surface px-2 py-1 text-[11px] text-charcoal/75">
               <Clock3 className="h-3.5 w-3.5" />
               {APPROVAL_QUEUE.length} items
             </span>
@@ -325,7 +345,7 @@ export function AdminDashboardHome() {
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[620px] text-left">
               <thead>
-                <tr className="border-b border-[var(--border-subtle)] text-xs text-[var(--color-charcoal)]/65">
+                <tr className="border-b border-subtle text-xs text-charcoal/65">
                   <th className="px-2 py-2 font-medium">Reference</th>
                   <th className="px-2 py-2 font-medium">Property</th>
                   <th className="px-2 py-2 font-medium">Submitted by</th>
@@ -338,21 +358,21 @@ export function AdminDashboardHome() {
                 {APPROVAL_QUEUE.map((item) => (
                   <tr
                     key={item.ref}
-                    className="border-b border-[var(--border-subtle)]/70 text-sm last:border-b-0"
+                    className="border-b border-subtle/70 text-sm last:border-b-0"
                   >
-                    <td className="px-2 py-3 font-medium text-[var(--brand-secondary)]">
+                    <td className="px-2 py-3 font-medium text-secondary">
                       {item.ref}
                     </td>
-                    <td className="px-2 py-3 text-[var(--color-charcoal)]">
+                    <td className="px-2 py-3 text-charcoal">
                       {item.title}
                     </td>
-                    <td className="px-2 py-3 text-[var(--color-charcoal)]/80">
+                    <td className="px-2 py-3 text-charcoal/80">
                       {item.submittedBy}
                     </td>
-                    <td className="px-2 py-3 text-[var(--color-charcoal)]/80">
+                    <td className="px-2 py-3 text-charcoal/80">
                       {item.city}
                     </td>
-                    <td className="px-2 py-3 text-[var(--color-charcoal)]/70">
+                    <td className="px-2 py-3 text-charcoal/70">
                       {item.submittedAt}
                     </td>
                     <td className="px-2 py-3">
@@ -369,27 +389,27 @@ export function AdminDashboardHome() {
           </div>
         </article>
 
-        <article className="rounded-2xl border border-[var(--border-subtle)] bg-white p-4 shadow-sm md:p-5">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-charcoal)]">
-            <TrendingUp className="h-4 w-4 text-[var(--brand-secondary)]" />
+        <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-charcoal">
+            <TrendingUp className="h-4 w-4 text-secondary" />
             Lead source quality
           </h2>
           <div className="mt-4 space-y-3">
             {LEAD_SOURCES.map((item) => (
               <div
                 key={item.source}
-                className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] p-3"
+                className="rounded-xl border border-subtle bg-surface p-3"
               >
-                <div className="flex items-center justify-between gap-2 text-xs text-[var(--color-charcoal)]/80">
+                <div className="flex items-center justify-between gap-2 text-xs text-charcoal/80">
                   <span className="font-medium">{item.source}</span>
                   <span>{item.conversionRate} CVR</span>
                 </div>
-                <p className="mt-1 text-sm font-semibold text-[var(--color-charcoal)]">
+                <p className="mt-1 text-sm font-semibold text-charcoal">
                   {item.leads.toLocaleString()} leads
                 </p>
                 <div className="mt-2 h-2 rounded-full bg-white">
                   <div
-                    className="h-2 rounded-full bg-[var(--brand-primary)]"
+                    className="h-2 rounded-full bg-primary"
                     style={{ width: `${item.share}%` }}
                   />
                 </div>
@@ -400,32 +420,32 @@ export function AdminDashboardHome() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <article className="rounded-2xl border border-[var(--border-subtle)] bg-white p-4 shadow-sm md:p-5">
-          <h2 className="text-sm font-semibold text-[var(--color-charcoal)]">
+        <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
+          <h2 className="text-sm font-semibold text-charcoal">
             Top agents this month
           </h2>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             {TOP_AGENTS.map((agent) => (
               <div
                 key={agent.name}
-                className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] p-3"
+                className="rounded-xl border border-subtle bg-surface p-3"
               >
-                <p className="text-sm font-semibold text-[var(--color-charcoal)]">
+                <p className="text-sm font-semibold text-charcoal">
                   {agent.name}
                 </p>
-                <p className="mt-1 flex items-center gap-1 text-xs text-[var(--color-charcoal)]/70">
+                <p className="mt-1 flex items-center gap-1 text-xs text-charcoal/70">
                   <MapPin className="h-3.5 w-3.5" />
                   {agent.area}
                 </p>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                   <div className="rounded-lg bg-white p-2">
-                    <p className="text-[var(--color-charcoal)]/65">Deals</p>
-                    <p className="mt-1 text-sm font-semibold text-[var(--brand-secondary)]">
+                    <p className="text-charcoal/65">Deals</p>
+                    <p className="mt-1 text-sm font-semibold text-secondary">
                       {agent.closedDeals}
                     </p>
                   </div>
                   <div className="rounded-lg bg-white p-2">
-                    <p className="text-[var(--color-charcoal)]/65">Response</p>
+                    <p className="text-charcoal/65">Response</p>
                     <p className="mt-1 text-sm font-semibold text-emerald-700">
                       {agent.responseRate}
                     </p>
@@ -436,15 +456,15 @@ export function AdminDashboardHome() {
           </div>
         </article>
 
-        <article className="rounded-2xl border border-[var(--border-subtle)] bg-white p-4 shadow-sm md:p-5">
-          <h2 className="text-sm font-semibold text-[var(--color-charcoal)]">
+        <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
+          <h2 className="text-sm font-semibold text-charcoal">
             Recent activity
           </h2>
           <div className="mt-4 space-y-3">
             {RECENT_ACTIVITY.map((item) => (
               <div
                 key={`${item.text}-${item.time}`}
-                className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)] p-3"
+                className="rounded-xl border border-subtle bg-surface p-3"
               >
                 <div className="flex items-start gap-2">
                   {item.tone === "success" ? (
@@ -452,19 +472,19 @@ export function AdminDashboardHome() {
                   ) : item.tone === "warning" ? (
                     <CircleAlert className="mt-0.5 h-4 w-4 text-amber-600" />
                   ) : (
-                    <Mail className="mt-0.5 h-4 w-4 text-[var(--brand-secondary)]" />
+                    <Mail className="mt-0.5 h-4 w-4 text-secondary" />
                   )}
                   <div>
-                    <p className="text-sm text-[var(--color-charcoal)]">{item.text}</p>
-                    <p className="mt-1 text-xs text-[var(--color-charcoal)]/65">
+                    <p className="text-sm text-charcoal">{item.text}</p>
+                    <p className="mt-1 text-xs text-charcoal/65">
                       {item.time}
                     </p>
                   </div>
                 </div>
               </div>
             ))}
-            <div className="rounded-xl border border-dashed border-[var(--border-subtle)] bg-white p-3">
-              <p className="flex items-center gap-2 text-xs text-[var(--color-charcoal)]/70">
+            <div className="rounded-xl border border-dashed border-subtle bg-white p-3">
+              <p className="flex items-center gap-2 text-xs text-charcoal/70">
                 <PhoneCall className="h-3.5 w-3.5" />
                 Support line queue currently: 6 active tickets.
               </p>
