@@ -40,7 +40,7 @@ export function SearchResultSortDropdown({
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "flex h-11 cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 py-2 text-sm text-[var(--color-charcoal)] transition hover:border-[rgba(43,91,166,0.6)]",
+          "flex h-10 sm:h-11 cursor-pointer items-center gap-1.5 sm:gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 py-2 sm:px-4 text-sm text-[var(--color-charcoal)] transition hover:border-[rgba(43,91,166,0.6)] min-h-[44px] sm:min-h-0",
           open && "border-[var(--brand-secondary)]",
           isRtl && "flex-row-reverse",
         )}

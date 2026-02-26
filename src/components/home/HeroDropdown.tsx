@@ -18,6 +18,8 @@ export interface HeroDropdownProps {
   anchorRef?: React.RefObject<HTMLElement | null>;
   /** Render into body when using anchorRef. Disable to keep menu in normal layout flow. */
   portaled?: boolean;
+  /** When portaled, ensure panel is at least this wide (e.g. for budget popover). Keeps panel in viewport. */
+  minPanelWidth?: number;
 }
 
 export function HeroDropdown({
@@ -28,13 +30,14 @@ export function HeroDropdown({
   closeOnSelect = false,
   anchorRef,
   portaled = true,
+  minPanelWidth,
 }: HeroDropdownProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [position, setPosition] = useState<{
     top: number;
     left?: number;
     right?: number;
-    width?: number;
+    width: number;
   } | null>(null);
 
   useEffect(() => {
@@ -43,13 +46,25 @@ export function HeroDropdown({
     const updatePosition = () => {
       if (!anchorRef.current) return;
       const rect = anchorRef.current.getBoundingClientRect();
-      setPosition({
-        top: rect.bottom + 8,
-        width: rect.width,
-        ...(align === "left"
-          ? { left: rect.left }
-          : { right: window.innerWidth - rect.right }),
-      });
+      const innerWidth = window.innerWidth;
+      const padding = 16;
+      const desiredWidth = minPanelWidth
+        ? Math.max(rect.width, Math.min(minPanelWidth, innerWidth - padding * 2))
+        : rect.width;
+      const width = Math.min(desiredWidth, innerWidth - padding * 2);
+
+      if (align === "left") {
+        let left = rect.left;
+        if (left + width > innerWidth - padding) left = innerWidth - width - padding;
+        if (left < padding) left = padding;
+        setPosition({ top: rect.bottom + 8, left, width });
+      } else {
+        let right = innerWidth - rect.right;
+        const leftEdge = innerWidth - right - width;
+        if (leftEdge < padding) right = innerWidth - width - padding;
+        if (right < padding) right = padding;
+        setPosition({ top: rect.bottom + 8, right, width });
+      }
     };
 
     updatePosition();
@@ -59,7 +74,7 @@ export function HeroDropdown({
       window.removeEventListener("scroll", updatePosition, true);
       window.removeEventListener("resize", updatePosition);
     };
-  }, [isOpen, align, anchorRef, portaled]);
+  }, [isOpen, align, anchorRef, portaled, minPanelWidth]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -111,7 +126,8 @@ export function HeroDropdown({
     const style: CSSProperties = {
       top: position.top,
       width: position.width,
-      minWidth: position.width,
+      minWidth: 0,
+      maxWidth: "100%",
     };
     if (position.left != null) style.left = position.left;
     if (position.right != null) style.right = position.right;

@@ -173,7 +173,7 @@ export default function LocalizedSignupPage() {
         <p className="mt-6 text-center text-sm text-zinc-600">
           {t("haveAccountSignIn")}{" "}
           <Link
-            href={`/${locale}/login`}
+            href={`/${locale}`}
             className="font-semibold text-zinc-900 hover:underline"
           >
             {t("signInLink")}

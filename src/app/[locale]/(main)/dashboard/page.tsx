@@ -33,7 +33,7 @@ export default function LocalizedDashboardPage() {
 
   useEffect(() => {
     if (!auth.user) {
-      router.replace(`/${locale}/login`);
+      router.replace(`/${locale}`);
     }
   }, [auth.user, locale, router]);
 

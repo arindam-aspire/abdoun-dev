@@ -51,6 +51,7 @@ function getPageTitle(
 export function SearchResultMain({ language }: SearchResultMainProps) {
   const searchParams = useSearchParams();
   const t = useTranslations("searchResult");
+  const tSaved = useTranslations("savedSearches");
   const isRtl = language === "ar";
   const pageTitle = getPageTitle(t, searchParams);
 
@@ -60,8 +61,8 @@ export function SearchResultMain({ language }: SearchResultMainProps) {
       dir={isRtl ? "rtl" : "ltr"}
     >
       <div className="space-y-4">
-        {/* Sticky search bar below header (header is sticky top-0 z-30, ~64px height) */}
-        <div className="sticky top-16 z-20 bg-white pt-2 -mt-2 md:top-[52px]">
+        {/* Keep sticky search bar on desktop; use normal flow on mobile for full advanced filter scrolling */}
+        <div className="z-20 bg-white pt-2 -mt-2 md:sticky md:top-[52px]">
           <SearchFields
             translations={{
               rent: t("rent"),
@@ -115,6 +116,7 @@ export function SearchResultMain({ language }: SearchResultMainProps) {
               swimmingPool: t("swimmingPool"),
               garden: t("garden"),
               airConditioning: t("airConditioning"),
+              saveSearch: tSaved("saveSearch"),
             }}
             isRtl={isRtl}
           />

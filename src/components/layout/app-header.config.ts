@@ -36,7 +36,7 @@ export const APP_HEADER_CONFIG: AppHeaderConfig = {
     }
   ],
   publicLinks: {
-    defaultVisible: false,
+    defaultVisible: true,
     showPathPrefixes: ["/", "/about", "/team"],
   },
 };

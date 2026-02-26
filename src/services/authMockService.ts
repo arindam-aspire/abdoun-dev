@@ -179,3 +179,44 @@ export async function mockSetNewPassword(resetToken: string, password: string) {
   resetTokenStore.delete(resetToken);
   return { success: true };
 }
+
+// --- Profile (mock) ---
+export type ProfileRole = "user" | "agent" | "admin";
+
+export interface ProfileData {
+  fullName: string;
+  email: string;
+  phone: string;
+  location: string;
+  avatarUrl?: string;
+  role: ProfileRole;
+  displayName?: string;
+}
+
+/** Returns only auth-derived profile fields (used with profile slice for full data). */
+export function getProfileFromAuth(authUser: {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: ProfileRole;
+}): Omit<ProfileData, "displayName" | "avatarUrl"> & { displayName?: string; avatarUrl?: string } {
+  return {
+    fullName: authUser.name,
+    email: authUser.email,
+    phone: authUser.phone ?? "+1 (555) 000-0000",
+    location: "Dubai, UAE",
+    role: authUser.role,
+  };
+}
+
+/** Simulates API call; actual profile storage is in profile slice. */
+export async function mockUpdateProfile(
+  _userId: string,
+  _updates: Partial<ProfileData>,
+) {
+  void _userId;
+  void _updates;
+  await delay(400);
+  return { success: true };
+}

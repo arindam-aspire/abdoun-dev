@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 export type StatusTabKey = "buy" | "rent";
 
 export const STATUS_TABS: StatusTabKey[] = ["buy", "rent"];
@@ -56,11 +58,15 @@ export interface SearchFieldsTranslations {
   swimmingPool: string;
   garden: string;
   airConditioning: string;
+  /** Optional label for Save Search button (e.g. on search-result page) */
+  saveSearch?: string;
 }
 
 export interface SearchFieldsProps {
   translations: SearchFieldsTranslations;
   isRtl: boolean;
+  /** Optional node rendered on the same row after Clear (e.g. Save Search button) */
+  trailingAction?: ReactNode;
 }
 
 export const CATEGORY_OPTIONS: {

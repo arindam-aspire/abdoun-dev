@@ -342,25 +342,27 @@ export function SearchResults({ resultsTitle }: SearchResultsProps) {
 
   return (
     <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-[var(--border-subtle)] md:p-5">
-      {/* Same line: title — dropdown — list/map — listing count */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h2 className="min-w-0 flex-1 text-lg font-semibold text-[var(--color-charcoal)]">
+      {/* Title on own row on mobile; sort, view toggle, count on second row. Desktop: single row. */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+        <h2 className="min-w-0 text-base font-semibold text-[var(--color-charcoal)] sm:flex-1 sm:text-lg">
           {resultsTitle}
         </h2>
-        <SearchResultSortDropdown
-          value={sort}
-          onSelect={setSort}
-          getLabel={(key) => t(key)}
-        />
-        <SearchResultViewToggle
-          value={view}
-          onSelect={setView}
-          gridLabel={t("viewGrid")}
-          listLabel={t("viewList")}
-        />
-        <span className="shrink-0 text-sm text-[var(--color-charcoal)]/70">
-          {totalItems} {t("resultsCount")}
-        </span>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <SearchResultSortDropdown
+            value={sort}
+            onSelect={setSort}
+            getLabel={(key) => t(key)}
+          />
+          <SearchResultViewToggle
+            value={view}
+            onSelect={setView}
+            gridLabel={t("viewGrid")}
+            listLabel={t("viewList")}
+          />
+          <span className="shrink-0 text-sm text-[var(--color-charcoal)]/70">
+            {totalItems} {t("resultsCount")}
+          </span>
+        </div>
       </div>
 
       <ul

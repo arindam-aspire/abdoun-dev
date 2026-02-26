@@ -38,13 +38,11 @@ export function useOtpTimer(initialSeconds = 60) {
   const [secondsLeft, setSecondsLeft] = useState(initialSeconds);
 
   useEffect(() => {
-    if (secondsLeft <= 0) return;
     const timer = window.setInterval(() => {
       setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
-
     return () => window.clearInterval(timer);
-  }, [secondsLeft]);
+  }, []); // Single interval for the component lifetime; functional setState always sees latest value
 
   const restart = (seconds = initialSeconds) => setSecondsLeft(seconds);
 
@@ -182,7 +180,7 @@ export function useSignupFlow(locale: string) {
 
       if (result.nextStep === "login") {
         setMessage(result.message);
-        router.push(`/${locale}/login`);
+        router.push(`/${locale}`);
         return;
       }
 

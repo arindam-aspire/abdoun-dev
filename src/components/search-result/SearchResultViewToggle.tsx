@@ -23,7 +23,7 @@ export function SearchResultViewToggle({
   return (
     <div
       className={cn(
-        "inline-flex shrink-0 rounded-2xl bg-[var(--surface)] p-1 ring-1 ring-[var(--border-subtle)]",
+        "inline-flex shrink-0 rounded-2xl bg-[var(--surface)] p-1 ring-1 ring-[var(--border-subtle)] min-h-[44px] sm:min-h-0",
         isRtl && "flex-row-reverse",
       )}
       dir={isRtl ? "rtl" : "ltr"}
@@ -36,7 +36,7 @@ export function SearchResultViewToggle({
         aria-selected={value === "grid"}
         onClick={() => onSelect("grid")}
         className={cn(
-          "inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-5 py-2 text-sm font-medium capitalize transition",
+          "inline-flex cursor-pointer items-center gap-1 sm:gap-1.5 rounded-xl px-3 py-2 sm:px-5 text-sm font-medium capitalize transition min-h-[40px] sm:min-h-0",
           value === "grid"
             ? "bg-[var(--brand-secondary)] text-white shadow-sm"
             : "text-[rgba(51,51,51,0.7)] hover:text-[var(--brand-secondary)]",
@@ -51,7 +51,7 @@ export function SearchResultViewToggle({
         aria-selected={value === "list"}
         onClick={() => onSelect("list")}
         className={cn(
-          "inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-5 py-2 text-sm font-medium capitalize transition",
+          "inline-flex cursor-pointer items-center gap-1 sm:gap-1.5 rounded-xl px-3 py-2 sm:px-5 text-sm font-medium capitalize transition min-h-[40px] sm:min-h-0",
           value === "list"
             ? "bg-[var(--brand-secondary)] text-white shadow-sm"
             : "text-[rgba(51,51,51,0.7)] hover:text-[var(--brand-secondary)]",

@@ -101,7 +101,7 @@ export function BudgetRangeInputs({
 
   return (
     <div
-      className="w-[320px] rounded-2xl border border-[var(--border-subtle)] bg-white p-3 text-xs shadow-xl ring-1 ring-black/5"
+      className="min-w-[260px] w-full max-w-[min(320px,calc(100vw-2rem))] rounded-2xl border border-[var(--border-subtle)] bg-white p-3 text-xs shadow-xl ring-1 ring-black/5"
       onClick={() => setActiveField(null)}
     >
       <div className="mb-3 grid grid-cols-2 gap-3">

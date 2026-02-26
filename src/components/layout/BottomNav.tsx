@@ -8,7 +8,7 @@ import { useTranslations } from "@/hooks/useTranslations";
 import type { AppLocale } from "@/i18n/routing";
 import { useAppSelector } from "@/hooks/storeHooks";
 
-const NAV_HEIGHT = 64;
+const NAV_HEIGHT = 72;
 const SAFE_AREA = "env(safe-area-inset-bottom, 0px)";
 
 export function BottomNav() {
@@ -37,7 +37,7 @@ export function BottomNav() {
     <nav
       role="navigation"
       aria-label="Main navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-[var(--border-subtle)] bg-white/95 shadow-[0_-4px_20px_rgba(26,59,92,0.08)] backdrop-blur-md md:hidden"
+      className="fixed bottom-0 left-0 right-0 z-40 flex items-stretch justify-around border-t border-[var(--border-subtle)] bg-white shadow-[0_-4px_24px_rgba(26,59,92,0.06)] md:hidden"
       style={{
         paddingBottom: SAFE_AREA,
         minHeight: NAV_HEIGHT,
@@ -50,19 +50,25 @@ export function BottomNav() {
           <Link
             key={href}
             href={href}
-            className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 py-2 px-1 transition-colors ${
-              active
+            className={`
+              flex min-w-0 flex-1 flex-col items-center justify-center gap-1
+              py-3 px-2 min-h-[44px] active:bg-[var(--surface)]/50
+              transition-colors duration-150
+              ${active
                 ? "text-[var(--brand-secondary)]"
-                : "text-[var(--color-charcoal)]/60 hover:text-[var(--brand-secondary)]"
-            }`}
+                : "text-[var(--color-charcoal)]/70"
+              }
+            `}
             aria-current={active ? "page" : undefined}
           >
-            <Icon
-              className="h-6 w-6 shrink-0"
-              strokeWidth={active ? 2.25 : 2}
-              aria-hidden
-            />
-            <span className="truncate text-[10px] font-medium max-w-full">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center">
+              <Icon
+                className="h-6 w-6"
+                strokeWidth={active ? 2.5 : 2}
+                aria-hidden
+              />
+            </span>
+            <span className="truncate text-[11px] font-medium max-w-[72px] leading-tight">
               {label}
             </span>
           </Link>

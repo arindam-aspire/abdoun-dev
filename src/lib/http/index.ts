@@ -38,7 +38,7 @@ export const createHttpClients = (
   });
 
   const logoutHandler = new BrowserLogoutHandler({
-    loginPath: options.loginPath ?? "/login",
+    loginPath: options.loginPath ?? "",
   });
 
   const publicApi = createClient({

@@ -8,7 +8,7 @@ export class BrowserLogoutHandler implements LogoutHandler {
   private readonly loginPath: string;
 
   constructor(options: BrowserLogoutHandlerOptions = {}) {
-    this.loginPath = options.loginPath ?? "/login";
+    this.loginPath = options.loginPath ?? "";
   }
 
   handleLogout(): void {

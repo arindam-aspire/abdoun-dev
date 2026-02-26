@@ -7,8 +7,10 @@ import type { AppLocale } from "@/i18n/routing";
 import { LanguageSelect } from "@/components/ui/language-select";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { AuthPopup } from "@/components/auth/AuthPopup";
+import { ProfileModal } from "@/components/profile/ProfileModal";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { logout } from "@/features/auth/authSlice";
+import { clearProfileForUser } from "@/features/profile/profileSlice";
 
 interface SiteHeaderProps {
   language: AppLocale;
@@ -25,6 +27,8 @@ export function SiteHeader({ language }: SiteHeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isAccountSettingsHover, setIsAccountSettingsHover] = useState(false);
   const rafRef = useRef<number | null>(null);
   const profileRef = useRef<HTMLDivElement | null>(null);
   const isRTL = language === "ar";
@@ -138,7 +142,14 @@ export function SiteHeader({ language }: SiteHeaderProps) {
           </div>
 
           {user ? (
-            <div className="relative" ref={profileRef}>
+            <>
+              <Link
+                href={`/${language}/list`}
+                className="hidden md:inline-flex h-9 items-center rounded-full border border-[var(--brand-accent)] bg-[var(--brand-accent)] px-4 text-xs font-semibold text-[var(--brand-secondary)] transition hover:brightness-95"
+              >
+                {t("nav.listProperty")}
+              </Link>
+              <div className="relative" ref={profileRef}>
               <button
                 type="button"
                 onClick={() => setIsProfileOpen((prev) => !prev)}
@@ -156,13 +167,6 @@ export function SiteHeader({ language }: SiteHeaderProps) {
                     <p className="mt-0.5 truncate text-xs text-zinc-500">{user.email}</p>
                   </div>
                   <nav className="py-1 px-2" aria-label="Account menu">
-                    <Link
-                      href={`/${language}/profile`}
-                      onClick={() => setIsProfileOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
-                    >
-                      {tCommon("myProfile")}
-                    </Link>
                     <Link
                       href={`/${language}/favourites`}
                       onClick={() => setIsProfileOpen(false)}
@@ -184,18 +188,56 @@ export function SiteHeader({ language }: SiteHeaderProps) {
                     >
                       {tCommon("myRecentlyViewed")}
                     </Link>
-                    <Link
-                      href={`/${language}/account-settings`}
-                      onClick={() => setIsProfileOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                    <div
+                      className="relative"
+                      onMouseEnter={() => setIsAccountSettingsHover(true)}
+                      onMouseLeave={() => setIsAccountSettingsHover(false)}
                     >
-                      {tCommon("myAccountSettings")}
-                    </Link>
+                      <Link
+                        href={`/${language}/account-settings`}
+                        onClick={() => setIsProfileOpen(false)}
+                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer ${isRTL ? "flex-row-reverse" : ""}`}
+                      >
+                        {tCommon("myAccountSettings")}
+                        <span className={isRTL ? "rotate-180" : ""} aria-hidden>›</span>
+                      </Link>
+                      {isAccountSettingsHover ? (
+                        <div
+                          className="absolute top-0 right-full z-40 mr-1 min-w-[200px] rounded-lg border border-[var(--border-subtle)] bg-white py-1.5 shadow-lg"
+                          role="menu"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsProfileOpen(false);
+                              setIsAccountSettingsHover(false);
+                              setIsProfileModalOpen(true);
+                            }}
+                            className={`block w-full rounded-md px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 cursor-pointer ${isRTL ? "text-right" : "text-left"}`}
+                            role="menuitem"
+                          >
+                            {tCommon("myProfile")}
+                          </button>
+                          <Link
+                            href={`/${language}/notifications`}
+                            onClick={() => {
+                              setIsProfileOpen(false);
+                              setIsAccountSettingsHover(false);
+                            }}
+                            className={`block rounded-md px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 cursor-pointer ${isRTL ? "text-right" : "text-left"}`}
+                            role="menuitem"
+                          >
+                            {tCommon("notifications")}
+                          </Link>
+                        </div>
+                      ) : null}
+                    </div>
                   </nav>
                   <div className="mt-1 border-t border-[var(--border-subtle)] px-3 pt-2 pb-2">
                     <button
                       type="button"
                       onClick={() => {
+                        dispatch(clearProfileForUser(user.id));
                         dispatch(logout());
                         setIsProfileOpen(false);
                       }}
@@ -207,8 +249,9 @@ export function SiteHeader({ language }: SiteHeaderProps) {
                 </div>
               ) : null}
             </div>
+            </>
           ) : (
-<button
+            <button
             type="button"
             onClick={() => setIsAuthOpen(true)}
             suppressHydrationWarning
@@ -224,6 +267,11 @@ export function SiteHeader({ language }: SiteHeaderProps) {
         open={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
         locale={language}
+      />
+      <ProfileModal
+        open={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        isRtl={isRTL}
       />
     </header>
   );

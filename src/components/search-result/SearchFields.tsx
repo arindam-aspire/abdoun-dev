@@ -3,10 +3,11 @@
 import { BudgetRangeInputs } from "@/components/home/BudgetRangeInputs";
 import { HeroDropdown } from "@/components/home/HeroDropdown";
 import { cn } from "@/lib/cn";
-import { ChevronDown, CircleMinus, MoreHorizontal, CirclePlus } from "lucide-react";
+import { ChevronDown, CircleMinus, MoreHorizontal, CirclePlus, BookmarkPlus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useLocale } from "next-intl";
 import type { CategoryKey, SearchFieldsProps, StatusTabKey } from "./types";
 import { routing } from "@/i18n/routing";
 import {
@@ -18,6 +19,9 @@ import {
   CATEGORY_TO_PROPERTY_TYPES,
   STATUS_TABS,
 } from "./types";
+import { useAppSelector } from "@/hooks/storeHooks";
+import { AuthPopup } from "@/components/auth/AuthPopup";
+import { SaveSearchModal } from "./SaveSearchModal";
 
 export type { SearchFieldsProps, SearchFieldsTranslations } from "./types";
 
@@ -81,6 +85,7 @@ const LAND_ELECTRICITY_TYPES = new Set([
 export function SearchFields({
   translations: t,
   isRtl: isRtlProp,
+  trailingAction,
 }: SearchFieldsProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -261,6 +266,12 @@ export function SearchFields({
   const [advFloorOpen, setAdvFloorOpen] = useState(false);
   const [advParkingOpen, setAdvParkingOpen] = useState(false);
   const [advPropertyAgeOpen, setAdvPropertyAgeOpen] = useState(false);
+
+  const [saveSearchOpen, setSaveSearchOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const authUser = useAppSelector((state) => state.auth.user);
+  const locale = useLocale();
+  const queryString = searchParams.toString();
 
   const closeAllAdvancedDropdowns = () => {
     setAdvFurnitureOpen(false);
@@ -646,20 +657,36 @@ export function SearchFields({
     setElectricityNearby(false);
   };
 
+  /** Clear all filters (main + advanced) and sync URL to pathname (preserving exclusive if set). */
+  const handleClearAll = () => {
+    setStatus("buy");
+    setCategory("residential");
+    setPropertyType("");
+    setCity("");
+    setSelectedAreas([]);
+    setBudgetMin("");
+    setBudgetMax("");
+    setAdvancedSearchOpen(false);
+    handleClearAdvanced();
+    const exclusiveParam = searchParams.get("exclusive");
+    const query = exclusiveParam === "1" || exclusiveParam === "true" ? "?exclusive=1" : "";
+    router.replace(`${pathname}${query}`, { scroll: false });
+  };
+
   return (
     <section
-      className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-[var(--border-subtle)] sm:p-4"
+      className="min-w-0 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-[var(--border-subtle)] sm:p-4"
       dir={isRtl ? "rtl" : "ltr"}
     >
       <div
         className={cn(
-          "flex flex-wrap items-center gap-2 md:gap-3",
+          "grid grid-cols-2 gap-x-2 gap-y-2 sm:gap-3 md:flex md:flex-wrap md:items-center md:gap-3",
         )}
       >
         {/* Rent / Buy tabs (same style as HeroSearchCard) */}
         <div
           className={cn(
-            "inline-flex shrink-0 rounded-2xl bg-[var(--surface)] p-1 ring-1 ring-[var(--border-subtle)]",
+            "col-span-2 inline-flex shrink-0 rounded-2xl bg-[var(--surface)] p-1 ring-1 ring-[var(--border-subtle)] md:col-span-auto",
             isRtl && "flex-row-reverse",
           )}
           dir={isRtl ? "rtl" : "ltr"}
@@ -684,7 +711,7 @@ export function SearchFields({
         </div>
 
         {/* Commercial / Category dropdown */}
-        <div className="relative min-w-[150px] flex-1" dir={isRtl ? "rtl" : "ltr"}>
+        <div className="relative col-span-2 min-w-0 md:col-span-auto md:min-w-[150px] md:flex-1" dir={isRtl ? "rtl" : "ltr"}>
           <button
             ref={categoryTriggerRef}
             type="button"
@@ -732,7 +759,7 @@ export function SearchFields({
 
         {/* Property Type dropdown (depends on category) */}
         <div
-          className="relative min-w-[150px] flex-1"
+          className="relative min-w-0 md:min-w-[150px] md:flex-1"
           dir={isRtl ? "rtl" : "ltr"}
         >
           <button
@@ -802,7 +829,7 @@ export function SearchFields({
 
         {/* City dropdown */}
         <div
-          className="relative min-w-[150px] flex-1"
+          className="relative min-w-0 md:min-w-[150px] md:flex-1"
           dir={isRtl ? "rtl" : "ltr"}
         >
           <button
@@ -871,7 +898,7 @@ export function SearchFields({
         </div>
 
         {/* Areas (locations) multi-select - like HeroAreaSelect, disabled when no city */}
-        <div className="relative min-w-[180px] flex-[1.2]" dir={isRtl ? "rtl" : "ltr"}>
+        <div className="relative min-w-0 md:min-w-[180px] md:flex-[1.2]" dir={isRtl ? "rtl" : "ltr"}>
           <button
             ref={areasTriggerRef}
             type="button"
@@ -985,7 +1012,7 @@ export function SearchFields({
         </div>
 
         {/* Budget (JD) - dropdown like HeroSearchCard */}
-        <div className="relative min-w-[170px] flex-1" dir={isRtl ? "rtl" : "ltr"}>
+        <div className="relative min-w-0 md:min-w-[170px] md:flex-1" dir={isRtl ? "rtl" : "ltr"}>
           <button
             ref={budgetTriggerRef}
             type="button"
@@ -1009,6 +1036,7 @@ export function SearchFields({
             onClose={() => setIsBudgetOpen(false)}
             align={isRtl ? "right" : "left"}
             anchorRef={budgetTriggerRef}
+            minPanelWidth={300}
           >
             <BudgetRangeInputs
               minBudget={budgetMin}
@@ -1026,10 +1054,10 @@ export function SearchFields({
           </HeroDropdown>
         </div>
 
-        {/* Advanced Search toggle (+/–) + Clear */}
+        {/* Advanced Search toggle (+/–) + Clear + Save Search */}
         <div
           className={cn(
-            "flex shrink-0 items-center gap-2",
+            "col-span-2 flex w-full flex-row flex-wrap items-center gap-2 sm:gap-3 md:col-span-auto md:w-auto md:shrink-0 md:gap-2",
             isRtl && "flex-row-reverse",
           )}
         >
@@ -1037,7 +1065,7 @@ export function SearchFields({
             type="button"
             onClick={() => setAdvancedSearchOpen((o) => !o)}
             className={cn(
-            "flex h-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border-2 border-[var(--brand-secondary)] bg-[var(--brand-secondary)] px-5 py-2 text-sm font-medium text-white transition hover:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2",
+              "flex h-11 w-full shrink-0 cursor-pointer items-center justify-center rounded-xl border-2 border-[var(--brand-secondary)] bg-[var(--brand-secondary)] px-4 py-2 text-sm font-medium text-white transition hover:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 md:w-auto md:px-5",
               isRtl && "flex-row-reverse",
             )}
           >
@@ -1051,19 +1079,35 @@ export function SearchFields({
           <button
             type="button"
             onClick={() => {
-              handleClearAdvanced();
+              handleClearAll();
             }}
             className={cn(
-              "flex h-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border-2 border-[var(--border-subtle)] bg-white px-4 py-2 text-sm font-medium text-[var(--color-charcoal)] transition hover:border-[var(--brand-secondary)]/50 hover:bg-[var(--surface)]",
+              "flex h-11 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-xl border-2 border-[var(--border-subtle)] bg-white px-3 py-2 text-sm font-medium text-[var(--color-charcoal)] transition hover:border-[var(--brand-secondary)]/50 hover:bg-[var(--surface)] md:flex-none md:px-4",
               isRtl && "flex-row-reverse",
             )}
           >
             {t.clear}
           </button>
+          {trailingAction != null ? trailingAction : null}
+          {t.saveSearch != null && t.saveSearch !== "" ? (
+            <button
+              type="button"
+              onClick={() =>
+                authUser ? setSaveSearchOpen(true) : setAuthOpen(true)
+              }
+              className={cn(
+                "flex h-11 min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--border-subtle)] bg-white px-3 py-2 text-sm font-medium text-[var(--color-charcoal)] transition hover:border-[var(--brand-secondary)]/50 hover:bg-[var(--surface)] md:flex-none md:px-4",
+                isRtl && "flex-row-reverse",
+              )}
+            >
+              <BookmarkPlus className="h-4 w-4 shrink-0" aria-hidden />
+              <span className="truncate">{t.saveSearch}</span>
+            </button>
+          ) : null}
         </div>
       </div>
 
-      {/* Collapsible Advanced Search section */}
+      {/* Collapsible Advanced Search section — uses normal page scroll on mobile */}
       {advancedSearchOpen && (
         <div
           className={cn(
@@ -1071,6 +1115,12 @@ export function SearchFields({
             isRtl && "text-right",
           )}
         >
+          <div
+            className={cn(
+              "-mx-1 px-1 md:mx-0 md:px-0",
+              "touch-pan-y",
+            )}
+          >
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {/* Residential + Commercial: Furniture Status */}
             {showFurnitureStatus && (
@@ -1703,8 +1753,20 @@ export function SearchFields({
               ))}
             </div>
           )}
+          </div>
         </div>
       )}
+      <SaveSearchModal
+        open={saveSearchOpen}
+        onClose={() => setSaveSearchOpen(false)}
+        queryString={queryString}
+        isRtl={isRtl}
+      />
+      <AuthPopup
+        open={authOpen}
+        locale={locale}
+        onClose={() => setAuthOpen(false)}
+      />
     </section>
   );
 }
