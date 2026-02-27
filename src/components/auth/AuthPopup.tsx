@@ -19,6 +19,7 @@ import { useTranslations } from "@/hooks/useTranslations";
 import { persistAuthSession } from "@/lib/auth/sessionCookies";
 import {
   mockAdminEmailPasswordLogin,
+  mockAgentEmailPasswordLogin,
   mockManualLogin,
   mockSendOneTimeCode,
   mockVerifyOneTimeCode,
@@ -27,12 +28,14 @@ import {
 } from "@/services/authMockService";
 import { BrandLogo } from "../layout/brand-logo";
 
-type View = "landing" | "email" | "oneTimeCode" | "signup" | "forgot";
+export type AuthPopupView = "landing" | "email" | "oneTimeCode" | "signup" | "forgot";
 
 interface AuthPopupProps {
   open: boolean;
   locale: string;
   onClose: () => void;
+  /** When set, popup opens directly to this view (e.g. "email" for agent login). */
+  initialView?: AuthPopupView;
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -44,7 +47,7 @@ function isEmailOrPhone(value: string) {
   return EMAIL_REGEX.test(raw) || PHONE_REGEX.test(cleaned);
 }
 
-export function AuthPopup({ open, locale, onClose }: AuthPopupProps) {
+export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps) {
   const pathname = usePathname();
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -54,7 +57,7 @@ export function AuthPopup({ open, locale, onClose }: AuthPopupProps) {
   const forgot = useForgotPasswordFlow();
   const isRTL = locale === "ar";
 
-  const [view, setView] = useState<View>("landing");
+  const [view, setView] = useState<AuthPopupView>("landing");
   const [showPassword, setShowPassword] = useState(false);
   const [emailIdentifier, setEmailIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -75,6 +78,18 @@ export function AuthPopup({ open, locale, onClose }: AuthPopupProps) {
   const [otcDebugOtp, setOtcDebugOtp] = useState<string | null>(null);
   const [otcLoading, setOtcLoading] = useState(false);
   const otcTimer = useOtpTimer(60);
+
+  useEffect(() => {
+    if (open && (pathname === `/${locale}/dashboard` || pathname === `/${locale}/agent-dashboard`)) {
+      onClose();
+    }
+  }, [locale, onClose, open, pathname]);
+
+  useEffect(() => {
+    if (open && initialView) {
+      setView(initialView);
+    }
+  }, [open, initialView]);
 
   useEffect(() => {
     if (!open) {
@@ -99,12 +114,6 @@ export function AuthPopup({ open, locale, onClose }: AuthPopupProps) {
       setOtcLoading(false);
     }
   }, [open]);
-
-  useEffect(() => {
-    if (open && pathname === `/${locale}/dashboard`) {
-      onClose();
-    }
-  }, [locale, onClose, open, pathname]);
 
   useEffect(() => {
     if (open && user) {
@@ -163,6 +172,19 @@ export function AuthPopup({ open, locale, onClose }: AuthPopupProps) {
     setMessage(null);
     try {
       if (trimmedIdentifier.includes("@")) {
+        try {
+          const agentUser = await mockAgentEmailPasswordLogin(
+            trimmedIdentifier,
+            password,
+          );
+          persistAuthSession(agentUser);
+          dispatch(login(agentUser));
+          onClose();
+          router.push(`/${locale}/agent-dashboard`);
+          return;
+        } catch {
+          // Not agent; try admin.
+        }
         try {
           const adminUser = await mockAdminEmailPasswordLogin(
             trimmedIdentifier,

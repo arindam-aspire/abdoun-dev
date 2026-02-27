@@ -12,7 +12,7 @@ import { logout } from "@/features/auth/authSlice";
 import { clearProfileForUser } from "@/features/profile/profileSlice";
 import { clearAuthSession } from "@/lib/auth/sessionCookies";
 import { useLocale } from "next-intl";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   APP_HEADER_CONFIG,
   resolvePublicLinksVisibility,
@@ -39,6 +39,8 @@ interface AppHeaderProps {
 export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
   const currentLocale = useLocale() as AppLocale;
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const activeLanguage = language ?? currentLocale;
   const t = useTranslations("home");
   const tCommon = useTranslations("common");
@@ -46,6 +48,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
   const user = useAppSelector((state) => state.auth.user);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authInitialView, setAuthInitialView] = useState<"email" | undefined>(undefined);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isListPropertyModalOpen, setIsListPropertyModalOpen] = useState(false);
@@ -103,6 +106,18 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
       }
     };
   }, []);
+
+  // Open auth popup for "Agent login" when URL has openAuth=agent (e.g. from agent-invite)
+  useEffect(() => {
+    if (searchParams.get("openAuth") === "agent") {
+      setAuthInitialView("email");
+      setIsAuthOpen(true);
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("openAuth");
+      const q = params.toString();
+      router.replace(pathname + (q ? `?${q}` : ""));
+    }
+  }, [pathname, router, searchParams]);
 
   useEffect(() => {
     if (!isProfileOpen) return;
@@ -489,8 +504,12 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
 
       <AuthPopup
         open={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
+        onClose={() => {
+          setIsAuthOpen(false);
+          setAuthInitialView(undefined);
+        }}
         locale={activeLanguage}
+        initialView={authInitialView}
       />
       <ProfileModal
         open={isProfileModalOpen}

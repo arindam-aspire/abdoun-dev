@@ -6,6 +6,12 @@ export const MOCK_ADMIN_CREDENTIALS = {
   name: "Admin User",
 };
 
+export const MOCK_AGENT_CREDENTIALS = {
+  email: "agent@abdoun.com",
+  password: "Agent@123",
+  name: "Ahmad Khaled Al-Hassan",
+};
+
 export interface SignupPayload {
   fullName: string;
   email: string;
@@ -133,6 +139,30 @@ export async function mockAdminEmailPasswordLogin(
     email: MOCK_ADMIN_CREDENTIALS.email,
     phone: "+962600000000",
     role: "admin" as const,
+  };
+}
+
+export async function mockAgentEmailPasswordLogin(
+  email: string,
+  password: string,
+) {
+  await delay(700);
+  const normalizedEmail = email.trim().toLowerCase();
+  const expectedEmail = MOCK_AGENT_CREDENTIALS.email.toLowerCase();
+
+  if (
+    normalizedEmail !== expectedEmail ||
+    password !== MOCK_AGENT_CREDENTIALS.password
+  ) {
+    throw new Error("Invalid agent credentials.");
+  }
+
+  return {
+    id: "agent_001",
+    name: MOCK_AGENT_CREDENTIALS.name,
+    email: MOCK_AGENT_CREDENTIALS.email,
+    phone: "+962600000001",
+    role: "agent" as const,
   };
 }
 

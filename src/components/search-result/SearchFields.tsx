@@ -680,7 +680,7 @@ export function SearchFields({
     >
       <div
         className={cn(
-          "grid grid-cols-2 gap-x-2 gap-y-2 sm:gap-3 md:flex md:flex-wrap md:items-center md:gap-3",
+          "grid grid-cols-2 gap-x-2 gap-y-2 sm:gap-3 md:flex md:flex-nowrap md:items-center md:gap-2 lg:gap-3",
         )}
       >
         {/* Rent / Buy tabs (same style as HeroSearchCard) */}
@@ -711,7 +711,7 @@ export function SearchFields({
         </div>
 
         {/* Commercial / Category dropdown */}
-        <div className="relative col-span-2 min-w-0 md:col-span-auto md:min-w-[150px] md:flex-1" dir={isRtl ? "rtl" : "ltr"}>
+        <div className="relative col-span-2 min-w-0 md:col-span-auto md:min-w-[120px] md:flex-1" dir={isRtl ? "rtl" : "ltr"}>
           <button
             ref={categoryTriggerRef}
             type="button"
@@ -759,7 +759,7 @@ export function SearchFields({
 
         {/* Property Type dropdown (depends on category) */}
         <div
-          className="relative min-w-0 md:min-w-[150px] md:flex-1"
+          className="relative min-w-0 md:min-w-[120px] md:flex-1"
           dir={isRtl ? "rtl" : "ltr"}
         >
           <button
@@ -829,7 +829,7 @@ export function SearchFields({
 
         {/* City dropdown */}
         <div
-          className="relative min-w-0 md:min-w-[150px] md:flex-1"
+          className="relative min-w-0 md:min-w-[120px] md:flex-1"
           dir={isRtl ? "rtl" : "ltr"}
         >
           <button
@@ -898,7 +898,7 @@ export function SearchFields({
         </div>
 
         {/* Areas (locations) multi-select - like HeroAreaSelect, disabled when no city */}
-        <div className="relative min-w-0 md:min-w-[180px] md:flex-[1.2]" dir={isRtl ? "rtl" : "ltr"}>
+        <div className="relative min-w-0 md:min-w-[140px] md:flex-[1.1]" dir={isRtl ? "rtl" : "ltr"}>
           <button
             ref={areasTriggerRef}
             type="button"
@@ -1012,7 +1012,7 @@ export function SearchFields({
         </div>
 
         {/* Budget (JD) - dropdown like HeroSearchCard */}
-        <div className="relative min-w-0 md:min-w-[170px] md:flex-1" dir={isRtl ? "rtl" : "ltr"}>
+        <div className="relative min-w-0 md:min-w-[130px] md:flex-1" dir={isRtl ? "rtl" : "ltr"}>
           <button
             ref={budgetTriggerRef}
             type="button"
@@ -1057,7 +1057,7 @@ export function SearchFields({
         {/* Advanced Search toggle (+/–) + Clear + Save Search */}
         <div
           className={cn(
-            "col-span-2 flex w-full flex-row flex-wrap items-center gap-2 sm:gap-3 md:col-span-auto md:w-auto md:shrink-0 md:gap-2",
+            "col-span-2 flex w-full flex-row flex-wrap items-center gap-2 sm:gap-3 md:col-span-auto md:ml-auto md:w-auto md:flex-nowrap md:shrink-0 md:gap-2",
             isRtl && "flex-row-reverse",
           )}
         >
@@ -1082,7 +1082,7 @@ export function SearchFields({
               handleClearAll();
             }}
             className={cn(
-              "flex h-11 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-xl border-2 border-subtle bg-white px-4 py-2 text-size-sm fw-medium text-charcoal transition hover:border-secondary/50 hover:bg-surface",
+              "flex h-11 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-xl border-2 border-subtle bg-white px-4 py-2 text-size-sm fw-medium text-charcoal transition hover:border-secondary/50 hover:bg-surface md:flex-none",
               isRtl && "flex-row-reverse",
             )}
           >
@@ -1096,7 +1096,7 @@ export function SearchFields({
                 authUser ? setSaveSearchOpen(true) : setAuthOpen(true)
               }
               className={cn(
-                "flex h-11 min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--border-subtle)] bg-white px-3 py-2 text-sm font-medium text-[var(--color-charcoal)] transition hover:border-[var(--brand-secondary)]/50 hover:bg-[var(--surface)] md:flex-none md:px-4",
+                "flex h-11 min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border-2 border-subtle bg-white px-3 py-2 text-size-sm fw-medium text-charcoal transition hover:border-secondary/50 hover:bg-surface md:flex-none md:px-4",
                 isRtl && "flex-row-reverse",
               )}
             >

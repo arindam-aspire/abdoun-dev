@@ -45,6 +45,12 @@ body {
 [dir="rtl"] .rtl-flip-x {
   transform: scaleX(-1);
 }
+
+/* Phone input: RTL placeholder and text (Arabic) */
+[dir="rtl"] .PhoneInputInput {
+  text-align: start;
+  direction: rtl;
+}
 @utility font-ui {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }

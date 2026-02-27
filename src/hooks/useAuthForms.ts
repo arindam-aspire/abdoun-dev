@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { isValidPhoneNumber } from "libphonenumber-js";
 import { useAppDispatch } from "@/hooks/storeHooks";
 import { login } from "@/features/auth/authSlice";
 import {
@@ -15,19 +16,20 @@ import {
   mockVerifySignupOtp,
   type SocialProvider,
 } from "@/services/authMockService";
-import {
-  DEFAULT_COUNTRY_CODE,
-  isValidInternationalPhone,
-  normalizePhoneNumber,
-  splitPhoneNumber,
-} from "@/lib/phone";
-
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_REGEX = /^\+?[1-9]\d{7,14}$/;
-
 function isEmailOrPhone(value: string) {
-  const cleaned = value.replace(/[\s()-]/g, "").trim();
-  return EMAIL_REGEX.test(value.trim()) || PHONE_REGEX.test(cleaned);
+  const trimmed = value.trim();
+  const cleaned = trimmed.replace(/[\s()-]/g, "");
+
+  if (!trimmed) return false;
+  if (EMAIL_REGEX.test(trimmed)) return true;
+
+  // Treat numbers with "+" as full international numbers, otherwise assume Jordan as default
+  if (cleaned.startsWith("+")) {
+    return isValidPhoneNumber(cleaned);
+  }
+
+  return isValidPhoneNumber(cleaned, "JO");
 }
 
 function validatePassword(password: string) {
@@ -65,8 +67,7 @@ export function useSignupFlow(locale: string) {
   const [screen, setScreen] = useState<"landing" | "manual" | "otp">("landing");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [phoneCountryCode, setPhoneCountryCode] = useState(DEFAULT_COUNTRY_CODE);
-  const [phoneLocalNumber, setPhoneLocalNumber] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [challengeId, setChallengeId] = useState("");
@@ -92,10 +93,8 @@ export function useSignupFlow(locale: string) {
     value.trim() ? undefined : "Full name is required.";
   const validateEmail = (value: string) =>
     EMAIL_REGEX.test(value.trim()) ? undefined : "Enter a valid email.";
-  const validatePhone = (countryCode: string, localNumber: string) =>
-    isValidInternationalPhone(normalizePhoneNumber(countryCode, localNumber))
-      ? undefined
-      : "Enter a valid phone.";
+  const validatePhone = (value: string) =>
+    value.trim() && isValidPhoneNumber(value.trim()) ? undefined : "Enter a valid phone.";
   const validatePasswordField = (value: string) =>
     Object.values(validatePassword(value)).every(Boolean)
       ? undefined
@@ -121,13 +120,7 @@ export function useSignupFlow(locale: string) {
     } else if (field === "email") {
       setFieldError("email", validateEmail(valueOverride ?? email));
     } else if (field === "phone") {
-      const parsedPhone = valueOverride
-        ? splitPhoneNumber(valueOverride, phoneCountryCode)
-        : { countryCode: phoneCountryCode, localNumber: phoneLocalNumber };
-      setFieldError(
-        "phone",
-        validatePhone(parsedPhone.countryCode, parsedPhone.localNumber),
-      );
+      setFieldError("phone", validatePhone(valueOverride ?? phone));
     } else if (field === "password") {
       setFieldError("password", validatePasswordField(valueOverride ?? password));
     } else {
@@ -169,7 +162,7 @@ export function useSignupFlow(locale: string) {
     const nextErrors: Record<string, string> = {};
     const fullNameError = validateFullName(fullName);
     const emailError = validateEmail(email);
-    const phoneError = validatePhone(phoneCountryCode, phoneLocalNumber);
+    const phoneError = validatePhone(phone);
     const passwordError = validatePasswordField(password);
 
     if (fullNameError) nextErrors.fullName = fullNameError;
@@ -187,7 +180,7 @@ export function useSignupFlow(locale: string) {
       const result = await mockSignupWithManual({
         fullName: fullName.trim(),
         email: email.trim(),
-        phone: normalizePhoneNumber(phoneCountryCode, phoneLocalNumber),
+        phone: phone.trim(),
         password,
       });
 
@@ -228,10 +221,7 @@ export function useSignupFlow(locale: string) {
           id: `signup_${challengeId}`,
           name: fullName.trim() || "New User",
           email: email.trim() || "new.user@mock.abdoun",
-          phone:
-            phoneLocalNumber.trim()
-              ? normalizePhoneNumber(phoneCountryCode, phoneLocalNumber)
-              : undefined,
+          phone: phone.trim() || undefined,
           role: "user",
         }),
       );
@@ -269,9 +259,7 @@ export function useSignupFlow(locale: string) {
     fields: {
       fullName,
       email,
-      phone: normalizePhoneNumber(phoneCountryCode, phoneLocalNumber),
-      phoneCountryCode,
-      phoneLocalNumber,
+      phone,
       password,
       otp,
     },
@@ -292,26 +280,9 @@ export function useSignupFlow(locale: string) {
         }
       },
       setPhone: (value: string) => {
-        const parsedPhone = splitPhoneNumber(value, phoneCountryCode);
-        setPhoneCountryCode(parsedPhone.countryCode);
-        setPhoneLocalNumber(parsedPhone.localNumber);
+        setPhone(value);
         if (touched.phone) {
-          setFieldError(
-            "phone",
-            validatePhone(parsedPhone.countryCode, parsedPhone.localNumber),
-          );
-        }
-      },
-      setPhoneCountryCode: (value: string) => {
-        setPhoneCountryCode(value);
-        if (touched.phone) {
-          setFieldError("phone", validatePhone(value, phoneLocalNumber));
-        }
-      },
-      setPhoneLocalNumber: (value: string) => {
-        setPhoneLocalNumber(value);
-        if (touched.phone) {
-          setFieldError("phone", validatePhone(phoneCountryCode, value));
+          setFieldError("phone", validatePhone(value));
         }
       },
       setPassword: (value: string) => {
