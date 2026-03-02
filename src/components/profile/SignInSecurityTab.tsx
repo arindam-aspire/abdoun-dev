@@ -5,13 +5,8 @@ import { Mail, Lock, Eye, EyeOff, Phone } from "lucide-react";
 import { useTranslations } from "@/hooks/useTranslations";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { PhoneNumberInput } from "@/components/ui/phone-number-input";
+import { PhoneNumberInputField } from "@/components/ui/PhoneNumberInputField";
 import { cn } from "@/lib/cn";
-import {
-  DEFAULT_COUNTRY_CODE,
-  normalizePhoneNumber,
-  splitPhoneNumber,
-} from "@/lib/phone";
 
 export interface SignInSecurityTabProps {
   email: string;
@@ -45,13 +40,10 @@ export function SignInSecurityTab({
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
-  const [phoneCountryCode, setPhoneCountryCode] = useState(DEFAULT_COUNTRY_CODE);
-  const [phoneLocalNumber, setPhoneLocalNumber] = useState("");
+  const [phoneValue, setPhoneValue] = useState(phone);
 
   useEffect(() => {
-    const parsedPhone = splitPhoneNumber(phone, DEFAULT_COUNTRY_CODE);
-    setPhoneCountryCode(parsedPhone.countryCode);
-    setPhoneLocalNumber(parsedPhone.localNumber);
+    setPhoneValue(phone);
   }, [phone]);
 
   const maskedEmail =
@@ -94,14 +86,14 @@ export function SignInSecurityTab({
   const handleSavePhone = useCallback(
     async () => {
       if (!onPhoneUpdate) return;
-      if (!phoneLocalNumber.trim()) {
+      if (!phoneValue?.trim()) {
         setPhoneError("Phone number is required.");
         return;
       }
       setPhoneError(null);
-      await onPhoneUpdate(normalizePhoneNumber(phoneCountryCode, phoneLocalNumber));
+      await onPhoneUpdate(phoneValue);
     },
-    [onPhoneUpdate, phoneCountryCode, phoneLocalNumber],
+    [onPhoneUpdate, phoneValue],
   );
 
   return (
@@ -135,15 +127,13 @@ export function SignInSecurityTab({
           <Phone className="h-4 w-4 shrink-0 text-zinc-500" />
           {t("phoneNumber")}
         </div>
-        <PhoneNumberInput
-          idPrefix="security-phone"
-          label=""
-          countryCode={phoneCountryCode}
-          localNumber={phoneLocalNumber}
-          onCountryCodeChange={setPhoneCountryCode}
-          onLocalNumberChange={setPhoneLocalNumber}
+        <PhoneNumberInputField
+          value={phoneValue || undefined}
+          onChange={(v) => setPhoneValue(v ?? "")}
           placeholder={t("phonePlaceholder")}
-          className="space-y-0"
+          showFlag={true}
+          showCountryCode={true}
+          showDialCode={true}
         />
         <Button type="button" size="sm" className="mt-3 text-white" onClick={() => void handleSavePhone()}>
           {t("save")}

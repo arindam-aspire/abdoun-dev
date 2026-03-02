@@ -6,14 +6,9 @@ import { DialogRoot } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { PhoneNumberInput } from "@/components/ui/phone-number-input";
+import { PhoneNumberInputField } from "@/components/ui/PhoneNumberInputField";
 import { cn } from "@/lib/cn";
 import { useTranslations } from "@/hooks/useTranslations";
-import {
-  DEFAULT_COUNTRY_CODE,
-  normalizePhoneNumber,
-  splitPhoneNumber,
-} from "@/lib/phone";
 
 export interface EmailAgentModalTranslations {
   title: string;
@@ -55,9 +50,7 @@ export function EmailAgentModal({
 
   const [name, setName] = useState(() => initialValues?.name ?? "");
   const [email, setEmail] = useState(() => initialValues?.email ?? "");
-  const initialPhone = splitPhoneNumber(initialValues?.phone ?? "", DEFAULT_COUNTRY_CODE);
-  const [phoneCountryCode, setPhoneCountryCode] = useState(initialPhone.countryCode);
-  const [phoneNumber, setPhoneNumber] = useState(initialPhone.localNumber);
+  const [phone, setPhone] = useState(() => initialValues?.phone ?? "");
   const [message, setMessage] = useState(() => defaultMessage);
   const [keepInformed, setKeepInformed] = useState(true);
 
@@ -65,7 +58,7 @@ export function EmailAgentModal({
     e.preventDefault();
     const subject = encodeURIComponent(`Inquiry: ${listing.title}`);
     const body = encodeURIComponent(
-      `Name: ${name}\nEmail: ${email}\nPhone: ${normalizePhoneNumber(phoneCountryCode, phoneNumber)}\n\n${message}`,
+      `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\n\n${message}`,
     );
     window.location.href = `mailto:contact@abdoun.com?subject=${subject}&body=${body}`;
     onClose();
@@ -120,21 +113,19 @@ export function EmailAgentModal({
             required
           />
 
-          <PhoneNumberInput
-            idPrefix="email-agent"
-            label={t.phone}
-            countryCode={phoneCountryCode}
-            localNumber={phoneNumber}
-            onCountryCodeChange={setPhoneCountryCode}
-            onLocalNumberChange={setPhoneNumber}
-            isRtl={isRtl}
-            placeholder=""
-            className="mb-4"
-            labelClassName="text-sm font-medium text-[var(--color-charcoal)]"
-            rowClassName="grid-cols-[9.5rem_1fr]"
-            selectClassName="border-[var(--border-subtle)]"
-            inputClassName="border-[var(--border-subtle)]"
-          />
+          <div className="mb-4">
+            <label className="mb-1.5 block text-size-sm fw-medium text-charcoal">
+              {t.phone}
+            </label>
+            <PhoneNumberInputField
+              value={phone || undefined}
+              onChange={(v) => setPhone(v ?? "")}
+              placeholder=""
+              showFlag={true}
+              showCountryCode={true}
+              showDialCode={true}
+            />
+          </div>
 
           <label className="mb-1.5 block text-size-sm fw-medium text-charcoal">
             {t.messageLabel}

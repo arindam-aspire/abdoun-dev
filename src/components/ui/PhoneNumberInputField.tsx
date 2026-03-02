@@ -5,10 +5,21 @@ import { useMemo } from "react";
 import { useLocale } from "next-intl";
 import { cn } from "@/lib/cn";
 import PhoneInput from "react-phone-number-input";
-import { getCountries, getCountryCallingCode } from "libphonenumber-js";
+import { getCountries, getCountryCallingCode, parsePhoneNumber } from "libphonenumber-js";
 import type { CountrySelectProps } from "react-phone-number-input";
 import { CountrySelectWithSearch } from "@/components/ui/CountrySelectWithSearch";
 import "react-phone-number-input/style.css";
+
+/** Safely convert any phone string to E.164 so react-phone-number-input won't warn. */
+function normalizeToE164(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  try {
+    const parsed = parsePhoneNumber(raw);
+    return parsed?.number || undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 function buildCountryLabels(): Partial<Record<string, string>> {
   try {
@@ -59,6 +70,7 @@ export function PhoneNumberInputField({
   const locale = useLocale();
   const isRtl = locale === "ar";
   const labels = useMemo(buildCountryLabels, []);
+  const normalizedValue = useMemo(() => normalizeToE164(value), [value]);
 
   return (
     <div
@@ -92,7 +104,7 @@ export function PhoneNumberInputField({
           addInternationalOption={false}
           countrySelectComponent={CountrySelectWithSearch as React.ComponentType<CountrySelectProps>}
           {...(labels && { labels: labels as Partial<Record<import("libphonenumber-js").CountryCode, string>> })}
-          value={value ?? undefined}
+          value={normalizedValue}
           onChange={onChange}
           placeholder={placeholder}
           disabled={disabled}
