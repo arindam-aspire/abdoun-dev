@@ -32,6 +32,7 @@ export function AdminHeader() {
 
   const navItems = [
     { label: "Dashboard", href: `/${locale}/dashboard` },
+    { label: "Properties", href: `/${locale}/properties` },
     { label: "Agents", href: `/${locale}/agents` },
   ];
 

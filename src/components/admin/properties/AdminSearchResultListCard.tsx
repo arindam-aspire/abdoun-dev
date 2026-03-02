@@ -1,17 +1,27 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useLocale } from "next-intl";
-import { ChevronLeft, ChevronRight, MapPin, Info, Mail, Phone, CheckCircle2 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  Info,
+  Mail,
+  Phone,
+  CheckCircle2,
+  MoreVertical,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import type { AppLocale } from "@/i18n/routing";
-import type { SearchResultListing } from "./types";
+import type { SearchResultListing } from "@/components/search-result/types";
 import { cn } from "@/lib/cn";
-import { WhatsAppContactModal } from "./WhatsAppContactModal";
-import { ContactPropertyModal } from "./ContactPropertyModal";
-import { EmailAgentModal } from "./EmailAgentModal";
-import { FavouriteButton } from "@/components/favourites/FavouriteButton";
+import { WhatsAppContactModal } from "@/components/search-result/WhatsAppContactModal";
+import { ContactPropertyModal } from "@/components/search-result/ContactPropertyModal";
+import { EmailAgentModal } from "@/components/search-result/EmailAgentModal";
 import { useTranslations } from "@/hooks/useTranslations";
 import { useAppSelector } from "@/hooks/storeHooks";
 
@@ -28,7 +38,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-export interface SearchResultListCardProps {
+export interface AdminSearchResultListCardProps {
   listing: SearchResultListing;
   translations: {
     launchPrice: string;
@@ -40,15 +50,14 @@ export interface SearchResultListCardProps {
     byDeveloper: (name: string) => string;
     paymentPlanInfo?: string;
   };
-  /** Base path segment for property details link. Defaults to "property-details". */
   detailsBasePath?: string;
 }
 
-export function SearchResultListCard({
+export function AdminSearchResultListCard({
   listing,
   translations: t,
-  detailsBasePath = "property-details",
-}: SearchResultListCardProps) {
+  detailsBasePath = "properties",
+}: AdminSearchResultListCardProps) {
   const locale = useLocale() as AppLocale;
   const isRtl = locale === "ar";
   const tSearch = useTranslations("searchResult");
@@ -58,6 +67,20 @@ export function SearchResultListCard({
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
 
   const images =
     listing.images?.length > 0
@@ -82,7 +105,7 @@ export function SearchResultListCard({
     [totalImages],
   );
 
-  // Auto-advance carousel on hover (same as grid view)
+  // Auto-advance carousel on hover
   useEffect(() => {
     if (!isHovered || totalImages <= 1) return;
     const interval = setInterval(() => {
@@ -116,7 +139,7 @@ export function SearchResultListCard({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Left: Image carousel (~50% on desktop) */}
+      {/* Left: Image carousel */}
       <Link
         href={detailsHref}
         {...linkProps}
@@ -141,7 +164,7 @@ export function SearchResultListCard({
           )}
         </div>
 
-        {/* Badges: Exclusive and/or Verified */}
+        {/* Badges */}
         <div
           className={cn(
             "absolute top-2 z-10 flex flex-wrap items-center gap-1.5",
@@ -161,15 +184,60 @@ export function SearchResultListCard({
           )}
         </div>
 
-        {/* Favourite button (same as grid view) */}
-        <FavouriteButton
-          propertyId={listing.id}
+        {/* Three-dot menu (replaces FavouriteButton) */}
+        <div
+          ref={menuRef}
           className={cn(
-            "absolute top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-charcoal shadow-sm ring-1 ring-subtle hover:bg-white hover:text-red-500",
+            "absolute top-2 z-10",
             isRtl ? "left-2" : "right-2",
           )}
-          iconClassName="h-5 w-5"
-        />
+        >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setMenuOpen((prev) => !prev);
+            }}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-charcoal shadow-sm ring-1 ring-subtle hover:bg-white cursor-pointer"
+            aria-label="Property actions"
+          >
+            <MoreVertical className="h-5 w-5" />
+          </button>
+          {menuOpen && (
+            <div
+              className={cn(
+                "absolute top-11 z-50 min-w-[140px] rounded-lg border border-subtle bg-white py-1 shadow-xl",
+                isRtl ? "left-0" : "right-0",
+              )}
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-size-sm text-charcoal hover:bg-surface cursor-pointer transition"
+              >
+                <Pencil className="h-3.5 w-3.5 text-charcoal/60" />
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-size-sm text-red-600 hover:bg-red-50 cursor-pointer transition"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
 
         {totalImages > 1 && (
           <>
@@ -198,7 +266,7 @@ export function SearchResultListCard({
           </>
         )}
 
-        {/* Pagination dots at bottom-center (same as grid – visible on card hover) */}
+        {/* Pagination dots */}
         {totalImages > 1 && (
           <div
             className={cn(
@@ -220,7 +288,7 @@ export function SearchResultListCard({
             ))}
           </div>
         )}
-        {/* Broker name on image (subtle, same as grid) */}
+        {/* Broker name */}
         <div
           className={cn(
             "absolute bottom-8 left-1/2 z-0 -translate-x-1/2 text-size-2xs fw-medium text-white/70",
@@ -255,7 +323,7 @@ export function SearchResultListCard({
             )}
           </Link>
 
-          {/* Key metrics: Launch Price, Payment Plan, Handover */}
+          {/* Key metrics */}
           <div
             className={cn(
               "mt-3 flex flex-wrap gap-2",
@@ -303,7 +371,6 @@ export function SearchResultListCard({
             {listing.searchPropertyType ?? listing.propertyType}
           </p>
 
-          {/* Area (sqft or acres) */}
           {(listing.area || listing.acres) && (
             <p className="mt-0.5 text-size-sm text-charcoal/80">
               {listing.acres
@@ -326,7 +393,7 @@ export function SearchResultListCard({
           </div>
         </div>
 
-        {/* Bottom row: Call, Email, WhatsApp (same as grid) + Developer branding */}
+        {/* Bottom row */}
         <div
           className={cn(
             "mt-4 flex flex-col gap-3 border-t border-subtle pt-4",
@@ -448,6 +515,3 @@ export function SearchResultListCard({
     </article>
   );
 }
-
-
-

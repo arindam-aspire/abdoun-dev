@@ -11,11 +11,13 @@ import "./PropertyDetailsHero.css";
 export interface PropertyDetailsHeroProps {
   property: DetailedProperty;
   isRtl?: boolean;
+  customActions?: React.ReactNode;
 }
 
 export function PropertyDetailsHero({
   property,
   isRtl = false,
+  customActions,
 }: PropertyDetailsHeroProps) {
   const galleryImages = useMemo(
     () =>
@@ -157,7 +159,7 @@ export function PropertyDetailsHero({
       className={`property-details-hero hero-section py-4 ${isRtl ? "hero-section--rtl" : ""}`}
       dir={isRtl ? "rtl" : "ltr"}
     >
-      <div className="hero-container container mx-auto px-4 md:px-8">
+      <div className="hero-container">
         {/* ─── LEFT: Main — video only when present, else image carousel ─── */}
         <div
           className={`hero-main ${showVideoInMain ? "hero-main--video" : ""}`}
@@ -240,13 +242,19 @@ export function PropertyDetailsHero({
             </span>
           </div>
 
-          <FavouriteButton
-            propertyId={property.id}
-            className={`absolute top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-secondary shadow-sm ring-1 ring-subtle hover:bg-white hover:text-red-500 ${
-              isRtl ? "left-4" : "right-4"
-            }`}
-            iconClassName="h-5 w-5"
-          />
+          {customActions ? (
+            <div className={`absolute top-4 z-20 ${isRtl ? "left-4" : "right-4"}`}>
+              {customActions}
+            </div>
+          ) : (
+            <FavouriteButton
+              propertyId={property.id}
+              className={`absolute top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-secondary shadow-sm ring-1 ring-subtle hover:bg-white hover:text-red-500 ${
+                isRtl ? "left-4" : "right-4"
+              }`}
+              iconClassName="h-5 w-5"
+            />
+          )}
 
           {/* ─── Text overlay (bottom-left) ─── */}
           <div className="hero-content">

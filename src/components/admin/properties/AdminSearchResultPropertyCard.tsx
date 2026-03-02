@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useLocale } from "next-intl";
@@ -11,32 +11,33 @@ import {
   Mail,
   Phone,
   CheckCircle2,
+  MoreVertical,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import type { AppLocale } from "@/i18n/routing";
-import type { SearchResultListing } from "./types";
+import type { SearchResultListing } from "@/components/search-result/types";
 import { cn } from "@/lib/cn";
 import { useTranslations } from "@/hooks/useTranslations";
-import { ContactPropertyModal } from "./ContactPropertyModal";
-import { EmailAgentModal } from "./EmailAgentModal";
-import { WhatsAppContactModal } from "./WhatsAppContactModal";
-import { FavouriteButton } from "@/components/favourites/FavouriteButton";
+import { ContactPropertyModal } from "@/components/search-result/ContactPropertyModal";
+import { EmailAgentModal } from "@/components/search-result/EmailAgentModal";
+import { WhatsAppContactModal } from "@/components/search-result/WhatsAppContactModal";
 import { useAppSelector } from "@/hooks/storeHooks";
 
-export interface SearchResultPropertyCardProps {
+export interface AdminSearchResultPropertyCardProps {
   listing: SearchResultListing;
   translations?: {
     email?: string;
     call?: string;
   };
-  /** Base path segment for property details link. Defaults to "property-details". */
   detailsBasePath?: string;
 }
 
-export function SearchResultPropertyCard({
+export function AdminSearchResultPropertyCard({
   listing,
   translations = {},
-  detailsBasePath = "property-details",
-}: SearchResultPropertyCardProps) {
+  detailsBasePath = "properties",
+}: AdminSearchResultPropertyCardProps) {
   const locale = useLocale() as AppLocale;
   const isRtl = locale === "ar";
   const tSearch = useTranslations("searchResult");
@@ -45,6 +46,20 @@ export function SearchResultPropertyCard({
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
 
   const images =
     listing.images?.length > 0
@@ -93,7 +108,7 @@ export function SearchResultPropertyCard({
       )}
       dir={isRtl ? "rtl" : "ltr"}
     >
-      {/* Top: Image (fixed aspect – slightly smaller card) */}
+      {/* Top: Image */}
       <Link
         href={detailsHref}
         {...linkProps}
@@ -113,7 +128,7 @@ export function SearchResultPropertyCard({
           )}
         </div>
 
-        {/* Badges: Verified and/or Exclusive */}
+        {/* Badges */}
         <div
           className={cn(
             "absolute top-2 z-10 flex flex-wrap items-center gap-1.5",
@@ -133,17 +148,64 @@ export function SearchResultPropertyCard({
           )}
         </div>
 
-        {/* Favorite top-right on image */}
-        <FavouriteButton
-          propertyId={listing.id}
+        {/* Three-dot menu (replaces FavouriteButton) */}
+        <div
+          ref={menuRef}
           className={cn(
-            "absolute top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-charcoal shadow-sm ring-1 ring-subtle hover:bg-white hover:text-red-500",
+            "absolute top-2 z-10",
             isRtl ? "left-2" : "right-2",
           )}
-          iconClassName="h-5 w-5"
-        />
+        >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setMenuOpen((prev) => !prev);
+            }}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-charcoal shadow-sm ring-1 ring-subtle hover:bg-white cursor-pointer"
+            aria-label="Property actions"
+          >
+            <MoreVertical className="h-5 w-5" />
+          </button>
+          {menuOpen && (
+            <div
+              className={cn(
+                "absolute top-11 z-50 min-w-[140px] rounded-lg border border-subtle bg-white py-1 shadow-xl",
+                isRtl ? "left-0" : "right-0",
+              )}
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  // TODO: Implement edit
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-size-sm text-charcoal hover:bg-surface cursor-pointer transition"
+              >
+                <Pencil className="h-3.5 w-3.5 text-charcoal/60" />
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  // TODO: Implement delete
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-size-sm text-red-600 hover:bg-red-50 cursor-pointer transition"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
 
-        {/* Carousel arrows – visible on card hover */}
+        {/* Carousel arrows */}
         {totalImages > 1 && (
           <>
             <button
@@ -194,7 +256,7 @@ export function SearchResultPropertyCard({
           </div>
         )}
 
-        {/* Broker name on image (subtle) */}
+        {/* Broker name */}
         <div
           className={cn(
             "absolute bottom-8 left-1/2 z-0 -translate-x-1/2 text-size-2xs fw-medium text-white/70",
@@ -205,7 +267,7 @@ export function SearchResultPropertyCard({
         </div>
       </Link>
 
-      {/* Bottom: Minimal details (same structure for all cards = even height) */}
+      {/* Bottom: Details */}
       <div
         className={cn(
           "relative z-10 flex min-h-[120px] flex-1 flex-col justify-between p-3",
@@ -240,7 +302,7 @@ export function SearchResultPropertyCard({
           </p>
         </Link>
 
-        {/* Call, Email, WhatsApp – open contact modal */}
+        {/* Call, Email, WhatsApp */}
         <div
           className={cn(
             "mt-2 grid grid-cols-3 gap-1.5 border-t border-subtle pt-2",
@@ -350,5 +412,3 @@ export function SearchResultPropertyCard({
     </article>
   );
 }
-
-

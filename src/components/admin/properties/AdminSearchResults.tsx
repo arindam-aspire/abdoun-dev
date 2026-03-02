@@ -3,25 +3,23 @@
 import { useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "@/hooks/useTranslations";
-import { SearchResultPropertyCard } from "./SearchResultPropertyCard";
-import { SearchResultListCard } from "./SearchResultListCard";
-import { SearchResultSortDropdown } from "./SearchResultSortDropdown";
-import { SearchResultViewToggle } from "./SearchResultViewToggle";
-import { Pagination } from "./Pagination";
-import { MOCK_SEARCH_RESULTS } from "./mockSearchResults";
-import type { CategoryKey, SearchResultListing, StatusTabKey } from "./types";
-import type { SortKey } from "./SearchResultSortDropdown";
-import type { ViewKey } from "./SearchResultViewToggle";
+import { AdminSearchResultPropertyCard } from "./AdminSearchResultPropertyCard";
+import { AdminSearchResultListCard } from "./AdminSearchResultListCard";
+import { SearchResultSortDropdown } from "@/components/search-result/SearchResultSortDropdown";
+import { SearchResultViewToggle } from "@/components/search-result/SearchResultViewToggle";
+import { Pagination } from "@/components/search-result/Pagination";
+import { MOCK_SEARCH_RESULTS } from "@/components/search-result/mockSearchResults";
+import type { CategoryKey, SearchResultListing, StatusTabKey } from "@/components/search-result/types";
+import type { SortKey } from "@/components/search-result/SearchResultSortDropdown";
+import type { ViewKey } from "@/components/search-result/SearchResultViewToggle";
 
 const PAGE_SIZE = 12;
 const PAGE_PARAM = "page";
 const SORT_PARAM = "sort";
 const VIEW_PARAM = "view";
 
-export interface SearchResultsProps {
+export interface AdminSearchResultsProps {
   resultsTitle: string;
-  /** Base path segment for property details links. Defaults to "property-details". */
-  detailsBasePath?: string;
 }
 
 const slugify = (value: string) =>
@@ -77,22 +75,12 @@ function toPriceNumber(value: string): number {
   return Number.isFinite(amount) ? amount : 0;
 }
 
-function getBudgetFromParams(searchParams: URLSearchParams): {
-  min: number;
-  max: number;
-  hasMin: boolean;
-  hasMax: boolean;
-} {
+function getBudgetFromParams(searchParams: URLSearchParams) {
   const rawMin = (searchParams.get("budgetMin") ?? "").trim();
   const rawMax = (searchParams.get("budgetMax") ?? "").trim();
   const min = toPriceNumber(rawMin);
   const max = toPriceNumber(rawMax);
-  return {
-    min,
-    max,
-    hasMin: min > 0,
-    hasMax: max > 0,
-  };
+  return { min, max, hasMin: min > 0, hasMax: max > 0 };
 }
 
 function toAreaNumber(value: string): number {
@@ -104,30 +92,13 @@ function getAdvancedParams(searchParams: URLSearchParams) {
   const get = (k: string) => (searchParams.get(k) ?? "").trim();
   const amenitiesRaw = searchParams.get("amenities");
   const allowedAmenities = new Set([
-    "balcony",
-    "builtInCloset",
-    "garden",
-    "alarmSystem",
-    "homeAutomation",
-    "gymAccess",
-    "parkingAvailable",
-    "loadingAccess",
-    "displayFrontage",
-    "airConditioning",
-    "storageArea",
-    "roadAccess",
-    "utilitiesAvailable",
-    "zonedUse",
-    "waterSource",
-    "electricityNearby",
+    "balcony", "builtInCloset", "garden", "alarmSystem", "homeAutomation",
+    "gymAccess", "parkingAvailable", "loadingAccess", "displayFrontage",
+    "airConditioning", "storageArea", "roadAccess", "utilitiesAvailable",
+    "zonedUse", "waterSource", "electricityNearby",
   ]);
   const amenities = amenitiesRaw
-    ? new Set(
-        amenitiesRaw
-          .split(",")
-          .map((a) => a.trim())
-          .filter((a) => a.length > 0 && allowedAmenities.has(a)),
-      )
+    ? new Set(amenitiesRaw.split(",").map((a) => a.trim()).filter((a) => a.length > 0 && allowedAmenities.has(a)))
     : new Set<string>();
   return {
     furnitureStatus: get("furnitureStatus"),
@@ -149,24 +120,16 @@ function getAdvancedParams(searchParams: URLSearchParams) {
   };
 }
 
-/** Normalize area string for comparison (lowercase, consistent spacing). */
 function normalizeArea(area: string): string {
   return area.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-function sortListings(
-  listings: SearchResultListing[],
-  sort: SortKey,
-): SearchResultListing[] {
+function sortListings(listings: SearchResultListing[], sort: SortKey): SearchResultListing[] {
   const arr = [...listings];
-  if (sort === "newest") {
-    return arr.sort((a, b) => b.id - a.id);
-  }
+  if (sort === "newest") return arr.sort((a, b) => b.id - a.id);
   if (sort === "price_asc" || sort === "price_desc") {
     const mult = sort === "price_asc" ? 1 : -1;
-    return arr.sort(
-      (a, b) => (toPriceNumber(a.price) - toPriceNumber(b.price)) * mult,
-    );
+    return arr.sort((a, b) => (toPriceNumber(a.price) - toPriceNumber(b.price)) * mult);
   }
   return arr;
 }
@@ -177,16 +140,12 @@ function filterListingsBySearchParams(
 ): typeof MOCK_SEARCH_RESULTS {
   const exclusiveParam = searchParams.get("exclusive");
   const exclusiveOnly = exclusiveParam === "1" || exclusiveParam === "true";
-
   let source = listings;
   if (exclusiveOnly) {
     source = listings.filter(
-      (listing) =>
-        listing.exclusive === true ||
-        (Array.isArray(listing.badges) && listing.badges.includes("Exclusive")),
+      (l) => l.exclusive === true || (Array.isArray(l.badges) && l.badges.includes("Exclusive")),
     );
   }
-
   const status = getStatusParam(searchParams);
   const category = getCategoryParam(searchParams);
   const typeParam = (searchParams.get("type") ?? "").trim().toLowerCase();
@@ -196,16 +155,10 @@ function filterListingsBySearchParams(
   const adv = getAdvancedParams(searchParams);
 
   return source.filter((listing) => {
-    if (status) {
-      if (!listing.status || listing.status !== status) return false;
-    }
-    if (category) {
-      if (!listing.category || listing.category !== category) return false;
-    }
+    if (status && (!listing.status || listing.status !== status)) return false;
+    if (category && (!listing.category || listing.category !== category)) return false;
     if (typeParam) {
-      const listingType = slugify(
-        listing.searchPropertyType ?? listing.propertyType ?? "",
-      );
+      const listingType = slugify(listing.searchPropertyType ?? listing.propertyType ?? "");
       if (listingType !== typeParam) return false;
     }
     if (cityParam) {
@@ -214,11 +167,7 @@ function filterListingsBySearchParams(
     }
     if (areas.length > 0) {
       const listingAreaNorm = normalizeArea(listing.areaName ?? "");
-      if (!listingAreaNorm) return false;
-      const areaMatches = areas.some(
-        (a) => normalizeArea(a) === listingAreaNorm,
-      );
-      if (!areaMatches) return false;
+      if (!listingAreaNorm || !areas.some((a) => normalizeArea(a) === listingAreaNorm)) return false;
     }
     if (budget.hasMin || budget.hasMax) {
       const price = toPriceNumber(listing.price);
@@ -247,46 +196,11 @@ function filterListingsBySearchParams(
       if (adv.hasMinPlotArea && listingPlot < adv.minPlotArea) return false;
       if (adv.hasMaxPlotArea && listingPlot > adv.maxPlotArea) return false;
     }
-    if (adv.furnitureStatus && (category === "residential" || category === "commercial")) {
-      const h = (listing.highlights ?? "").toLowerCase();
-      const fs = adv.furnitureStatus.toLowerCase();
-      const hasFurnished = h.includes("furnished") && !h.includes("unfurnished") && !h.includes("semi");
-      const hasSemi = h.includes("semi") && h.includes("furnished");
-      const hasUnfurnished = h.includes("unfurnished");
-      const match =
-        (fs === "furnished" && hasFurnished) ||
-        (fs === "semi-furnished" && hasSemi) ||
-        (fs === "unfurnished" && (hasUnfurnished || (!hasFurnished && !hasSemi)));
-      if (!match) return false;
-    }
-    if (adv.amenities.size > 0 && listing.highlights) {
-      const h = listing.highlights.toLowerCase();
-      const listingAmenities = new Set<string>();
-      if (h.includes("balcony")) listingAmenities.add("balcony");
-      if (h.includes("closet") || h.includes("wardrobe")) listingAmenities.add("builtInCloset");
-      if (h.includes("garden")) listingAmenities.add("garden");
-      if (h.includes("alarm") || h.includes("security")) listingAmenities.add("alarmSystem");
-      if (h.includes("smart") || h.includes("automation")) listingAmenities.add("homeAutomation");
-      if (h.includes("gym") || h.includes("fitness")) listingAmenities.add("gymAccess");
-      if (h.includes("garage") || h.includes("parking")) listingAmenities.add("parkingAvailable");
-      if (h.includes("loading") || h.includes("dock")) listingAmenities.add("loadingAccess");
-      if (h.includes("frontage") || h.includes("display front") || h.includes("shop front")) listingAmenities.add("displayFrontage");
-      if (h.includes("air") || h.includes("ac ") || h.includes(" a/c")) listingAmenities.add("airConditioning");
-      if (h.includes("storage")) listingAmenities.add("storageArea");
-      if (h.includes("road access")) listingAmenities.add("roadAccess");
-      if (h.includes("utilities") || h.includes("infrastructure")) listingAmenities.add("utilitiesAvailable");
-      if (h.includes("zoned") || h.includes("zoning")) listingAmenities.add("zonedUse");
-      if (h.includes("water") || h.includes("well")) listingAmenities.add("waterSource");
-      if (h.includes("electricity") || h.includes("power")) listingAmenities.add("electricityNearby");
-      for (const a of adv.amenities) {
-        if (!listingAmenities.has(a)) return false;
-      }
-    }
     return true;
   });
 }
 
-export function SearchResults({ resultsTitle, detailsBasePath }: SearchResultsProps) {
+export function AdminSearchResults({ resultsTitle }: AdminSearchResultsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("searchResult");
@@ -294,10 +208,7 @@ export function SearchResults({ resultsTitle, detailsBasePath }: SearchResultsPr
   const sort = getSortParam(searchParams);
   const view = getViewParam(searchParams);
 
-  const filteredListings = filterListingsBySearchParams(
-    MOCK_SEARCH_RESULTS,
-    searchParams,
-  );
+  const filteredListings = filterListingsBySearchParams(MOCK_SEARCH_RESULTS, searchParams);
   const sortedListings = sortListings(filteredListings, sort);
 
   const totalItems = sortedListings.length;
@@ -344,7 +255,6 @@ export function SearchResults({ resultsTitle, detailsBasePath }: SearchResultsPr
 
   return (
     <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-[var(--border-subtle)] md:p-5">
-      {/* Title on own row on mobile; sort, view toggle, count on second row. Desktop: single row. */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
         <h2 className="min-w-0 text-base font-semibold text-[var(--color-charcoal)] sm:flex-1 sm:text-lg">
           {resultsTitle}
@@ -383,16 +293,14 @@ export function SearchResults({ resultsTitle, detailsBasePath }: SearchResultsPr
           listings.map((listing) => (
             <li key={listing.id} className="min-h-0">
               {view === "list" ? (
-                <SearchResultListCard
+                <AdminSearchResultListCard
                   listing={listing}
                   translations={listCardTranslations}
-                  detailsBasePath={detailsBasePath}
                 />
               ) : (
-                <SearchResultPropertyCard
+                <AdminSearchResultPropertyCard
                   listing={listing}
                   translations={cardTranslations}
-                  detailsBasePath={detailsBasePath}
                 />
               )}
             </li>
@@ -423,5 +331,3 @@ export function SearchResults({ resultsTitle, detailsBasePath }: SearchResultsPr
     </section>
   );
 }
-
-
