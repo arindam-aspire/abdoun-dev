@@ -29,14 +29,23 @@
   --color-brand-accent: var(--brand-accent);
   --color-brand-on-primary: var(--brand-on-primary);
   --color-brand-on-accent: var(--brand-on-accent);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-geist-sans), var(--font-tajawal);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans);
+  font-family: var(--font-geist-sans), var(--font-tajawal), Arial, Helvetica, sans-serif;
+}
+
+/* Arabic locale: prefer Tajawal for all UI text while keeping Geist as fallback. */
+html[lang="ar"] {
+  --font-sans: var(--font-tajawal), var(--font-geist-sans);
+}
+
+html[lang="ar"] body {
+  font-family: var(--font-tajawal), var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
 /* Direction-aware helpers
@@ -52,7 +61,7 @@ body {
   direction: rtl;
 }
 @utility font-ui {
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), var(--font-tajawal), Arial, Helvetica, sans-serif;
 }
 
 @utility font-display {

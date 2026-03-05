@@ -163,74 +163,73 @@ export function PropertyDetailsHero({
       <div className="hero-container">
         {/* ─── LEFT: Main — video only when present, else image carousel ─── */}
         <div
-          className={`hero-main ${showVideoInMain ? "hero-main--video" : ""}`}
+          className={`hero-main group`}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          {showVideoInMain ? (
-            <div className="hero-slide hero-slide--active hero-slide--video-wrap">
-              <video
-                ref={videoRef}
-                src={property.video}
-                className="hero-slide__img hero-slide__video"
-                controls
-                loop
-                playsInline
-                muted={false}
-                preload="metadata"
-                aria-label={`${property.title} video`}
-                onPlay={() => setIsVideoPlaying(true)}
-                onPause={() => setIsVideoPlaying(false)}
-              />
-              {/* Center play/pause — same action as native controls */}
-              <div
-                className={`hero-video-play-center ${!isVideoPlaying ? "hero-video-play-center--visible" : "hero-video-play-center--hidden"}`}
-                aria-hidden="true"
-              >
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleVideoPlayPause();
-                  }}
-                  className="hero-video-play-button"
-                  aria-label={isVideoPlaying ? "Pause video" : "Play video"}
-                >
-                  {isVideoPlaying ? (
-                    <Pause className="h-8 w-8 md:h-9 md:w-9" strokeWidth={2} />
-                  ) : (
-                    <Play className="h-8 w-8 md:h-9 md:w-9" strokeWidth={2} />
-                  )}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Image carousel (no video case) */}
-              {mediaItems.map((item, index) => {
-                const isActive = index === activeIndex;
-                return (
+          {mediaItems.map((item, index) => {
+            const isActive = index === activeIndex;
+            
+            if (item.type === "video") {
+              return (
+                <div key={item.type + item.url + index} className={`hero-slide hero-slide--video-wrap ${isActive ? "hero-slide--active" : ""}`}>
+                  <video
+                    ref={videoRef}
+                    src={item.url}
+                    className="hero-slide__img hero-slide__video"
+                    controls
+                    loop
+                    playsInline
+                    muted={false}
+                    preload="metadata"
+                    aria-label={`${property.title} video`}
+                    onPlay={() => setIsVideoPlaying(true)}
+                    onPause={() => setIsVideoPlaying(false)}
+                  />
                   <div
-                    key={item.type + item.url + index}
-                    className={`hero-slide ${isActive ? "hero-slide--active" : ""}`}
-                    onClick={() => openFullscreen(index)}
+                    className={`hero-video-play-center ${!isVideoPlaying ? "hero-video-play-center--visible" : "hero-video-play-center--hidden"}`}
+                    aria-hidden="true"
                   >
-                    <Image
-                      src={item.url}
-                      alt={property.title}
-                      fill
-                      priority={index === 0}
-                      unoptimized
-                      quality={100}
-                      sizes="(min-width: 768px) 70vw, 100vw"
-                      className="hero-slide__img"
-                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleVideoPlayPause();
+                      }}
+                      className="hero-video-play-button"
+                      aria-label={isVideoPlaying ? "Pause video" : "Play video"}
+                    >
+                      {isVideoPlaying ? (
+                        <Pause className="h-8 w-8 md:h-9 md:w-9" strokeWidth={2} />
+                      ) : (
+                        <Play className="h-8 w-8 md:h-9 md:w-9" strokeWidth={2} />
+                      )}
+                    </button>
                   </div>
-                );
-              })}
-            </>
-          )}
+                </div>
+              );
+            }
+
+            return (
+              <div
+                key={item.type + item.url + index}
+                className={`hero-slide ${isActive ? "hero-slide--active" : ""}`}
+                onClick={() => openFullscreen(index)}
+              >
+                <Image
+                  src={item.url}
+                  alt={property.title}
+                  fill
+                  priority={index === 0}
+                  unoptimized
+                  quality={100}
+                  sizes="(min-width: 768px) 70vw, 100vw"
+                  className="hero-slide__img"
+                />
+              </div>
+            );
+          })}
 
           {/* Soft gradient overlay — bottom-left only */}
           <div className="hero-gradient hero-gradient--left" />
@@ -266,8 +265,46 @@ export function PropertyDetailsHero({
             <p className="hero-content__subtitle">{property.subtitle}</p>
           </div>
 
+          {/* ─── Center-Aligned Navigation Arrows (Side) ─── */}
+          {mediaItems.length > 1 && (
+            <>
+              <button
+                type="button"
+                className="hero-side-arrow hero-side-arrow--prev"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToPrev();
+                  setIsAutoPlaying(false);
+                }}
+                aria-label="Previous photo"
+              >
+                {isRtl ? (
+                  <ChevronRight className="hero-side-arrow__icon" />
+                ) : (
+                  <ChevronLeft className="hero-side-arrow__icon" />
+                )}
+              </button>
+              <button
+                type="button"
+                className="hero-side-arrow hero-side-arrow--next"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToNext();
+                  setIsAutoPlaying(false);
+                }}
+                aria-label="Next photo"
+              >
+                {isRtl ? (
+                  <ChevronLeft className="hero-side-arrow__icon" />
+                ) : (
+                  <ChevronRight className="hero-side-arrow__icon" />
+                )}
+              </button>
+            </>
+          )}
+
           {/* ─── Navigation (bottom-right) — only for image carousel ─── */}
-          {!showVideoInMain && mediaItems.length > 1 && (
+          {mediaItems.length > 1 && (
             <div className="hero-nav">
               <div className="hero-dots">
                 {mediaItems.map((_, i) => (
