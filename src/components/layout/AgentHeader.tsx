@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useLocale } from "next-intl";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import type { AppLocale } from "@/i18n/routing";
 import { BrandLogo } from "@/components/layout/brand-logo";
@@ -15,8 +17,23 @@ const SHRINK_SCROLL_Y = 36;
 const EXPAND_SCROLL_Y = 12;
 const MOBILE_BREAKPOINT = 768;
 
+/** Format route segment as tab label (e.g. "agent-dashboard" → "Agent dashboard") */
+function segmentToLabel(segment: string): string {
+  return segment
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
+/** Only the parent folder under (agent): agent-dashboard, agent-properties */
+const AGENT_NAV_SEGMENTS = [
+  { segment: "agent-dashboard", path: "/agent-dashboard", label: "Dashboard" },
+  { segment: "agent-properties", path: "/agent-properties", label: "Properties" },
+] as const;
+
 export function AgentHeader() {
   const locale = useLocale() as AppLocale;
+  const pathname = usePathname();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -26,6 +43,13 @@ export function AgentHeader() {
   const profileRef = useRef<HTMLDivElement | null>(null);
   const mobileProfileRef = useRef<HTMLDivElement | null>(null);
   const isRTL = locale === "ar";
+
+  const navTabs = AGENT_NAV_SEGMENTS.map(({ segment, path, label }) => ({
+    href: `/${locale}${path}`,
+    label: label ?? segmentToLabel(segment),
+  }));
+  const isTabActive = (href: string) =>
+    pathname === href || pathname.startsWith(`${href}/`);
 
   const initials =
     (user?.name?.split(" ") ?? []).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "").join("") || "U";
@@ -101,7 +125,7 @@ export function AgentHeader() {
       dir={isRTL ? "rtl" : "ltr"}
     >
       <div
-        className={`container mx-auto flex items-center justify-between gap-2 px-4 transition-all duration-200 md:px-8 ${
+        className={`container mx-auto flex items-center justify-between gap-4 px-4 transition-all duration-200 md:px-8 ${
           isScrolled ? "py-2" : "py-4"
         }`}
       >
@@ -118,6 +142,23 @@ export function AgentHeader() {
             <span>1988</span>
           </span>
         </div>
+
+        <nav className="hidden md:flex flex-1 justify-center gap-1.5">
+          {navTabs.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "inline-flex items-center gap-2 px-3.5 py-1.5 text-size-sm fw-medium border-b-2 border-transparent transition-colors",
+                isTabActive(href)
+                  ? "border-white text-white"
+                  : "text-white/80 hover:text-white",
+              )}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
 
         <div className="flex items-center gap-2 md:gap-3 md:justify-end">
           <div className="hidden md:block">
@@ -189,6 +230,23 @@ export function AgentHeader() {
           )}
           dir={isRTL ? "rtl" : "ltr"}
         >
+          <nav className="flex flex-col gap-0.5 px-4 py-3">
+            {navTabs.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={closeMobileMenu}
+                className={cn(
+                  "rounded-lg px-4 py-3 text-size-sm fw-medium transition-colors",
+                  isTabActive(href)
+                    ? "bg-white/20 text-white"
+                    : "text-white/80 hover:bg-white/10 hover:text-white",
+                )}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
           <div className="mt-2 border-t border-white/20 px-4 py-4 flex items-center justify-between gap-2">
             <span className="text-size-sm text-white/80">Language</span>
             <LanguageSelect value={locale} showFullLabels={false} />

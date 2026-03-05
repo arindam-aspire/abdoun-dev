@@ -68,6 +68,8 @@ export function AgentDashboardHome() {
       value: String(data.totalProperties),
       delta: tAgent("myListingsDelta"),
       icon: Building2,
+      iconBgClass:
+        "bg-[var(--color-charcoal)]/8 ring-1 ring-[var(--color-charcoal)]/15",
       href: `/${locale}/agent-dashboard/listings`,
     },
     {
@@ -75,6 +77,8 @@ export function AgentDashboardHome() {
       value: String(data.leadsThisMonth),
       delta: tAgent("leadsThisMonthDelta"),
       icon: Mail,
+      iconBgClass:
+        "bg-[var(--color-royal-blue)]/12 ring-1 ring-[var(--color-royal-blue)]/20",
       href: `/${locale}/agent-dashboard/inquiries`,
     },
     {
@@ -82,6 +86,7 @@ export function AgentDashboardHome() {
       value: `${data.viewRate}%`,
       delta: tAgent("viewRateDelta"),
       icon: Eye,
+      iconBgClass: "bg-emerald-500/14 ring-1 ring-emerald-500/20",
       href: `/${locale}/agent-dashboard/trends`,
     },
     {
@@ -89,6 +94,7 @@ export function AgentDashboardHome() {
       value: String(data.dealCloseCount),
       delta: tAgent("dealCloseCountDelta"),
       icon: Handshake,
+      iconBgClass: "bg-amber-500/14 ring-1 ring-amber-500/20",
       href: `/${locale}/agent-dashboard/inquiries`,
     },
   ];
@@ -111,7 +117,11 @@ export function AgentDashboardHome() {
             <>
               <div className="flex items-center justify-between">
                 <p className="text-xs font-medium text-charcoal/70">{item.label}</p>
-                <Icon className="h-4 w-4 text-secondary" />
+                <span
+                  className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${item.iconBgClass}`}
+                >
+                  <Icon className="h-4 w-4 text-secondary" />
+                </span>
               </div>
               <p className="mt-3 text-2xl font-semibold text-charcoal">{item.value}</p>
               <p className="mt-1 text-xs text-emerald-700">{item.delta}</p>

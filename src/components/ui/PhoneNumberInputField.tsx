@@ -78,9 +78,10 @@ export function PhoneNumberInputField({
       className={cn(
         "w-full",
         !showFlag && "[&_.PhoneInputCountryIcon]:hidden",
-        !showCountryCode && "[&_.PhoneInputCountrySelectArrow]:hidden [&_.PhoneInputCountrySelect]:pointer-events-none [&_.PhoneInputCountrySelect]:w-0 [&_.PhoneInputCountrySelect]:overflow-hidden",
+        !showCountryCode &&
+          "[&_.PhoneInputCountrySelectArrow]:hidden [&_.PhoneInputCountrySelect]:pointer-events-none [&_.PhoneInputCountrySelect]:w-0 [&_.PhoneInputCountrySelect]:overflow-hidden",
         showCountryCode &&
-          "[&_.PhoneInputCountrySelectArrow]:transition-transform [&_.PhoneInputCountrySelect:focus+_.PhoneInputCountryIcon+_.PhoneInputCountrySelectArrow]:rotate-[180deg] [&_.PhoneInputCountrySelectArrow[data-open]]:rotate-180",
+          "[&_.PhoneInputCountrySelectArrow]:transition-transform [&_.PhoneInputCountrySelectArrow]:rotate-0 [&_.PhoneInputCountrySelectArrow[data-open]]:rotate-180",
         isRtl && showCountryCode && "[&_.PhoneInputCountryIcon]:me-2",
         className,
       )}

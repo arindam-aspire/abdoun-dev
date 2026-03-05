@@ -204,6 +204,11 @@
   },
   "agentDashboard": {
     "backToDashboard": "Back to Dashboard",
+    "navDashboard": "Dashboard",
+    "navProperties": "Properties",
+    "navListings": "Listings",
+    "navInquiries": "Inquiries",
+    "navTrends": "Trends",
     "agentDashboardTitle": "Agent Dashboard",
     "myListings": "My Listings",
     "myListingsDelta": "Active on platform",
@@ -375,7 +380,8 @@
     "viewDetails": "View details"
   },
   "searchResult": {
-    "filtersTitle": "Search filters",
+  "filtersTitle": "Search filters",
+  "properties": "Properties",
     "propertiesInAmman": "Properties in Amman.",
     "propertiesInLocation": "Properties in {location}",
     "exclusivePropertiesTitle": "Exclusive Properties",

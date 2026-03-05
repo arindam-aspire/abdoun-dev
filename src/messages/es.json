@@ -204,6 +204,11 @@
   },
   "agentDashboard": {
     "backToDashboard": "Volver al panel",
+    "navDashboard": "Panel",
+    "navProperties": "Propiedades",
+    "navListings": "Anuncios",
+    "navInquiries": "Consultas",
+    "navTrends": "Tendencias",
     "agentDashboardTitle": "Panel del agente",
     "myListings": "Mis anuncios",
     "myListingsDelta": "activos en la plataforma",

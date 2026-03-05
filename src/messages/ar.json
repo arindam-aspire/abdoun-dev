@@ -204,6 +204,11 @@
   },
   "agentDashboard": {
     "backToDashboard": "العودة للوحة التحكم",
+    "navDashboard": "لوحة التحكم",
+    "navProperties": "العقارات",
+    "navListings": "الإعلانات",
+    "navInquiries": "الاستفسارات",
+    "navTrends": "الاتجاهات",
     "agentDashboardTitle": "لوحة تحكم الوكيل",
     "myListings": "إعلاناتي",
     "myListingsDelta": "نشطة على المنصة",
