@@ -7,14 +7,15 @@ import {
   BarElement,
   LineElement,
   PointElement,
+  ArcElement,
   Filler,
   Tooltip,
   Legend,
 } from "chart.js";
 
 /**
- * Register Chart.js components once for custom agent charts.
- * Import this in any component that uses Line or Bar from react-chartjs-2.
+ * Register Chart.js components once for custom charts.
+ * Import this in any component that uses Line, Bar, or Doughnut from react-chartjs-2.
  */
 ChartJS.register(
   CategoryScale,
@@ -22,6 +23,7 @@ ChartJS.register(
   BarElement,
   LineElement,
   PointElement,
+  ArcElement,
   Filler,
   Tooltip,
   Legend

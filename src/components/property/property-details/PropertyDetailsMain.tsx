@@ -222,7 +222,7 @@ export function PropertyDetailsMain({ language, propertyId = "1" }: PropertyDeta
 
   return (
     <div
-      className={`relative min-h-screen overflow-x-clip bg-gradient-to-b from-surface via-white to-surface text-charcoal ${
+      className={`container mx-auto px-4 py-6 md:px-8 md:py-8 relative min-h-screen overflow-x-clip bg-gradient-to-b from-surface via-white to-surface text-charcoal ${
         isRtl ? "text-right" : "text-left"
       }`}
     >
@@ -241,7 +241,7 @@ export function PropertyDetailsMain({ language, propertyId = "1" }: PropertyDeta
 
       <PropertyDetailsHero property={displayProperty} isRtl={isRtl} />
 
-      <main className="relative z-10 mx-auto container px-4 pb-14 md:px-8 md:pb-20">
+      <main className="relative z-10">
         <PropertyDetailsTabBar
           activeTab={displayTab}
           onTabChange={handleTabChange}

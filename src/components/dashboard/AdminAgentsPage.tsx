@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
-import { Check, Copy, Mail, RefreshCw, UserPlus2, Users } from "lucide-react";
+import { Check, Copy, Mail, RefreshCw, UserCheck, UserPlus2, Users } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import {
   clearInviteFeedback,
@@ -80,6 +80,11 @@ export function AdminAgentsPage() {
     [items],
   );
 
+  const activeCount = useMemo(
+    () => items.filter((agent) => agent.status === "active").length,
+    [items],
+  );
+
   const onInvite = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!email.trim()) return;
@@ -125,10 +130,17 @@ export function AdminAgentsPage() {
         </Link>
       </div>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
         <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm">
           <p className="text-size-xs text-charcoal/70">Total agents</p>
           <p className="mt-2 text-size-2xl fw-semibold text-charcoal">{items.length}</p>
+        </article>
+        <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-1.5">
+            <UserCheck className="h-3.5 w-3.5 text-emerald-600" />
+            <p className="text-size-xs text-charcoal/70">Active agents</p>
+          </div>
+          <p className="mt-2 text-size-2xl fw-semibold text-emerald-700">{activeCount}</p>
         </article>
         <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm">
           <p className="text-size-xs text-charcoal/70">Pending invites</p>

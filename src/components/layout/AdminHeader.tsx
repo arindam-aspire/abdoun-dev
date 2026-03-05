@@ -134,7 +134,7 @@ export function AdminHeader() {
         </div>
 
         <nav
-          className={`hidden md:flex items-center justify-center gap-6 text-size-sm fw-medium text-white/80 ${isRTL ? "flex-row-reverse" : ""}`}
+          className={`hidden md:flex items-center justify-center gap-6 text-size-base fw-bold text-white/80 ${isRTL ? "flex-row-reverse" : ""}`}
           aria-label="Admin navigation"
         >
           {navItems.map((item) => {

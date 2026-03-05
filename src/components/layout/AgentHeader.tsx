@@ -143,16 +143,16 @@ export function AgentHeader() {
           </span>
         </div>
 
-        <nav className="hidden md:flex flex-1 justify-center gap-1.5">
+        <nav className={`hidden md:flex items-center justify-center gap-6 text-size-base fw-bold text-white/80 ${isRTL ? "flex-row-reverse" : ""}`}>
           {navTabs.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
               className={cn(
-                "inline-flex items-center gap-2 px-3.5 py-1.5 text-size-sm fw-medium border-b-2 border-transparent transition-colors",
+                "border-b-2 border-transparent transition hover:border-accent hover:text-white",
                 isTabActive(href)
-                  ? "border-white text-white"
-                  : "text-white/80 hover:text-white",
+                  ? "border-accent text-white"
+                  : "",
               )}
             >
               {label}

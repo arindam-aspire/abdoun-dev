@@ -100,7 +100,7 @@ export function AuthPopupEmailStep({
         type="button"
         variant="outline"
         size="lg"
-        className="h-11 w-full justify-center rounded-full bg-white text-zinc-800 hover:bg-zinc-50 sm:h-12"
+        className="h-11 w-full border-sky-500 justify-center rounded-full bg-white text-zinc-800 hover:bg-zinc-50 sm:h-12"
         disabled={loading}
         onClick={onGoOneTimeCode}
       >
@@ -108,11 +108,11 @@ export function AuthPopupEmailStep({
       </Button>
       <button
         type="button"
-        className="mt-2 w-full cursor-pointer text-center text-size-base fw-semibold text-sky-800 hover:text-sky-900 sm:mt-3 sm:text-size-base"
+        className="mt-2 w-full cursor-pointer text-center text-size-base fw-semibold text-black sm:mt-3 sm:text-size-base"
         onClick={onGoSignup}
       >
         {t.rich("newHereCreate", {
-          action: (chunks) => <span className="text-orange-600 hover:text-orange-700">{chunks}</span>,
+          action: (chunks) => <span className="text-secondary hover:underline">{chunks}</span>,
         })}
       </button>
     </div>

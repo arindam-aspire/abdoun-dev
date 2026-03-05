@@ -18,7 +18,17 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
+import { useEffect, useState } from "react";
 import type { AppLocale } from "@/i18n/routing";
+import { getAdminDashboardData } from "@/services/adminDashboardMockService";
+import type { AdminDashboardData } from "@/services/adminDashboardMockService";
+import { InquiryTrendLineChart } from "@/components/agent/InquiryTrendLineChart";
+import { SparkBarsChart } from "@/components/agent/SparkBarsChart";
+import { DotLineChart } from "@/components/agent/DotLineChart";
+
+/* ------------------------------------------------------------------ */
+/*  Types & helpers                                                    */
+/* ------------------------------------------------------------------ */
 
 type KpiCard = {
   label: string;
@@ -27,48 +37,6 @@ type KpiCard = {
   icon: React.ComponentType<{ className?: string }>;
   tone: "neutral" | "info" | "warning" | "success";
 };
-
-const KPI_CARDS: KpiCard[] = [
-  {
-    label: "Total users",
-    value: "18,420",
-    delta: "+4.2% MoM",
-    icon: Users,
-    tone: "neutral",
-  },
-  {
-    label: "Total agents",
-    value: "642",
-    delta: "+2.1% MoM",
-    icon: UserSquare2,
-    tone: "info",
-  },
-  {
-    label: "Pending approvals",
-    value: "56",
-    delta: "+8 today",
-    icon: Clock3,
-    tone: "warning",
-  },
-  {
-    label: "Active listings",
-    value: "1,248",
-    delta: "+32 this week",
-    icon: Building2,
-    tone: "info",
-  },
-  {
-    label: "Total leads",
-    value: "3,904",
-    delta: "+11.6% MoM",
-    icon: BarChart3,
-    tone: "success",
-  },
-];
-
-const USERS_SERIES = [24, 28, 31, 34, 39, 45, 49, 58, 66, 71, 82, 93];
-const LISTINGS_SERIES = [14, 18, 21, 19, 26, 30, 33, 37, 35, 42, 48, 52];
-const LEADS_SERIES = [56, 61, 58, 72, 69, 81, 90, 97, 88, 102, 113, 126];
 
 type QueueItemStatus = "pending" | "review" | "approved";
 
@@ -100,6 +68,10 @@ type TopAgent = {
   responseRate: string;
   area: string;
 };
+
+/* ------------------------------------------------------------------ */
+/*  Static mock data (non-KPI sections)                                */
+/* ------------------------------------------------------------------ */
 
 const APPROVAL_QUEUE: QueueItem[] = [
   {
@@ -182,6 +154,10 @@ const TOP_AGENTS: TopAgent[] = [
   },
 ];
 
+/* ------------------------------------------------------------------ */
+/*  Style helpers                                                      */
+/* ------------------------------------------------------------------ */
+
 function statusPillClass(status: QueueItemStatus): string {
   if (status === "approved") {
     return "bg-emerald-100 text-emerald-800 border-emerald-200";
@@ -230,71 +206,83 @@ function kpiToneClass(tone: KpiCard["tone"]): {
   };
 }
 
-function SparkBars({ values }: { values: number[] }) {
-  const max = Math.max(...values, 1);
-
-  return (
-    <div className="flex h-36 items-end gap-2">
-      {values.map((value, index) => (
-        <div key={`${value}-${index}`} className="flex-1">
-          <div
-            className="w-full rounded-t-sm bg-primary opacity-80 transition-all"
-            style={{ height: `${Math.max(10, (value / max) * 100)}%` }}
-            title={String(value)}
-          />
-        </div>
-      ))}
-    </div>
-  );
+function formatDelta(value: number, suffix = ""): string {
+  const sign = value >= 0 ? "+" : "";
+  return `${sign}${value}${suffix} vs last month`;
 }
 
-function ChartCard({
-  title,
-  subtitle,
-  values,
-}: {
-  title: string;
-  subtitle: string;
-  values: number[];
-}) {
-  const latest = values[values.length - 1] ?? 0;
-  const previous = values[values.length - 2] ?? latest;
-  const delta = latest - previous;
-  const total = values.reduce((sum, value) => sum + value, 0);
-
-  return (
-    <section className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold text-charcoal">{title}</h3>
-          <p className="mt-1 text-xs text-charcoal/65">{subtitle}</p>
-        </div>
-        <div className="rounded-lg bg-surface px-2.5 py-1.5 text-right">
-          <p className="text-xs text-charcoal/65">Latest</p>
-          <p className="text-sm font-semibold text-charcoal">{latest}</p>
-        </div>
-      </div>
-      <div className="mt-4">
-        <SparkBars values={values} />
-      </div>
-      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-        <div className="rounded-lg border border-subtle bg-surface px-2.5 py-2">
-          <p className="text-charcoal/65">Total</p>
-          <p className="mt-0.5 font-semibold text-charcoal">{total}</p>
-        </div>
-        <div className="rounded-lg border border-subtle bg-surface px-2.5 py-2">
-          <p className="text-charcoal/65">MoM delta</p>
-          <p className={`mt-0.5 font-semibold ${delta >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
-            {delta >= 0 ? `+${delta}` : delta}
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
 
 export function AdminDashboardHome() {
   const locale = useLocale() as AppLocale;
+  const [data, setData] = useState<AdminDashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    getAdminDashboardData().then((dashboard) => {
+      if (!cancelled) {
+        setData(dashboard);
+        setLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading || !data) {
+    return (
+      <div className="space-y-6">
+        <div className="px-1">
+          <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
+            Admin Dashboard
+          </h1>
+          <p className="mt-1 text-size-sm text-charcoal/70">Loading dashboard data…</p>
+        </div>
+      </div>
+    );
+  }
+
+  const kpiCards: KpiCard[] = [
+    {
+      label: "Users this month",
+      value: data.usersThisMonth.toLocaleString(),
+      delta: formatDelta(data.usersMoMDelta, "%"),
+      icon: Users,
+      tone: "neutral",
+    },
+    {
+      label: "Agents this month",
+      value: String(data.agentsThisMonth),
+      delta: formatDelta(data.agentsMoMDelta, "%"),
+      icon: UserSquare2,
+      tone: "info",
+    },
+    {
+      label: "Pending approvals",
+      value: String(data.pendingApprovals),
+      delta: `+${data.pendingApprovalsToday} today`,
+      icon: Clock3,
+      tone: "warning",
+    },
+    {
+      label: "Listings this month",
+      value: data.listingsThisMonth.toLocaleString(),
+      delta: formatDelta(data.listingsMoMDelta, "%"),
+      icon: Building2,
+      tone: "info",
+    },
+    {
+      label: "Leads this month",
+      value: data.leadsThisMonth.toLocaleString(),
+      delta: formatDelta(data.leadsMoMDelta, "%"),
+      icon: BarChart3,
+      tone: "success",
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -303,12 +291,13 @@ export function AdminDashboardHome() {
           Admin Dashboard
         </h1>
         <p className="mt-1 text-size-sm text-charcoal/70">
-          Overview of platform growth, moderation queue, and operational actions.
+          Monthly overview of platform growth, moderation queue, and operations.
         </p>
       </div>
 
+      {/* ── KPI Cards ── */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {KPI_CARDS.map((item) => {
+        {kpiCards.map((item) => {
           const Icon = item.icon;
           const toneClass = kpiToneClass(item.tone);
           return (
@@ -331,24 +320,27 @@ export function AdminDashboardHome() {
         })}
       </section>
 
+      {/* ── Charts (Chart.js) ── */}
       <section className="grid gap-4 xl:grid-cols-3">
-        <ChartCard
-          title="New users over time"
-          subtitle="Last 12 months user signups"
-          values={USERS_SERIES}
+        <InquiryTrendLineChart
+          values={data.userGrowthSeries}
+          title="User growth"
+          subtitle="New user signups over the last 12 months"
         />
-        <ChartCard
-          title="New listings over time"
-          subtitle="Last 12 months listing creation"
-          values={LISTINGS_SERIES}
+        <SparkBarsChart
+          values={data.listingGrowthSeries}
+          title="Listing activity"
+          subtitle="New listings created per month"
         />
-        <ChartCard
-          title="Leads / inquiries volume"
-          subtitle="Last 12 months lead activity"
-          values={LEADS_SERIES}
+        <DotLineChart
+          labels={data.monthLabels}
+          values={data.leadGrowthSeries}
+          title="Lead volume"
+          subtitle="Total leads generated per month"
         />
       </section>
 
+      {/* ── Alerts panel + Quick actions (original layout) ── */}
       <section className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-charcoal">
@@ -405,6 +397,7 @@ export function AdminDashboardHome() {
         </article>
       </section>
 
+      {/* ── Moderation queue + Lead source quality (original layout) ── */}
       <section className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
           <div className="flex items-center justify-between gap-2">
@@ -493,6 +486,7 @@ export function AdminDashboardHome() {
         </article>
       </section>
 
+      {/* ── Top agents + Recent activity (original layout) ── */}
       <section className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
           <h2 className="text-sm font-semibold text-charcoal">
