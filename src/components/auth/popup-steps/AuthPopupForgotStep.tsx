@@ -19,7 +19,7 @@ export function AuthPopupForgotStep({
   onFocusConfirmPassword,
 }: AuthPopupForgotStepProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {forgot.step === "request" ? (
         <>
           <AuthPopupField

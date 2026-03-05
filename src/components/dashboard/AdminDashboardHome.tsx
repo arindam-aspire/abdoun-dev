@@ -25,14 +25,45 @@ type KpiCard = {
   value: string;
   delta: string;
   icon: React.ComponentType<{ className?: string }>;
+  tone: "neutral" | "info" | "warning" | "success";
 };
 
 const KPI_CARDS: KpiCard[] = [
-  { label: "Total users", value: "18,420", delta: "+4.2% MoM", icon: Users },
-  { label: "Total agents", value: "642", delta: "+2.1% MoM", icon: UserSquare2 },
-  { label: "Pending approvals", value: "56", delta: "+8 today", icon: Clock3 },
-  { label: "Active listings", value: "1,248", delta: "+32 this week", icon: Building2 },
-  { label: "Total leads", value: "3,904", delta: "+11.6% MoM", icon: BarChart3 },
+  {
+    label: "Total users",
+    value: "18,420",
+    delta: "+4.2% MoM",
+    icon: Users,
+    tone: "neutral",
+  },
+  {
+    label: "Total agents",
+    value: "642",
+    delta: "+2.1% MoM",
+    icon: UserSquare2,
+    tone: "info",
+  },
+  {
+    label: "Pending approvals",
+    value: "56",
+    delta: "+8 today",
+    icon: Clock3,
+    tone: "warning",
+  },
+  {
+    label: "Active listings",
+    value: "1,248",
+    delta: "+32 this week",
+    icon: Building2,
+    tone: "info",
+  },
+  {
+    label: "Total leads",
+    value: "3,904",
+    delta: "+11.6% MoM",
+    icon: BarChart3,
+    tone: "success",
+  },
 ];
 
 const USERS_SERIES = [24, 28, 31, 34, 39, 45, 49, 58, 66, 71, 82, 93];
@@ -161,6 +192,44 @@ function statusPillClass(status: QueueItemStatus): string {
   return "bg-amber-100 text-amber-800 border-amber-200";
 }
 
+function kpiToneClass(tone: KpiCard["tone"]): {
+  iconWrap: string;
+  icon: string;
+  value: string;
+  delta: string;
+} {
+  if (tone === "warning") {
+    return {
+      iconWrap: "bg-amber-500/14 ring-1 ring-amber-500/20",
+      icon: "text-amber-700",
+      value: "text-amber-700",
+      delta: "text-amber-700",
+    };
+  }
+  if (tone === "info") {
+    return {
+      iconWrap: "bg-[var(--color-royal-blue)]/12 ring-1 ring-[var(--color-royal-blue)]/20",
+      icon: "text-secondary",
+      value: "text-secondary",
+      delta: "text-secondary",
+    };
+  }
+  if (tone === "success") {
+    return {
+      iconWrap: "bg-emerald-500/14 ring-1 ring-emerald-500/20",
+      icon: "text-emerald-700",
+      value: "text-emerald-700",
+      delta: "text-emerald-700",
+    };
+  }
+  return {
+    iconWrap: "bg-[var(--color-charcoal)]/8 ring-1 ring-[var(--color-charcoal)]/15",
+    icon: "text-[var(--color-charcoal)]/80",
+    value: "text-[var(--color-charcoal)]",
+    delta: "text-[var(--color-charcoal)]/70",
+  };
+}
+
 function SparkBars({ values }: { values: number[] }) {
   const max = Math.max(...values, 1);
 
@@ -241,17 +310,22 @@ export function AdminDashboardHome() {
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {KPI_CARDS.map((item) => {
           const Icon = item.icon;
+          const toneClass = kpiToneClass(item.tone);
           return (
             <article
               key={item.label}
-              className="rounded-2xl border border-subtle bg-white p-4 shadow-sm"
+              className="rounded-2xl border border-subtle bg-white p-4 shadow-sm transition hover:shadow-md"
             >
               <div className="flex items-center justify-between">
                 <p className="text-xs font-medium text-charcoal/70">{item.label}</p>
-                <Icon className="h-4 w-4 text-secondary" />
+                <span
+                  className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${toneClass.iconWrap}`}
+                >
+                  <Icon className={`h-4 w-4 ${toneClass.icon}`} />
+                </span>
               </div>
-              <p className="mt-3 text-2xl font-semibold text-charcoal">{item.value}</p>
-              <p className="mt-1 text-xs text-emerald-700">{item.delta}</p>
+              <p className={`mt-3 text-2xl font-semibold ${toneClass.value}`}>{item.value}</p>
+              <p className={`mt-1 text-xs font-medium ${toneClass.delta}`}>{item.delta}</p>
             </article>
           );
         })}

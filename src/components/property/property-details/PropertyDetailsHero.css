@@ -149,12 +149,10 @@
 .property-details-hero .hero-gradient--left {
   inset: 0;
   width: 60%;
-  background: linear-gradient(
-    to right,
-    rgba(26, 59, 92, 0.68) 0%,
-    rgba(26, 59, 92, 0.3) 45%,
-    transparent 100%
-  );
+  background: linear-gradient(to right,
+      rgba(26, 59, 92, 0.68) 0%,
+      rgba(26, 59, 92, 0.3) 45%,
+      transparent 100%);
 }
 
 .property-details-hero .hero-gradient--bottom {
@@ -162,23 +160,19 @@
   left: 0;
   right: 0;
   height: 55%;
-  background: linear-gradient(
-    to top,
-    rgba(26, 59, 92, 0.62) 0%,
-    rgba(26, 59, 92, 0.18) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(to top,
+      rgba(26, 59, 92, 0.62) 0%,
+      rgba(26, 59, 92, 0.18) 50%,
+      transparent 100%);
 }
 
 .property-details-hero.hero-section--rtl .hero-gradient--left {
   right: 0;
   left: auto;
-  background: linear-gradient(
-    to left,
-    rgba(26, 59, 92, 0.78) 0%,
-    rgba(26, 59, 92, 0.38) 45%,
-    transparent 100%
-  );
+  background: linear-gradient(to left,
+      rgba(26, 59, 92, 0.78) 0%,
+      rgba(26, 59, 92, 0.38) 45%,
+      transparent 100%);
 }
 
 .property-details-hero .hero-badges {
@@ -224,11 +218,11 @@
 }
 
 .property-details-hero .hero-badge--primary {
-  background: linear-gradient(135deg, var(--brand-accent), #e6d429);
-  color: var(--brand-secondary);
+  background: var(--brand-secondary);
+  color: var(--brand-accent);
   box-shadow:
-    0 4px 14px rgba(255, 235, 59, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    0 4px 14px rgba(26, 59, 92, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .property-details-hero .hero-badge--secondary {

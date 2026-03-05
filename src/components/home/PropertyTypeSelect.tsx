@@ -49,7 +49,7 @@ export function PropertyTypeSelect({
           PT
         </span>
         <span
-          className={`w-full truncate text-size-sm text-charcoal`}
+          className={`w-full truncate text-size-sm ${value ? "text-charcoal fw-medium" : "text-[rgba(51,51,51,0.45)] fw-normal"}`}
         >
           {value || placeholder}
         </span>

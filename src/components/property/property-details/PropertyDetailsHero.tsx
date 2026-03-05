@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { PropertyDetailsImageModal } from "./PropertyDetailsImageModal";
 import type { DetailedProperty, HeroMediaItem } from "./types";
 import { FavouriteButton } from "@/components/favourites/FavouriteButton";
+import { Badge } from "@/components/ui/badge";
 import "./PropertyDetailsHero.css";
 
 export interface PropertyDetailsHeroProps {
@@ -237,9 +238,9 @@ export function PropertyDetailsHero({
 
           {/* ─── Badges (top-left) ─── */}
           <div className="hero-badges">
-            <span className="hero-badge hero-badge--primary">
+            <Badge variant="exclusive" className="hero-badge">
               {property.badge}
-            </span>
+            </Badge>
           </div>
 
           {customActions ? (

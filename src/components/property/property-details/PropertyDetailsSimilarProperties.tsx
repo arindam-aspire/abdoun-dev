@@ -46,17 +46,17 @@ export function PropertyDetailsSimilarProperties() {
 
   return (
     <section
-      className="border-t border-subtle bg-surface/50 py-5 text-charcoal md:py-6"
+      className="rounded-2xl border border-subtle bg-white/95 py-5 text-charcoal shadow-[0_8px_24px_rgba(15,23,42,0.08)] md:py-6"
       aria-labelledby="similar-heading"
     >
       <div className="mb-4 flex items-center justify-between gap-2 px-4 md:px-5">
         <h2
           id="similar-heading"
-          className="text-size-sm fw-semibold uppercase tracking-wider text-charcoal/80"
+          className="text-size-sm fw-semibold uppercase tracking-[0.14em] text-charcoal/85"
         >
           Similar properties
         </h2>
-        <span className="text-size-xs text-charcoal/65">Curated for you</span>
+        <span className="text-size-xs fw-medium text-charcoal/70">Curated for you</span>
       </div>
 
       <div className="px-4 md:px-5">
@@ -105,22 +105,22 @@ export function PropertyDetailsSimilarProperties() {
             {activeSimilar + 1} / {total}
           </span>
         </div>
+      </div>
 
-        <div className="flex items-center gap-1">
-          {SIMILAR_PROPERTIES.map((property, index) => (
-            <button
-              key={property.id}
-              type="button"
-              onClick={() => setActiveSimilar(index)}
-              className={`h-1.5 rounded-full transition ${
-                index === activeSimilar
-                  ? "w-5 bg-secondary"
-                  : "w-3 bg-border-subtle hover:opacity-80"
-              }`}
-              aria-label={`Go to similar property ${index + 1}`}
-            />
-          ))}
-        </div>
+      <div className="mt-2 flex items-center justify-center gap-1 px-4 md:px-5">
+        {SIMILAR_PROPERTIES.map((property, index) => (
+          <button
+            key={property.id}
+            type="button"
+            onClick={() => setActiveSimilar(index)}
+            className={`h-1.5 rounded-full transition ${
+              index === activeSimilar
+                ? "w-5 bg-secondary"
+                : "w-3 bg-border-subtle hover:opacity-80"
+            }`}
+            aria-label={`Go to similar property ${index + 1}`}
+          />
+        ))}
       </div>
     </section>
   );

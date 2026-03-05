@@ -771,8 +771,8 @@ export function SearchFields({
             className={cn(
               "flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 py-2 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
               propertyType
-                ? "text-charcoal"
-                : "text-[rgba(51,51,51,0.5)]",
+                ? "text-charcoal fw-medium"
+                : "text-[rgba(51,51,51,0.5)] fw-normal",
               propertyTypeOpen && "border-secondary",
               isRtl && "flex-row-reverse",
             )}
@@ -839,8 +839,8 @@ export function SearchFields({
             className={cn(
               "flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 py-2 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
               city
-                ? "text-charcoal"
-                : "text-[rgba(51,51,51,0.5)]",
+                ? "text-charcoal fw-medium"
+                : "text-[rgba(51,51,51,0.5)] fw-normal",
               cityOpen && "border-secondary",
               isRtl && "flex-row-reverse",
             )}
@@ -913,10 +913,8 @@ export function SearchFields({
                 ? "cursor-not-allowed border-[rgba(43,91,166,0.2)] bg-surface/50 text-[rgba(51,51,51,0.5)]"
                 : "border-[rgba(43,91,166,0.35)] hover:border-[rgba(43,91,166,0.6)]",
               selectedAreas.length > 0
-                ? "text-charcoal"
-                : !city
-                  ? "text-[rgba(51,51,51,0.5)]"
-                  : "text-[rgba(51,51,51,0.5)]",
+                ? "text-charcoal fw-medium"
+                : "text-[rgba(51,51,51,0.5)] fw-normal",
               areasOpen && city && "border-secondary",
               isRtl && "flex-row-reverse",
             )}
@@ -1018,7 +1016,8 @@ export function SearchFields({
             type="button"
             onClick={() => toggleTopDropdown(isBudgetOpen, setIsBudgetOpen)}
             className={cn(
-              "flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 py-2 text-size-sm text-charcoal transition hover:border-[rgba(43,91,166,0.6)]",
+              "flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 py-2 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
+              budgetMin || budgetMax ? "text-charcoal" : "text-[rgba(51,51,51,0.5)]",
               isBudgetOpen && "border-secondary",
               isRtl && "flex-row-reverse",
             )}
@@ -1026,7 +1025,7 @@ export function SearchFields({
             <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface text-size-2xs fw-medium text-secondary">
               JD
             </span>
-            <span className="min-w-0 truncate text-size-sm">
+            <span className={`min-w-0 truncate text-size-sm ${budgetMin || budgetMax ? "fw-medium" : "fw-normal"}`}>
               {formatBudgetLabel()}
             </span>
             <ChevronDown className="h-4 w-4 shrink-0" aria-hidden />
@@ -1136,7 +1135,7 @@ export function SearchFields({
                   }
                   className={cn(
                     "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
-                    furnitureStatus ? "text-charcoal" : "text-[rgba(51,51,51,0.5)]",
+                    furnitureStatus ? "text-charcoal fw-medium" : "text-[rgba(51,51,51,0.5)] fw-normal",
                     advFurnitureOpen && "border-secondary",
                     isRtl && "flex-row-reverse",
                   )}
@@ -1212,7 +1211,7 @@ export function SearchFields({
                   }
                   className={cn(
                     "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
-                    bedrooms ? "text-charcoal" : "text-[rgba(51,51,51,0.5)]",
+                    bedrooms ? "text-charcoal fw-medium" : "text-[rgba(51,51,51,0.5)] fw-normal",
                     advBedroomsOpen && "border-secondary",
                     isRtl && "flex-row-reverse",
                   )}
@@ -1278,7 +1277,7 @@ export function SearchFields({
                   }
                   className={cn(
                     "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
-                    rooms ? "text-charcoal" : "text-[rgba(51,51,51,0.5)]",
+                    rooms ? "text-charcoal fw-medium" : "text-[rgba(51,51,51,0.5)] fw-normal",
                     advRoomsOpen && "border-secondary",
                     isRtl && "flex-row-reverse",
                   )}
@@ -1344,7 +1343,7 @@ export function SearchFields({
                   }
                   className={cn(
                     "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
-                    bathrooms ? "text-charcoal" : "text-[rgba(51,51,51,0.5)]",
+                    bathrooms ? "text-charcoal fw-medium" : "text-[rgba(51,51,51,0.5)] fw-normal",
                     advBathroomsOpen && "border-secondary",
                     isRtl && "flex-row-reverse",
                   )}
@@ -1410,7 +1409,7 @@ export function SearchFields({
                   }
                   className={cn(
                     "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
-                    floorLevel ? "text-charcoal" : "text-[rgba(51,51,51,0.5)]",
+                    floorLevel ? "text-charcoal fw-medium" : "text-[rgba(51,51,51,0.5)] fw-normal",
                     advFloorOpen && "border-secondary",
                     isRtl && "flex-row-reverse",
                   )}
@@ -1476,7 +1475,7 @@ export function SearchFields({
                   }
                   className={cn(
                     "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
-                    parking ? "text-charcoal" : "text-[rgba(51,51,51,0.5)]",
+                    parking ? "text-charcoal fw-medium" : "text-[rgba(51,51,51,0.5)] fw-normal",
                     advParkingOpen && "border-secondary",
                     isRtl && "flex-row-reverse",
                   )}
@@ -1577,7 +1576,7 @@ export function SearchFields({
                   }
                   className={cn(
                     "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-3 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
-                    propertyAge ? "text-charcoal" : "text-[rgba(51,51,51,0.5)]",
+                    propertyAge ? "text-charcoal fw-medium" : "text-[rgba(51,51,51,0.5)] fw-normal",
                     advPropertyAgeOpen && "border-secondary",
                     isRtl && "flex-row-reverse",
                   )}

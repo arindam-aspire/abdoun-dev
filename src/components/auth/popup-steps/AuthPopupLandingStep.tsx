@@ -86,10 +86,12 @@ export function AuthPopupLandingStep({
 
       <button
         type="button"
-        className="mt-2 w-full cursor-pointer text-center text-size-base fw-semibold text-sky-800 hover:text-sky-900 sm:mt-4 sm:text-size-base"
+        className="mt-2 w-full cursor-pointer text-center text-size-base fw-semibold text-black sm:mt-4 sm:text-size-base"
         onClick={onGoSignup}
       >
-        {t("newHereCreate")}
+        {t.rich("newHereCreate", {
+          action: (chunks) => <span className="text-secondary hover:underline">{chunks}</span>,
+        })}
       </button>
     </div>
   );

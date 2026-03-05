@@ -255,7 +255,10 @@ export function PropertyDetailsMain({ language, propertyId = "1" }: PropertyDeta
           }`}
         >
           <section className="space-y-6 md:space-y-7">
-            <section ref={overviewRef} className="scroll-mt-36 md:scroll-mt-40">
+            <section
+              ref={overviewRef}
+              className="scroll-mt-36 rounded-2xl border border-subtle bg-white/95 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] md:scroll-mt-40 md:p-6"
+            >
               <PropertyHighlights
                 property={displayProperty}
                 stats={MOCK_STATS}
@@ -263,12 +266,18 @@ export function PropertyDetailsMain({ language, propertyId = "1" }: PropertyDeta
               <PropertyOverview property={displayProperty} />
             </section>
 
-            <section ref={amenitiesRef} className="scroll-mt-36 md:scroll-mt-40">
+            <section
+              ref={amenitiesRef}
+              className="scroll-mt-36 rounded-2xl border border-subtle bg-white/95 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] md:scroll-mt-40 md:p-6"
+            >
               <PropertyAmenities amenities={displayProperty.amenities} />
             </section>
 
             {isExclusive && (
-              <section ref={locationRef} className="scroll-mt-36 md:scroll-mt-40">
+              <section
+                ref={locationRef}
+                className="scroll-mt-36 rounded-2xl border border-subtle bg-white/95 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] md:scroll-mt-40 md:p-6"
+              >
                 <PropertyNeighborhood />
               </section>
             )}

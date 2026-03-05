@@ -49,17 +49,17 @@ export function PropertyDetailsAgentSection({ listing }: PropertyDetailsAgentSec
   const tCall = tSearch("call");
 
   return (
-    <section className="border-t border-subtle bg-surface/50 py-5 md:py-6">
+    <section className="rounded-2xl border border-subtle bg-white/95 py-5 shadow-[0_8px_24px_rgba(15,23,42,0.08)] md:py-6">
       <div className={cn("flex items-center gap-3 px-4 md:px-5", isRtl && "flex-row-reverse")}>
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-secondary">
           <UserCircle2 className="h-6 w-6" />
         </div>
         <div className="min-w-0">
-          <p className="text-size-xs fw-semibold uppercase tracking-[0.18em] text-charcoal/70">
+          <p className="text-size-xs fw-semibold uppercase tracking-[0.16em] text-charcoal/75">
             Listing agent
           </p>
           <p className="text-size-sm fw-semibold text-charcoal">{DEFAULT_AGENT_NAME}</p>
-          <p className="text-size-11 text-charcoal/70">
+          <p className="text-size-11 fw-medium text-charcoal/75">
             {DEFAULT_AGENT_SPECIALTY}
           </p>
         </div>
@@ -98,7 +98,7 @@ export function PropertyDetailsAgentSection({ listing }: PropertyDetailsAgentSec
         </button>
       </div>
 
-      <p className="mt-3 px-4 text-size-11 leading-relaxed text-charcoal/75 md:px-5">
+      <p className="mt-3 px-4 text-size-11 fw-medium leading-relaxed text-charcoal/80 md:px-5">
         Our concierge team confirms viewing slots within
         <span className="fw-semibold text-charcoal"> 2 hours</span> and
         shares all details via WhatsApp and email.

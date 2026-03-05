@@ -41,7 +41,7 @@ export function AuthPopupEmailStep({
   onGoSignup,
 }: AuthPopupEmailStepProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <AuthPopupField
         id="auth-email-or-phone"
         label={t("emailOrPhone")}
@@ -111,7 +111,9 @@ export function AuthPopupEmailStep({
         className="mt-2 w-full cursor-pointer text-center text-size-base fw-semibold text-sky-800 hover:text-sky-900 sm:mt-3 sm:text-size-base"
         onClick={onGoSignup}
       >
-        {t("newHereCreate")}
+        {t.rich("newHereCreate", {
+          action: (chunks) => <span className="text-orange-600 hover:text-orange-700">{chunks}</span>,
+        })}
       </button>
     </div>
   );

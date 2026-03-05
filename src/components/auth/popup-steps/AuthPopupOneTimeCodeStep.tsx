@@ -40,7 +40,7 @@ export function AuthPopupOneTimeCodeStep({
   onResendCode,
 }: AuthPopupOneTimeCodeStepProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {otcStep === "request" ? (
         <>
           <AuthPopupField

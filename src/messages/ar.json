@@ -154,7 +154,7 @@
     "loginWithOneTimeCode": "تسجيل الدخول برمز لمرة واحدة",
     "loginWithCode": "تسجيل الدخول بالرمز",
     "sendOneTimeLink": "إرسال رابط لمرة واحدة",
-    "newHereCreate": "جديد على عبدون؟ أنشئ حسابًا",
+    "newHereCreate": "جديد على عبدون؟ <action>أنشئ حسابًا</action>",
     "emailOrPhone": "البريد الإلكتروني أو الهاتف",
     "phonePlaceholder": "الهاتف",
     "sendOtp": "إرسال OTP",

@@ -215,7 +215,7 @@ export function HeroSearchCard({
               <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface text-size-2xs fw-medium text-secondary">
                 JD
               </span>
-              <span className="w-full truncate text-size-sm text-charcoal">
+              <span className={`w-full truncate text-size-sm ${minBudget || maxBudget ? "text-charcoal fw-medium" : "text-[rgba(51,51,51,0.45)] fw-normal"}`}>
                 {formatBudgetLabel()}
               </span>
             </button>

@@ -12,6 +12,7 @@ import {
   Phone,
   CheckCircle2,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import type { AppLocale } from "@/i18n/routing";
 import type { SearchResultListing } from "./types";
 import { cn } from "@/lib/cn";
@@ -121,15 +122,13 @@ export function SearchResultPropertyCard({
           )}
         >
           {showExclusive && (
-            <span className="inline-flex rounded-md bg-accent px-2 py-1 text-size-11 fw-semibold text-secondary shadow-sm">
-              Exclusive
-            </span>
+            <Badge variant="exclusive">Exclusive</Badge>
           )}
           {showVerified && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-black/60 px-2 py-1 text-size-11 fw-medium text-white">
-              <CheckCircle2 className="h-3 w-3 text-white" />
+            <Badge variant="verified">
+              <CheckCircle2 className="h-3 w-3" />
               Verified
-            </span>
+            </Badge>
           )}
         </div>
 

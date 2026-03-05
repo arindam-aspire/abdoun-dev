@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useLocale } from "next-intl";
 import { Bath, BedDouble, MapPin, Maximize2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import type { AppLocale } from "@/i18n/routing";
 import type { Property } from "./types";
 import { FavouriteButton } from "@/components/favourites/FavouriteButton";
@@ -48,9 +49,7 @@ export function PropertyCard({
             isRtl ? "right-4 flex-row-reverse" : "left-4"
           }`}
         >
-          <span className="rounded-full bg-accent px-3 py-1 text-size-xs fw-semibold text-on-accent shadow-sm">
-            {property.badge}
-          </span>
+          <Badge variant="exclusive">{property.badge}</Badge>
         </div>
         <FavouriteButton
           propertyId={property.id}

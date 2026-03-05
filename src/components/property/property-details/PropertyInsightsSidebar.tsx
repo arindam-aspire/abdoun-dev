@@ -1,7 +1,6 @@
 "use client";
 
 import { PropertyDetailsAgentSection } from "./PropertyDetailsAgentSection";
-import { PropertyDetailsReviewSection } from "./PropertyDetailsReviewSection";
 import { PropertyDetailsSimilarProperties } from "./PropertyDetailsSimilarProperties";
 
 export interface PropertyInsightsSidebarProps {
@@ -16,7 +15,6 @@ export function PropertyInsightsSidebar({ listing }: PropertyInsightsSidebarProp
   return (
     <aside className="space-y-4">
       <PropertyDetailsAgentSection listing={listing} />
-      {/* <PropertyDetailsReviewSection /> */}
       <PropertyDetailsSimilarProperties />
     </aside>
   );

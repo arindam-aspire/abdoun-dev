@@ -29,7 +29,7 @@ export function AuthPopupSignupStep({
   onFocusPassword,
 }: AuthPopupSignupStepProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {signup.screen === "landing" ? (
         <>
           <Button

@@ -41,8 +41,8 @@ export function AuthPopupField({
   const isPhone = type === "phone";
 
   return (
-    <div className="space-y-2">
-      <Label htmlFor={id} className="text-size-base fw-semibold text-zinc-800">
+    <div className="flex flex-col">
+      <Label htmlFor={id} className="mb-2 text-size-base fw-semibold text-zinc-800">
         {label}
       </Label>
       <div className="relative">

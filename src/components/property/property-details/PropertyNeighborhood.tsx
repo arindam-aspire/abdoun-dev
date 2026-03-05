@@ -2,9 +2,9 @@ import { MapPin } from "lucide-react";
 
 export function PropertyNeighborhood() {
   return (
-    <section className="mt-10 md:mt-12">
+    <section className="mt-2">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-size-xs fw-semibold uppercase tracking-[0.18em] text-charcoal/70">
+        <p className="text-sm fw-bold uppercase tracking-[0.16em] text-primary">
           Neighborhood
         </p>
         <button

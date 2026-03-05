@@ -154,7 +154,7 @@
     "loginWithOneTimeCode": "Login with one-time code",
     "loginWithCode": "Login with Code",
     "sendOneTimeLink": "Send one-time link",
-    "newHereCreate": "New to Abdoun? Create an account",
+    "newHereCreate": "New to Abdoun? <action>Create an account</action>",
     "emailOrPhone": "Email or phone",
     "phonePlaceholder": "Phone",
     "sendOtp": "Send OTP",

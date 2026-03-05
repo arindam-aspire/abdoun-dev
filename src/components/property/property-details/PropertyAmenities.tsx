@@ -47,21 +47,21 @@ export interface PropertyAmenitiesProps {
 
 export function PropertyAmenities({ amenities }: PropertyAmenitiesProps) {
   return (
-    <section className="mt-10 md:mt-12">
+    <section className="mt-2">
       <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-size-xs fw-semibold uppercase tracking-[0.18em] text-charcoal/70">
+        <p className="text-sm fw-bold uppercase tracking-[0.16em] text-primary">
           Features
         </p>
-        <p className="text-size-11 text-charcoal/70">
+        {/* <p className="text-size-11 text-charcoal/70">
           Thoughtfully selected for elevated everyday living.
-        </p>
+        </p> */}
       </div>
 
       <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-[var(--border-subtle)] pt-4 text-xs text-[var(--color-charcoal)] sm:grid-cols-3 md:grid-cols-4">
         {amenities.map((item) => (
           <div
             key={item}
-            className="group flex items-center gap-2 py-1.5 transition-colors hover:text-primary"
+            className="group flex items-center gap-2 rounded-lg bg-surface/65 px-2 py-2 transition-colors hover:text-primary"
           >
             {(() => {
               const Icon = getAmenityIcon(item);
@@ -71,7 +71,7 @@ export function PropertyAmenities({ amenities }: PropertyAmenitiesProps) {
                 </span>
               );
             })()}
-            <span className="leading-snug">{item}</span>
+            <span className="leading-snug fw-medium">{item}</span>
           </div>
         ))}
       </div>

@@ -10,12 +10,12 @@ interface AuthFieldProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export function AuthField({ id, label, error, helperText, ...rest }: AuthFieldProps) {
   return (
-    <div className="space-y-2">
-      <Label htmlFor={id} required>
+    <div className="flex flex-col">
+      <Label htmlFor={id} className="mb-2" required>
         {label}
       </Label>
       <Input id={id} error={error} {...rest} />
-      {!error && helperText ? <p className="text-size-xs text-zinc-500">{helperText}</p> : null}
+      {!error && helperText ? <p className="mt-1.5 text-size-xs text-zinc-500">{helperText}</p> : null}
     </div>
   );
 }
