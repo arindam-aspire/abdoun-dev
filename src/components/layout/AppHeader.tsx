@@ -184,15 +184,21 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
           className={`hidden md:flex items-center justify-center gap-6 text-size-base fw-bold text-white/80 ${isRTL ? "flex-row-reverse" : ""}`}
           aria-label="Main navigation"
         >
-          {navItems.map((item) => (
-            <Link
-              key={item.id}
-              href={`/${activeLanguage}${item.path}`}
-              className="border-b-2 border-transparent transition hover:border-accent hover:text-white"
-            >
-              {t(item.labelKey)}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const isActive = pathname === `/${activeLanguage}${item.path}` || pathname.startsWith(`/${activeLanguage}${item.path}/`);
+            return (
+              <Link
+                key={item.id}
+                href={`/${activeLanguage}${item.path}`}
+                className={cn(
+                  "border-b-2 transition hover:border-accent hover:text-white",
+                  isActive ? "border-accent text-white" : "border-transparent text-white/80",
+                )}
+              >
+                {t(item.labelKey)}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Desktop: actions in header */}
@@ -468,16 +474,22 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
           dir={isRTL ? "rtl" : "ltr"}
         >
           <nav className="flex flex-col gap-1 px-4 py-4 text-white" aria-label="Mobile navigation">
-            {navItems.map((item) => (
-              <Link
-                key={item.id}
-                href={`/${activeLanguage}${item.path}`}
-                onClick={closeMobileMenu}
-                className="rounded-xl px-4 py-3.5 text-base font-medium text-white/90 hover:bg-white/10 hover:text-white transition"
-              >
-                {t(item.labelKey)}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const isActive = pathname === `/${activeLanguage}${item.path}` || pathname.startsWith(`/${activeLanguage}${item.path}/`);
+              return (
+                <Link
+                  key={item.id}
+                  href={`/${activeLanguage}${item.path}`}
+                  onClick={closeMobileMenu}
+                  className={cn(
+                    "rounded-xl px-4 py-3.5 text-base font-medium transition hover:bg-white/10 hover:text-white",
+                    isActive ? "bg-white/10 text-white" : "text-white/90",
+                  )}
+                >
+                  {t(item.labelKey)}
+                </Link>
+              );
+            })}
           </nav>
           <div className="mt-2 border-t border-white/20 px-4 py-4 flex flex-col gap-3">
             <div className="flex items-center justify-between gap-2">

@@ -380,8 +380,8 @@
     "viewDetails": "View details"
   },
   "searchResult": {
-  "filtersTitle": "Search filters",
-  "properties": "Properties",
+    "filtersTitle": "Search filters",
+    "properties": "Properties",
     "propertiesInAmman": "Properties in Amman.",
     "propertiesInLocation": "Properties in {location}",
     "exclusivePropertiesTitle": "Exclusive Properties",
@@ -503,5 +503,118 @@
     "ar": "Arabic",
     "es": "Spanish",
     "fr": "French"
+  },
+  "aboutUsPage": {
+    "heroTitle": "About Abdoun Real Estate",
+    "heroSubtitle": "Your trusted partner in Jordanian real estate since 2010",
+    "breadcrumbHome": "Home",
+    "breadcrumbAbout": "About Us",
+    "stats": {
+      "propertiesSold": "Properties Sold",
+      "yearsExperience": "Years of Experience",
+      "happyClients": "Happy Clients",
+      "awardsWon": "Awards Won"
+    },
+    "storyLabel": "Our Story",
+    "storyTitle": "Rooted in Amman, Reaching Beyond",
+    "storyP1": "Founded in the heart of Abdoun, one of Amman's most prestigious neighborhoods, Abdoun Real Estate has grown from a boutique agency into a leading force in the Jordanian property market. Our deep understanding of the local landscape — from the tree-lined avenues of Abdoun to the bustling hills of West Amman — sets us apart.",
+    "storyP2": "We combine regional expertise with global standards, leveraging the latest PropTech innovations to deliver seamless buying, selling, and property management experiences. Every transaction is backed by our commitment to transparency, accuracy, and personalized service.",
+    "missionLabel": "Our Mission",
+    "missionTitle": "Mission",
+    "missionText": "To empower families and investors with insightful real estate decisions that maximize prosperity, supported by cutting-edge technology and unwavering integrity.",
+    "visionLabel": "Our Vision",
+    "visionTitle": "Vision",
+    "visionText": "To be the most trusted and innovative real estate platform in the MENA region, setting new benchmarks for transparency, client satisfaction, and digital excellence.",
+    "valuesLabel": "Our Core Values",
+    "valuesTitle": "What Drives Us Every Day",
+    "values": {
+      "trust": {
+        "title": "Trust",
+        "text": "We build lasting relationships through honesty and reliability in every interaction."
+      },
+      "innovation": {
+        "title": "Innovation",
+        "text": "We embrace cutting-edge technology to deliver exceptional property experiences."
+      },
+      "transparency": {
+        "title": "Transparency",
+        "text": "We ensure accuracy and openness at every stage of the real estate journey."
+      },
+      "excellence": {
+        "title": "Excellence",
+        "text": "We pursue the highest standards in service, quality, and professional expertise."
+      },
+      "integrity": {
+        "title": "Integrity",
+        "text": "We uphold ethical practices and accountability in all our dealings."
+      },
+      "community": {
+        "title": "Community",
+        "text": "We invest in the neighborhoods and people we serve, creating lasting value."
+      }
+    },
+    "ctaTitle": "Ready to Find Your Dream Property?",
+    "ctaSubtitle": "Let our experts guide you through Jordan's premier real estate market.",
+    "ctaButton": "Browse Properties"
+  },
+  "ourTeamPage": {
+    "heroTitle": "Meet Our Team",
+    "heroSubtitle": "Dedicated professionals committed to your real estate success",
+    "breadcrumbHome": "Home",
+    "breadcrumbTeam": "Our Team",
+    "introLabel": "The People Behind Abdoun",
+    "introText": "Our team of experienced real estate professionals brings together diverse expertise in property valuation, market analysis, and client relations. With deep knowledge of Amman's neighborhoods and a passion for exceptional service, we're here to guide you at every step.",
+    "leadershipLabel": "Leadership",
+    "leadershipTitle": "Our Leadership",
+    "leaders": {
+      "ceo": {
+        "name": "Ahmad Al-Rashid",
+        "role": "CEO & Founder",
+        "bio": "With over 20 years in Jordanian real estate, Ahmad founded Abdoun Real Estate with a vision to bring transparency and innovation to the market. He leads the company's strategic direction and partnerships across the MENA region."
+      },
+      "coo": {
+        "name": "Lina Mansour",
+        "role": "Chief Operating Officer",
+        "bio": "Lina brings 15 years of operational excellence from international property firms. She oversees day-to-day operations, ensuring our clients receive world-class service at every touchpoint."
+      }
+    },
+    "teamLabel": "Our Agents",
+    "teamTitle": "Expert Agents at Your Service",
+    "members": {
+      "agent1": {
+        "name": "Khaled Nasser",
+        "role": "Senior Property Consultant",
+        "bio": "Specializes in luxury villas and residential properties in Abdoun and Deir Ghbar."
+      },
+      "agent2": {
+        "name": "Sara Al-Haddad",
+        "role": "Commercial Real Estate Specialist",
+        "bio": "Expert in commercial investments, office spaces, and retail properties across Amman."
+      },
+      "agent3": {
+        "name": "Omar Tariq",
+        "role": "Land & Development Advisor",
+        "bio": "Focuses on land acquisition and development opportunities in West Amman."
+      },
+      "agent4": {
+        "name": "Rania Khalil",
+        "role": "Rental Property Manager",
+        "bio": "Manages our rental portfolio with a focus on tenant satisfaction and property upkeep."
+      },
+      "agent5": {
+        "name": "Fadi Jamal",
+        "role": "Property Valuation Expert",
+        "bio": "Certified appraiser with deep expertise in Amman's real estate market valuations."
+      },
+      "agent6": {
+        "name": "Noor Abed",
+        "role": "Client Relations Manager",
+        "bio": "Ensures seamless communication and exceptional service throughout your property journey."
+      }
+    },
+    "contactLabel": "Contact",
+    "ctaTitle": "Want to Join Our Team?",
+    "ctaSubtitle": "We're always looking for talented real estate professionals to grow with us.",
+    "ctaButton": "Get in Touch"
   }
 }

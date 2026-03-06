@@ -1,0 +1,343 @@
+/* ─── Hero Banner ─── */
+.hero {
+  position: relative;
+  min-height: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--brand-secondary) 0%, var(--brand-primary) 100%);
+}
+
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(26, 59, 92, 0.88) 0%, rgba(43, 91, 166, 0.7) 100%);
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 64px 16px 48px;
+  max-width: 720px;
+}
+
+/* Decorative gold accent line below hero title */
+.heroAccent {
+  display: block;
+  width: 64px;
+  height: 3px;
+  margin: 16px auto 0;
+  border-radius: 2px;
+  background: var(--brand-accent);
+}
+
+/* ─── Breadcrumb ─── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.breadcrumb a {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.breadcrumb a:hover {
+  color: #fff;
+}
+
+.breadcrumbSep {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.breadcrumbCurrent {
+  color: var(--brand-accent);
+}
+
+/* ─── Stats Row ─── */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  max-width: 900px;
+  margin: -48px auto 0;
+  position: relative;
+  z-index: 2;
+  padding: 0 16px;
+}
+
+@media (min-width: 768px) {
+  .statsRow {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    padding: 0 32px;
+  }
+}
+
+.statCard {
+  background: white;
+  border-radius: 12px;
+  padding: 24px 16px;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-subtle);
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+
+.statCard:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.statIcon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+  color: var(--brand-primary);
+}
+
+.statNumber {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--brand-secondary);
+  line-height: 1;
+}
+
+.statLabel {
+  margin-top: 4px;
+  font-size: 13px;
+  color: rgba(51, 51, 51, 0.7);
+  font-weight: 500;
+}
+
+/* ─── Story Section ─── */
+.storySection {
+  padding: 80px 16px 64px;
+}
+
+@media (min-width: 768px) {
+  .storySection {
+    padding: 96px 32px 80px;
+  }
+}
+
+.storyGrid {
+  display: grid;
+  gap: 40px;
+  align-items: center;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .storyGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 56px;
+  }
+}
+
+.storyImage {
+  border-radius: 16px;
+  overflow: hidden;
+  aspect-ratio: 4/3;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 15%, transparent), color-mix(in srgb, var(--brand-secondary) 20%, transparent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.storyImageInner {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+/* Geometric decorative pattern inside story image placeholder */
+.storyImagePattern {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.storyImagePattern svg {
+  width: 80%;
+  height: 80%;
+  opacity: 0.15;
+}
+
+/* ─── Mission & Vision ─── */
+.mvSection {
+  background: var(--surface);
+}
+
+.mvGrid {
+  display: grid;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .mvGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+}
+
+.mvCard {
+  background: white;
+  border-radius: 16px;
+  padding: 32px 28px;
+  border: 1px solid var(--border-subtle);
+  transition: transform 0.25s, box-shadow 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+
+.mvCard:hover {
+  /* box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08); */
+}
+
+.mvCard::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
+  border-radius: 16px 16px 0 0;
+}
+
+[dir="rtl"] .mvCard::before {
+  background: linear-gradient(270deg, var(--brand-primary), var(--brand-accent));
+}
+
+.mvIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+  color: var(--brand-primary);
+}
+
+/* ─── Values Grid ─── */
+.valuesGrid {
+  display: grid;
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .valuesGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .valuesGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.valueCard {
+  background: white;
+  border-radius: 14px;
+  padding: 28px 24px;
+  border: 1px solid var(--border-subtle);
+  transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+  cursor: default;
+}
+
+.valueCard:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+  border-color: color-mix(in srgb, var(--brand-primary) 30%, transparent);
+}
+
+.valueIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+  color: var(--brand-primary);
+}
+
+/* ─── CTA Section ─── */
+.ctaSection {
+  background: linear-gradient(135deg, var(--brand-secondary) 0%, var(--brand-primary) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.ctaSection::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.ctaContent {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 64px 16px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.ctaButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding: 14px 32px;
+  border-radius: 999px;
+  background: var(--brand-accent);
+  color: var(--brand-secondary);
+  font-weight: 600;
+  font-size: 15px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-decoration: none;
+}
+
+.ctaButton:hover {
+  /* transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 235, 59, 0.35); */
+}
+
+/* ─── Section padding helper ─── */
+.sectionPad {
+  padding: 64px 16px;
+}
+
+@media (min-width: 768px) {
+  .sectionPad {
+    padding: 80px 32px;
+  }
+}

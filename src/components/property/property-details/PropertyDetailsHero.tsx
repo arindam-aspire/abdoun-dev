@@ -103,12 +103,32 @@ export function PropertyDetailsHero({
     }
   }, []);
 
-  // Auto-play (only when main area is image carousel, not when it's the single video)
+  // Auto-play carousel — cycles through ALL media (images + video)
   useEffect(() => {
-    if (showVideoInMain || mediaItems.length <= 1 || !isAutoPlaying) return;
-    const timer = window.setInterval(goToNext, 5000);
+    if (mediaItems.length <= 1 || !isAutoPlaying) return;
+    const timer = window.setInterval(() => {
+      // When leaving a video slide, pause the video
+      if (videoRef.current && mediaItems[activeIndex]?.type === "video") {
+        videoRef.current.pause();
+      }
+      goToNext();
+    }, 5000);
     return () => window.clearInterval(timer);
-  }, [showVideoInMain, mediaItems.length, isAutoPlaying, goToNext]);
+  }, [mediaItems, activeIndex, isAutoPlaying, goToNext]);
+
+  // Pause auto-carousel while user is actively watching video; resume when they pause
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    const onPlay = () => setIsAutoPlaying(false);
+    const onPause = () => setIsAutoPlaying(true);
+    vid.addEventListener("play", onPlay);
+    vid.addEventListener("pause", onPause);
+    return () => {
+      vid.removeEventListener("play", onPlay);
+      vid.removeEventListener("pause", onPause);
+    };
+  }, []);
 
   // Keyboard navigation
   useEffect(() => {
@@ -303,7 +323,7 @@ export function PropertyDetailsHero({
             </>
           )}
 
-          {/* ─── Navigation (bottom-right) — only for image carousel ─── */}
+          {/* ─── Navigation (bottom-right) ─── */}
           {mediaItems.length > 1 && (
             <div className="hero-nav">
               <div className="hero-dots">
@@ -316,7 +336,7 @@ export function PropertyDetailsHero({
                       setIsAutoPlaying(false);
                     }}
                     className={`hero-dot ${i === activeIndex ? "hero-dot--active" : ""}`}
-                    aria-label={`Go to photo ${i + 1}`}
+                    aria-label={`Go to slide ${i + 1}`}
                   />
                 ))}
               </div>
@@ -326,6 +346,18 @@ export function PropertyDetailsHero({
               </span>
 
               <div className="hero-arrows">
+                <button
+                  type="button"
+                  className="hero-arrow"
+                  onClick={() => setIsAutoPlaying((p) => !p)}
+                  aria-label={isAutoPlaying ? "Pause auto-play" : "Resume auto-play"}
+                >
+                  {isAutoPlaying ? (
+                    <Pause className="hero-arrow__icon" />
+                  ) : (
+                    <Play className="hero-arrow__icon" />
+                  )}
+                </button>
                 <button
                   type="button"
                   className="hero-arrow"

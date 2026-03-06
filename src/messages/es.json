@@ -502,5 +502,118 @@
     "ar": "Arabe",
     "es": "Espanol",
     "fr": "Frances"
+  },
+  "aboutUsPage": {
+    "heroTitle": "Sobre Abdoun Bienes Raíces",
+    "heroSubtitle": "Su socio de confianza en el mercado inmobiliario jordano desde 2010",
+    "breadcrumbHome": "Inicio",
+    "breadcrumbAbout": "Sobre Nosotros",
+    "stats": {
+      "propertiesSold": "Propiedades Vendidas",
+      "yearsExperience": "Años de Experiencia",
+      "happyClients": "Clientes Satisfechos",
+      "awardsWon": "Premios Ganados"
+    },
+    "storyLabel": "Nuestra Historia",
+    "storyTitle": "Raíces en Amán, Alcance Global",
+    "storyP1": "Fundada en el corazón de Abdoun, uno de los barrios más prestigiosos de Amán, Abdoun Bienes Raíces ha crecido de una agencia boutique a una fuerza líder en el mercado inmobiliario jordano.",
+    "storyP2": "Combinamos experiencia regional con estándares globales, aprovechando las últimas innovaciones en PropTech para ofrecer experiencias inmobiliarias excepcionales.",
+    "missionLabel": "Nuestra Misión",
+    "missionTitle": "Misión",
+    "missionText": "Empoderar a familias e inversores con decisiones inmobiliarias que maximicen su prosperidad, respaldadas por tecnología de vanguardia e integridad inquebrantable.",
+    "visionLabel": "Nuestra Visión",
+    "visionTitle": "Visión",
+    "visionText": "Ser la plataforma inmobiliaria más confiable e innovadora de la región MENA, estableciendo nuevos estándares de transparencia, satisfacción del cliente y excelencia digital.",
+    "valuesLabel": "Nuestros Valores",
+    "valuesTitle": "Lo Que Nos Impulsa Cada Día",
+    "values": {
+      "trust": {
+        "title": "Confianza",
+        "text": "Construimos relaciones duraderas a través de la honestidad y fiabilidad."
+      },
+      "innovation": {
+        "title": "Innovación",
+        "text": "Adoptamos tecnología de vanguardia para experiencias inmobiliarias excepcionales."
+      },
+      "transparency": {
+        "title": "Transparencia",
+        "text": "Garantizamos precisión y apertura en cada etapa del proceso inmobiliario."
+      },
+      "excellence": {
+        "title": "Excelencia",
+        "text": "Perseguimos los más altos estándares en servicio, calidad y experiencia profesional."
+      },
+      "integrity": {
+        "title": "Integridad",
+        "text": "Mantenemos prácticas éticas y responsabilidad en todos nuestros tratos."
+      },
+      "community": {
+        "title": "Comunidad",
+        "text": "Invertimos en los barrios y personas a las que servimos, creando valor duradero."
+      }
+    },
+    "ctaTitle": "¿Listo para Encontrar la Propiedad de sus Sueños?",
+    "ctaSubtitle": "Deje que nuestros expertos lo guíen por el mercado inmobiliario jordano.",
+    "ctaButton": "Ver Propiedades"
+  },
+  "ourTeamPage": {
+    "heroTitle": "Conozca a Nuestro Equipo",
+    "heroSubtitle": "Profesionales dedicados comprometidos con su éxito inmobiliario",
+    "breadcrumbHome": "Inicio",
+    "breadcrumbTeam": "Nuestro Equipo",
+    "introLabel": "Las Personas Detrás de Abdoun",
+    "introText": "Nuestro equipo de profesionales inmobiliarios experimentados reúne diversas competencias en valoración de propiedades, análisis de mercado y relaciones con clientes.",
+    "leadershipLabel": "Liderazgo",
+    "leadershipTitle": "Nuestro Liderazgo",
+    "leaders": {
+      "ceo": {
+        "name": "Ahmad Al-Rashid",
+        "role": "CEO y Fundador",
+        "bio": "Con más de 20 años en el sector inmobiliario jordano, Ahmad fundó Abdoun con la visión de aportar transparencia e innovación al mercado."
+      },
+      "coo": {
+        "name": "Lina Mansour",
+        "role": "Directora de Operaciones",
+        "bio": "Lina aporta 15 años de excelencia operativa de firmas inmobiliarias internacionales."
+      }
+    },
+    "teamLabel": "Nuestros Agentes",
+    "teamTitle": "Agentes Expertos a su Servicio",
+    "members": {
+      "agent1": {
+        "name": "Khaled Nasser",
+        "role": "Consultor Inmobiliario Senior",
+        "bio": "Especialista en villas de lujo y propiedades residenciales."
+      },
+      "agent2": {
+        "name": "Sara Al-Haddad",
+        "role": "Especialista Comercial",
+        "bio": "Experta en inversiones comerciales y espacios de oficinas."
+      },
+      "agent3": {
+        "name": "Omar Tariq",
+        "role": "Asesor de Terrenos",
+        "bio": "Enfocado en adquisición de terrenos y oportunidades de desarrollo."
+      },
+      "agent4": {
+        "name": "Rania Khalil",
+        "role": "Gerente de Alquileres",
+        "bio": "Gestiona nuestra cartera de alquileres con enfoque en satisfacción del inquilino."
+      },
+      "agent5": {
+        "name": "Fadi Jamal",
+        "role": "Experto en Valoración",
+        "bio": "Tasador certificado con profunda experiencia en el mercado de Amán."
+      },
+      "agent6": {
+        "name": "Noor Abed",
+        "role": "Gerente de Relaciones",
+        "bio": "Asegura comunicación fluida y servicio excepcional."
+      }
+    },
+    "contactLabel": "Contacto",
+    "ctaTitle": "¿Quiere Unirse a Nuestro Equipo?",
+    "ctaSubtitle": "Siempre buscamos profesionales inmobiliarios talentosos para crecer con nosotros.",
+    "ctaButton": "Contáctenos"
   }
 }
