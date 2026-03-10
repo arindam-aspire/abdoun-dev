@@ -8,6 +8,8 @@ import {
   Handshake,
   Mail,
   ShieldCheck,
+  TrendingDown,
+  TrendingUp,
   UserSquare2,
 } from "lucide-react";
 import Link from "next/link";
@@ -67,6 +69,7 @@ export function AgentDashboardHome() {
       label: tAgent("myListings"),
       value: String(data.totalProperties),
       delta: tAgent("myListingsDelta"),
+      deltaTrend: 2,
       icon: Building2,
       iconBgClass:
         "bg-[var(--color-charcoal)]/8 ring-1 ring-[var(--color-charcoal)]/15",
@@ -76,6 +79,7 @@ export function AgentDashboardHome() {
       label: tAgent("leadsThisMonth"),
       value: String(data.leadsThisMonth),
       delta: tAgent("leadsThisMonthDelta"),
+      deltaTrend: -1,
       icon: Mail,
       iconBgClass:
         "bg-[var(--color-royal-blue)]/12 ring-1 ring-[var(--color-royal-blue)]/20",
@@ -85,17 +89,19 @@ export function AgentDashboardHome() {
       label: tAgent("viewRate"),
       value: `${data.viewRate}%`,
       delta: tAgent("viewRateDelta"),
+      deltaTrend: 0.5,
       icon: Eye,
       iconBgClass: "bg-emerald-500/14 ring-1 ring-emerald-500/20",
-      href: `/${locale}/agent-dashboard/trends`,
+      href: `/${locale}/agent-dashboard/view-rate`,
     },
     {
       label: tAgent("dealCloseCount"),
       value: String(data.dealCloseCount),
       delta: tAgent("dealCloseCountDelta"),
+      deltaTrend: 3,
       icon: Handshake,
       iconBgClass: "bg-amber-500/14 ring-1 ring-amber-500/20",
-      href: `/${locale}/agent-dashboard/inquiries`,
+      href: `/${locale}/agent-dashboard/inquiries?status=closed`,
     },
   ];
 
@@ -123,8 +129,24 @@ export function AgentDashboardHome() {
                   <Icon className="h-4 w-4 text-secondary" />
                 </span>
               </div>
-              <p className="mt-3 text-2xl font-semibold text-charcoal">{item.value}</p>
-              <p className="mt-1 text-xs text-emerald-700">{item.delta}</p>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <p className="text-2xl font-semibold text-charcoal">{item.value}</p>
+                {item.deltaTrend !== 0 && (
+                  <span
+                    className={`flex items-center gap-1.5 text-sm font-medium ${
+                      item.deltaTrend > 0 ? "text-emerald-600" : "text-red-600"
+                    }`}
+                  >
+                    {item.deltaTrend > 0 && (
+                      <TrendingUp className="h-4 w-4 shrink-0" aria-hidden />
+                    )}
+                    {item.deltaTrend < 0 && (
+                      <TrendingDown className="h-4 w-4 shrink-0" aria-hidden />
+                    )}
+                    {item.deltaTrend > 0 ? `+${item.deltaTrend}%` : `${item.deltaTrend}%`}
+                  </span>
+                )}
+              </div>
             </>
           );
           return (

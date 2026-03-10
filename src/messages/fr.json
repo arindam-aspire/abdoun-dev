@@ -288,6 +288,13 @@
     "loadingTrends": "Chargement des tendances...",
     "noListings": "Aucune annonce.",
     "noInquiries": "Aucune demande ne correspond au filtre.",
+    "viewRatePageTitle": "Taux de vues par bien",
+    "viewRatePageSubtitle": "Nombre total de vues par annonce. Graphique et liste reflètent les mêmes données.",
+    "viewRateChartTitle": "Vues par bien",
+    "viewRateChartSubtitle": "Hauteur de la barre = nombre de vues",
+    "views": "Vues",
+    "viewRateListTitle": "Nombre de vues par bien",
+    "noPropertiesWithViews": "Aucun bien actif avec des données de vues.",
     "inquiry": "Demande"
   },
   "dashboard": {

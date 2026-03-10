@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import type { AppLocale } from "@/i18n/routing";
 import { ArrowLeft, Mail, MessageSquare } from "lucide-react";
@@ -46,16 +47,35 @@ function statusLabel(s: string, t: (k: string) => string): string {
   return s;
 }
 
+function capitalizeFirst(str: string): string {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+const VALID_STATUSES: readonly (InquiryStatus | "all")[] = ["all", "new", "responded", "closed"];
+
 export function AgentInquiriesPage() {
   const locale = useLocale() as AppLocale;
+  const searchParams = useSearchParams();
   const t = useTranslations("agentDashboard");
+  const statusParam = searchParams.get("status");
+  const initialFilter: InquiryStatus | "all" = VALID_STATUSES.includes(statusParam as InquiryStatus | "all")
+    ? (statusParam as InquiryStatus | "all")
+    : "all";
   const [inquiries, setInquiries] = useState<AgentInquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selected, setSelected] = useState<AgentInquiry | null>(null);
   const [responseText, setResponseText] = useState("");
   const [sending, setSending] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<InquiryStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<InquiryStatus | "all">(initialFilter);
+
+  useEffect(() => {
+    const param = searchParams.get("status");
+    if (param && VALID_STATUSES.includes(param as InquiryStatus | "all")) {
+      setStatusFilter(param as InquiryStatus | "all");
+    }
+  }, [searchParams]);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -148,13 +168,13 @@ export function AgentInquiriesPage() {
             key={s}
             type="button"
             onClick={() => setStatusFilter(s)}
-            className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
+            className={`rounded-full border px-3 py-1.5 text-xs font-medium cursor-pointer ${
               statusFilter === s
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-subtle bg-surface text-charcoal/80 hover:bg-primary/5"
             }`}
           >
-            {s === "all" ? t("filterAll") : statusLabel(s, t)}
+            {capitalizeFirst(s === "all" ? t("filterAll") : statusLabel(s, t))}
           </button>
         ))}
       </div>
@@ -182,7 +202,7 @@ export function AgentInquiriesPage() {
                     <span
                       className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-medium ${statusClass(row.status)}`}
                     >
-                      {statusLabel(row.status, t)}
+                      {capitalizeFirst(statusLabel(row.status, t))}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -254,7 +274,7 @@ export function AgentInquiriesPage() {
                         : "border-subtle bg-surface text-charcoal/80"
                     }`}
                   >
-                    {statusLabel(s, t)}
+                    {capitalizeFirst(statusLabel(s, t))}
                   </button>
                 ))}
               </div>

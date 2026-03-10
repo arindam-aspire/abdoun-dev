@@ -207,3 +207,15 @@ export function getPerformanceComparison(): Promise<PerformanceComparisonItem[]>
     .slice(0, 5);
   return Promise.resolve(items);
 }
+
+/** View counts per property (for View Rate page). Active listings only, mock view counts. */
+export function getPropertyViewCounts(): Promise<PerformanceComparisonItem[]> {
+  const active = listingsStore.filter((l) => l.status === "active");
+  const items: PerformanceComparisonItem[] = active.map((listing) => {
+    const hash = listing.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    const views = (hash % 45) + 5;
+    return { label: listing.title, value: views };
+  });
+  items.sort((a, b) => b.value - a.value);
+  return Promise.resolve(items);
+}

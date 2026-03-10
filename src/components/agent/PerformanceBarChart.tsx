@@ -12,6 +12,8 @@ export interface PerformanceBarChartProps {
   data: PerformanceComparisonItem[];
   title?: string;
   subtitle?: string;
+  /** Optional suffix for tooltip value (e.g. " Views"). */
+  valueLabel?: string;
   className?: string;
 }
 
@@ -21,13 +23,14 @@ export function PerformanceBarChart({
   data,
   title,
   subtitle,
+  valueLabel,
   className = "",
 }: PerformanceBarChartProps) {
   const chartData = {
     labels: data.map((d) => d.label),
     datasets: [
       {
-        label: "Inquiries",
+        label: valueLabel ?? "Value",
         data: data.map((d) => d.value),
         backgroundColor: PRIMARY,
         borderRadius: 4,
@@ -43,7 +46,10 @@ export function PerformanceBarChart({
       legend: { display: false },
       tooltip: {
         callbacks: {
-          label: (ctx: TooltipItem<"bar">) => `${ctx.parsed.x ?? 0}`,
+          label: (ctx: TooltipItem<"bar">) =>
+            valueLabel
+              ? `${ctx.parsed.x ?? 0} ${valueLabel}`
+              : `${ctx.parsed.x ?? 0}`,
         },
       },
     },

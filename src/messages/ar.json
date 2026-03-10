@@ -288,6 +288,13 @@
     "loadingTrends": "جاري تحميل الاتجاهات...",
     "noListings": "لا توجد إعلانات بعد.",
     "noInquiries": "لا تطابق أي استفسار التصفية.",
+    "viewRatePageTitle": "معدل المشاهدات حسب العقار",
+    "viewRatePageSubtitle": "إجمالي المشاهدات لكل إعلان. الرسم والقائمة يعكسان نفس البيانات.",
+    "viewRateChartTitle": "المشاهدات حسب العقار",
+    "viewRateChartSubtitle": "ارتفاع الشريطة = عدد المشاهدات",
+    "views": "مشاهدات",
+    "viewRateListTitle": "عدد المشاهدات حسب العقار",
+    "noPropertiesWithViews": "لا توجد عقارات نشطة تحتوي على بيانات مشاهدات.",
     "inquiry": "استفسار"
   },
   "dashboard": {

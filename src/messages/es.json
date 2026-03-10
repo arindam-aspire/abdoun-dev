@@ -288,6 +288,13 @@
     "loadingTrends": "Cargando tendencias...",
     "noListings": "Aún no hay anuncios.",
     "noInquiries": "Ninguna consulta coincide con el filtro.",
+    "viewRatePageTitle": "Tasa de visualización por propiedad",
+    "viewRatePageSubtitle": "Vistas totales por anuncio. Gráfico y lista reflejan los mismos datos.",
+    "viewRateChartTitle": "Vistas por propiedad",
+    "viewRateChartSubtitle": "Altura de la barra = número de vistas",
+    "views": "Vistas",
+    "viewRateListTitle": "Conteo de vistas por propiedad",
+    "noPropertiesWithViews": "No hay propiedades activas con datos de vistas.",
     "inquiry": "Consulta"
   },
   "dashboard": {

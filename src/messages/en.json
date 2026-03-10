@@ -288,6 +288,13 @@
     "loadingTrends": "Loading trends...",
     "noListings": "No listings yet.",
     "noInquiries": "No inquiries match the filter.",
+    "viewRatePageTitle": "View Rate by Property",
+    "viewRatePageSubtitle": "Total views per listing. Chart and list reflect the same data.",
+    "viewRateChartTitle": "Views by Property",
+    "viewRateChartSubtitle": "Bar height = view count",
+    "views": "Views",
+    "viewRateListTitle": "Property-wise view counts",
+    "noPropertiesWithViews": "No active properties with view data.",
     "inquiry": "Inquiry"
   },
   "dashboard": {
