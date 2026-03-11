@@ -66,7 +66,8 @@
       "amenities": "Equipements",
       "features": "Caracteristiques",
       "location": "Localisation",
-      "reviews": "Avis"
+      "reviews": "Avis",
+      "virtualTour": "Tour virtuel"
     },
     "footerDescription": "Agence immobiliere haut de gamme aidant les familles et les investisseurs a trouver des biens d'exception dans les meilleurs quartiers d'Amman.",
     "footerQuickLinks": {

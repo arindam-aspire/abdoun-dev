@@ -52,6 +52,9 @@ export function AgentPropertyEdit({
   const [amenitiesText, setAmenitiesText] = useState(
     (MOCK_AGENT_PROPERTY.amenities ?? []).join("\n"),
   );
+  const [virtualTourUrl, setVirtualTourUrl] = useState(
+    MOCK_AGENT_PROPERTY.virtualTourUrl ?? "",
+  );
   const [saving, setSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState<string | null>(
     null,
@@ -70,6 +73,7 @@ export function AgentPropertyEdit({
     status,
     location,
     description,
+    virtualTourUrl,
     amenities: amenitiesText
       .split("\n")
       .map((line) => line.trim())
@@ -101,6 +105,7 @@ export function AgentPropertyEdit({
       location,
       description,
       amenities: amenitiesText,
+      virtualTourUrl,
     });
   };
 
@@ -319,6 +324,22 @@ export function AgentPropertyEdit({
                     className="h-10 w-full rounded-lg border border-subtle bg-surface/40 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:border-secondary focus:outline-none"
                     placeholder="Neighborhood, city"
                   />
+                </div>
+                <div>
+                  <label className="mb-1 block text-size-xs fw-medium text-charcoal/80">
+                    Virtual tour link (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={virtualTourUrl}
+                    onChange={(e) => setVirtualTourUrl(e.target.value)}
+                    className="h-10 w-full rounded-lg border border-subtle bg-surface/40 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:border-secondary focus:outline-none"
+                    placeholder="Paste URL or full iframe embed code (YouTube, Matterport, 360°)"
+                  />
+                  <p className="mt-1 text-size-2xs text-charcoal/50">
+                    Paste a link (e.g. https://my.matterport.com/show/?m=...) or the full
+                    iframe code. The tour is embedded on the property page; leave empty to hide.
+                  </p>
                 </div>
               </div>
             </div>

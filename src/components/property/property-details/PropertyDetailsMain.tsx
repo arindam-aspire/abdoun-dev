@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { AppLocale } from "@/i18n/routing";
 import { PropertyDetailsHero } from "./PropertyDetailsHero";
@@ -11,6 +11,7 @@ import { PropertyInsightsSidebar } from "./PropertyInsightsSidebar";
 import { PropertyNeighborhood } from "./PropertyNeighborhood";
 import { PropertyDetailsPriceCard } from "./PropertyDetailsPriceCard";
 import { PropertyDetailsTabBar } from "./PropertyDetailsTabBar";
+import { PropertyVirtualTour } from "./PropertyVirtualTour";
 import type { DetailedProperty, PropertyStat } from "./types";
 import type { PropertyDetailsTabKey } from "./PropertyDetailsTabBar";
 
@@ -29,7 +30,8 @@ const MOCK_DETAILED_PROPERTY_EXCLUSIVE: DetailedProperty = {
     "https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=1800&auto=format&fit=crop",
   location: "Abdoun, Amman · West Amman skyline",
   video: "/7578547-uhd_3840_2160_30fps.mp4",
-  youtubeUrl: "https://www.youtube.com/watch?v=ysz5S6PUM-U",
+  youtubeUrl: "https://www.youtube.com/watch?v=IG7Jrgl9h1o",
+  virtualTourUrl: "https://www.youtube.com/embed/otYbvFPA5MI",
   price: "1,250,000 JD",
   beds: 4,
   baths: 5,
@@ -73,7 +75,8 @@ const MOCK_DETAILED_PROPERTY_STANDARD: DetailedProperty = {
     "https://images.unsplash.com/photo-1613977257363-707ba9348227?q=80&w=1800&auto=format&fit=crop",
   location: "Dabouq, Amman",
   video: "/7578547-uhd_3840_2160_30fps.mp4",
-  youtubeUrl: "https://www.youtube.com/watch?v=ysz5S6PUM-U",
+  youtubeUrl: "https://www.youtube.com/watch?v=IG7Jrgl9h1o",
+  virtualTourUrl: "https://my.matterport.com/show/?m=xxeWJqmc5zf",
   price: "685,000 JD",
   beds: 5,
   baths: 4,
@@ -103,7 +106,7 @@ const MOCK_DETAILED_PROPERTY_STANDARD: DetailedProperty = {
     "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1800&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1800&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1800&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1600566752355-35792bedcfea?q=80&w=1800&auto=format&fit=crop"
+    "https://images.unsplash.com/photo-1600566752355-35792bedcfea?q=80&w=1800&auto=format&fit=crop",
   ],
   propertyType: "Penthouse",
 };
@@ -149,6 +152,7 @@ const MOCK_DETAILED_PROPERTY_EXCLUSIVE_2: DetailedProperty = {
     "https://images.unsplash.com/photo-1600566752355-35792bedcfea?q=80&w=1800&auto=format&fit=crop",
   ],
   propertyType: "Penthouse",
+  virtualTourUrl: "https://my.matterport.com/show/?m=xxeWJqmc5zf",
 };
 
 const MOCK_DETAILED_PROPERTIES: Record<string, DetailedProperty> = {
@@ -200,8 +204,14 @@ export function PropertyDetailsMain({ language, propertyId = "1" }: PropertyDeta
   const amenitiesRef = useRef<HTMLElement | null>(null);
   const locationRef = useRef<HTMLElement | null>(null);
   const sidebarRef = useRef<HTMLDivElement | null>(null);
+  const virtualTourRef = useRef<HTMLElement | null>(null);
+  const manualTabLockUntilRef = useRef(0);
+  const manualTabTargetRef = useRef<PropertyDetailsTabKey | null>(null);
+  const observerDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleTabChange = (tab: PropertyDetailsTabKey) => {
+    manualTabTargetRef.current = tab;
+    manualTabLockUntilRef.current = Date.now() + 700;
     setActiveTab(tab);
 
     const map: Record<PropertyDetailsTabKey, HTMLElement | null | undefined> = {
@@ -209,6 +219,7 @@ export function PropertyDetailsMain({ language, propertyId = "1" }: PropertyDeta
       amenities: amenitiesRef.current,
       location: locationRef.current,
       reviews: sidebarRef.current,
+      virtualTour: virtualTourRef.current,
     };
 
     const target = map[tab];
@@ -216,6 +227,81 @@ export function PropertyDetailsMain({ language, propertyId = "1" }: PropertyDeta
       target.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
+
+  useEffect(() => {
+    const sections: Array<{ key: PropertyDetailsTabKey; element: HTMLElement | null }> = [
+      { key: "overview", element: overviewRef.current },
+      { key: "amenities", element: amenitiesRef.current },
+      { key: "virtualTour", element: virtualTourRef.current },
+      ...(isExclusive ? [{ key: "location" as const, element: locationRef.current }] : []),
+    ];
+
+    const observedSections = sections.filter(
+      (section): section is { key: PropertyDetailsTabKey; element: HTMLElement } => Boolean(section.element)
+    );
+
+    if (observedSections.length === 0) return;
+
+    const stickyHeaderOffset = window.innerWidth >= 768 ? 170 : 140;
+    const visibilityMap = new Map<PropertyDetailsTabKey, number>();
+
+    const setMostVisibleSection = () => {
+      if (Date.now() < manualTabLockUntilRef.current && manualTabTargetRef.current) {
+        const lockedTab = manualTabTargetRef.current;
+        setActiveTab((current) => (current === lockedTab ? current : lockedTab));
+        return;
+      }
+
+      let bestKey = observedSections[0].key;
+      let bestRatio = -1;
+
+      for (const section of observedSections) {
+        const ratio = visibilityMap.get(section.key) ?? 0;
+        if (ratio > bestRatio) {
+          bestRatio = ratio;
+          bestKey = section.key;
+        }
+      }
+
+      if (bestRatio > 0) {
+        setActiveTab((current) => (current === bestKey ? current : bestKey));
+      }
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const matched = observedSections.find((section) => section.element === entry.target);
+          if (!matched) continue;
+          visibilityMap.set(matched.key, entry.isIntersecting ? entry.intersectionRatio : 0);
+        }
+
+        if (observerDebounceRef.current) {
+          clearTimeout(observerDebounceRef.current);
+        }
+        observerDebounceRef.current = setTimeout(() => {
+          setMostVisibleSection();
+        }, 80);
+      },
+      {
+        root: null,
+        rootMargin: `-${stickyHeaderOffset}px 0px -40% 0px`,
+        threshold: [0.15, 0.3, 0.5, 0.7],
+      }
+    );
+
+    for (const section of observedSections) {
+      visibilityMap.set(section.key, 0);
+      observer.observe(section.element);
+    }
+
+    return () => {
+      if (observerDebounceRef.current) {
+        clearTimeout(observerDebounceRef.current);
+      }
+      observer.disconnect();
+    };
+  }, [isExclusive]);
 
   const displayTab: PropertyDetailsTabKey =
     !isExclusive && activeTab === "location" ? "overview" : activeTab;
@@ -273,6 +359,10 @@ export function PropertyDetailsMain({ language, propertyId = "1" }: PropertyDeta
               <PropertyAmenities amenities={displayProperty.amenities} />
             </section>
 
+            {/* Separate virtual tour section under Features */}
+            <section ref={virtualTourRef} className="scroll-mt-36 rounded-2xl border border-subtle bg-white/95 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] md:scroll-mt-40 md:p-6">
+              <PropertyVirtualTour property={displayProperty} />
+            </section>
             {isExclusive && (
               <section
                 ref={locationRef}
@@ -298,7 +388,6 @@ export function PropertyDetailsMain({ language, propertyId = "1" }: PropertyDeta
           </div>
         </div>
       </main>
-
     </div>
   );
 }

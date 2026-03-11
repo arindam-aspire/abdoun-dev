@@ -9,6 +9,8 @@ export interface DetailedProperty {
   video?: string;
   /** Optional YouTube link shown when available */
   youtubeUrl?: string;
+  /** Optional virtual tour URL (YouTube, 360, Matterport, etc.) */
+  virtualTourUrl?: string;
   price: string;
   beds: number;
   baths: number;

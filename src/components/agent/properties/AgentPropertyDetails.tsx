@@ -23,6 +23,7 @@ import {
 import {
   PropertyInsightsSidebar,
 } from "@/components/property/property-details/PropertyInsightsSidebar";
+import { PropertyVirtualTour } from "@/components/property/property-details/PropertyVirtualTour";
 import type {
   DetailedProperty,
   PropertyStat,
@@ -43,6 +44,7 @@ export const MOCK_AGENT_PROPERTY: DetailedProperty = {
   location: "Abdoun, Amman",
   video: "/7578547-uhd_3840_2160_30fps.mp4",
   youtubeUrl: "https://www.youtube.com/watch?v=ysz5S6PUM-U",
+  virtualTourUrl: "https://www.youtube.com/embed/ysz5S6PUM-U",
   price: "1,600 JD / month",
   beds: 3,
   baths: 3,
@@ -149,6 +151,7 @@ export function AgentPropertyDetails({
 
             <section className="scroll-mt-36 md:scroll-mt-40">
               <PropertyAmenities amenities={displayProperty.amenities} />
+              <PropertyVirtualTour property={displayProperty} />
             </section>
 
             {isExclusive && (

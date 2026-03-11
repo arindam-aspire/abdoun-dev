@@ -11,6 +11,7 @@ import { PropertyAmenities } from "@/components/property/property-details/Proper
 import { PropertyInsightsSidebar } from "@/components/property/property-details/PropertyInsightsSidebar";
 import { PropertyNeighborhood } from "@/components/property/property-details/PropertyNeighborhood";
 import { PropertyDetailsPriceCard } from "@/components/property/property-details/PropertyDetailsPriceCard";
+import { PropertyVirtualTour } from "@/components/property/property-details/PropertyVirtualTour";
 import { AdminPropertyDetailsTabBar } from "./AdminPropertyDetailsTabBar";
 import { AdminPropertyDocuments } from "./AdminPropertyDocuments";
 import type { AdminPropertyDetailsTabKey } from "./AdminPropertyDetailsTabBar";
@@ -98,6 +99,7 @@ const MOCK_DETAILED_PROPERTY_EXCLUSIVE: DetailedProperty = {
   location: "Abdoun, Amman · West Amman skyline",
   video: "/7578547-uhd_3840_2160_30fps.mp4",
   youtubeUrl: "https://www.youtube.com/watch?v=ysz5S6PUM-U",
+  virtualTourUrl: "https://www.youtube.com/embed/ysz5S6PUM-U",
   price: "1,250,000 JD",
   beds: 4,
   baths: 5,
@@ -142,6 +144,7 @@ const MOCK_DETAILED_PROPERTY_STANDARD: DetailedProperty = {
   location: "Dabouq, Amman",
   video: "/7578547-uhd_3840_2160_30fps.mp4",
   youtubeUrl: "https://www.youtube.com/watch?v=ysz5S6PUM-U",
+  virtualTourUrl: "https://www.youtube.com/embed/ysz5S6PUM-U",
   price: "685,000 JD",
   beds: 5,
   baths: 4,
@@ -217,6 +220,7 @@ const MOCK_DETAILED_PROPERTY_EXCLUSIVE_2: DetailedProperty = {
     "https://images.unsplash.com/photo-1600566752355-35792bedcfea?q=80&w=1800&auto=format&fit=crop",
   ],
   propertyType: "Penthouse",
+  virtualTourUrl: "https://www.youtube.com/embed/ysz5S6PUM-U",
 };
 
 const MOCK_DETAILED_PROPERTIES: Record<string, DetailedProperty> = {
@@ -339,6 +343,7 @@ export function AdminPropertyDetailsMain({
 
             <section ref={amenitiesRef} className="scroll-mt-36 md:scroll-mt-40">
               <PropertyAmenities amenities={displayProperty.amenities} />
+              <PropertyVirtualTour property={displayProperty} />
             </section>
 
             {isExclusive && (

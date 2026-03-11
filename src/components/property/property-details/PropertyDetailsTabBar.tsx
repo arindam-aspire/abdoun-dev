@@ -1,9 +1,9 @@
 "use client";
 
-import { Info, Map, Sparkles } from "lucide-react";
+import { Info, Map, Sparkles, Video } from "lucide-react";
 import { useTranslations } from "@/hooks/useTranslations";
 
-export type PropertyDetailsTabKey = "overview" | "amenities" | "location" | "reviews";
+export type PropertyDetailsTabKey = "overview" | "amenities" | "location" | "reviews" | "virtualTour";
 
 export interface PropertyDetailsTabBarProps {
   activeTab: PropertyDetailsTabKey;
@@ -24,6 +24,7 @@ export function PropertyDetailsTabBar({
   const tabs: { key: PropertyDetailsTabKey; label: string; icon: React.ReactNode }[] = [
     { key: "overview", label: t("propertyTabs.overview"), icon: <Info className="h-3.5 w-3.5" /> },
     { key: "amenities", label: t("propertyTabs.features"), icon: <Sparkles className="h-3.5 w-3.5" /> },
+    { key: "virtualTour", label: t("propertyTabs.virtualTour"), icon: <Video className="h-3.5 w-3.5" /> },
     ...(showLocationTab
       ? [{ key: "location" as const, label: t("propertyTabs.location"), icon: <Map className="h-3.5 w-3.5" /> }]
       : []),
@@ -44,7 +45,7 @@ export function PropertyDetailsTabBar({
                 key={tab.key}
                 type="button"
                 onClick={() => onTabChange(tab.key)}
-                className={`flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                className={`flex items-center cursor-pointer gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                   isActive
                     ? "border-primary text-primary"
                     : "border-transparent text-charcoal/80 hover:text-charcoal"
