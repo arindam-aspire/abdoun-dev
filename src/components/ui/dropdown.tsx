@@ -35,7 +35,7 @@ export function Dropdown({
       <MenuButton
         id={buttonId}
         suppressHydrationWarning
-        className="inline-flex w-full justify-center rounded-full border border-zinc-300 bg-white px-4 py-2 text-size-xs fw-medium text-zinc-900 shadow-sm hover:bg-zinc-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 gap-2 items-center"
+        className="inline-flex w-full justify-center rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs fw-medium text-zinc-900 shadow-sm hover:bg-zinc-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 gap-2 items-center"
       >
         {selected?.label ?? label}
         <ChevronDown className="h-4 w-4" aria-hidden="true" />
@@ -63,7 +63,7 @@ export function Dropdown({
                   <button
                     type="button"
                     className={cn(
-                      "block w-full px-3 py-1.5 text-left text-size-xs text-zinc-700",
+                      "block w-full px-3 py-1.5 text-left text-xs text-zinc-700",
                       focus && "bg-zinc-50 text-zinc-900",
                     )}
                     onClick={() => onChange(option.value)}

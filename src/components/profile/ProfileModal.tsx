@@ -22,7 +22,7 @@ export interface ProfileModalProps {
 const TABS: { id: ProfileTabId; labelKey: string; icon: typeof User }[] = [
   { id: "personal", labelKey: "personalInformation", icon: User },
   { id: "security", labelKey: "signInSecurity", icon: Lock },
-  { id: "privacy", labelKey: "privacyCookies", icon: Shield },
+  // { id: "privacy", labelKey: "privacyCookies", icon: Shield },
 ];
 
 export function ProfileModal({
@@ -159,9 +159,9 @@ export function ProfileModal({
                   isRtl={isRtl}
                 />
               )}
-              {activeTab === "privacy" && (
+              {/* {activeTab === "privacy" && (
                 <PrivacyCookiesTab isRtl={isRtl} />
-              )}
+              )} */}
             </div>
           </>
         )}

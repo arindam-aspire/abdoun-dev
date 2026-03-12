@@ -9,10 +9,22 @@ import type { ChartOptions, TooltipItem } from "chart.js";
  */
 export interface SparkBarsChartProps {
   values: number[];
+  /** Optional custom labels for each bar (e.g. week names). Defaults to "1", "2", ... */
+  labels?: string[];
   title?: string;
   subtitle?: string;
-  /** Show "Latest", "Total", "Delta" summary below bars */
+  /** Show latest value, total, and change-from-previous summary below bars */
   showSummary?: boolean;
+  /** X-axis label (e.g. "Week") */
+  xAxisTitle?: string;
+  /** Y-axis label (e.g. "Number of inquiries") */
+  yAxisTitle?: string;
+  /** Label for the "latest" summary box (e.g. "Inquiries this week") */
+  summaryLatestLabel?: string;
+  /** Label for the "total" summary box (e.g. "Total inquiries (all weeks)") */
+  summaryTotalLabel?: string;
+  /** Label for the "delta" summary box (e.g. "Change from previous week") */
+  summaryDeltaLabel?: string;
   className?: string;
 }
 
@@ -20,12 +32,18 @@ const PRIMARY = "rgba(43, 91, 166, 0.8)";
 
 export function SparkBarsChart({
   values,
+  labels: customLabels,
   title,
   subtitle,
   showSummary = true,
+  xAxisTitle,
+  yAxisTitle,
+  summaryLatestLabel = "Latest",
+  summaryTotalLabel = "Total",
+  summaryDeltaLabel = "Change from previous",
   className = "",
 }: SparkBarsChartProps) {
-  const labels = values.map((_, i) => (i + 1).toString());
+  const labels = customLabels ?? values.map((_, i) => (i + 1).toString());
   const latest = values[values.length - 1] ?? 0;
   const previous = values[values.length - 2] ?? latest;
   const delta = latest - previous;
@@ -50,7 +68,7 @@ export function SparkBarsChart({
       legend: { display: false },
       tooltip: {
         callbacks: {
-          label: (ctx: TooltipItem<"bar">) => String(ctx.parsed.y ?? 0),
+          label: (ctx: TooltipItem<"bar">) => `${labels[ctx.dataIndex] ?? ""}: ${ctx.parsed.y ?? 0}`,
         },
       },
     },
@@ -58,11 +76,13 @@ export function SparkBarsChart({
       x: {
         grid: { display: false },
         ticks: { maxTicksLimit: 8, font: { size: 10 } },
+        title: xAxisTitle ? { display: true, text: xAxisTitle, font: { size: 11 } } : undefined,
       },
       y: {
         beginAtZero: true,
         grid: { color: "rgba(0,0,0,0.06)" },
         ticks: { maxTicksLimit: 5, font: { size: 10 } },
+        title: yAxisTitle ? { display: true, text: yAxisTitle, font: { size: 11 } } : undefined,
       },
     },
   };
@@ -83,7 +103,7 @@ export function SparkBarsChart({
           </div>
           {showSummary ? (
             <div className="rounded-lg bg-surface px-2.5 py-1.5 text-right">
-              <p className="text-xs text-charcoal/65">Latest</p>
+              <p className="text-xs text-charcoal/65">{summaryLatestLabel}</p>
               <p className="text-sm font-semibold text-charcoal">{latest}</p>
             </div>
           ) : null}
@@ -95,11 +115,11 @@ export function SparkBarsChart({
       {showSummary ? (
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
           <div className="rounded-lg border border-subtle bg-surface px-2.5 py-2">
-            <p className="text-charcoal/65">Total</p>
+            <p className="text-charcoal/65">{summaryTotalLabel}</p>
             <p className="mt-0.5 font-semibold text-charcoal">{total}</p>
           </div>
           <div className="rounded-lg border border-subtle bg-surface px-2.5 py-2">
-            <p className="text-charcoal/65">MoM delta</p>
+            <p className="text-charcoal/65">{summaryDeltaLabel}</p>
             <p
               className={`mt-0.5 font-semibold ${delta >= 0 ? "text-emerald-700" : "text-rose-700"}`}
             >

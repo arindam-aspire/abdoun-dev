@@ -11,7 +11,14 @@ export interface InquiryTrendLineChartProps {
   /** Daily values (e.g. last 30 days). Length determines x-axis. */
   values: number[];
   title?: string;
+  /** Optional description below the title. */
   subtitle?: string;
+  /** Shown on the same line as title, right-aligned, secondary color (e.g. "View Details."). */
+  viewDetailsLabel?: string;
+  /** X-axis label (e.g. "Day (1–30)") */
+  xAxisTitle?: string;
+  /** Y-axis label (e.g. "Number of inquiries") */
+  yAxisTitle?: string;
   className?: string;
 }
 
@@ -22,6 +29,9 @@ export function InquiryTrendLineChart({
   values,
   title,
   subtitle,
+  viewDetailsLabel,
+  xAxisTitle,
+  yAxisTitle,
   className = "",
 }: InquiryTrendLineChartProps) {
   const labels = values.map((_, i) => (i + 1).toString());
@@ -58,11 +68,13 @@ export function InquiryTrendLineChart({
       x: {
         grid: { display: false },
         ticks: { maxTicksLimit: 8, font: { size: 10 } },
+        title: xAxisTitle ? { display: true, text: xAxisTitle, font: { size: 11 } } : undefined,
       },
       y: {
         beginAtZero: true,
         grid: { color: "rgba(0,0,0,0.06)" },
         ticks: { maxTicksLimit: 5, font: { size: 10 } },
+        title: yAxisTitle ? { display: true, text: yAxisTitle, font: { size: 11 } } : undefined,
       },
     },
   };
@@ -71,9 +83,14 @@ export function InquiryTrendLineChart({
     <section
       className={`rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5 ${className}`}
     >
-      {title ? (
+      {(title ?? subtitle) ? (
         <div className="mb-3">
-          <h3 className="text-sm font-semibold text-charcoal">{title}</h3>
+          <div className="flex items-center justify-between gap-2">
+            {title ? <h3 className="text-sm font-semibold text-charcoal">{title}</h3> : null}
+            {viewDetailsLabel ? (
+              <span className="text-xs font-medium text-[var(--brand-secondary)] hover:text-brand-secondary/80 transition shrink-0">{viewDetailsLabel}</span>
+            ) : null}
+          </div>
           {subtitle ? (
             <p className="mt-1 text-xs text-charcoal/65">{subtitle}</p>
           ) : null}

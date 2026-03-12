@@ -1,4 +1,4 @@
-import AgentFooter from "@/components/layout/AgentFooter";
+import AgentFooterConditional from "@/components/layout/AgentFooterConditional";
 import { AgentHeader } from "@/components/layout/AgentHeader";
 import { AgentRouteGuard } from "@/components/layout/AgentRouteGuard";
 
@@ -17,7 +17,7 @@ export default function AgentLayout({
               {children}
             </div>
           </section>
-          <AgentFooter />
+          <AgentFooterConditional />
         </div>
       </main>
     </AgentRouteGuard>

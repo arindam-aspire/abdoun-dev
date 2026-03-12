@@ -7,6 +7,7 @@ import {
   Eye,
   Handshake,
   Mail,
+  Plus,
   ShieldCheck,
   TrendingDown,
   TrendingUp,
@@ -74,6 +75,7 @@ export function AgentDashboardHome() {
       iconBgClass:
         "bg-[var(--color-charcoal)]/8 ring-1 ring-[var(--color-charcoal)]/15",
       href: `/${locale}/agent-dashboard/listings`,
+      subLine: null as string | null,
     },
     {
       label: tAgent("leadsThisMonth"),
@@ -83,16 +85,8 @@ export function AgentDashboardHome() {
       icon: Mail,
       iconBgClass:
         "bg-[var(--color-royal-blue)]/12 ring-1 ring-[var(--color-royal-blue)]/20",
-      href: `/${locale}/agent-dashboard/inquiries`,
-    },
-    {
-      label: tAgent("viewRate"),
-      value: `${data.viewRate}%`,
-      delta: tAgent("viewRateDelta"),
-      deltaTrend: 0.5,
-      icon: Eye,
-      iconBgClass: "bg-emerald-500/14 ring-1 ring-emerald-500/20",
-      href: `/${locale}/agent-dashboard/view-rate`,
+      href: `/${locale}/agent-dashboard/leads`,
+      subLine: null as string | null,
     },
     {
       label: tAgent("dealCloseCount"),
@@ -101,8 +95,19 @@ export function AgentDashboardHome() {
       deltaTrend: 3,
       icon: Handshake,
       iconBgClass: "bg-amber-500/14 ring-1 ring-amber-500/20",
-      href: `/${locale}/agent-dashboard/inquiries?status=closed`,
+      href: `/${locale}/agent-dashboard/inquiries?view=deal-close&status=closed`,
+      subLine: `${tAgent("conversionRateLabel")}: ${data.conversionRate}%`,
     },
+    {
+      label: tAgent("totalPropertyViews"),
+      value: String(data.totalPropertyViews),
+      delta: tAgent("totalPropertyViewsDelta"),
+      deltaTrend: 0.5,
+      icon: Eye,
+      iconBgClass: "bg-emerald-500/14 ring-1 ring-emerald-500/20",
+      href: `/${locale}/agent-dashboard/view-rate`,
+      subLine: null as string | null,
+    }
   ];
 
   return (
@@ -147,6 +152,9 @@ export function AgentDashboardHome() {
                   </span>
                 )}
               </div>
+              {item.subLine ? (
+                <p className="mt-1.5 text-xs font-medium text-amber-700/80">{item.subLine}</p>
+              ) : null}
             </>
           );
           return (
@@ -177,53 +185,39 @@ export function AgentDashboardHome() {
           <InquiryTrendLineChart
             values={data.inquiryTrendLast30Days}
             title={tAgent("inquiryTrendTitle")}
-            subtitle={tAgent("inquiryTrendSubtitle")}
+            viewDetailsLabel={tAgent("viewDetails")}
+            xAxisTitle={tAgent("chartAxisDay")}
+            yAxisTitle={tAgent("chartAxisInquiries")}
           />
         </Link>
-        <PerformanceBarChart
-          data={performanceData}
-          title={tAgent("performanceComparison")}
-          subtitle={tAgent("inquiriesByProperty")}
-        />
+        <Link
+          href={`/${locale}/agent-dashboard/view-rate`}
+          className="block transition hover:opacity-95"
+        >
+          <PerformanceBarChart
+            data={performanceData}
+            title={tAgent("propertyPerformance")}
+            viewDetailsLabel={tAgent("viewDetails")}
+            xAxisTitle={tAgent("chartAxisViews")}
+            yAxisTitle={tAgent("chartAxisProperty")}
+          />
+        </Link>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-charcoal">
-            <CircleAlert className="h-4 w-4 text-amber-600" />
-            {tAgent("inquiryOverview")}
-          </h2>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <div className="rounded-xl border border-subtle bg-surface p-3">
-              <p className="text-xs font-semibold text-charcoal">{tAgent("allTime")}</p>
-              <p className="mt-2 text-2xl font-semibold text-secondary">
-                {data.inquiryVolumeAllTime}
-              </p>
-              <p className="mt-1 text-xs text-charcoal/70">{tAgent("totalInquiries")}</p>
-            </div>
-            <div className="rounded-xl border border-subtle bg-surface p-3">
-              <p className="text-xs font-semibold text-charcoal">{tAgent("last7Days")}</p>
-              <p className="mt-2 text-2xl font-semibold text-emerald-700">
-                {data.inquiryVolumeLast7Days}
-              </p>
-              <p className="mt-1 text-xs text-charcoal/70">{tAgent("newThisWeek")}</p>
-            </div>
-            <div className="rounded-xl border border-subtle bg-surface p-3">
-              <p className="text-xs font-semibold text-charcoal">{tAgent("activeProperties")}</p>
-              <p className="mt-2 text-2xl font-semibold text-charcoal">
-                {data.activeProperties}
-              </p>
-              <p className="mt-1 text-xs text-charcoal/70">{tAgent("liveOnPlatform")}</p>
-            </div>
-          </div>
-        </article>
-
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-charcoal">
             <ShieldCheck className="h-4 w-4 text-secondary" />
             {tAgent("quickActions")}
           </h2>
           <div className="mt-4 space-y-2">
+            <Link
+              href={`/${locale}/agent-dashboard/add-property`}
+              className="flex w-full items-center justify-between rounded-xl border border-subtle bg-surface px-3 py-2 text-sm text-charcoal transition hover:bg-primary/5"
+            >
+              <span>{tAgent("addNewProperty")}</span>
+              <Plus className="h-4 w-4" />
+            </Link>
             <Link
               href={`/${locale}/agent-dashboard/listings`}
               className="flex w-full items-center justify-between rounded-xl border border-subtle bg-surface px-3 py-2 text-sm text-charcoal transition hover:bg-primary/5"
@@ -247,35 +241,14 @@ export function AgentDashboardHome() {
             </Link>
           </div>
         </article>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-charcoal">{tAgent("listingsSummary")}</h2>
-            <Link
-              href={`/${locale}/agent-dashboard/listings`}
-              className="inline-flex items-center gap-1 rounded-full border border-subtle bg-surface px-2 py-1 text-[11px] text-charcoal/75 hover:bg-primary/5"
-            >
-              <Building2 className="h-3.5 w-3.5" />
-              {data.totalProperties} total · {tAgent("manageListings")}
-            </Link>
-          </div>
-          <div className="mt-4 rounded-xl border border-subtle bg-surface p-4">
-            <p className="text-xs text-charcoal/65">{t("mockNotice")}</p>
-            <p className="mt-2 text-sm text-charcoal">
-              {tAgent("listingsSummaryNote", { active: data.activeProperties, draft: data.draftProperties })}
-            </p>
-          </div>
-        </article>
 
         <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
           <h2 className="text-sm font-semibold text-charcoal">{tAgent("recentActivity")}</h2>
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-2">
             {data.recentActivity.map((item) => (
               <div
                 key={`${item.text}-${item.time}`}
-                className="rounded-xl border border-subtle bg-surface p-3"
+                className="rounded-xl border border-subtle bg-surface px-3 py-2"
               >
                 <div className="flex items-start gap-2">
                   {item.tone === "success" ? (
@@ -285,9 +258,9 @@ export function AgentDashboardHome() {
                   ) : (
                     <Mail className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
                   )}
-                  <div>
+                  <div className="flex flex-1 items-center justify-between gap-2 min-w-0">
                     <p className="text-sm text-charcoal">{item.text}</p>
-                    <p className="mt-1 text-xs text-charcoal/65">{item.time}</p>
+                    <span className="text-xs text-charcoal/65 shrink-0">{item.time}</span>
                   </div>
                 </div>
               </div>

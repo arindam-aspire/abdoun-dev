@@ -1,45 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import type { AppLocale } from "@/i18n/routing";
 import { useTranslations } from "@/hooks/useTranslations";
 import { ArrowLeft } from "lucide-react";
-import {
-  getInquiryTrendDaily,
-  getInquiryTrendWeekly,
-  getPerformanceComparison,
-} from "@/services/agentDashboardMockService";
-import { InquiryTrendLineChart } from "@/components/agent/InquiryTrendLineChart";
-import { PerformanceBarChart } from "@/components/agent/PerformanceBarChart";
+import { getInquiryTrendWeekly } from "@/services/agentDashboardMockService";
 import { SparkBarsChart } from "@/components/agent/SparkBarsChart";
 
 export function AgentTrendsPage() {
   const locale = useLocale() as AppLocale;
   const t = useTranslations("agentDashboard");
-  const [daily, setDaily] = useState<{ date: string; count: number }[]>([]);
   const [weekly, setWeekly] = useState<{ weekLabel: string; count: number }[]>([]);
-  const [performance, setPerformance] = useState<{ label: string; value: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(() => {
-    setLoading(true);
-    Promise.all([
-      getInquiryTrendDaily(),
-      getInquiryTrendWeekly(),
-      getPerformanceComparison(),
-    ]).then(([d, w, p]) => {
-      setDaily(d);
-      setWeekly(w);
-      setPerformance(p);
-      setLoading(false);
-    });
-  }, []);
-
   useEffect(() => {
-    load();
-  }, [load]);
+    let cancelled = false;
+    getInquiryTrendWeekly().then((w) => {
+      if (!cancelled) {
+        setWeekly(w);
+        setLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -48,8 +35,6 @@ export function AgentTrendsPage() {
       </div>
     );
   }
-
-  const dailyValues = daily.map((d) => d.count);
 
   return (
     <div className="space-y-6">
@@ -71,23 +56,17 @@ export function AgentTrendsPage() {
         </p>
       </div>
 
-      <InquiryTrendLineChart
-        values={dailyValues}
-        title={t("dailyInquiryVolume")}
-        subtitle={t("dailyInquiryVolumeSubtitle")}
-      />
-
       <SparkBarsChart
         values={weekly.map((w) => w.count)}
+        labels={weekly.map((w) => w.weekLabel)}
         title={t("weeklyAggregation")}
         subtitle={t("last4Weeks")}
         showSummary={true}
-      />
-
-      <PerformanceBarChart
-        data={performance}
-        title={t("performanceComparison")}
-        subtitle={t("inquiriesByProperty")}
+        xAxisTitle={t("chartAxisWeek")}
+        yAxisTitle={t("chartAxisInquiries")}
+        summaryLatestLabel={t("summaryLatestWeek")}
+        summaryTotalLabel={t("summaryTotalInquiries")}
+        summaryDeltaLabel={t("summaryChangeFromPrevWeek")}
       />
     </div>
   );
