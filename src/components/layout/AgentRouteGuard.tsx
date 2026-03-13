@@ -29,6 +29,12 @@ export function AgentRouteGuard({ children }: { children: React.ReactNode }) {
     }
   }, [dispatch, locale, router, user]);
 
-  if (user?.role !== "agent") return null;
+  if (user?.role !== "agent") {
+    return (
+      <div className="min-h-screen bg-[var(--surface)] flex items-center justify-center text-sm text-zinc-600">
+        Redirecting...
+      </div>
+    );
+  }
   return <>{children}</>;
 }

@@ -1,31 +1,32 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { useTranslations } from "@/hooks/useTranslations";
-import type { AppLocale } from "@/i18n/routing";
-import { LanguageSelect } from "@/components/ui/language-select";
-import { BrandLogo } from "@/components/layout/brand-logo";
 import { AuthPopup } from "@/components/auth/AuthPopup";
-import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
-import { logout } from "@/features/auth/authSlice";
-import { clearProfileForUser } from "@/features/profile/profileSlice";
-import { clearAuthSession } from "@/lib/auth/sessionCookies";
-import { useLocale } from "next-intl";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   APP_HEADER_CONFIG,
+  type HeaderRole,
   resolvePublicLinksVisibility,
 } from "@/components/layout/app-header.config";
+import { BrandLogo } from "@/components/layout/brand-logo";
 import { ProfileModal } from "@/components/profile/ProfileModal";
-import { cn } from "@/lib/cn";
 import {
   DialogDescription,
   DialogFooter,
   DialogRoot,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { LanguageSelect } from "@/components/ui/language-select";
+import { logout } from "@/features/auth/authSlice";
+import { clearProfileForUser } from "@/features/profile/profileSlice";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import { useTranslations } from "@/hooks/useTranslations";
+import type { AppLocale } from "@/i18n/routing";
+import { clearAuthSession } from "@/lib/auth/sessionCookies";
+import { cn } from "@/lib/cn";
 import { Menu, X } from "lucide-react";
+import { useLocale } from "next-intl";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 const SHRINK_SCROLL_Y = 36;
 const MOBILE_BREAKPOINT = 768;
@@ -58,15 +59,18 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
   const profileRef = useRef<HTMLDivElement | null>(null);
   const mobileProfileRef = useRef<HTMLDivElement | null>(null);
   const isRTL = activeLanguage === "ar";
+  const activeRole: HeaderRole = user?.role ?? "guest";
   const shouldShowPublicLinks = resolvePublicLinksVisibility(
     pathname,
     showPublicLinks,
   );
   const navItems = APP_HEADER_CONFIG.navItems.filter(
     (item) =>
-      item.id !== "listProperty" &&
+      item.roles.includes(activeRole) &&
       (!item.publicOnly || shouldShowPublicLinks),
   );
+  const canShowListProperty = APP_HEADER_CONFIG.actions.listProperty.roles.includes(activeRole);
+  const profileMenuConfig = user ? APP_HEADER_CONFIG.profileMenu[user.role] : null;
 
   const initials =
     user?.name
@@ -157,6 +161,21 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
   }, [mobileMenuOpen]);
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
+  const openAccountSettings = () => {
+    setIsProfileOpen(false);
+    setIsAccountSettingsHover(false);
+    setIsProfileModalOpen(true);
+  };
+  const handleLogout = () => {
+    if (user) {
+      dispatch(clearProfileForUser(user.id));
+    }
+    clearAuthSession();
+    dispatch(logout());
+    setIsProfileOpen(false);
+    setMobileMenuOpen(false);
+    router.replace(`/${activeLanguage}`);
+  };
 
   return (
     <header
@@ -195,7 +214,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                   isActive ? "border-accent text-white" : "border-transparent text-white/80",
                 )}
               >
-                {t(item.labelKey)}
+                {item.label}
               </Link>
             );
           })}
@@ -206,19 +225,21 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
           <div className="hidden md:block">
             <LanguageSelect value={activeLanguage} showFullLabels />
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              if (!user) {
-                setIsAuthOpen(true);
-                return;
-              }
-              setIsListPropertyModalOpen(true);
-            }}
-            className="inline-flex h-8 items-center rounded-full border border-[var(--brand-accent)] bg-[var(--brand-accent)] px-3 text-[11px] font-semibold text-[var(--brand-secondary)] transition hover:brightness-95 md:h-9 md:px-4 md:text-xs"
-          >
-            {t("nav.listProperty")}
-          </button>
+          {canShowListProperty ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (!user) {
+                  setIsAuthOpen(true);
+                  return;
+                }
+                setIsListPropertyModalOpen(true);
+              }}
+              className="inline-flex h-8 items-center rounded-full border border-[var(--brand-accent)] bg-[var(--brand-accent)] px-3 text-[11px] font-semibold text-[var(--brand-secondary)] transition hover:brightness-95 md:h-9 md:px-4 md:text-xs"
+            >
+              {t("nav.listProperty")}
+            </button>
+          ) : null}
           {user ? (
             <>
               <div className="relative" ref={profileRef}>
@@ -244,97 +265,108 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                     </p>
                   </div>
                   <nav className="py-1 px-1" aria-label="Account menu">
-                    <Link
-                      href={`/${activeLanguage}/favourites`}
-                      onClick={() => setIsProfileOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
-                    >
-                      {tCommon("myFavourites")}
-                    </Link>
-                    <Link
-                      href={`/${activeLanguage}/saved-searches`}
-                      onClick={() => setIsProfileOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
-                    >
-                      {tCommon("mySavedSearches")}
-                    </Link>
-                    <Link
-                      href={`/${activeLanguage}/recently-viewed`}
-                      onClick={() => setIsProfileOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
-                    >
-                      {tCommon("myRecentlyViewed")}
-                    </Link>
-                    <div
-                      className="relative"
-                      onMouseEnter={() => setIsAccountSettingsHover(true)}
-                      onMouseLeave={() => setIsAccountSettingsHover(false)}
-                    >
-                      <button
-                        type="button"
-                        className={cn(
-                          "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline",
-                          // isRTL ? "flex-row-reverse" : "",
-                        )}
+                    {profileMenuConfig?.showFavourites ? (
+                      <Link
+                        href={`/${activeLanguage}/favourites`}
+                        onClick={() => setIsProfileOpen(false)}
+                        className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
                       >
-                        {tCommon("myAccountSettings")}
-                        <span className={cn("text-zinc-400", isRTL ? "" : "")} aria-hidden>›</span>
-                      </button>
-                      {isAccountSettingsHover ? (
+                        {tCommon("myFavourites")}
+                      </Link>
+                    ) : null}
+                    {profileMenuConfig?.showSavedSearches ? (
+                      <Link
+                        href={`/${activeLanguage}/saved-searches`}
+                        onClick={() => setIsProfileOpen(false)}
+                        className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                      >
+                        {tCommon("mySavedSearches")}
+                      </Link>
+                    ) : null}
+                    {profileMenuConfig?.showRecentlyViewed ? (
+                      <Link
+                        href={`/${activeLanguage}/recently-viewed`}
+                        onClick={() => setIsProfileOpen(false)}
+                        className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                      >
+                        {tCommon("myRecentlyViewed")}
+                      </Link>
+                    ) : null}
+                    {profileMenuConfig?.showAccountSettings ? (
+                      profileMenuConfig.showNotifications ? (
                         <div
-                          className={cn(
-                            "absolute top-0 z-40 min-w-[200px] max-w-[calc(100vw-2rem)] rounded-lg border border-[var(--border-subtle)] bg-white py-1.5 px-1.5 shadow-lg",
-                            isRTL ? "left-full ml-1" : "right-full",
-                          )}
-                          role="menu"
+                          className="relative"
+                          onMouseEnter={() => setIsAccountSettingsHover(true)}
+                          onMouseLeave={() => setIsAccountSettingsHover(false)}
                         >
                           <button
                             type="button"
-                            onClick={() => {
-                              setIsProfileOpen(false);
-                              setIsAccountSettingsHover(false);
-                              setIsProfileModalOpen(true);
-                            }}
-                            className={cn(
-                              "block w-full rounded-md px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer",
-                              isRTL ? "text-right" : "text-left",
-                            )}
-                            role="menuitem"
+                            className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline"
                           >
-                            {tCommon("myProfile")}
+                            {tCommon("myAccountSettings")}
+                            <span className={cn("text-zinc-400", isRTL ? "" : "")} aria-hidden>{"\u203A"}</span>
                           </button>
-                          <Link
-                            href={`/${activeLanguage}/notifications`}
-                            onClick={() => {
-                              setIsProfileOpen(false);
-                              setIsAccountSettingsHover(false);
-                            }}
-                            className={cn(
-                              "block rounded-md px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer",
-                              isRTL ? "text-right" : "text-left",
-                            )}
-                            role="menuitem"
-                          >
-                            {tCommon("notifications")}
-                          </Link>
+                          {isAccountSettingsHover ? (
+                            <div
+                              className={cn(
+                                "absolute top-0 z-40 min-w-[200px] max-w-[calc(100vw-2rem)] rounded-lg border border-[var(--border-subtle)] bg-white py-1.5 px-1.5 shadow-lg",
+                                isRTL ? "left-full ml-1" : "right-full",
+                              )}
+                              role="menu"
+                            >
+                              <button
+                                type="button"
+                                onClick={openAccountSettings}
+                                className={cn(
+                                  "block w-full rounded-md px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer",
+                                  isRTL ? "text-right" : "text-left",
+                                )}
+                                role="menuitem"
+                              >
+                                {tCommon("myProfile")}
+                              </button>
+                              <Link
+                                href={`/${activeLanguage}/notifications`}
+                                onClick={() => {
+                                  setIsProfileOpen(false);
+                                  setIsAccountSettingsHover(false);
+                                }}
+                                className={cn(
+                                  "block rounded-md px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer",
+                                  isRTL ? "text-right" : "text-left",
+                                )}
+                                role="menuitem"
+                              >
+                                {tCommon("notifications")}
+                              </Link>
+                            </div>
+                          ) : null}
                         </div>
-                      ) : null}
-                    </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={openAccountSettings}
+                          className={cn(
+                            "block w-full rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer",
+                            isRTL ? "text-right" : "text-left",
+                          )}
+                        >
+                          {tCommon("myAccountSettings")}
+                        </button>
+                      )
+                    ) : null}
                   </nav>
-                  <div className="mt-1 border-t border-subtle px-3 pt-2 pb-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        dispatch(clearProfileForUser(user.id));
-                        clearAuthSession();
-                        dispatch(logout());
-                        setIsProfileOpen(false);
-                      }}
-                      className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-size-sm fw-semibold text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
-                    >
-                      {tCommon("signOut")}
-                    </button>
-                  </div>
+                  {profileMenuConfig?.showLogout ? (
+                    <div className="mt-1 border-t border-subtle px-3 pt-2 pb-2">
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-size-sm fw-semibold text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                      >
+                        {tCommon("signOut")}
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -386,58 +418,69 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                     </p>
                   </div>
                   <nav className="py-1 px-1" aria-label="Account menu">
-                    <Link
-                      href={`/${activeLanguage}/favourites`}
-                      onClick={() => setIsProfileOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline"
-                    >
-                      {tCommon("myFavourites")}
-                    </Link>
-                    <Link
-                      href={`/${activeLanguage}/saved-searches`}
-                      onClick={() => setIsProfileOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline"
-                    >
-                      {tCommon("mySavedSearches")}
-                    </Link>
-                    <Link
-                      href={`/${activeLanguage}/recently-viewed`}
-                      onClick={() => setIsProfileOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline"
-                    >
-                      {tCommon("myRecentlyViewed")}
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsProfileOpen(false);
-                        setIsProfileModalOpen(true);
-                      }}
-                      className="block w-full rounded-lg px-3 py-2.5 text-left text-sm text-zinc-700 hover:bg-zinc-100 hover:underline"
-                    >
-                      {tCommon("myProfile")}
-                    </button>
-                    <Link
-                      href={`/${activeLanguage}/notifications`}
-                      onClick={() => setIsProfileOpen(false)}
-                      className="block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline"
-                    >
-                      {tCommon("notifications")}
-                    </Link>
+                    {profileMenuConfig?.showFavourites ? (
+                      <Link
+                        href={`/${activeLanguage}/favourites`}
+                        onClick={() => setIsProfileOpen(false)}
+                        className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                      >
+                        {tCommon("myFavourites")}
+                      </Link>
+                    ) : null}
+                    {profileMenuConfig?.showSavedSearches ? (
+                      <Link
+                        href={`/${activeLanguage}/saved-searches`}
+                        onClick={() => setIsProfileOpen(false)}
+                        className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                      >
+                        {tCommon("mySavedSearches")}
+                      </Link>
+                    ) : null}
+                    {profileMenuConfig?.showRecentlyViewed ? (
+                      <Link
+                        href={`/${activeLanguage}/recently-viewed`}
+                        onClick={() => setIsProfileOpen(false)}
+                        className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                      >
+                        {tCommon("myRecentlyViewed")}
+                      </Link>
+                    ) : null}
+                    {profileMenuConfig?.showAccountSettings ? (
+                      <button
+                        type="button"
+                        onClick={openAccountSettings}
+                        className={cn(
+                          "block w-full rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer",
+                          isRTL ? "text-right" : "text-left",
+                        )}
+                      >
+                        {tCommon("myAccountSettings")}
+                      </button>
+                    ) : null}
+                    {profileMenuConfig?.showNotifications ? (
+                      <Link
+                        href={`/${activeLanguage}/notifications`}
+                        onClick={() => setIsProfileOpen(false)}
+                        className={cn(
+                          "block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer",
+                          isRTL ? "text-right" : "text-left",
+                        )}
+                      >
+                        {tCommon("notifications")}
+                      </Link>
+                    ) : null}
                   </nav>
-                  <div className="mt-1 border-t border-[var(--border-subtle)] px-3 pt-2 pb-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        dispatch(clearProfileForUser(user.id));
-                        dispatch(logout());
-                        setIsProfileOpen(false);
-                      }}
-                      className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 hover:underline"
-                    >
-                      {tCommon("signOut")}
-                    </button>
-                  </div>
+                  {profileMenuConfig?.showLogout ? (
+                    <div className="mt-1 border-t border-[var(--border-subtle)] px-3 pt-2 pb-2">
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 hover:underline"
+                      >
+                        {tCommon("signOut")}
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -486,7 +529,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                     isActive ? "bg-white/10 text-white" : "text-white/90",
                   )}
                 >
-                  {t(item.labelKey)}
+                  {item.label}
                 </Link>
               );
             })}
@@ -496,20 +539,22 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
               <span className="text-sm text-white/80">Language</span>
               <LanguageSelect value={activeLanguage} showFullLabels={false} />
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                closeMobileMenu();
-                if (!user) {
-                  setIsAuthOpen(true);
-                  return;
-                }
-                setIsListPropertyModalOpen(true);
-              }}
-              className="w-full inline-flex h-12 items-center justify-center rounded-xl border-2 border-[var(--brand-accent)] bg-[var(--brand-accent)] text-sm font-semibold text-[var(--brand-secondary)] transition hover:brightness-95"
-            >
-              {t("nav.listProperty")}
-            </button>
+            {canShowListProperty ? (
+              <button
+                type="button"
+                onClick={() => {
+                  closeMobileMenu();
+                  if (!user) {
+                    setIsAuthOpen(true);
+                    return;
+                  }
+                  setIsListPropertyModalOpen(true);
+                }}
+                className="w-full inline-flex h-12 items-center justify-center rounded-xl border-2 border-[var(--brand-accent)] bg-[var(--brand-accent)] text-sm font-semibold text-[var(--brand-secondary)] transition hover:brightness-95"
+              >
+                {t("nav.listProperty")}
+              </button>
+            ) : null}
           </div>
         </div>
       </div>
@@ -549,5 +594,6 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
     </header>
   );
 }
+
 
 

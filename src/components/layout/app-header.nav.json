@@ -1,0 +1,79 @@
+{
+  "navItems": [
+    {
+      "id": "aboutUs",
+      "label": "About Us",
+      "path": "/about",
+      "roles": ["guest", "user"],
+      "publicOnly": true
+    },
+    {
+      "id": "ourTeam",
+      "label": "Our Team",
+      "path": "/team",
+      "roles": ["guest", "user"],
+      "publicOnly": true
+    },
+    {
+      "id": "agentDashboard",
+      "label": "Dashboard",
+      "path": "/agent-dashboard",
+      "roles": ["agent"]
+    },
+    {
+      "id": "agentProperties",
+      "label": "Properties",
+      "path": "/agent-properties",
+      "roles": ["agent"]
+    },
+    {
+      "id": "adminDashboard",
+      "label": "Dashboard",
+      "path": "/dashboard",
+      "roles": ["admin"]
+    },
+    {
+      "id": "adminProperties",
+      "label": "Properties",
+      "path": "/properties",
+      "roles": ["admin"]
+    },
+    {
+      "id": "adminAgents",
+      "label": "Agents",
+      "path": "/agents",
+      "roles": ["admin"]
+    }
+  ],
+  "actions": {
+    "listProperty": {
+      "roles": ["guest", "user"]
+    }
+  },
+  "profileMenu": {
+    "user": {
+      "showFavourites": true,
+      "showSavedSearches": true,
+      "showRecentlyViewed": true,
+      "showNotifications": true,
+      "showAccountSettings": true,
+      "showLogout": true
+    },
+    "agent": {
+      "showFavourites": false,
+      "showSavedSearches": false,
+      "showRecentlyViewed": false,
+      "showNotifications": false,
+      "showAccountSettings": true,
+      "showLogout": true
+    },
+    "admin": {
+      "showFavourites": false,
+      "showSavedSearches": false,
+      "showRecentlyViewed": false,
+      "showNotifications": false,
+      "showAccountSettings": true,
+      "showLogout": true
+    }
+  }
+}

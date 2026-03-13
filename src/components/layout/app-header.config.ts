@@ -1,14 +1,36 @@
 import { routing } from "@/i18n/routing";
+import type { UserRole } from "@/features/auth/authSlice";
+import navConfigJson from "@/components/layout/app-header.nav.json";
+
+export type HeaderRole = UserRole | "guest";
 
 export interface HeaderNavItem {
-  id: "listProperty" | "ourTeam" | "aboutUs";
-  labelKey: "nav.listProperty" | "nav.ourTeam" | "nav.aboutUs";
+  id: string;
+  label: string;
   path: string;
+  roles: HeaderRole[];
   publicOnly?: boolean;
+}
+
+export interface HeaderActionConfig {
+  roles: HeaderRole[];
+}
+
+export interface HeaderProfileMenuConfig {
+  showFavourites: boolean;
+  showSavedSearches: boolean;
+  showRecentlyViewed: boolean;
+  showNotifications: boolean;
+  showAccountSettings: boolean;
+  showLogout: boolean;
 }
 
 export interface AppHeaderConfig {
   navItems: HeaderNavItem[];
+  actions: {
+    listProperty: HeaderActionConfig;
+  };
+  profileMenu: Record<UserRole, HeaderProfileMenuConfig>;
   publicLinks: {
     defaultVisible: boolean;
     showPathPrefixes: string[];
@@ -16,25 +38,11 @@ export interface AppHeaderConfig {
 }
 
 export const APP_HEADER_CONFIG: AppHeaderConfig = {
-  navItems: [
-    {
-      id: "listProperty",
-      labelKey: "nav.listProperty",
-      path: "/list",
-    },
-    {
-      id: "aboutUs",
-      labelKey: "nav.aboutUs",
-      path: "/about",
-      publicOnly: true,
-    },
-    {
-      id: "ourTeam",
-      labelKey: "nav.ourTeam",
-      path: "/team",
-      publicOnly: true,
-    }
-  ],
+  navItems: navConfigJson.navItems as HeaderNavItem[],
+  actions: {
+    listProperty: navConfigJson.actions.listProperty as HeaderActionConfig,
+  },
+  profileMenu: navConfigJson.profileMenu as Record<UserRole, HeaderProfileMenuConfig>,
   publicLinks: {
     defaultVisible: true,
     showPathPrefixes: ["/", "/about", "/team"],

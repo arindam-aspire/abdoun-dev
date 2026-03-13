@@ -29,6 +29,12 @@ export function AdminRouteGuard({ children }: { children: React.ReactNode }) {
     }
   }, [dispatch, locale, router, user]);
 
-  if (user?.role !== "admin") return null;
+  if (user?.role !== "admin") {
+    return (
+      <div className="min-h-screen bg-[var(--surface)] flex items-center justify-center text-sm text-zinc-600">
+        Redirecting...
+      </div>
+    );
+  }
   return <>{children}</>;
 }
