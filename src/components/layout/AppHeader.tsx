@@ -588,7 +588,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
         description={tCommon("confirmSignOut")}
         confirmLabel={tCommon("signOut")}
         cancelLabel={tCommon("cancel")}
-        destructive
+        confirmButtonClassName="bg-rose-700 text-white hover:bg-rose-800"
       />
       <DialogRoot
         open={isListPropertyModalOpen}
