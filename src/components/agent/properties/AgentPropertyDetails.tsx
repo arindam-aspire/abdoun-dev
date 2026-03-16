@@ -156,7 +156,7 @@ export function AgentPropertyDetails({
 
             {isExclusive && (
               <section className="scroll-mt-36 md:scroll-mt-40">
-                <PropertyNeighborhood />
+                <PropertyNeighborhood property={displayProperty} />
               </section>
             )}
           </section>

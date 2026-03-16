@@ -11,6 +11,8 @@ export interface PropertyFormSectionProps {
   title: string;
   /** Optional subtitle / description */
   subtitle?: string;
+  /** Optional action rendered in the header beside the title block */
+  headerAction?: ReactNode;
   /** Whether the section starts expanded (default true) */
   defaultOpen?: boolean;
   /** Section content (form fields) */
@@ -27,6 +29,7 @@ export function PropertyFormSection({
   icon,
   title,
   subtitle,
+  headerAction,
   defaultOpen = true,
   children,
   className,
@@ -41,27 +44,37 @@ export function PropertyFormSection({
       )}
     >
       {/* Header – always visible */}
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-surface/40"
-      >
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-size-sm fw-semibold text-charcoal">{title}</h3>
-          {subtitle && (
-            <p className="mt-0.5 text-size-xs text-charcoal/65 truncate">{subtitle}</p>
-          )}
-        </div>
-        <ChevronDown
-          className={cn(
-            "h-5 w-5 shrink-0 text-charcoal/50 transition-transform duration-200",
-            open && "rotate-180",
-          )}
-        />
-      </button>
+      <div className="flex items-center gap-3 px-5 py-4">
+        <button
+          type="button"
+          onClick={() => setOpen((prev) => !prev)}
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-xl py-1 text-left transition-colors hover:bg-surface/40"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            {icon}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-size-sm fw-semibold text-charcoal">{title}</h3>
+            {subtitle && (
+              <p className="mt-0.5 text-size-xs text-charcoal/65 truncate">{subtitle}</p>
+            )}
+          </div>
+        </button>
+        {headerAction ? <div className="shrink-0">{headerAction}</div> : null}
+        <button
+          type="button"
+          onClick={() => setOpen((prev) => !prev)}
+          className="shrink-0 rounded-xl p-1 text-charcoal/50 transition-colors hover:bg-surface/40"
+          aria-label={open ? "Collapse section" : "Expand section"}
+        >
+          <ChevronDown
+            className={cn(
+              "h-5 w-5 transition-transform duration-200",
+              open && "rotate-180",
+            )}
+          />
+        </button>
+      </div>
 
       {/* Body – collapsible */}
       <div

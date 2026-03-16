@@ -4,14 +4,14 @@
       "id": "aboutUs",
       "label": "About Us",
       "path": "/about",
-      "roles": ["guest", "user"],
+      "roles": ["guest", "user", "agent", "admin"],
       "publicOnly": true
     },
     {
       "id": "ourTeam",
       "label": "Our Team",
       "path": "/team",
-      "roles": ["guest", "user"],
+      "roles": ["guest", "user", "agent", "admin"],
       "publicOnly": true
     },
     {

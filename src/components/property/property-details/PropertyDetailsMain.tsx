@@ -29,6 +29,8 @@ const MOCK_DETAILED_PROPERTY_EXCLUSIVE: DetailedProperty = {
   image:
     "https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=1800&auto=format&fit=crop",
   location: "Abdoun, Amman · West Amman skyline",
+  latitude:31.9880592,
+  longitude:35.8113021,
   video: "/7578547-uhd_3840_2160_30fps.mp4",
   youtubeUrl: "https://www.youtube.com/watch?v=IG7Jrgl9h1o",
   virtualTourUrl: "https://www.youtube.com/embed/otYbvFPA5MI",
@@ -368,7 +370,7 @@ export function PropertyDetailsMain({ language, propertyId = "1" }: PropertyDeta
                 ref={locationRef}
                 className="scroll-mt-36 rounded-2xl border border-subtle bg-white/95 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] md:scroll-mt-40 md:p-6"
               >
-                <PropertyNeighborhood />
+                <PropertyNeighborhood property={displayProperty} />
               </section>
             )}
           </section>

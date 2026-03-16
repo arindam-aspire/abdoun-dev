@@ -12,9 +12,11 @@ import {
   FileText,
   ImageIcon,
   MapPin,
+  Plus,
   ShieldCheck,
   Sparkles,
   Tag,
+  Trash2,
   User,
   Video,
 } from "lucide-react";
@@ -37,6 +39,7 @@ import type { PropertyType } from "@/types/agent";
 
 import { PropertyFormSection } from "./PropertyFormSection";
 import { PropertyFormField } from "./PropertyFormField";
+import LocationPicker from "@/components/map/LocationPicker";
 import {
   DocumentUploadField,
   createUploadedFiles,
@@ -111,6 +114,33 @@ function mapToAgentPropertyType(category: CategoryKey, propertyType: string): Pr
   return map[propertyType.toLowerCase()] ?? (category === "land" ? "land" : "villa");
 }
 
+interface OwnerFormState {
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+  socialSecurityId: string;
+  nationality: string;
+  address: string;
+}
+
+interface PropertyLocation {
+  lat: number;
+  lng: number;
+}
+
+function createOwner(id: number): OwnerFormState {
+  return {
+    id,
+    name: "",
+    phone: "",
+    email: "",
+    socialSecurityId: "",
+    nationality: "",
+    address: "",
+  };
+}
+
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
@@ -132,6 +162,7 @@ export function AddPropertyForm() {
   const [city, setCity] = useState("");
   const [area, setArea] = useState("");
   const [address, setAddress] = useState("");
+  const [exactLocation, setExactLocation] = useState<PropertyLocation | null>(null);
   const [governorate, setGovernorate] = useState("");
   const [directorate, setDirectorate] = useState("");
   const [village, setVillage] = useState("");
@@ -157,12 +188,7 @@ export function AddPropertyForm() {
   const [permitNumber, setPermitNumber] = useState("");
 
   // ---- Owner Info ----
-  const [ownerName, setOwnerName] = useState("");
-  const [ownerPhone, setOwnerPhone] = useState("");
-  const [ownerEmail, setOwnerEmail] = useState("");
-  const [ownerSocialSecurityId, setOwnerSocialSecurityId] = useState("");
-  const [ownerNationality, setOwnerNationality] = useState("");
-  const [ownerAddress, setOwnerAddress] = useState("");
+  const [owners, setOwners] = useState<OwnerFormState[]>([createOwner(1)]);
 
   // ---- Pricing ----
   const [price, setPrice] = useState("");
@@ -396,6 +422,30 @@ export function AddPropertyForm() {
       },
     [],
   );
+  const updateOwner = useCallback(
+    <K extends keyof Omit<OwnerFormState, "id">>(
+      ownerId: number,
+      field: K,
+      value: OwnerFormState[K],
+    ) => {
+      setOwners((prev) =>
+        prev.map((owner) =>
+          owner.id === ownerId ? { ...owner, [field]: value } : owner,
+        ),
+      );
+    },
+    [],
+  );
+  const addOwner = useCallback(() => {
+    setOwners((prev) => {
+      if (prev.length >= 3) return prev;
+      const nextId = prev.reduce((maxId, owner) => Math.max(maxId, owner.id), 0) + 1;
+      return [...prev, createOwner(nextId)];
+    });
+  }, []);
+  const removeOwner = useCallback((ownerId: number) => {
+    setOwners((prev) => (prev.length > 1 ? prev.filter((owner) => owner.id !== ownerId) : prev));
+  }, []);
 
   // ---- Submit ----
   const handleSubmit = async () => {
@@ -525,71 +575,107 @@ export function AddPropertyForm() {
       {/* ============================================================ */}
       {/*  SECTION 2 — Owner Information                                */}
       {/* ============================================================ */}
-      <PropertyFormSection
-        icon={<User className="h-5 w-5" />}
-        title={t("sectionOwnerInfo")}
-        subtitle={t("sectionOwnerInfoHint")}
-      >
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <PropertyFormField label={t("ownerName")} htmlFor="owner-name" required>
-            <Input
-              id="owner-name"
-              value={ownerName}
-              onChange={(e) => setOwnerName(e.target.value)}
-              placeholder={t("ownerNamePlaceholder")}
-            />
-          </PropertyFormField>
+      {owners.map((owner, index) => (
+        <PropertyFormSection
+          key={owner.id}
+          icon={<User className="h-5 w-5" />}
+          title={`${t("sectionOwnerInfo")} ${owners.length > 1 ? `#${index + 1}` : ""}`}
+          subtitle={t("sectionOwnerInfoHint")}
+          headerAction={
+            index === owners.length - 1 && owners.length < 3 ? (
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={addOwner}
+                className="flex items-center gap-2 bg-secondary text-white hover:bg-secondary/90"
+              >
+                <Plus className="h-4 w-4" />
+                {t("addAnotherOwner")} ({owners.length}/3)
+              </Button>
+            ) : undefined
+          }
+        >
+          <div className="space-y-5">
+            {/* Owner fields grid */}
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <PropertyFormField label={t("ownerName")} htmlFor={`owner-name-${owner.id}`} required>
+                <Input
+                  id={`owner-name-${owner.id}`}
+                  value={owner.name}
+                  onChange={(e) => updateOwner(owner.id, "name", e.target.value)}
+                  placeholder={t("ownerNamePlaceholder")}
+                />
+              </PropertyFormField>
 
-          <PropertyFormField label={t("ownerPhone")} htmlFor="owner-phone" required>
-            <PhoneNumberInputField
-              value={ownerPhone || undefined}
-              onChange={(v) => setOwnerPhone(v ?? "")}
-              placeholder={t("ownerPhonePlaceholder")}
-              showFlag={true}
-              showCountryCode={true}
-              showDialCode={true}
-            />
-          </PropertyFormField>
+              <PropertyFormField label={t("ownerPhone")} htmlFor={`owner-phone-${owner.id}`} required>
+                <PhoneNumberInputField
+                  value={owner.phone || undefined}
+                  onChange={(v) => updateOwner(owner.id, "phone", v ?? "")}
+                  placeholder={t("ownerPhonePlaceholder")}
+                  showFlag={true}
+                  showCountryCode={true}
+                  showDialCode={true}
+                />
+              </PropertyFormField>
 
-          <PropertyFormField label={t("ownerEmail")} htmlFor="owner-email">
-            <Input
-              id="owner-email"
-              type="email"
-              value={ownerEmail}
-              onChange={(e) => setOwnerEmail(e.target.value)}
-              placeholder={t("ownerEmailPlaceholder")}
-            />
-          </PropertyFormField>
+              <PropertyFormField label={t("ownerEmail")} htmlFor={`owner-email-${owner.id}`}>
+                <Input
+                  id={`owner-email-${owner.id}`}
+                  type="email"
+                  value={owner.email}
+                  onChange={(e) => updateOwner(owner.id, "email", e.target.value)}
+                  placeholder={t("ownerEmailPlaceholder")}
+                />
+              </PropertyFormField>
 
-          <PropertyFormField label={t("ownerSocialSecurityId")} htmlFor="owner-social-security-id">
-            <Input
-              id="owner-social-security-id"
-              value={ownerSocialSecurityId}
-              onChange={(e) => setOwnerSocialSecurityId(e.target.value)}
-              placeholder={t("ownerSocialSecurityIdPlaceholder")}
-            />
-          </PropertyFormField>
+              <PropertyFormField label={t("ownerSocialSecurityId")} htmlFor={`owner-social-security-id-${owner.id}`}>
+                <Input
+                  id={`owner-social-security-id-${owner.id}`}
+                  value={owner.socialSecurityId}
+                  onChange={(e) => updateOwner(owner.id, "socialSecurityId", e.target.value)}
+                  placeholder={t("ownerSocialSecurityIdPlaceholder")}
+                />
+              </PropertyFormField>
 
-          <PropertyFormField label={t("ownerNationality")} htmlFor="owner-nationality">
-            <Input
-              id="owner-nationality"
-              value={ownerNationality}
-              onChange={(e) => setOwnerNationality(e.target.value)}
-              placeholder={t("ownerNationalityPlaceholder")}
-            />
-          </PropertyFormField>
-        </div>
+              <PropertyFormField label={t("ownerNationality")} htmlFor={`owner-nationality-${owner.id}`}>
+                <Input
+                  id={`owner-nationality-${owner.id}`}
+                  value={owner.nationality}
+                  onChange={(e) => updateOwner(owner.id, "nationality", e.target.value)}
+                  placeholder={t("ownerNationalityPlaceholder")}
+                />
+              </PropertyFormField>
+            </div>
 
-        <PropertyFormField label={t("ownerAddress")} htmlFor="owner-address">
-          <Textarea
-            id="owner-address"
-            value={ownerAddress}
-            onChange={(e) => setOwnerAddress(e.target.value)}
-            placeholder={t("ownerAddressPlaceholder")}
-            rows={3}
-          />
-        </PropertyFormField>
-      </PropertyFormSection>
+            {/* Owner address */}
+            <PropertyFormField label={t("ownerAddress")} htmlFor={`owner-address-${owner.id}`}>
+              <Textarea
+                id={`owner-address-${owner.id}`}
+                value={owner.address}
+                onChange={(e) => updateOwner(owner.id, "address", e.target.value)}
+                placeholder={t("ownerAddressPlaceholder")}
+                rows={3}
+              />
+            </PropertyFormField>
+
+            {/* Remove button for additional owners */}
+            {owners.length > 1 && (
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => removeOwner(owner.id)}
+                  className="flex items-center gap-2 bg-red-500/85 text-white hover:bg-red-500"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {t("removeOwner")}
+                </Button>
+              </div>
+            )}
+          </div>
+        </PropertyFormSection>
+      ))}
 
       {/* ============================================================ */}
       {/*  SECTION 3 — Location                                         */}
@@ -634,6 +720,24 @@ export function AddPropertyForm() {
             rows={4}
           />
         </PropertyFormField>
+
+        <div className="space-y-4 rounded-2xl border border-subtle bg-surface/30 p-4">
+          <div className="space-y-1">
+            <h4 className="text-size-sm fw-semibold text-charcoal">
+              {t("exactLocationTitle")}
+            </h4>
+            <p className="text-size-xs text-charcoal/65">
+              {t("exactLocationHint")}
+            </p>
+          </div>
+
+          <LocationPicker
+            city={city}
+            area={area}
+            address={address}
+            onLocationSelect={setExactLocation}
+          />
+        </div>
 
         {showGovFields && (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

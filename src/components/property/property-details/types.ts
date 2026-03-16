@@ -5,6 +5,8 @@ export interface DetailedProperty {
   badge: string;
   image: string;
   location: string;
+  lat?: number;
+  lng?: number;
   /** Optional hosted video URL (e.g. MP4) shown in media gallery */
   video?: string;
   /** Optional YouTube link shown when available */
@@ -23,7 +25,9 @@ export interface DetailedProperty {
   gallery?: string[];
   /** Agent/broker name for contact modals */
   brokerName?: string;
-  propertyType:string
+  propertyType: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export type HeroMediaItem =

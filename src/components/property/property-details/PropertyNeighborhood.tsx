@@ -1,6 +1,11 @@
-import { MapPin } from "lucide-react";
+import MapEmbedIframe from "@/components/map/MapEmbedIframe";
+import type { DetailedProperty } from "./types";
 
-export function PropertyNeighborhood() {
+interface PropertyNeighborhoodProps {
+  property: DetailedProperty;
+}
+
+export function PropertyNeighborhood({ property }: PropertyNeighborhoodProps) {
   return (
     <section className="mt-2">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -15,17 +20,18 @@ export function PropertyNeighborhood() {
         </button>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <div className="relative h-52 overflow-hidden bg-surface/50">
-          <div className="absolute inset-0 flex items-center justify-center text-size-xs text-charcoal/70">
-            <p className="flex items-center gap-1.5 text-size-11 fw-medium text-charcoal">
-              <MapPin className="h-3.5 w-3.5 text-primary" />
-              Map coming soon
-            </p>
-          </div>
+      <div className="grid items-stretch gap-6 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        <div className="relative min-h-[260px] overflow-hidden rounded-2xl bg-surface/50 md:min-h-0">
+          <MapEmbedIframe
+            lat={property.lat}
+            lng={property.lng}
+            query={property.location}
+            title={`${property.title} location map`}
+            height={260}
+          />
         </div>
 
-        <div className="space-y-4 text-size-xs text-charcoal">
+        <div className="flex h-full flex-col justify-between space-y-4 text-size-xs text-charcoal">
           <div>
             <p className="text-size-11 fw-semibold uppercase tracking-[0.18em] text-charcoal/70">
               Local highlights
