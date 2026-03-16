@@ -7,6 +7,7 @@ import type { AppLocale } from "@/i18n/routing";
 import { cn } from "@/lib/cn";
 import { toggleFavourite } from "@/features/favourites/favouritesSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import { selectCurrentUser } from "@/store/selectors";
 import { AuthPopup } from "@/components/auth/AuthPopup";
 
 export interface FavouriteButtonProps {
@@ -30,7 +31,7 @@ export function FavouriteButton({
 }: FavouriteButtonProps) {
   const dispatch = useAppDispatch();
   const locale = useLocale() as AppLocale;
-  const user = useAppSelector((state) => state.auth.user);
+  const user = useAppSelector(selectCurrentUser);
   const propertyIds = useAppSelector((state) => state.favourites.propertyIds);
   const isFavourite = user ? propertyIds.includes(propertyId) : false;
   const [isAuthOpen, setIsAuthOpen] = useState(false);

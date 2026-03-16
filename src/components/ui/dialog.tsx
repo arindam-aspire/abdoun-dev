@@ -1,7 +1,13 @@
-"use client";
+ "use client";
 
 import { Fragment, type ReactNode } from "react";
-import { Dialog, Transition } from "@headlessui/react";
+import {
+  Dialog,
+  Description,
+  DialogTitle as HeadlessDialogTitle,
+  Transition,
+  TransitionChild,
+} from "@headlessui/react";
 import { cn } from "@/lib/cn";
 
 export interface DialogProps {
@@ -22,7 +28,7 @@ export function DialogRoot({
   return (
     <Transition appear show={open} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
-        <Transition.Child
+        <TransitionChild
           as={Fragment}
           enter="ease-out duration-200"
           enterFrom="opacity-0"
@@ -35,7 +41,7 @@ export function DialogRoot({
             className="fixed inset-0 bg-black/70"
             aria-hidden="true"
           />
-        </Transition.Child>
+        </TransitionChild>
         <div className="fixed inset-0 overflow-y-auto">
           <div
             className={cn(
@@ -43,7 +49,7 @@ export function DialogRoot({
               containerClassName,
             )}
           >
-            <Transition.Child
+            <TransitionChild
               as={Fragment}
               enter="ease-out duration-200"
               enterFrom="opacity-0 scale-95"
@@ -60,7 +66,7 @@ export function DialogRoot({
               >
                 {children}
               </Dialog.Panel>
-            </Transition.Child>
+            </TransitionChild>
           </div>
         </div>
       </Dialog>
@@ -75,11 +81,11 @@ export interface DialogTitleProps {
 
 export function DialogTitle({ children, className }: DialogTitleProps) {
   return (
-    <Dialog.Title
+    <HeadlessDialogTitle
       className={cn("text-size-lg fw-semibold leading-6 text-zinc-900", className)}
     >
       {children}
-    </Dialog.Title>
+    </HeadlessDialogTitle>
   );
 }
 
@@ -93,11 +99,11 @@ export function DialogDescription({
   className,
 }: DialogDescriptionProps) {
   return (
-    <Dialog.Description
+    <Description
       className={cn("mt-2 text-size-sm text-zinc-500", className)}
     >
       {children}
-    </Dialog.Description>
+    </Description>
   );
 }
 

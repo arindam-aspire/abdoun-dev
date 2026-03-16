@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import type { AppLocale } from "@/i18n/routing";
 import type { Property } from "./types";
 import { FavouriteButton } from "@/components/favourites/FavouriteButton";
+import { useBackendTranslation } from "@/hooks/useBackendTranslation";
 
 export interface PropertyCardProps {
   property: Property;
@@ -22,8 +23,11 @@ export function PropertyCard({
   variant = "default",
 }: PropertyCardProps) {
   const language = useLocale() as AppLocale;
+  const { tBackend } = useBackendTranslation();
   const isRtl = language === "ar";
   const isMinimal = variant === "minimal";
+  const title = tBackend(property.title) || "Untitled Property";
+  const location = tBackend(property.location) || "Location unavailable";
 
   return (
     <article
@@ -37,7 +41,7 @@ export function PropertyCard({
         <div className="relative h-52 w-full">
           <Image
             src={property.image}
-            alt={property.title}
+            alt={title}
             fill
             sizes="(min-width: 768px) 33vw, 100vw"
             className="object-cover transition duration-500 group-hover:scale-105"
@@ -71,7 +75,7 @@ export function PropertyCard({
               {agentLabel}
             </p>
             <h3 className="mt-1 h-10 overflow-hidden text-size-sm fw-semibold leading-5 text-secondary">
-              {property.title}
+              {title}
             </h3>
           </div>
           <p className="shrink-0 text-size-sm fw-semibold text-secondary">
@@ -85,7 +89,7 @@ export function PropertyCard({
           }`}
         >
           <MapPin className="h-3 w-3 shrink-0" />
-          <span className="block truncate">{property.location}</span>
+          <span className="block truncate">{location}</span>
         </div>
 
         <div
@@ -112,7 +116,7 @@ export function PropertyCard({
       <Link
         href={`/${language}/property-details/${property.id}${property.badge === "Exclusive" ? "?exclusive=1" : ""}`}
         className="absolute inset-0 z-10"
-        aria-label={`View details for ${property.title}`}
+        aria-label={`View details for ${title}`}
         target="_blank"
         rel="noopener noreferrer"
       />

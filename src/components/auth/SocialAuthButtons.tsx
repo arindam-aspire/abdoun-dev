@@ -1,4 +1,4 @@
-import type { SocialProvider } from "@/services/authMockService";
+import type { SocialProvider } from "@/types/auth";
 import { Button } from "@/components/ui";
 
 interface SocialAuthButtonsProps {

@@ -6,6 +6,8 @@
     "signup": "Creer un compte",
     "logout": "Deconnexion",
     "signOut": "Se deconnecter",
+    "confirmSignOut": "Êtes-vous sûr de vouloir vous déconnecter ?",
+    "cancel": "Annuler",
     "signUpSignIn": "S'inscrire / Connexion",
     "dashboard": "Tableau de bord",
     "themeLight": "Clair",

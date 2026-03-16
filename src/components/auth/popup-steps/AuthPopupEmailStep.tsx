@@ -1,5 +1,5 @@
 import { Eye, EyeOff, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui";
+import { Button, LoadingButton } from "@/components/ui";
 import { AuthPopupField } from "@/components/auth";
 import type { useTranslations } from "@/hooks/useTranslations";
 
@@ -40,8 +40,13 @@ export function AuthPopupEmailStep({
   onGoOneTimeCode,
   onGoSignup,
 }: AuthPopupEmailStepProps) {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit();
+  };
+
   return (
-    <div className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <AuthPopupField
         id="auth-email-or-phone"
         label={t("emailOrPhone")}
@@ -63,7 +68,7 @@ export function AuthPopupEmailStep({
         rightAdornment={(
           <button
             type="button"
-            className="text-zinc-500"
+            className="cursor-pointer text-zinc-500 hover:text-zinc-700"
             onClick={onTogglePasswordVisibility}
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
@@ -82,16 +87,13 @@ export function AuthPopupEmailStep({
       >
         {t("forgotPassword")}
       </button>
-      <Button
-        type="button"
-        variant="accent"
-        size="lg"
+      <LoadingButton
+        type="submit"
         className="h-12 w-full rounded-full"
-        disabled={loading}
-        onClick={onSubmit}
+        loading={loading}
       >
-        {loading ? "Logging in..." : t("logIn")}
-      </Button>
+        {t("logIn")}
+      </LoadingButton>
 
       <div className="py-1 text-center text-size-base text-zinc-700 sm:text-size-base">
         {t("or")}
@@ -115,7 +117,7 @@ export function AuthPopupEmailStep({
           action: (chunks) => <span className="text-secondary hover:underline">{chunks}</span>,
         })}
       </button>
-    </div>
+    </form>
   );
 }
 

@@ -11,6 +11,8 @@ export interface PropertyDetailsTabBarProps {
   isRtl?: boolean;
   /** When true, the Map/Location tab is shown (for exclusive properties). */
   showLocationTab?: boolean;
+   /** When true, the Virtual Tour tab is shown (only when property has virtual tour). */
+  showVirtualTourTab?: boolean;
 }
 
 export function PropertyDetailsTabBar({
@@ -18,13 +20,22 @@ export function PropertyDetailsTabBar({
   onTabChange,
   isRtl = false,
   showLocationTab = false,
+  showVirtualTourTab = true,
 }: PropertyDetailsTabBarProps) {
   const t = useTranslations("home");
 
   const tabs: { key: PropertyDetailsTabKey; label: string; icon: React.ReactNode }[] = [
     { key: "overview", label: t("propertyTabs.overview"), icon: <Info className="h-3.5 w-3.5" /> },
     { key: "amenities", label: t("propertyTabs.features"), icon: <Sparkles className="h-3.5 w-3.5" /> },
-    { key: "virtualTour", label: t("propertyTabs.virtualTour"), icon: <Video className="h-3.5 w-3.5" /> },
+    ...(showVirtualTourTab
+      ? [
+          {
+            key: "virtualTour" as const,
+            label: t("propertyTabs.virtualTour"),
+            icon: <Video className="h-3.5 w-3.5" />,
+          },
+        ]
+      : []),
     ...(showLocationTab
       ? [{ key: "location" as const, label: t("propertyTabs.location"), icon: <Map className="h-3.5 w-3.5" /> }]
       : []),

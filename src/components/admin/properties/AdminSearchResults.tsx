@@ -7,7 +7,7 @@ import { AdminSearchResultPropertyCard } from "./AdminSearchResultPropertyCard";
 import { AdminSearchResultListCard } from "./AdminSearchResultListCard";
 import { SearchResultSortDropdown } from "@/components/search-result/SearchResultSortDropdown";
 import { SearchResultViewToggle } from "@/components/search-result/SearchResultViewToggle";
-import { Pagination } from "@/components/search-result/Pagination";
+import { Pagination } from "@/components/ui/Pagination";
 import { MOCK_SEARCH_RESULTS } from "@/components/search-result/mockSearchResults";
 import type { CategoryKey, SearchResultListing, StatusTabKey } from "@/components/search-result/types";
 import type { SortKey } from "@/components/search-result/SearchResultSortDropdown";

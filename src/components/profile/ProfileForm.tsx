@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { PhoneNumberInputField } from "@/components/ui/PhoneNumberInputField";
 import { cn } from "@/lib/cn";
-import type { ProfileData } from "@/services/authMockService";
+import type { ProfileData } from "@/types/auth";
 
 const ACCEPT_IMAGE = "image/jpeg,image/png,image/gif,image/webp";
 const MAX_IMAGE_MB = 4;

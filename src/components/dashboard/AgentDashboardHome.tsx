@@ -18,6 +18,7 @@ import { useLocale } from "next-intl";
 import type { AppLocale } from "@/i18n/routing";
 import { useTranslations } from "@/hooks/useTranslations";
 import { useAppSelector } from "@/hooks/storeHooks";
+import { selectCurrentUser } from "@/store/selectors";
 import { useEffect, useState } from "react";
 import {
   getDashboardData,
@@ -31,7 +32,7 @@ export function AgentDashboardHome() {
   const locale = useLocale() as AppLocale;
   const t = useTranslations("dashboard");
   const tAgent = useTranslations("agentDashboard");
-  const user = useAppSelector((state) => state.auth.user);
+  const user = useAppSelector(selectCurrentUser);
   const [data, setData] = useState<AgentDashboardData | null>(null);
   const [performanceData, setPerformanceData] = useState<PerformanceComparisonItem[]>([]);
   const [loading, setLoading] = useState(true);

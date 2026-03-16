@@ -33,7 +33,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             {...rest}
           />
           {rightAdornment ? (
-            <div className="pointer-events-none absolute end-3 top-1/2 flex -translate-y-1/2 items-center justify-end">
+            <div className="absolute end-3 top-1/2 flex -translate-y-1/2 items-center justify-end">
               {rightAdornment}
             </div>
           ) : null}

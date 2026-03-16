@@ -1,4 +1,5 @@
 export interface DetailedProperty {
+  media?: any;
   id: number;
   title: string;
   subtitle: string;
@@ -20,12 +21,12 @@ export interface DetailedProperty {
   orientation?: string;
   floor?: string;
   status?: string;
+  propertyType?: string;
   description: string;
   amenities: string[];
   gallery?: string[];
   /** Agent/broker name for contact modals */
   brokerName?: string;
-  propertyType: string;
   latitude?: number;
   longitude?: number;
 }

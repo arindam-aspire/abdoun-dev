@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback } from "react";
-import { useTranslations } from "@/hooks/useTranslations";
-import { useProfile } from "@/hooks/useProfile";
 import { InlineEditableField } from "@/components/profile/InlineEditableField";
-import type { ProfileData } from "@/services/authMockService";
+import { useTranslations } from "@/hooks/useTranslations";
 import { cn } from "@/lib/cn";
+import type { ProfileData } from "@/types/auth";
+import { useCallback } from "react";
 
 export interface PersonalInformationTabProps {
   profile: ProfileData;
@@ -72,11 +71,16 @@ export function PersonalInformationTab({
         />
         <InlineEditableField
           label={tCommon("role")}
-          value={profile.role}
+          value={
+            profile.role
+              ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
+              : profile.role ?? ""
+          }
           placeholder={tCommon("user")}
           onSave={handleSaveRole}
           options={roleOptions}
           isRtl={isRtl}
+          readOnly={true}
         />
         <InlineEditableField
           label={t("displayName")}

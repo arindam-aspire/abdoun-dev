@@ -6,6 +6,8 @@
     "signup": "Sign up",
     "logout": "Logout",
     "signOut": "Sign Out",
+    "confirmSignOut": "Are you sure you want to sign out?",
+    "cancel": "Cancel",
     "signUpSignIn": "Sign Up / Sign In",
     "dashboard": "Dashboard",
     "themeLight": "Light",

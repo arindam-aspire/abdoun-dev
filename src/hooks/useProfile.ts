@@ -4,11 +4,10 @@ import { useCallback, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { login } from "@/features/auth/authSlice";
 import { setProfileExtra } from "@/features/profile/profileSlice";
-import {
-  getProfileFromAuth,
-  mockUpdateProfile,
-  type ProfileData,
-} from "@/services/authMockService";
+import { selectCurrentUser } from "@/store/selectors";
+import { getProfileFromAuth, type ProfileData } from "@/types/auth";
+import { updateUser } from "@/services/userService";
+import { getCurrentUser, toSessionUserForProfile } from "@/services/authService";
 
 export interface UseProfileResult {
   profile: ProfileData;
@@ -18,10 +17,7 @@ export interface UseProfileResult {
 const DEFAULT_LOCATION = "Dubai, UAE";
 
 export function useProfile(): UseProfileResult | null {
-  const authUser = useAppSelector((state) => state.auth.user);
-  const profileExtra = useAppSelector((state) =>
-    authUser ? state.profile.byUserId[authUser.id] : null,
-  );
+  const authUser = useAppSelector(selectCurrentUser);
   const dispatch = useAppDispatch();
 
   const profile = useMemo((): ProfileData | null => {
@@ -29,31 +25,41 @@ export function useProfile(): UseProfileResult | null {
     const base = getProfileFromAuth(authUser);
     return {
       ...base,
-      location: profileExtra?.location ?? base.location ?? DEFAULT_LOCATION,
-      avatarUrl: profileExtra?.avatarUrl,
-      displayName: profileExtra?.displayName,
+      location: authUser.location ?? base.location ?? DEFAULT_LOCATION,
+      avatarUrl: authUser.avatarUrl,
+      displayName: authUser.displayName,
     };
-  }, [authUser, profileExtra]);
+  }, [authUser]);
 
   const saveProfile = useCallback(
     async (updates: Partial<ProfileData>) => {
       if (!authUser) return;
 
-      const authUpdates: Partial<{
-        name: string;
-        email: string;
-        phone: string;
-        role: ProfileData["role"];
-      }> = {};
-      if (updates.fullName !== undefined) authUpdates.name = updates.fullName;
-      if (updates.email !== undefined) authUpdates.email = updates.email;
-      if (updates.phone !== undefined) authUpdates.phone = updates.phone;
-      if (updates.role !== undefined) authUpdates.role = updates.role;
+      // Update via API (PATCH /users/:id) for full_name, phone_number
+      const apiPayload: { full_name?: string; phone_number?: string } = {};
+      if (updates.fullName !== undefined) apiPayload.full_name = updates.fullName;
+      if (updates.phone !== undefined) apiPayload.phone_number = updates.phone;
 
-      if (Object.keys(authUpdates).length > 0) {
-        dispatch(login({ ...authUser, ...authUpdates }));
+      let sessionUser = authUser;
+      if (Object.keys(apiPayload).length > 0) {
+        await updateUser(authUser.id, apiPayload);
+        const updated = await getCurrentUser();
+        sessionUser = toSessionUserForProfile(updated);
+        dispatch(login(sessionUser));
       }
 
+      // Local-only auth fields (role, email) — update session from inputs
+      if (updates.role !== undefined) {
+        const role =
+          (updates.role.charAt(0).toUpperCase() + updates.role.slice(1)) as ProfileData["role"];
+        dispatch(login({ ...sessionUser, role }));
+        sessionUser = { ...sessionUser, role };
+      }
+      if (updates.email !== undefined) {
+        dispatch(login({ ...sessionUser, email: updates.email }));
+      }
+
+      // Profile extras (avatar, displayName, location) — Redux only
       const profileOnly: Partial<{
         location: string;
         avatarUrl: string;
@@ -63,15 +69,6 @@ export function useProfile(): UseProfileResult | null {
       if (updates.avatarUrl !== undefined) profileOnly.avatarUrl = updates.avatarUrl;
       if (updates.displayName !== undefined) profileOnly.displayName = updates.displayName;
 
-      const persistenceUpdates: Partial<ProfileData> = {};
-      if (updates.fullName !== undefined) persistenceUpdates.fullName = updates.fullName;
-      if (updates.email !== undefined) persistenceUpdates.email = updates.email;
-      if (updates.phone !== undefined) persistenceUpdates.phone = updates.phone;
-      if (updates.role !== undefined) persistenceUpdates.role = updates.role;
-      if (updates.location !== undefined) persistenceUpdates.location = updates.location;
-      if (updates.avatarUrl !== undefined) persistenceUpdates.avatarUrl = updates.avatarUrl;
-      if (updates.displayName !== undefined) persistenceUpdates.displayName = updates.displayName;
-
       if (Object.keys(profileOnly).length > 0) {
         dispatch(
           setProfileExtra({
@@ -79,10 +76,6 @@ export function useProfile(): UseProfileResult | null {
             extra: profileOnly,
           }),
         );
-      }
-
-      if (Object.keys(persistenceUpdates).length > 0) {
-        await mockUpdateProfile(authUser.id, persistenceUpdates);
       }
     },
     [authUser, dispatch],

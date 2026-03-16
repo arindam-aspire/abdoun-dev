@@ -15,7 +15,8 @@ export function PropertyInsightsSidebar({ listing }: PropertyInsightsSidebarProp
   return (
     <aside className="space-y-4">
       <PropertyDetailsAgentSection listing={listing} />
-      <PropertyDetailsSimilarProperties />
+      {/* <PropertyDetailsReviewSection /> */}
+      <PropertyDetailsSimilarProperties key={listing.id} propertyId={listing.id} />
     </aside>
   );
 }

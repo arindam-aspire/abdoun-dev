@@ -22,6 +22,7 @@ import { EmailAgentModal } from "./EmailAgentModal";
 import { WhatsAppContactModal } from "./WhatsAppContactModal";
 import { FavouriteButton } from "@/components/favourites/FavouriteButton";
 import { useAppSelector } from "@/hooks/storeHooks";
+import { selectCurrentUser } from "@/store/selectors";
 
 export interface SearchResultPropertyCardProps {
   listing: SearchResultListing;
@@ -41,7 +42,7 @@ export function SearchResultPropertyCard({
   const locale = useLocale() as AppLocale;
   const isRtl = locale === "ar";
   const tSearch = useTranslations("searchResult");
-  const signedInUser = useAppSelector((state) => state.auth.user);
+  const signedInUser = useAppSelector(selectCurrentUser);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);

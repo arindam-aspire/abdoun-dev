@@ -6,6 +6,8 @@
     "signup": "Registrarse",
     "logout": "Cerrar sesion",
     "signOut": "Cerrar sesion",
+    "confirmSignOut": "¿Seguro que quieres cerrar sesión?",
+    "cancel": "Cancelar",
     "signUpSignIn": "Registrarse / Iniciar sesion",
     "dashboard": "Panel",
     "themeLight": "Claro",

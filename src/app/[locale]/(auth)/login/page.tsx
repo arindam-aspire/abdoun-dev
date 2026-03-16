@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { Mail, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useDispatch } from "react-redux";
-import { Button, Input, Label } from "@/components/ui";
+import { Button, Input, Label, Toast } from "@/components/ui";
 import { useTranslations } from "@/hooks/useTranslations";
 import { login } from "@/features/auth/authSlice";
 import type { UserRole } from "@/features/auth/authSlice";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { SESSION_EXPIRED_MESSAGE_KEY } from "@/lib/auth/logoutClient";
 
 export default function LocalizedLoginPage() {
   const t = useTranslations("auth");
@@ -20,6 +21,16 @@ export default function LocalizedLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [sessionExpiredMessage, setSessionExpiredMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const message = window.sessionStorage.getItem(SESSION_EXPIRED_MESSAGE_KEY);
+    if (message) {
+      window.sessionStorage.removeItem(SESSION_EXPIRED_MESSAGE_KEY);
+      setSessionExpiredMessage(message);
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +63,14 @@ export default function LocalizedLoginPage() {
   };
 
   return (
+    <>
+      {sessionExpiredMessage ? (
+        <Toast
+          kind="error"
+          message={sessionExpiredMessage}
+          onClose={() => setSessionExpiredMessage(null)}
+        />
+      ) : null}
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
         {/* Logo - same as home page header, clickable to localized home */}
         <div className="flex justify-center">
@@ -152,6 +171,7 @@ export default function LocalizedLoginPage() {
           </Link>
         </p>
       </div>
+    </>
   );
 }
 

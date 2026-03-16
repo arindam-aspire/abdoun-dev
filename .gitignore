@@ -45,3 +45,6 @@ sonar-project.properties
 coverage/
 .scannerwork/
 .cursor/
+
+# .agent
+.agent/

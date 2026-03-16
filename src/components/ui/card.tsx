@@ -26,7 +26,7 @@ export interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {
 export function CardHeader({ className, children, ...rest }: CardHeaderProps) {
   return (
     <div
-      className={cn("flex flex-col space-y-1.5 p-4 md:p-6", className)}
+      className={cn("flex flex-col space-y-1.5 px-4 pt-4 pb-0 md:px-6 md:pt-6 md:pb-0", className)}
       {...rest}
     >
       {children}
@@ -70,7 +70,11 @@ export interface CardContentProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export function CardContent({ className, children, ...rest }: CardContentProps) {
-  return <div className={cn("p-4 pt-0 md:p-6 md:pt-0", className)} {...rest}>{children}</div>;
+  return (
+    <div className={cn("p-4 md:p-6", className)} {...rest}>
+      {children}
+    </div>
+  );
 }
 
 export interface CardFooterProps extends HTMLAttributes<HTMLDivElement> {
@@ -80,7 +84,7 @@ export interface CardFooterProps extends HTMLAttributes<HTMLDivElement> {
 export function CardFooter({ className, children, ...rest }: CardFooterProps) {
   return (
     <div
-      className={cn("flex items-center p-4 pt-0 md:p-6 md:pt-0", className)}
+      className={cn("flex items-center border-t border-zinc-200 px-4 py-4 md:px-6 md:py-4", className)}
       {...rest}
     >
       {children}

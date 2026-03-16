@@ -31,6 +31,10 @@ export function persistAuthSession(user: AuthUser): void {
       email: user.email,
       phone: user.phone,
       role: user.role,
+      isActive: user.isActive ?? null,
+      isEmailVerified: user.isEmailVerified ?? null,
+      isPhoneVerified: user.isPhoneVerified ?? null,
+      requiresPasswordSet: user.requiresPasswordSet ?? null,
     }),
   );
   const baseAttributes = `path=/; max-age=${COOKIE_MAX_AGE_SECONDS}; samesite=lax`;
@@ -76,6 +80,10 @@ export function readAuthSessionFromBrowser(): AuthUser | null {
       email: parsed.email,
       phone: typeof parsed.phone === "string" ? parsed.phone : undefined,
       role: parsed.role,
+      isActive: parsed.isActive ?? null,
+      isEmailVerified: parsed.isEmailVerified ?? null,
+      isPhoneVerified: parsed.isPhoneVerified ?? null,
+      requiresPasswordSet: parsed.requiresPasswordSet ?? null,
     };
   } catch {
     return null;

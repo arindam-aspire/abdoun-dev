@@ -8,10 +8,23 @@ type RestAuthServiceOptions = {
   client?: AxiosInstance;
 };
 
-type RefreshResponse = {
-  accessToken: string;
-  refreshToken: string;
+type StandardApiResponse<T> = {
+  success: boolean;
+  data: T;
+  message?: string | null;
+  error?: string | null;
 };
+
+type RefreshResponse = {
+  access_token: string;
+  refresh_token?: string | null;
+  id_token?: string | null;
+  token_type?: string;
+  expires_in?: number;
+};
+
+const AUTH_USERNAME_STORAGE_KEY = "authUsername";
+const AUTH_SUBID_STORAGE_KEY = "subId";
 
 export class RestAuthService implements AuthService {
   private readonly client: AxiosInstance;
@@ -29,13 +42,22 @@ export class RestAuthService implements AuthService {
   }
 
   async refresh(refreshToken: string): Promise<AuthTokens> {
-    const response = await this.client.post<RefreshResponse>(this.refreshPath, {
-      refreshToken,
-    });
+    const subId =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem(AUTH_SUBID_STORAGE_KEY)
+        : null;
+
+    const response = await this.client.post<StandardApiResponse<RefreshResponse>>(
+      this.refreshPath,
+      {
+        refresh_token: refreshToken,
+        username: subId || undefined,
+      },
+    );
 
     return {
-      accessToken: response.data.accessToken,
-      refreshToken: response.data.refreshToken,
+      accessToken: response.data.data.access_token,
+      refreshToken: response.data.data.refresh_token ?? refreshToken,
     };
   }
 

@@ -5,10 +5,12 @@ import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { login } from "@/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import { selectCurrentUser } from "@/store/selectors";
 import { readAuthSessionFromBrowser } from "@/lib/auth/sessionCookies";
+import { enrichWithPhoneParts } from "@/services/authService";
 
 export function AgentRouteGuard({ children }: { children: React.ReactNode }) {
-  const user = useAppSelector((state) => state.auth.user);
+  const user = useAppSelector(selectCurrentUser);
   const dispatch = useAppDispatch();
   const router = useRouter();
   const locale = useLocale();
@@ -20,7 +22,7 @@ export function AgentRouteGuard({ children }: { children: React.ReactNode }) {
 
     const sessionUser = readAuthSessionFromBrowser();
     if (sessionUser?.role === "agent") {
-      dispatch(login(sessionUser));
+      dispatch(login(enrichWithPhoneParts(sessionUser)));
       return;
     }
 

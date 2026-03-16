@@ -1,13 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import { useTranslations } from "@/hooks/useTranslations";
 import type { AppLocale } from "@/i18n/routing";
-import {
-  MOCK_EXCLUSIVE_PROPERTIES,
-  MOCK_LATEST_PROPERTIES,
-  MOCK_PROPERTIES,
-  SERVICE_CARD_CONTENT,
-} from "./constants";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import { fetchExclusivePropertiesOnce } from "@/features/exclusive-properties/exclusivePropertiesSlice";
+import { SERVICE_CARD_CONTENT } from "./constants";
 import { AboutUsSection } from "./AboutUsSection";
 import { FeaturedPropertiesSection } from "./FeaturedPropertiesSection";
 import { HeroSection } from "./HeroSection";
@@ -18,8 +16,20 @@ export interface HomeMainProps {
 }
 
 export function HomeMain({ language }: HomeMainProps) {
+  const dispatch = useAppDispatch();
   const t = useTranslations("home");
   const isRtl = language === "ar";
+  const {
+    items: exclusiveProperties,
+    loading: exclusiveLoading,
+    error: exclusiveError,
+    status: exclusiveStatus,
+  } = useAppSelector((state) => state.exclusiveProperties);
+
+  useEffect(() => {
+    if (exclusiveStatus !== "idle") return;
+    void dispatch(fetchExclusivePropertiesOnce());
+  }, [dispatch, exclusiveStatus]);
 
   const heroTranslations = {
     title: t("heroTitle"),
@@ -54,7 +64,7 @@ export function HomeMain({ language }: HomeMainProps) {
     title: t("exclusiveTitle"),
     subtitle: t("exclusiveSubtitle"),
     viewAll: t("exclusiveViewAll"),
-    viewAllHref: `/${language}/search-result?exclusive=1`,
+    viewAllHref: `/${language}/search-result?exclusive=1&status=buy&category=residential`,
   };
 
   const latestTranslations = {
@@ -85,9 +95,11 @@ export function HomeMain({ language }: HomeMainProps) {
       <HeroSection translations={heroTranslations} isRtl={isRtl} />
       <FeaturedPropertiesSection
         translations={exclusiveTranslations}
-        properties={MOCK_EXCLUSIVE_PROPERTIES}
+        properties={exclusiveProperties}
         isRtl={isRtl}
         useCarouselOnOverflow
+        loading={exclusiveLoading}
+        error={exclusiveError}
       />
       <AboutUsSection
         title={aboutUsTranslations.title}

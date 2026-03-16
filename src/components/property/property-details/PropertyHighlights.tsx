@@ -60,7 +60,9 @@ export function PropertyHighlights({ property, stats }: PropertyHighlightsProps)
             <Maximize2 className="h-4 w-4 text-primary" />
           </span>
           <div>
-            <p className="text-size-11 fw-medium text-charcoal/75">Built-up area</p>
+            <p className="text-size-11 fw-medium text-charcoal/75">
+              Built-up area
+            </p>
             <p className="text-size-sm fw-semibold text-charcoal">
               {property.area}
             </p>
@@ -71,7 +73,9 @@ export function PropertyHighlights({ property, stats }: PropertyHighlightsProps)
             <Compass className="h-4 w-4 text-primary" />
           </span>
           <div>
-            <p className="text-size-11 fw-medium text-charcoal/75">Property type</p>
+            <p className="text-size-11 fw-medium text-charcoal/75">
+              Property type
+            </p>
             <p className="text-size-sm fw-semibold text-charcoal">
               {property.propertyType ?? "Property"}
             </p>
@@ -81,7 +85,10 @@ export function PropertyHighlights({ property, stats }: PropertyHighlightsProps)
 
       <div className="grid gap-4 border-t border-subtle pt-5 text-size-xs text-charcoal sm:grid-cols-3">
         {stats.map((item) => (
-          <div key={item.label} className="rounded-xl bg-surface/70 px-3 py-2 shadow-[0_2px_10px_rgba(15,23,42,0.04)]">
+          <div
+            key={item.label}
+            className="rounded-xl bg-surface/70 px-3 py-2 shadow-[0_2px_10px_rgba(15,23,42,0.04)]"
+          >
             <p className="text-size-11 fw-semibold uppercase tracking-[0.14em] text-charcoal/75">
               {item.label}
             </p>
@@ -89,7 +96,9 @@ export function PropertyHighlights({ property, stats }: PropertyHighlightsProps)
               {item.value}
             </p>
             {item.helper && (
-              <p className="mt-0.5 text-size-11 fw-medium text-charcoal/75">{item.helper}</p>
+              <p className="mt-0.5 text-size-11 fw-medium text-charcoal/75">
+                {item.helper}
+              </p>
             )}
           </div>
         ))}

@@ -1,46 +1,90 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
-export interface ProfileExtra {
-  displayName?: string;
+/** User data stored in profile (synced from auth on login). */
+export interface ProfileUser {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  /** Country calling code (e.g. "+91" or "91"). */
+  countryDialCode?: string;
+  /** National number without country code (e.g. "86172 20397"). */
+  phoneNumber?: string;
+  role: "user" | "agent" | "admin";
   location?: string;
   avatarUrl?: string;
+  displayName?: string;
   marketingEmails?: boolean;
   analyticsCookies?: boolean;
+  isActive?: boolean | null;
+  isEmailVerified?: boolean | null;
+  isPhoneVerified?: boolean | null;
+  requiresPasswordSet?: boolean | null;
 }
 
 export interface ProfileState {
-  /** Extended profile data by user id (displayName, location, avatarUrl, privacy prefs). */
-  byUserId: Record<string, ProfileExtra>;
+  /** User data by user id (synced from auth when user logs in). */
+  userDetails: ProfileUser;
+  userId: string;
 }
 
 const initialState: ProfileState = {
-  byUserId: {},
+  userDetails: {
+    id: "",
+    name: "",
+    email: "",
+    phone: "",
+    role: "user",
+  },
+  userId: "",
 };
+
+type ProfileExtraPayload = Partial<
+  Pick<
+    ProfileUser,
+    | "location"
+    | "avatarUrl"
+    | "displayName"
+    | "marketingEmails"
+    | "analyticsCookies"
+    | "countryDialCode"
+    | "phoneNumber"
+  >
+>;
 
 const profileSlice = createSlice({
   name: "profile",
   initialState,
   reducers: {
+    setProfileUser(state, action: PayloadAction<ProfileUser>) {
+      const user = action.payload;
+      state.userDetails = { ...user };
+      state.userId = user.id;
+    },
     setProfileExtra(
       state,
-      action: PayloadAction<{ userId: string; extra: Partial<ProfileExtra> }>,
+      action: PayloadAction<{ userId: string; extra: ProfileExtraPayload }>,
     ) {
       const { userId, extra } = action.payload;
-      if (!state.byUserId[userId]) {
-        state.byUserId[userId] = {};
-      }
-      const current = state.byUserId[userId];
-      if (extra.displayName !== undefined) current.displayName = extra.displayName;
-      if (extra.location !== undefined) current.location = extra.location;
-      if (extra.avatarUrl !== undefined) current.avatarUrl = extra.avatarUrl;
-      if (extra.marketingEmails !== undefined) current.marketingEmails = extra.marketingEmails;
-      if (extra.analyticsCookies !== undefined) current.analyticsCookies = extra.analyticsCookies;
+      if (state.userId !== userId) return;
+      const details = state.userDetails;
+      if (extra.displayName !== undefined) details.displayName = extra.displayName;
+      if (extra.location !== undefined) details.location = extra.location;
+      if (extra.avatarUrl !== undefined) details.avatarUrl = extra.avatarUrl;
+      if (extra.marketingEmails !== undefined) details.marketingEmails = extra.marketingEmails;
+      if (extra.analyticsCookies !== undefined) details.analyticsCookies = extra.analyticsCookies;
+      if (extra.countryDialCode !== undefined)
+        details.countryDialCode = extra.countryDialCode;
+      if (extra.phoneNumber !== undefined) details.phoneNumber = extra.phoneNumber;
     },
     clearProfileForUser(state, action: PayloadAction<string>) {
-      delete state.byUserId[action.payload];
+      if (state.userId !== action.payload) return;
+      state.userDetails = { ...initialState.userDetails };
+      state.userId = initialState.userId;
     },
   },
 });
 
-export const { setProfileExtra, clearProfileForUser } = profileSlice.actions;
+export const { setProfileUser, setProfileExtra, clearProfileForUser } =
+  profileSlice.actions;
 export default profileSlice.reducer;

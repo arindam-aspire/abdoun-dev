@@ -1,10 +1,12 @@
+export type LocalizedField = string | Record<string, string>;
+
 export interface Property {
   id: number;
-  title: string;
+  title: LocalizedField;
   price: string;
   badge: string;
   image: string;
-  location: string;
+  location: LocalizedField;
   beds: number;
   baths: number;
   area: string;

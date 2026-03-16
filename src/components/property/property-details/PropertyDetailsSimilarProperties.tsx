@@ -1,45 +1,67 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Property } from "@/components/home/types";
 import { PropertyCard } from "@/components/home/PropertyCard";
+import { fetchSimilarPropertiesById } from "@/services/propertyService";
+import type { SearchResultListing } from "@/components/search-result/types";
 
-const SIMILAR_PROPERTIES: Property[] = [
-  {
-    id: 2,
-    title: "Skyline Terrace Residence",
-    price: "980,000 JD",
-    badge: "Featured",
-    image:
-      "https://images.unsplash.com/photo-1743486780771-afd09eea3624?q=80&w=1200&auto=format&fit=crop&ixlib=rb-4.1.0",
-    location: "Dabouq, Amman",
-    beds: 3,
-    baths: 4,
-    area: "4,200",
-  },
-  {
-    id: 3,
-    title: "Abdoun Garden Villa",
-    price: "1,450,000 JD",
-    badge: "New",
-    image:
-      "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=1200&auto=format&fit=crop&ixlib=rb-4.1.0",
-    location: "Abdoun, Amman",
-    beds: 5,
-    baths: 6,
-    area: "9,100",
-  },
-];
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=1200&auto=format&fit=crop";
 
-export function PropertyDetailsSimilarProperties() {
+function toPropertyCard(item: SearchResultListing): Property {
+  return {
+    id: item.id,
+    title: item.title || "Untitled Property",
+    price: item.price || "Price on request",
+    badge: item.badges?.[0] ?? "For Sale",
+    image: item.images?.[0] || FALLBACK_IMAGE,
+    location: item.location || "Location unavailable",
+    beds: item.beds ?? 0,
+    baths: item.baths ?? 0,
+    area: item.area || "N/A",
+  };
+}
+
+export interface PropertyDetailsSimilarPropertiesProps {
+  propertyId: number;
+}
+
+export function PropertyDetailsSimilarProperties({ propertyId }: PropertyDetailsSimilarPropertiesProps) {
   const [activeSimilar, setActiveSimilar] = useState(0);
-  const total = SIMILAR_PROPERTIES.length;
-  const current = SIMILAR_PROPERTIES[activeSimilar];
+  const [items, setItems] = useState<SearchResultListing[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const similarProperties = useMemo(() => (items ?? []).map(toPropertyCard), [items]);
+  const total = similarProperties.length;
+  const normalizedIndex = total === 0 ? 0 : Math.min(activeSimilar, total - 1);
+  const current = total > 0 ? similarProperties[normalizedIndex] : null;
+  const loading = items == null && !error;
   const isRtl = useLocale() === "ar";
 
+  useEffect(() => {
+    let mounted = true;
+
+    void fetchSimilarPropertiesById(propertyId)
+      .then((data) => {
+        if (!mounted) return;
+        setItems(data.filter((item) => item.id !== propertyId));
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        setError(err instanceof Error ? err.message : "Failed to load similar properties.");
+        setItems([]);
+      })
+      ;
+
+    return () => {
+      mounted = false;
+    };
+  }, [propertyId]);
+
   const goTo = (index: number) => {
+    if (total === 0) return;
     const next = (index + total) % total;
     setActiveSimilar(next);
   };
@@ -60,11 +82,25 @@ export function PropertyDetailsSimilarProperties() {
       </div>
 
       <div className="px-4 md:px-5">
-        <PropertyCard
-          property={current}
-          agentLabel="Abdoun Real Estate"
-          variant="minimal"
-        />
+        {loading ? (
+          <div className="rounded-lg border border-[var(--border-subtle)] bg-white px-4 py-6 text-sm text-[var(--color-charcoal)]/70">
+            Loading similar properties...
+          </div>
+        ) : error ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700">
+            {error}
+          </div>
+        ) : current ? (
+          <PropertyCard
+            property={current}
+            agentLabel="Abdoun Real Estate"
+            variant="minimal"
+          />
+        ) : (
+          <div className="rounded-lg border border-[var(--border-subtle)] bg-white px-4 py-6 text-sm text-[var(--color-charcoal)]/70">
+            No similar properties found.
+          </div>
+        )}
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-2 px-4 md:px-5">
@@ -102,27 +138,27 @@ export function PropertyDetailsSimilarProperties() {
             )}
           </button>
           <span className={isRtl ? "mr-1" : "ml-1"}>
-            {activeSimilar + 1} / {total}
+            {total === 0 ? 0 : normalizedIndex + 1} / {total}
           </span>
         </div>
       </div>
 
-      <div className="mt-2 flex items-center justify-center gap-1 px-4 md:px-5">
-        {SIMILAR_PROPERTIES.map((property, index) => (
-          <button
-            key={property.id}
-            type="button"
-            onClick={() => setActiveSimilar(index)}
-            className={`h-1.5 rounded-full transition ${
-              index === activeSimilar
-                ? "w-5 bg-secondary"
-                : "w-3 bg-border-subtle hover:opacity-80"
-            }`}
-            aria-label={`Go to similar property ${index + 1}`}
-          />
-        ))}
-      </div>
-    </section>
+        <div className="flex h-full items-center justify-center gap-1">
+          {similarProperties.map((property, index) => (
+            <button
+              key={property.id}
+              type="button"
+              onClick={() => setActiveSimilar(index)}
+              className={`h-1.5 rounded-full transition ${
+                index === activeSimilar
+                  ? "w-5 bg-secondary"
+                  : "w-3 bg-border-subtle hover:opacity-80"
+              }`}
+              aria-label={`Go to similar property ${index + 1}`}
+            />
+          ))}
+        </div>
+     </section>
   );
 }
 

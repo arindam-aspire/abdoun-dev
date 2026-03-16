@@ -8,14 +8,19 @@ export interface AuthUser {
   email: string;
   phone?: string;
   role: UserRole;
+  isActive?: boolean | null;
+  isEmailVerified?: boolean | null;
+  isPhoneVerified?: boolean | null;
+  requiresPasswordSet?: boolean | null;
 }
 
 export interface AuthState {
-  user: AuthUser | null;
+  /** Current user id; full user data lives in profile.userDetails. */
+  userId: string | null;
 }
 
 const initialState: AuthState = {
-  user: null,
+  userId: null,
 };
 
 const authSlice = createSlice({
@@ -23,10 +28,10 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     login(state, action: PayloadAction<AuthUser>) {
-      state.user = action.payload;
+      state.userId = action.payload.id;
     },
     logout(state) {
-      state.user = null;
+      state.userId = null;
     },
   },
 });

@@ -7,6 +7,7 @@ import { useLocale } from "next-intl";
 import { Search, Pencil, Trash2, Bookmark } from "lucide-react";
 import type { AppLocale } from "@/i18n/routing";
 import { useAppSelector, useAppDispatch } from "@/hooks/storeHooks";
+import { selectCurrentUser } from "@/store/selectors";
 import { updateSavedSearch, removeSavedSearch } from "@/features/savedSearches/savedSearchesSlice";
 import type { SavedSearchItem } from "@/features/savedSearches/savedSearchesSlice";
 import { useTranslations } from "@/hooks/useTranslations";
@@ -18,7 +19,7 @@ export default function SavedSearchesPage() {
   const router = useRouter();
   const isRtl = locale === "ar";
   const t = useTranslations("savedSearches");
-  const authUser = useAppSelector((state) => state.auth.user);
+  const authUser = useAppSelector(selectCurrentUser);
   const items = useAppSelector((state) => state.savedSearches.items);
   const dispatch = useAppDispatch();
 

@@ -5,17 +5,17 @@ import { useRouter } from "next/navigation";
 import { isValidPhoneNumber } from "libphonenumber-js";
 import { useAppDispatch } from "@/hooks/storeHooks";
 import { login } from "@/features/auth/authSlice";
+import { persistAuthSession } from "@/lib/auth/sessionCookies";
+import type { SocialProvider } from "@/types/auth";
 import {
-  mockForgotPasswordRequest,
-  mockManualLogin,
-  mockResendOtp,
-  mockSetNewPassword,
-  mockSignupWithManual,
-  mockSocialAuth,
-  mockVerifyResetOtp,
-  mockVerifySignupOtp,
-  type SocialProvider,
-} from "@/services/authMockService";
+  confirmForgotPassword,
+  confirmSignup,
+  loginWithPasswordAndPersist,
+  requestForgotPassword,
+  resendConfirmation,
+  signup as apiSignup,
+} from "@/services/authService";
+import { AxiosError } from "axios";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function isEmailOrPhone(value: string) {
   const trimmed = value.trim();
@@ -132,7 +132,10 @@ export function useSignupFlow(locale: string) {
     setLoading(true);
     setMessage(null);
     try {
-      await mockSocialAuth(provider);
+      await new Promise((r) => setTimeout(r, 800));
+      if (provider === "facebook") {
+        throw new Error("Provider email is not verified. Please sign up manually.");
+      }
       dispatch(
         login({
           id: `social_${provider}`,
@@ -177,22 +180,31 @@ export function useSignupFlow(locale: string) {
     setMessage(null);
 
     try {
-      const result = await mockSignupWithManual({
-        fullName: fullName.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        password,
-      });
-
-      if (result.nextStep === "login") {
-        setMessage(result.message);
-        router.push(`/${locale}`);
-        return;
+      try {
+        await apiSignup({
+          full_name: fullName.trim(),
+          email: email.trim(),
+          phone_number: phone.trim(),
+          password,
+        });
+      } catch (err) {
+        const axiosError = err as AxiosError<{ detail?: string }>;
+        if (axiosError?.response?.status === 409) {
+          const message =
+            typeof axiosError.response?.data?.detail === "string"
+              ? axiosError.response.data.detail
+              : "Account already exists. Please log in.";
+          setMessage(message);
+          router.push(`/${locale}`);
+          return;
+        }
+        throw err;
       }
 
-      setChallengeId(result.challengeId);
-      setDebugOtp(result.debugOtp);
-      timer.restart(result.expiresInSeconds);
+      const emailVal = email.trim();
+      setChallengeId(emailVal);
+      setDebugOtp(null);
+      timer.restart(600);
       setScreen("otp");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to sign up.");
@@ -214,17 +226,11 @@ export function useSignupFlow(locale: string) {
     setMessage(null);
 
     try {
-      await mockVerifySignupOtp(challengeId, otp.trim());
+      await confirmSignup({ email: challengeId, code: otp.trim() });
+      const { sessionUser } = await loginWithPasswordAndPersist(email.trim(), password);
+      persistAuthSession(sessionUser);
+      dispatch(login(sessionUser));
       setMessage("Signup completed. Redirecting...");
-      dispatch(
-        login({
-          id: `signup_${challengeId}`,
-          name: fullName.trim() || "New User",
-          email: email.trim() || "new.user@mock.abdoun",
-          phone: phone.trim() || undefined,
-          role: "user",
-        }),
-      );
       router.push(`/${locale}`);
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : "Invalid OTP.";
@@ -240,9 +246,9 @@ export function useSignupFlow(locale: string) {
     setMessage(null);
 
     try {
-      const result = await mockResendOtp(challengeId);
-      setDebugOtp(result.debugOtp);
-      timer.restart(result.expiresInSeconds);
+      await resendConfirmation({ email: challengeId });
+      setDebugOtp(null);
+      timer.restart(600);
       setMessage("OTP resent successfully.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to resend OTP.");
@@ -331,17 +337,17 @@ export function useLoginFlow(locale: string) {
     setError(null);
 
     try {
-      await mockManualLogin(identifier, password);
-      dispatch(
-        login({
-          id: "manual_login",
-          name: "Mock User",
-          email: identifier.includes("@") ? identifier.trim() : "mock.user@abdoun",
-          phone: identifier.includes("@") ? undefined : identifier.trim(),
-          role: "user",
-        }),
-      );
-      router.push(`/${locale}`);
+      const { sessionUser } = await loginWithPasswordAndPersist(identifier, password);
+      persistAuthSession(sessionUser);
+      dispatch(login(sessionUser));
+
+      if (sessionUser.role === "admin") {
+        router.push(`/${locale}/dashboard`);
+      } else if (sessionUser.role === "agent") {
+        router.push(`/${locale}/agent-dashboard`);
+      } else {
+        router.push(`/${locale}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed.");
     } finally {
@@ -353,7 +359,10 @@ export function useLoginFlow(locale: string) {
     setLoading(true);
     setError(null);
     try {
-      await mockSocialAuth(provider);
+      await new Promise((r) => setTimeout(r, 800));
+      if (provider === "facebook") {
+        throw new Error("Provider email is not verified. Please sign up manually.");
+      }
       dispatch(
         login({
           id: `social_${provider}`,
@@ -462,11 +471,11 @@ export function useForgotPasswordFlow() {
     setMessage(null);
 
     try {
-      const result = await mockForgotPasswordRequest(identifier);
-      setChallengeId(result.challengeId);
-      setDebugOtp(result.debugOtp);
-      setMessage(result.message);
-      timer.restart(result.expiresInSeconds);
+      await requestForgotPassword({ email: identifier.trim() });
+      setChallengeId(identifier.trim());
+      setDebugOtp(null);
+      setMessage("If an account exists, OTP has been sent.");
+      timer.restart(600);
       setStep("otp");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to request OTP.");
@@ -488,8 +497,7 @@ export function useForgotPasswordFlow() {
     setMessage(null);
 
     try {
-      const result = await mockVerifyResetOtp(challengeId, otp.trim());
-      setResetToken(result.resetToken);
+      setResetToken(challengeId);
       setStep("reset");
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : "Invalid OTP.";
@@ -504,9 +512,9 @@ export function useForgotPasswordFlow() {
     setLoading(true);
     setMessage(null);
     try {
-      const result = await mockResendOtp(challengeId);
-      setDebugOtp(result.debugOtp);
-      timer.restart(result.expiresInSeconds);
+      await requestForgotPassword({ email: challengeId });
+      setDebugOtp(null);
+      timer.restart(600);
       setMessage("OTP resent successfully.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to resend OTP.");
@@ -534,7 +542,11 @@ export function useForgotPasswordFlow() {
     setMessage(null);
 
     try {
-      await mockSetNewPassword(resetToken, newPassword);
+      await confirmForgotPassword({
+        email: resetToken,
+        code: otp.trim(),
+        new_password: newPassword,
+      });
       setStep("success");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to reset password.");

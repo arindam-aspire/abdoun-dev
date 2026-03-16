@@ -6,6 +6,8 @@
     "signup": "إنشاء حساب",
     "logout": "تسجيل الخروج",
     "signOut": "تسجيل الخروج",
+    "confirmSignOut": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
+    "cancel": "إلغاء",
     "signUpSignIn": "إنشاء حساب / تسجيل الدخول",
     "dashboard": "لوحة التحكم",
     "themeLight": "فاتح",

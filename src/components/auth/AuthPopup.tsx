@@ -6,7 +6,8 @@ import { X, ArrowLeft } from "lucide-react";
 import { DialogRoot } from "@/components/ui/dialog";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { login } from "@/features/auth/authSlice";
-import { AuthAlert, AuthPopupSection } from "@/components/auth";
+import { AuthPopupSection } from "@/components/auth";
+import { LoadingScreen, Toast } from "@/components/ui";
 import {
   AuthPopupEmailStep,
   AuthPopupForgotStep,
@@ -17,15 +18,21 @@ import {
 import { useForgotPasswordFlow, useOtpTimer, useSignupFlow } from "@/hooks/useAuthForms";
 import { useTranslations } from "@/hooks/useTranslations";
 import { persistAuthSession } from "@/lib/auth/sessionCookies";
+import { selectCurrentUser } from "@/store/selectors";
 import {
-  mockAdminEmailPasswordLogin,
-  mockAgentEmailPasswordLogin,
-  mockManualLogin,
-  mockSendOneTimeCode,
-  mockVerifyOneTimeCode,
-  mockResendOtp,
-  mockSocialAuth,
-} from "@/services/authMockService";
+  MOCK_ADMIN_CREDENTIALS,
+  MOCK_AGENT_CREDENTIALS,
+} from "@/types/auth";
+import {
+  getCurrentUser,
+  loginWithPasswordAndPersist,
+  persistTokens,
+  requestOtpLogin,
+  setAuthUsername,
+  toSessionUserForProfile,
+  verifyOtpLogin,
+} from "@/services/authService";
+import { getApiErrorMessage } from "@/lib/http/apiError";
 import { BrandLogo } from "../layout/brand-logo";
 
 export type AuthPopupView = "landing" | "email" | "oneTimeCode" | "signup" | "forgot";
@@ -51,7 +58,7 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
   const pathname = usePathname();
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const user = useAppSelector((state) => state.auth.user);
+  const user = useAppSelector(selectCurrentUser);
   const t = useTranslations("auth");
   const signup = useSignupFlow(locale);
   const forgot = useForgotPasswordFlow();
@@ -78,6 +85,8 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
   const [otcDebugOtp, setOtcDebugOtp] = useState<string | null>(null);
   const [otcLoading, setOtcLoading] = useState(false);
   const otcTimer = useOtpTimer(60);
+  const [toast, setToast] = useState<{ kind: "info" | "error" | "success"; message: string } | null>(null);
+  const [redirectingToForceChange, setRedirectingToForceChange] = useState(false);
 
   useEffect(() => {
     if (open && (pathname === `/${locale}/dashboard` || pathname === `/${locale}/agent-dashboard`)) {
@@ -103,6 +112,7 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
       setPasswordError(undefined);
       setLoading(false);
       setMessage(null);
+      setToast(null);
       setOtcIdentifier("");
       setOtcIdentifierTouched(false);
       setOtcIdentifierError(undefined);
@@ -138,16 +148,17 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
     setLoading(true);
     setMessage(null);
     try {
-      await mockSocialAuth(provider);
+      await new Promise((r) => setTimeout(r, 800));
+      if (provider === "facebook") {
+        throw new Error("Provider email is not verified. Please sign up manually.");
+      }
       completeAuth({
         id: `social_${provider}`,
         name: `${provider[0].toUpperCase()}${provider.slice(1)} User`,
         email: `${provider}.user@mock.abdoun`,
       });
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Social login failed.",
-      );
+      setToast({ kind: "error", message: getApiErrorMessage(error) });
     } finally {
       setLoading(false);
     }
@@ -172,46 +183,89 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
     setMessage(null);
     try {
       if (trimmedIdentifier.includes("@")) {
+        const normalizedEmail = trimmedIdentifier.toLowerCase();
         try {
-          const agentUser = await mockAgentEmailPasswordLogin(
-            trimmedIdentifier,
-            password,
-          );
-          persistAuthSession(agentUser);
-          dispatch(login(agentUser));
-          onClose();
-          router.push(`/${locale}/agent-dashboard`);
-          return;
+          if (
+            normalizedEmail === MOCK_AGENT_CREDENTIALS.email.toLowerCase() &&
+            password === MOCK_AGENT_CREDENTIALS.password
+          ) {
+            const { sessionUser, requiresPasswordSet } = await loginWithPasswordAndPersist(
+              trimmedIdentifier,
+              password,
+            );
+            
+            if (requiresPasswordSet) {
+              setRedirectingToForceChange(true);
+              router.push(`/${locale}/force-change-password`);
+              return;
+            }
+
+            const withRole = { ...sessionUser, role: "agent" as const };
+            persistAuthSession(withRole);
+            dispatch(login(withRole));
+            onClose();
+            router.push(`/${locale}/agent-dashboard`);
+            return;
+          }
         } catch {
           // Not agent; try admin.
         }
         try {
-          const adminUser = await mockAdminEmailPasswordLogin(
-            trimmedIdentifier,
-            password,
-          );
-          persistAuthSession(adminUser);
-          dispatch(login(adminUser));
-          onClose();
-          router.push(`/${locale}/dashboard`);
-          return;
+          if (
+            normalizedEmail === MOCK_ADMIN_CREDENTIALS.email.toLowerCase() &&
+            password === MOCK_ADMIN_CREDENTIALS.password
+          ) {
+            const { sessionUser, requiresPasswordSet } = await loginWithPasswordAndPersist(
+              trimmedIdentifier,
+              password,
+            );
+
+            if (requiresPasswordSet) {
+              setRedirectingToForceChange(true);
+              router.push(`/${locale}/force-change-password`);
+              return;
+            }
+
+            const withRole = { ...sessionUser, role: "admin" as const };
+            persistAuthSession(withRole);
+            dispatch(login(withRole));
+            onClose();
+            router.push(`/${locale}/dashboard`);
+            return;
+          }
         } catch {
-          // Fall back to regular mock user login.
+          // Fall back to regular login.
         }
       }
 
-      await mockManualLogin(trimmedIdentifier, password);
-      completeAuth({
-        id: "manual_login",
-        name: "Mock User",
-        email: trimmedIdentifier.includes("@")
-          ? trimmedIdentifier
-          : "mock.user@abdoun",
-      });
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Invalid credentials.",
+      const { sessionUser, requiresPasswordSet } = await loginWithPasswordAndPersist(
+        trimmedIdentifier,
+        password,
       );
+
+      if (requiresPasswordSet) {
+        setRedirectingToForceChange(true);
+        router.push(`/${locale}/force-change-password`);
+        return;
+      }
+
+      persistAuthSession(sessionUser);
+      dispatch(login(sessionUser));
+      onClose();
+
+      // On success we immediately redirect, so a toast would unmount before being visible.
+      if (sessionUser.role === "admin") {
+        setToast({ kind: "success", message: "Logged in as admin." });
+        router.push(`/${locale}/dashboard`);
+      } else if (sessionUser.role === "agent") {
+        setToast({ kind: "success", message: "Logged in as agent." });
+        router.push(`/${locale}/agent-dashboard`);
+      } else {
+        setToast({ kind: "success", message: "Logged in successfully." });
+        router.push(`/${locale}`);
+      }
+    } catch (error) {
+      setToast({ kind: "error", message: getApiErrorMessage(error) });
     } finally {
       setLoading(false);
     }
@@ -249,16 +303,14 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
     setOtcLoading(true);
     setMessage(null);
     try {
-      const result = await mockSendOneTimeCode(trimmedIdentifier);
-      setOtcChallengeId(result.challengeId);
-      setOtcDebugOtp(result.debugOtp ?? null);
-      setMessage(result.message ?? "One-time code sent.");
-      otcTimer.restart(result.expiresInSeconds);
+      const { session } = await requestOtpLogin({ username: trimmedIdentifier });
+      setOtcChallengeId(session);
+      setOtcDebugOtp(null);
+      setToast({ kind: "success", message: "One-time code sent." });
+      otcTimer.restart(60);
       setOtcStep("otp");
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Unable to send code.",
-      );
+      setToast({ kind: "error", message: getApiErrorMessage(error) });
     } finally {
       setOtcLoading(false);
     }
@@ -285,19 +337,28 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
     setMessage(null);
     setOtcOtpError(null);
     try {
-      await mockVerifyOneTimeCode(otcChallengeId, otpValue);
-      completeAuth({
-        id: `otp_${otcChallengeId}`,
-        name: "OTP User",
-        email: otcIdentifier.includes("@")
-          ? otcIdentifier.trim()
-          : "otp.user@mock.abdoun",
+      const tokens = await verifyOtpLogin({
+        username: otcIdentifier.trim(),
+        code: otpValue,
+        session: otcChallengeId,
       });
+      persistTokens(tokens);
+      setAuthUsername(otcIdentifier.trim());
+      const me = await getCurrentUser();
+      if (me.requires_password_set) {
+        onClose();
+        router.push(`/${locale}/force-change-password`);
+        return;
+      }
+      const sessionUser = toSessionUserForProfile(me);
+      persistAuthSession(sessionUser);
+      dispatch(login(sessionUser));
+      onClose();
+      router.push(`/${locale}`);
     } catch (error) {
-      const errMsg =
-        error instanceof Error ? error.message : "Invalid code. Try again.";
+      const errMsg = getApiErrorMessage(error);
       setOtcOtpError(errMsg);
-      setMessage(errMsg);
+      setToast({ kind: "error", message: errMsg });
     } finally {
       setOtcLoading(false);
     }
@@ -307,14 +368,17 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
     setOtcLoading(true);
     setMessage(null);
     try {
-      const result = await mockResendOtp(otcChallengeId);
-      setOtcDebugOtp(result.debugOtp ?? null);
-      otcTimer.restart(result.expiresInSeconds);
-      setMessage("Code resent.");
+      const { session } = await requestOtpLogin({
+        username: otcIdentifier.trim(),
+      });
+      setOtcChallengeId(session);
+      setOtcDebugOtp(null);
+      setOtcOtp("");
+      setOtcOtpError(null);
+      otcTimer.restart(60);
+      setToast({ kind: "success", message: "Code resent." });
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Unable to resend.",
-      );
+      setToast({ kind: "error", message: getApiErrorMessage(error) });
     } finally {
       setOtcLoading(false);
     }
@@ -327,7 +391,6 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
     }
     if (view === "oneTimeCode" && otcStep === "otp") {
       setOtcStep("request");
-      setOtcOtp("");
       setOtcOtpError(null);
       setMessage(null);
       return;
@@ -338,12 +401,22 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
   const showBackButton = view !== "landing";
 
   return (
-    <DialogRoot
+    <>
+      {redirectingToForceChange ? (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4">
+          <LoadingScreen
+            title="Redirecting for security check"
+            description="Please wait while we open the password change page."
+            className="max-w-md w-full"
+          />
+        </div>
+      ) : null}
+      <DialogRoot
       open={open}
       onClose={onClose}
       containerClassName="p-0 sm:p-4"
       className="h-[100dvh] w-full max-w-none overflow-hidden rounded-none border border-subtle bg-gray-400 p-0 sm:h-[92dvh] sm:max-h-[760px] sm:max-w-[460px] sm:rounded-xl"
-    >
+      >
       <div
         className="relative flex h-full flex-col bg-gradient-to-b from-white via-surface to-surface p-4 sm:p-6"
         dir={isRTL ? "rtl" : "ltr"}
@@ -379,12 +452,6 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
         </h2>
 
         <AuthPopupSection>
-          {message ? (
-            <div className="mb-4">
-              <AuthAlert kind="error" message={message} />
-            </div>
-          ) : null}
-
           {view === "landing" ? (
             <AuthPopupLandingStep
               t={t}
@@ -479,6 +546,8 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
               t={t}
               loading={loading}
               signup={signup}
+              showPassword={showPassword}
+              onTogglePasswordVisibility={() => setShowPassword((prev) => !prev)}
               onSocial={runSocial}
               onBackToLogin={() => setView("landing")}
               onFocusFullName={() => signup.actions.validateField("fullName")}
@@ -499,7 +568,16 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
           ) : null}
         </AuthPopupSection>
       </div>
-    </DialogRoot>
+      </DialogRoot>
+
+      {toast ? (
+        <Toast
+          kind={toast.kind}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      ) : null}
+    </>
   );
 }
 

@@ -8,9 +8,10 @@ import { AgentInviteForm } from "@/components/agent/AgentInviteForm";
 import { useTranslations } from "@/hooks/useTranslations";
 import {
   getInviteByToken,
-  acceptInvitation,
   tokenForEmail,
 } from "@/services/agentInviteMockService";
+import { validateInviteToken } from "@/services/adminAgentApiService";
+import { completeAgentOnboarding } from "@/services/agentOnboardingApiService";
 import type { AgentInviteFormPayload } from "@/components/agent/AgentInviteForm";
 
 /** Decode email from query: handle %22 (quotes) and trim. */
@@ -29,16 +30,53 @@ export default function InviteAgentPage() {
 
   const emailFromUrl = searchParams.get("email");
   const email = parseEmailFromParams(emailFromUrl);
+  const tokenFromUrl = searchParams.get("token")?.trim() ?? "";
 
-  const [invite, setInvite] = useState<{ email: string } | null>(null);
-  const [loading, setLoading] = useState(!!email);
+  const [invite, setInvite] = useState<{
+    email: string;
+    token?: string;
+  } | null>(null);
+  const [loading, setLoading] = useState(!!email || !!tokenFromUrl);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Validate token from URL (e.g. /en/agent-invite?token=xxx)
   useEffect(() => {
-    if (!email) {
-      setInvite(null);
-      setLoading(false);
+    if (!tokenFromUrl) return;
+    let cancelled = false;
+    validateInviteToken(tokenFromUrl)
+      .then((data) => {
+        if (cancelled) return;
+        if (data.alreadySubmitted) {
+          setInvite(null);
+          setError(data.message ?? t("inviteNotFound"));
+        } else {
+          setInvite({ email: data.email, token: tokenFromUrl });
+          setError(null);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setInvite(null);
+          setError(err instanceof Error ? err.message : t("inviteNotFound"));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tokenFromUrl, t]);
+
+  // Email-based invite (legacy): resolve invite by email
+  useEffect(() => {
+    if (tokenFromUrl || !email) {
+      if (!tokenFromUrl) {
+        setInvite(null);
+        setLoading(false);
+      }
       return;
     }
     let cancelled = false;
@@ -53,23 +91,30 @@ export default function InviteAgentPage() {
     return () => {
       cancelled = true;
     };
-  }, [email]);
+  }, [email, tokenFromUrl]);
 
   const handleSubmit = useCallback(
     async (payload: AgentInviteFormPayload) => {
-      if (!email) return;
+      const submitToken = invite?.token ?? (email ? tokenForEmail(email) : "");
+      if (!submitToken) return;
       setError(null);
       try {
-        await acceptInvitation(tokenForEmail(email), payload);
+        const result = await completeAgentOnboarding(submitToken, {
+          fullName: payload.name,
+          phone: payload.phone,
+          serviceArea: payload.serviceArea,
+        });
+        setSuccessMessage(result.message ?? t("inviteSuccess"));
         setSuccess(true);
       } catch (e) {
         setError(e instanceof Error ? e.message : t("inviteNotFound"));
       }
     },
-    [email, t]
+    [invite?.token, email, t],
   );
 
-  if (!emailFromUrl) {
+  const hasTokenOrEmail = !!tokenFromUrl || !!emailFromUrl;
+  if (!hasTokenOrEmail) {
     return (
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
         <div className="flex justify-center">
@@ -79,7 +124,8 @@ export default function InviteAgentPage() {
           {t("inviteTitle")}
         </h1>
         <p className="mt-4 text-center text-sm text-red-600">
-          Missing email. Use: /{locale}/invite-agent?email=your@email.com
+          Missing invite link. Use the link from your invitation email, or: /
+          {locale}/agent-invite?email=your@email.com
         </p>
         <Link
           href={`/${locale}?openAuth=agent`}
@@ -91,7 +137,7 @@ export default function InviteAgentPage() {
     );
   }
 
-  if (!email) {
+  if (!tokenFromUrl && !email) {
     return (
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
         <div className="flex justify-center">
@@ -100,7 +146,9 @@ export default function InviteAgentPage() {
         <h1 className="mt-5 text-center text-xl font-bold text-zinc-900 sm:text-2xl">
           {t("inviteTitle")}
         </h1>
-        <p className="mt-4 text-center text-sm text-red-600">Invalid email in URL.</p>
+        <p className="mt-4 text-center text-sm text-red-600">
+          Invalid email in URL.
+        </p>
         <Link
           href={`/${locale}?openAuth=agent`}
           className="mt-4 flex justify-center text-sm font-medium text-primary"
@@ -131,13 +179,17 @@ export default function InviteAgentPage() {
         <h1 className="mt-5 text-center text-xl font-bold text-zinc-900 sm:text-2xl">
           {t("inviteTitle")}
         </h1>
-        <p className="mt-4 text-center text-sm text-red-600">{t("inviteNotFound")}</p>
-        <Link
-          href={`/${locale}?openAuth=agent`}
-          className="mt-4 flex justify-center text-sm font-medium text-primary"
-        >
-          {t("loginTitle")}
-        </Link>
+        <p className="mt-4 text-center text-sm text-red-600">
+          {error ?? t("inviteNotFound")}
+        </p>
+        <div className="mt-4">
+          <Link
+            href={`/${locale}`}
+            className="inline-flex h-12 w-full items-center justify-center rounded-full bg-accent text-on-accent fw-medium text-size-base transition-colors hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          >
+            Return to Home page
+          </Link>
+        </div>
       </div>
     );
   }
@@ -151,13 +203,15 @@ export default function InviteAgentPage() {
         <h1 className="mt-5 text-center text-xl font-bold text-zinc-900 sm:text-2xl">
           {t("inviteTitle")}
         </h1>
-        <p className="mt-4 text-center text-sm text-emerald-700">{t("inviteSuccess")}</p>
+        <p className="mt-4 text-center text-sm text-emerald-700">
+          {successMessage ?? t("inviteSuccess")}
+        </p>
         <div className="mt-6">
           <Link
-            href={`/${locale}?openAuth=agent`}
+            href={`/${locale}`}
             className="inline-flex h-12 w-full items-center justify-center rounded-full bg-accent text-on-accent fw-medium text-size-base transition-colors hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
-            {t("loginTitle")}
+            Return to homepage
           </Link>
         </div>
       </div>
@@ -172,7 +226,9 @@ export default function InviteAgentPage() {
       <h1 className="mt-5 text-center text-xl font-bold text-zinc-900 sm:text-2xl">
         {t("inviteTitle")}
       </h1>
-      <p className="mt-1.5 text-center text-sm text-zinc-600">{t("inviteSubtitle")}</p>
+      <p className="mt-1.5 text-center text-sm text-zinc-600">
+        {t("inviteSubtitle")}
+      </p>
       <AgentInviteForm
         email={invite.email}
         onSubmit={handleSubmit}

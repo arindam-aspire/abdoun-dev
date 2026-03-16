@@ -6,6 +6,7 @@ import { Mail, Phone, UserCircle2 } from "lucide-react";
 import type { AppLocale } from "@/i18n/routing";
 import { useTranslations } from "@/hooks/useTranslations";
 import { useAppSelector } from "@/hooks/storeHooks";
+import { selectCurrentUser } from "@/store/selectors";
 import { ContactPropertyModal } from "@/components/search-result/ContactPropertyModal";
 import { EmailAgentModal } from "@/components/search-result/EmailAgentModal";
 import { WhatsAppContactModal } from "@/components/search-result/WhatsAppContactModal";
@@ -39,7 +40,7 @@ export function PropertyDetailsAgentSection({ listing }: PropertyDetailsAgentSec
   const locale = useLocale() as AppLocale;
   const isRtl = locale === "ar";
   const tSearch = useTranslations("searchResult");
-  const signedInUser = useAppSelector((state) => state.auth.user);
+  const signedInUser = useAppSelector(selectCurrentUser);
 
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);

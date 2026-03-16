@@ -143,7 +143,7 @@ export function InlineEditableField({
             <button
               type="button"
               onClick={startEdit}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
               aria-label={t("editField")}
             >
               <Pencil className="h-4 w-4" />

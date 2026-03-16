@@ -151,7 +151,7 @@ export function ProfileModal({
               {activeTab === "security" && (
                 <SignInSecurityTab
                   email={profile.email}
-                  phone={profile.phone}
+                  phone={profile?.phone}
                   onPhoneUpdate={async (phone) => {
                     await handleProfileUpdate({ phone });
                   }}

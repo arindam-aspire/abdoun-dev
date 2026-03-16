@@ -1,6 +1,8 @@
 "use client";
 
 import type { AxiosInstance, RawAxiosRequestHeaders } from "axios";
+
+export { getApiErrorMessage } from "./apiError";
 import { BrowserLogoutHandler } from "@/lib/auth/adapters/browserLogoutHandler";
 import { LocalStorageTokenStore } from "@/lib/auth/adapters/localStorageTokenStore";
 import { RestAuthService } from "@/lib/auth/adapters/restAuthService";

@@ -7,6 +7,7 @@ import { Home, List, MapPin, Users, User } from "lucide-react";
 import { useTranslations } from "@/hooks/useTranslations";
 import type { AppLocale } from "@/i18n/routing";
 import { useAppSelector } from "@/hooks/storeHooks";
+import { selectCurrentUser } from "@/store/selectors";
 
 const NAV_HEIGHT = 72;
 const SAFE_AREA = "env(safe-area-inset-bottom, 0px)";
@@ -15,7 +16,7 @@ export function BottomNav() {
   const pathname = usePathname();
   const locale = useLocale() as AppLocale;
   const t = useTranslations("home");
-  const auth = useAppSelector((state) => state.auth);
+  const user = useAppSelector(selectCurrentUser);
   const isRtl = locale === "ar";
 
   const basePath = `/${locale}`;
@@ -27,9 +28,9 @@ export function BottomNav() {
     { key: "team", href: `${basePath}/team`, label: t("bottomNav.team"), icon: Users, match: () => pathname.startsWith(`${basePath}/team`) },
     {
       key: "account",
-      href: auth.user?.role === "agent"
+      href: user?.role === "agent"
         ? `${basePath}/agent-dashboard`
-        : auth.user
+        : user
           ? `${basePath}/dashboard`
           : basePath,
       label: t("bottomNav.account"),

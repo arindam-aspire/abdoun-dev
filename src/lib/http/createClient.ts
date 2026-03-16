@@ -60,6 +60,36 @@ const appendHeaders = (
 const isUnauthorized = (error: AxiosError): boolean =>
   error.response?.status === 401;
 
+const SESSION_EXPIRED_MESSAGE = "Invalid or expired token";
+
+function getResponseDetail(error: unknown): string | undefined {
+  if (error && typeof error === "object" && "response" in error) {
+    const response = (error as { response?: { data?: { detail?: unknown } } }).response;
+    const detail = response?.data?.detail;
+    if (typeof detail === "string") return detail;
+  }
+  return undefined;
+}
+
+function isInvalidOrExpiredToken(error: unknown): boolean {
+  const detail = getResponseDetail(error);
+  return detail === SESSION_EXPIRED_MESSAGE || detail?.includes(SESSION_EXPIRED_MESSAGE) === true;
+}
+
+export const AUTH_SESSION_EXPIRED_EVENT = "auth:session-expired" as const;
+
+export type AuthSessionExpiredDetail = { message: string };
+
+function runForceLocalLogout(tokenStore: TokenStore, message: string): void {
+  if (typeof window === "undefined") return;
+  void tokenStore.clearTokens();
+  window.dispatchEvent(
+    new CustomEvent<AuthSessionExpiredDetail>(AUTH_SESSION_EXPIRED_EVENT, {
+      detail: { message },
+    }),
+  );
+}
+
 export const createClient = (options: CreateClientOptions): AxiosInstance => {
   const client = axios.create({
     baseURL: options.baseURL,
@@ -174,6 +204,12 @@ export const createClient = (options: CreateClientOptions): AxiosInstance => {
         return client.request(originalRequest);
       } catch (refreshError) {
         flushQueue(refreshError);
+        const message =
+          getResponseDetail(refreshError) ?? (refreshError instanceof Error ? refreshError.message : "Session expired");
+        if (isInvalidOrExpiredToken(refreshError)) {
+          runForceLocalLogout(tokenStore, message);
+          throw refreshError;
+        }
         return runLogoutFlow(refreshError);
       } finally {
         isRefreshing = false;

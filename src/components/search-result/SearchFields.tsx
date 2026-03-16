@@ -26,6 +26,7 @@ import {
   STATUS_TABS,
 } from "./types";
 import { useAppSelector } from "@/hooks/storeHooks";
+import { selectCurrentUser } from "@/store/selectors";
 import { AuthPopup } from "@/components/auth/AuthPopup";
 import { SaveSearchModal } from "./SaveSearchModal";
 
@@ -340,7 +341,7 @@ export function SearchFields({
 
   const [saveSearchOpen, setSaveSearchOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
-  const authUser = useAppSelector((state) => state.auth.user);
+  const authUser = useAppSelector(selectCurrentUser);
   const locale = useLocale();
   const queryString = searchParams.toString();
 

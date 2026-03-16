@@ -12,6 +12,8 @@ export interface FeaturedPropertiesSectionProps {
   properties: Property[];
   isRtl?: boolean;
   useCarouselOnOverflow?: boolean;
+  loading?: boolean;
+  error?: string | null;
 }
 
 export function FeaturedPropertiesSection({
@@ -19,12 +21,15 @@ export function FeaturedPropertiesSection({
   properties,
   isRtl,
   useCarouselOnOverflow = false,
+  loading = false,
+  error = null,
 }: FeaturedPropertiesSectionProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
+  const displayedProperties = properties;
 
-  const shouldUseCarousel = useCarouselOnOverflow && properties.length > 3;
+  const shouldUseCarousel = useCarouselOnOverflow && displayedProperties.length > 3;
 
   useEffect(() => {
     if (!shouldUseCarousel) return;
@@ -140,7 +145,9 @@ export function FeaturedPropertiesSection({
               {t.subtitle}
             </h2>
           </div>
-          <div className={`flex items-center gap-2 ${isRtl ? "flex-row-reverse" : ""}`}>
+          <div
+            className={`flex items-center gap-2 ${isRtl ? "flex-row-reverse" : ""}`}
+          >
             {t.viewAllHref != null ? (
               <Link
                 href={t.viewAllHref}
@@ -189,7 +196,11 @@ export function FeaturedPropertiesSection({
                   isRtl ? "right-0 translate-x-1/2" : "left-0 -translate-x-1/2"
                 }`}
               >
-                {isRtl ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                {isRtl ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <ChevronLeft className="h-4 w-4" />
+                )}
               </button>
             )}
             {canScrollNext && (
@@ -201,7 +212,11 @@ export function FeaturedPropertiesSection({
                   isRtl ? "left-0 -translate-x-1/2" : "right-0 translate-x-1/2"
                 }`}
               >
-                {isRtl ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                {isRtl ? (
+                  <ChevronLeft className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
               </button>
             )}
 
@@ -209,7 +224,7 @@ export function FeaturedPropertiesSection({
               ref={scrollRef}
               className="flex snap-x snap-mandatory gap-6 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:h-0"
             >
-              {properties.map((property) => (
+              {displayedProperties.map((property) => (
                 <div
                   key={property.id}
                   className="min-w-0 shrink-0 snap-start basis-[88%] sm:basis-[62%] md:basis-[calc((100%-3rem)/3.2)]"
@@ -221,10 +236,32 @@ export function FeaturedPropertiesSection({
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-3">
-            {properties.map((property) => (
+            {displayedProperties.map((property) => (
               <PropertyCard key={property.id} property={property} />
             ))}
           </div>
+        )}
+
+        {loading && (
+          <p
+            className={`mt-4 text-sm text-[var(--brand-secondary)]/70 ${isRtl ? "text-right" : "text-left"}`}
+          >
+            Loading exclusive properties...
+          </p>
+        )}
+        {!loading && error && (
+          <p
+            className={`mt-4 text-sm text-red-600 ${isRtl ? "text-right" : "text-left"}`}
+          >
+            {error}
+          </p>
+        )}
+        {!loading && !error && displayedProperties.length === 0 && (
+          <p
+            className={`mt-4 text-sm text-[var(--brand-secondary)]/70 ${isRtl ? "text-right" : "text-left"}`}
+          >
+            No exclusive properties found.
+          </p>
         )}
       </div>
     </section>

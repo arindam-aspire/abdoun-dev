@@ -78,6 +78,24 @@ export function PropertyDetailsHero({
     setActiveIndex(index);
   }, []);
 
+  const visibleDotIndexes = useMemo(() => {
+    const total = mediaItems.length;
+    if (total <= 9) {
+      return Array.from({ length: total }, (_, i) => i);
+    }
+
+    const windowSize = 9;
+    let start = Math.max(0, activeIndex - 2);
+    let end = start + windowSize - 1;
+
+    if (end >= total) {
+      end = total - 1;
+      start = end - windowSize + 1;
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }, [activeIndex, mediaItems.length]);
+
   const openFullscreen = useCallback(
     (index: number) => {
       setActiveIndex(index);
@@ -327,7 +345,7 @@ export function PropertyDetailsHero({
           {mediaItems.length > 1 && (
             <div className="hero-nav">
               <div className="hero-dots">
-                {mediaItems.map((_, i) => (
+                {visibleDotIndexes.map((i) => (
                   <button
                     key={i}
                     type="button"

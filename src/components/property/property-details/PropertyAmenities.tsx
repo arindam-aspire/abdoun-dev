@@ -58,6 +58,11 @@ export function PropertyAmenities({ amenities }: PropertyAmenitiesProps) {
       </div>
 
       <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-[var(--border-subtle)] pt-4 text-xs text-[var(--color-charcoal)] sm:grid-cols-3 md:grid-cols-4">
+        {amenities.length === 0 && (
+          <p className="col-span-full text-sm text-[var(--color-charcoal)]/70">
+            No features listed for this property.
+          </p>
+        )}
         {amenities.map((item) => (
           <div
             key={item}

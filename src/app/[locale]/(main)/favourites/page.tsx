@@ -10,7 +10,7 @@ import { addToCompare, removeFromCompare } from "@/features/compare/compareSlice
 import { MAX_COMPARE_ITEMS } from "@/features/compare/compareSlice";
 import { useTranslations } from "@/hooks/useTranslations";
 import { SearchResultPropertyCard } from "@/components/search-result/SearchResultPropertyCard";
-import { Pagination } from "@/components/search-result/Pagination";
+import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CompareModal } from "@/components/compare/CompareModal";
 import { MOCK_SEARCH_RESULTS } from "@/components/search-result/mockSearchResults";

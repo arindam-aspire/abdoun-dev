@@ -24,6 +24,7 @@ import { ContactPropertyModal } from "@/components/search-result/ContactProperty
 import { EmailAgentModal } from "@/components/search-result/EmailAgentModal";
 import { WhatsAppContactModal } from "@/components/search-result/WhatsAppContactModal";
 import { useAppSelector } from "@/hooks/storeHooks";
+import { selectCurrentUser } from "@/store/selectors";
 
 export interface AgentSearchResultGridCardProps {
   listing: SearchResultListing;
@@ -55,7 +56,7 @@ export function AgentSearchResultGridCard({
   const locale = useLocale() as AppLocale;
   const isRtl = locale === "ar";
   const tSearch = useTranslations("searchResult");
-  const signedInUser = useAppSelector((state) => state.auth.user);
+  const signedInUser = useAppSelector(selectCurrentUser);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);

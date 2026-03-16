@@ -8,6 +8,7 @@ import {
 } from "@/components/layout/app-header.config";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { ProfileModal } from "@/components/profile/ProfileModal";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   DialogDescription,
   DialogFooter,
@@ -17,11 +18,13 @@ import {
 import { LanguageSelect } from "@/components/ui/language-select";
 import { logout } from "@/features/auth/authSlice";
 import { clearProfileForUser } from "@/features/profile/profileSlice";
+import { clearAuthSession } from "@/lib/auth/sessionCookies";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { useTranslations } from "@/hooks/useTranslations";
 import type { AppLocale } from "@/i18n/routing";
-import { clearAuthSession } from "@/lib/auth/sessionCookies";
+import { performClientLogout } from "@/lib/auth/logoutClient";
 import { cn } from "@/lib/cn";
+import { selectCurrentUser } from "@/store/selectors";
 import { Menu, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
@@ -46,7 +49,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
   const t = useTranslations("home");
   const tCommon = useTranslations("common");
   const dispatch = useAppDispatch();
-  const user = useAppSelector((state) => state.auth.user);
+  const user = useAppSelector(selectCurrentUser);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authInitialView, setAuthInitialView] = useState<"email" | undefined>(undefined);
@@ -54,6 +57,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isListPropertyModalOpen, setIsListPropertyModalOpen] = useState(false);
   const [isAccountSettingsHover, setIsAccountSettingsHover] = useState(false);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const rafRef = useRef<number | null>(null);
   const profileRef = useRef<HTMLDivElement | null>(null);
@@ -175,6 +179,13 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
     setIsProfileOpen(false);
     setMobileMenuOpen(false);
     router.replace(`/${activeLanguage}`);
+  };
+
+  const handleConfirmLogout = async () => {
+    setIsLogoutConfirmOpen(false);
+    if (!user) return;
+    await performClientLogout(dispatch, user.id);
+    setIsProfileOpen(false);
   };
 
   return (
@@ -356,17 +367,15 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                       )
                     ) : null}
                   </nav>
-                  {profileMenuConfig?.showLogout ? (
-                    <div className="mt-1 border-t border-subtle px-3 pt-2 pb-2">
-                      <button
-                        type="button"
-                        onClick={handleLogout}
-                        className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-size-sm fw-semibold text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
-                      >
-                        {tCommon("signOut")}
-                      </button>
-                    </div>
-                  ) : null}
+                  <div className="mt-1 border-t border-subtle px-3 pt-2 pb-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsLogoutConfirmOpen(true)}
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-size-sm fw-semibold text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                    >
+                      {tCommon("signOut")}
+                    </button>
+                  </div>
                 </div>
               ) : null}
             </div>
@@ -470,17 +479,15 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                       </Link>
                     ) : null}
                   </nav>
-                  {profileMenuConfig?.showLogout ? (
-                    <div className="mt-1 border-t border-[var(--border-subtle)] px-3 pt-2 pb-2">
-                      <button
-                        type="button"
-                        onClick={handleLogout}
-                        className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 hover:underline"
-                      >
-                        {tCommon("signOut")}
-                      </button>
-                    </div>
-                  ) : null}
+                  <div className="mt-1 border-t border-[var(--border-subtle)] px-3 pt-2 pb-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsLogoutConfirmOpen(true)}
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 hover:underline"
+                    >
+                      {tCommon("signOut")}
+                    </button>
+                  </div>
                 </div>
               ) : null}
             </div>
@@ -572,6 +579,16 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
         open={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
         isRtl={isRTL}
+      />
+      <ConfirmDialog
+        open={isLogoutConfirmOpen}
+        onCancel={() => setIsLogoutConfirmOpen(false)}
+        onConfirm={handleConfirmLogout}
+        title={tCommon("signOut")}
+        description={tCommon("confirmSignOut")}
+        confirmLabel={tCommon("signOut")}
+        cancelLabel={tCommon("cancel")}
+        destructive
       />
       <DialogRoot
         open={isListPropertyModalOpen}

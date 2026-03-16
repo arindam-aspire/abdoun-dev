@@ -128,12 +128,12 @@ export function SignInSecurityTab({
           {t("phoneNumber")}
         </div>
         <PhoneNumberInputField
-          value={phoneValue || undefined}
+          value={phone}
           onChange={(v) => setPhoneValue(v ?? "")}
           placeholder={t("phonePlaceholder")}
           showFlag={true}
           showCountryCode={true}
-          showDialCode={true}
+          showDialCode={false}
         />
         <Button type="button" size="sm" className="mt-3 text-white" onClick={() => void handleSavePhone()}>
           {t("save")}

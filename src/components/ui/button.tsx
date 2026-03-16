@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/cn";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center cursor-pointer rounded-md text-size-sm fw-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none gap-2",
+  "inline-flex items-center justify-center rounded-md text-size-sm fw-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 gap-2",
   {
     variants: {
       variant: {
@@ -35,11 +35,23 @@ export interface ButtonProps
   children: ReactNode;
 }
 
-export function Button({ className, variant, size, children, ...rest }: ButtonProps) {
+export function Button({
+  className,
+  variant,
+  size,
+  children,
+  disabled,
+  ...rest
+}: ButtonProps) {
   return (
     <button
       type="button"
-      className={cn(buttonVariants({ variant, size }), className)}
+      disabled={disabled}
+      className={cn(
+        buttonVariants({ variant, size }),
+        disabled ? "cursor-not-allowed" : "cursor-pointer",
+        className,
+      )}
       {...rest}
     >
       {children}

@@ -5,16 +5,19 @@ import { useMemo } from "react";
 import { useLocale } from "next-intl";
 import { cn } from "@/lib/cn";
 import PhoneInput from "react-phone-number-input";
-import { getCountries, getCountryCallingCode, parsePhoneNumber } from "libphonenumber-js";
+import { getCountries, getCountryCallingCode, parsePhoneNumberFromString } from "libphonenumber-js";
 import type { CountrySelectProps } from "react-phone-number-input";
 import { CountrySelectWithSearch } from "@/components/ui/CountrySelectWithSearch";
 import "react-phone-number-input/style.css";
 
-/** Safely convert any phone string to E.164 so react-phone-number-input won't warn. */
+/** Safely convert any phone string to E.164 when possible.
+ * Uses JO as default country so national numbers like "079..." can be parsed.
+ * If parsing fails, return undefined so the underlying input starts empty.
+ */
 function normalizeToE164(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
   try {
-    const parsed = parsePhoneNumber(raw);
+    const parsed = parsePhoneNumberFromString(raw, "JO");
     return parsed?.number || undefined;
   } catch {
     return undefined;
@@ -42,6 +45,10 @@ export interface PhoneNumberInputFieldProps {
   onFocus?: () => void;
   error?: string;
   className?: string;
+  /** Extra classes for the bordered field wrapper (controls height, radius, border, etc.). */
+  fieldClassName?: string;
+  /** Extra classes for the underlying phone input (padding, font size, etc.). */
+  inputClassName?: string;
   placeholder?: string;
   disabled?: boolean;
   /** Show country flag icon (default: true) */
@@ -60,6 +67,8 @@ export function PhoneNumberInputField({
   onFocus,
   error,
   className,
+  fieldClassName,
+  inputClassName,
   placeholder = "Enter phone number",
   disabled = false,
   showFlag = true,
@@ -70,7 +79,7 @@ export function PhoneNumberInputField({
   const locale = useLocale();
   const isRtl = locale === "ar";
   const labels = useMemo(buildCountryLabels, []);
-  const normalizedValue = useMemo(() => normalizeToE164(value), [value]);
+  const normalizedValue = normalizeToE164(value);
 
   return (
     <div
@@ -96,6 +105,7 @@ export function PhoneNumberInputField({
           "focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:border-transparent",
           "disabled:cursor-not-allowed disabled:opacity-50",
           error && "border-red-500 ring-2 ring-red-500/20",
+          fieldClassName,
         )}
       >
         <PhoneInput
@@ -110,7 +120,10 @@ export function PhoneNumberInputField({
           placeholder={placeholder}
           disabled={disabled}
           dir={isRtl ? "rtl" : "ltr"}
-          className="flex h-full flex-1 min-w-0 border-0 bg-transparent px-3 py-2 text-size-sm text-zinc-900 shadow-none placeholder:text-zinc-400 focus:outline-none focus:ring-0 disabled:bg-transparent text-start"
+          className={cn(
+            "flex h-full flex-1 min-w-0 border-0 bg-transparent px-3 py-2 text-size-sm text-zinc-900 shadow-none placeholder:text-zinc-400 focus:outline-none focus:ring-0 disabled:bg-transparent text-start",
+            inputClassName,
+          )}
           aria-invalid={!!error}
           aria-describedby={error ? "phone-input-error" : undefined}
           onFocus={onFocus}

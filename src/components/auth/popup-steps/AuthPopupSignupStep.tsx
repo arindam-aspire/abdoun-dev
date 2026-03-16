@@ -1,4 +1,4 @@
-import { Mail, Phone } from "lucide-react";
+import { Eye, EyeOff, Mail, Phone } from "lucide-react";
 import { Button } from "@/components/ui";
 import { AuthPopupField, OTPVerificationBlock, PasswordPolicyHelper } from "@/components/auth";
 import { AuthProviderLogo } from "@/components/auth/popup-steps/AuthProviderLogo";
@@ -9,6 +9,8 @@ interface AuthPopupSignupStepProps {
   t: ReturnType<typeof useTranslations>;
   loading: boolean;
   signup: SignupFlowState;
+  showPassword: boolean;
+  onTogglePasswordVisibility: () => void;
   onSocial: (provider: "google" | "facebook" | "apple") => void;
   onBackToLogin: () => void;
   onFocusFullName?: () => void;
@@ -21,6 +23,8 @@ export function AuthPopupSignupStep({
   t,
   loading,
   signup,
+  showPassword,
+  onTogglePasswordVisibility,
   onSocial,
   onBackToLogin,
   onFocusFullName,
@@ -142,13 +146,27 @@ export function AuthPopupSignupStep({
           />
           <AuthPopupField
             id="signup-password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             label={t("password")}
             placeholder={t("passwordPlaceholder")}
             value={signup.fields.password}
             onChange={signup.actions.setPassword}
             onFocus={onFocusPassword}
             error={signup.errors.password}
+            rightAdornment={(
+              <button
+                type="button"
+                className="cursor-pointer text-zinc-500 hover:text-zinc-700"
+                onClick={onTogglePasswordVisibility}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            )}
           />
           <PasswordPolicyHelper checks={signup.passwordChecks} />
           <Button
