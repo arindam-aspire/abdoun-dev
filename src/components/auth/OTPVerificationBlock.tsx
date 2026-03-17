@@ -135,7 +135,7 @@ export function OTPVerificationBlock({
         </span>
         <Button
           type="button"
-          variant="link"
+          variant="ghost"
           size="sm"
           className="fw-medium text-sky-700 disabled:text-zinc-400 px-0"
           disabled={!canResend || loading}

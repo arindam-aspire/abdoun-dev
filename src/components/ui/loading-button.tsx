@@ -1,9 +1,8 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
-import { Button } from "@/components/ui/button";
+import type { ReactNode } from "react";
+import { Button, type ButtonProps } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 
-export interface LoadingButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface LoadingButtonProps extends ButtonProps {
   loading?: boolean;
   spinnerSize?: "sm" | "md" | "lg";
   children: ReactNode;

@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button, Label } from "@/components/ui";
 import { Dropdown } from "@/components/ui/dropdown";
-import { Pagination } from "@/components/search-result/Pagination";
+import { Pagination } from "@/components/ui/Pagination";
 
 function statusClass(status: string): string {
   if (status === "new") return "bg-sky-100 text-sky-800 border-sky-200";

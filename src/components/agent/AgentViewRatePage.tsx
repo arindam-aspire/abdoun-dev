@@ -10,7 +10,7 @@ import { ArrowLeft, Eye, Filter, Building2 } from "lucide-react";
 import { getPropertyViewCounts } from "@/services/agentDashboardMockService";
 import type { PerformanceComparisonItem } from "@/types/agent";
 import { Dropdown } from "@/components/ui/dropdown";
-import { Pagination } from "@/components/search-result/Pagination";
+import { Pagination } from "@/components/ui/Pagination";
 
 const PERIOD_FILTERS = ["all", "weekly", "monthly", "yearly"] as const;
 type PeriodFilter = (typeof PERIOD_FILTERS)[number];

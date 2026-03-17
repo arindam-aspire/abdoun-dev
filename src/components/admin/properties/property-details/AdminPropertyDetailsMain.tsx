@@ -348,7 +348,7 @@ export function AdminPropertyDetailsMain({
 
             {isExclusive && (
               <section ref={locationRef} className="scroll-mt-36 md:scroll-mt-40">
-                <PropertyNeighborhood />
+                <PropertyNeighborhood property={displayProperty} />
               </section>
             )}
 

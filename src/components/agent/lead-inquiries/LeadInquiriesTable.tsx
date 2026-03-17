@@ -2,7 +2,7 @@
 
 import { Mail, MessageSquare } from "lucide-react";
 import { useTranslations } from "@/hooks/useTranslations";
-import { Pagination } from "@/components/search-result/Pagination";
+import { Pagination } from "@/components/ui/Pagination";
 import type { LeadInquiry, LeadInquirySource } from "@/types/leadInquiry";
 
 function formatDate(iso: string): string {
