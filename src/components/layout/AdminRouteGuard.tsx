@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
+import { BrandLogo } from "@/components/layout/brand-logo";
+import { GuardRedirectScreen } from "@/components/ui";
 import { login } from "@/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { selectCurrentUser } from "@/store/selectors";
@@ -33,9 +35,17 @@ export function AdminRouteGuard({ children }: { children: React.ReactNode }) {
 
   if (user?.role !== "admin") {
     return (
-      <div className="min-h-screen bg-[var(--surface)] flex items-center justify-center text-sm text-zinc-600">
-        Redirecting...
-      </div>
+      <GuardRedirectScreen
+        logo={
+          <BrandLogo
+            locale={locale}
+            priority
+            imageClassName="h-12 sm:h-14"
+            ariaLabel="Back to home"
+          />
+        }
+        description="We’re checking your session and redirecting you to your admin dashboard."
+      />
     );
   }
   return <>{children}</>;

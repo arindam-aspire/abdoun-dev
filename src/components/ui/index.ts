@@ -56,6 +56,8 @@ export { Skeleton } from "./skeleton";
 export type { SkeletonProps } from "./skeleton";
 export { LoadingScreen } from "./loading-screen";
 export type { LoadingScreenProps } from "./loading-screen";
+export { GuardRedirectScreen } from "./guard-redirect-screen";
+export type { GuardRedirectScreenProps } from "./guard-redirect-screen";
 export { Alert, AlertTitle, AlertDescription } from "./alert";
 export type {
   AlertProps,

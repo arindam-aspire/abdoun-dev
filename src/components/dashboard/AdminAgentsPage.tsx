@@ -11,7 +11,11 @@ import {
   Toast,
 } from "@/components/ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Pagination } from "@/components/ui/Pagination";
+import {
+  DEFAULT_PAGINATION_PAGE_SIZE,
+  PAGINATION_PAGE_SIZES,
+  Pagination,
+} from "@/components/ui/Pagination";
 import {
   AGENT_STATUS,
   AGENT_STATUS_FILTER_OPTIONS,
@@ -96,8 +100,16 @@ export function AdminAgentsPage() {
     message: string;
   } | null>(null);
 
-  const PAGE_SIZE = 10;
   const PAGE_PARAM = "page";
+  const PAGE_SIZE_PARAM = "pageSize";
+
+  const pageSize = useMemo(() => {
+    const raw = searchParams.get(PAGE_SIZE_PARAM);
+    const n = Number.parseInt(raw ?? String(DEFAULT_PAGINATION_PAGE_SIZE), 10);
+    return PAGINATION_PAGE_SIZES.includes(n as (typeof PAGINATION_PAGE_SIZES)[number])
+      ? n
+      : DEFAULT_PAGINATION_PAGE_SIZE;
+  }, [searchParams]);
   const [fullNameIdentifierTouched, setFullNameIdentifierTouched] =
     useState(false);
   const [emailIdentifierTouched, setEmailIdentifierTouched] = useState(false);
@@ -133,13 +145,13 @@ export function AdminAgentsPage() {
     void dispatch(
       fetchAdminAgents({
         page,
-        limit: PAGE_SIZE,
+        limit: pageSize,
         sort_by: "invited_at",
         order: "desc",
         status: isAllStatus ? undefined : statusFilter,
       }),
     );
-  }, [dispatch, searchParams, statusFilter]);
+  }, [dispatch, pageSize, searchParams, statusFilter]);
 
   useEffect(() => {
     return () => {
@@ -220,7 +232,7 @@ export function AdminAgentsPage() {
   }, [searchParams]);
 
   const totalItems = total;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safePage = Math.min(currentPage, totalPages);
 
   const doInvite = async (normalizedEmail: string) => {
@@ -744,8 +756,9 @@ export function AdminAgentsPage() {
                     currentPage={safePage}
                     totalPages={totalPages}
                     totalItems={totalItems}
-                    pageSize={PAGE_SIZE}
+                    pageSize={pageSize}
                     pageParam={PAGE_PARAM}
+                    pageSizeParam={PAGE_SIZE_PARAM}
                     translations={{
                       previous: "Previous",
                       next: "Next",
