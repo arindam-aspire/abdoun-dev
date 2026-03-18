@@ -1,7 +1,7 @@
 "use client";
 
-import { BudgetRangeInputs } from "@/components/home/BudgetRangeInputs";
-import { HeroDropdown } from "@/components/home/HeroDropdown";
+import { BudgetRangeInputs } from "@/features/public-home/components/BudgetRangeInputs";
+import { HeroDropdown } from "@/features/public-home/components/HeroDropdown";
 import { cn } from "@/lib/cn";
 import {
   ChevronDown,
@@ -14,7 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
-import type { CategoryKey, SearchFieldsProps, StatusTabKey } from "./types";
+import type { CategoryKey, SearchFieldsProps, StatusTabKey } from "@/features/property-search/types";
 import { routing } from "@/i18n/routing";
 import {
   getAreasByCityName,
@@ -24,13 +24,13 @@ import {
   CATEGORY_OPTIONS,
   CATEGORY_TO_PROPERTY_TYPES,
   STATUS_TABS,
-} from "./types";
+} from "@/features/property-search/types";
 import { useAppSelector } from "@/hooks/storeHooks";
 import { selectCurrentUser } from "@/store/selectors";
-import { AuthPopup } from "@/components/auth/AuthPopup";
-import { SaveSearchModal } from "./SaveSearchModal";
+import { AuthPopup } from "@/features/auth/components/modals/AuthPopup";
+import { SaveSearchModal } from "@/features/saved-searches/components/modals/SaveSearchModal";
 
-export type { SearchFieldsProps, SearchFieldsTranslations } from "./types";
+export type { SearchFieldsProps, SearchFieldsTranslations } from "@/features/property-search/types";
 
 const dropdownPanelClass =
   "min-w-48 rounded-xl border border-subtle bg-white p-2 shadow-xl ring-1 ring-black/5";
@@ -602,9 +602,10 @@ export function SearchFields({
     return `${minLabel} - ${maxLabel}`;
   };
 
+  const exclusiveParam = searchParams.get("exclusive");
+
   const syncToUrl = useCallback(() => {
     const params = new URLSearchParams();
-    const exclusiveParam = searchParams.get("exclusive");
     if (exclusiveParam === "1" || exclusiveParam === "true")
       params.set("exclusive", "1");
     params.set("status", status);
@@ -667,6 +668,7 @@ export function SearchFields({
       scroll: false,
     });
   }, [
+    exclusiveParam,
     status,
     category,
     propertyType,
@@ -736,9 +738,6 @@ export function SearchFields({
     showElectricityNearbyAmenity,
     pathname,
     router,
-    // Intentionally omit searchParams: reading it inside to preserve exclusive=1.
-    // Including it caused syncToUrl to be recreated after router.replace, retriggering
-    // the effect and causing repeated navigations.
   ]);
 
   const isFirstMount = useRef(true);

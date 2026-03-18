@@ -5,17 +5,16 @@ import { useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import { Heart, Scale } from "lucide-react";
 import type { AppLocale } from "@/i18n/routing";
-import { useAppSelector, useAppDispatch } from "@/hooks/storeHooks";
-import { addToCompare, removeFromCompare } from "@/features/compare/compareSlice";
-import { MAX_COMPARE_ITEMS } from "@/features/compare/compareSlice";
 import { useTranslations } from "@/hooks/useTranslations";
-import { SearchResultPropertyCard } from "@/components/search-result/SearchResultPropertyCard";
 import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { CompareModal } from "@/components/compare/CompareModal";
-import { MOCK_SEARCH_RESULTS } from "@/components/search-result/mockSearchResults";
-import type { SearchResultListing } from "@/components/search-result/types";
+import { CompareModal } from "@/features/compare/components/modals/CompareModal";
+import { MOCK_SEARCH_RESULTS } from "@/lib/mocks/mockSearchResults";
+import type { SearchResultListing } from "@/features/property-search/types";
 import { cn } from "@/lib/cn";
+import { useFavourites } from "@/features/favourites/hooks/useFavourites";
+import { useCompareSelection } from "@/features/compare/hooks/useCompareSelection";
+import { FavouritesList } from "@/features/favourites/components/FavouritesList";
 
 const PAGE_SIZE = 12;
 const PAGE_PARAM = "page";
@@ -40,9 +39,8 @@ export default function FavouritesPage() {
   const tFav = useTranslations("favourites");
   const tSearch = useTranslations("searchResult");
 
-  const propertyIds = useAppSelector((state) => state.favourites.propertyIds);
-  const compareIds = useAppSelector((state) => state.compare.propertyIds);
-  const dispatch = useAppDispatch();
+  const { propertyIds } = useFavourites();
+  const { selectedIds: compareIds, toggleSelected } = useCompareSelection();
 
   const [compareMode, setCompareMode] = useState(false);
   const [compareModalOpen, setCompareModalOpen] = useState(false);
@@ -66,13 +64,9 @@ export default function FavouritesPage() {
 
   const toggleCompareForId = useCallback(
     (id: number) => {
-      if (compareIds.includes(id)) {
-        dispatch(removeFromCompare(id));
-      } else if (compareIds.length < MAX_COMPARE_ITEMS) {
-        dispatch(addToCompare(id));
-      }
+      toggleSelected(id);
     },
-    [compareIds, dispatch],
+    [toggleSelected],
   );
 
   const handleCompareClick = useCallback(() => {
@@ -156,38 +150,17 @@ export default function FavouritesPage() {
       )}
 
       <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-[var(--border-subtle)] md:p-5">
-        <ul
-          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-5 items-stretch"
-          aria-label={tFav("listLabel")}
-        >
-          {listings.map((listing) => (
-            <li key={listing.id} className="relative min-h-0">
-              {compareMode && (
-                <label
-                  className={cn(
-                    "absolute top-2 z-20 flex items-center gap-2 rounded-lg border bg-white/95 px-2.5 py-1.5 text-xs font-medium shadow-sm",
-                    isRtl ? "right-2" : "left-2",
-                  )}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isInCompare(listing.id)}
-                    onChange={() => toggleCompareForId(listing.id)}
-                    disabled={
-                      !isInCompare(listing.id) && compareIds.length >= MAX_COMPARE_ITEMS
-                    }
-                    className="h-4 w-4 rounded border-[var(--border-subtle)] text-[var(--brand-secondary)]"
-                  />
-                  {tFav("addToCompare")}
-                </label>
-              )}
-              <SearchResultPropertyCard
-                listing={listing}
-                translations={cardTranslations}
-              />
-            </li>
-          ))}
-        </ul>
+        <FavouritesList
+          listings={listings}
+          listLabel={tFav("listLabel")}
+          compareMode={compareMode}
+          compareIds={compareIds}
+          isRtl={isRtl}
+          onToggleCompareForId={toggleCompareForId}
+          isInCompare={isInCompare}
+          addToCompareLabel={tFav("addToCompare")}
+          cardTranslations={cardTranslations}
+        />
 
         {totalPages > 1 && (
           <div className="mt-8 border-t border-[var(--border-subtle)] pt-6">

@@ -1,39 +1,42 @@
 "use client";
 
-import { useEffect } from "react";
-import { useLocale } from "next-intl";
-import { useRouter } from "next/navigation";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { GuardRedirectScreen } from "@/components/ui";
-import { login } from "@/features/auth/authSlice";
-import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
-import { selectCurrentUser } from "@/store/selectors";
-import { readAuthSessionFromBrowser } from "@/lib/auth/sessionCookies";
-import { enrichWithPhoneParts } from "@/services/authService";
+import { useSession } from "@/features/auth/hooks/useSession";
+import { useEffect, useSyncExternalStore } from "react";
+import { useLocale } from "next-intl";
+import { usePathname, useRouter } from "next/navigation";
+
+function useHydrated() {
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      const id = window.requestAnimationFrame(onStoreChange);
+      return () => window.cancelAnimationFrame(id);
+    },
+    () => true,
+    () => false,
+  );
+}
 
 export function AdminRouteGuard({ children }: { children: React.ReactNode }) {
-  const user = useAppSelector(selectCurrentUser);
-  const dispatch = useAppDispatch();
+  const { role } = useSession();
   const router = useRouter();
   const locale = useLocale();
+  const pathname = usePathname();
+  const isHydrated = useHydrated();
 
   useEffect(() => {
-    if (user?.role === "admin") {
-      return;
-    }
+    if (!isHydrated) return;
+    if (role === "admin") return;
 
-    const sessionUser = readAuthSessionFromBrowser();
-    if (sessionUser?.role === "admin") {
-      dispatch(login(enrichWithPhoneParts(sessionUser)));
-      return;
-    }
+    const destination = `/${locale}`;
+    if (pathname === destination) return;
+    router.replace(destination);
+  }, [isHydrated, locale, pathname, role, router]);
 
-    if (!user) {
-      router.replace(`/${locale}`);
-    }
-  }, [dispatch, locale, router, user]);
-
-  if (user?.role !== "admin") {
+  // Render a deterministic shell until client hydration completes to avoid
+  // server/client markup mismatches in the admin layout.
+  if (!isHydrated) {
     return (
       <GuardRedirectScreen
         logo={
@@ -44,9 +47,11 @@ export function AdminRouteGuard({ children }: { children: React.ReactNode }) {
             ariaLabel="Back to home"
           />
         }
-        description="We’re checking your session and redirecting you to your admin dashboard."
+        description="We’re checking your session and redirecting you."
       />
     );
   }
+
+  if (role !== "admin") return null;
   return <>{children}</>;
 }

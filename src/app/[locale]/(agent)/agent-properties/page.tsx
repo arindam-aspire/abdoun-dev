@@ -1,4 +1,4 @@
-import { AgentProperties } from "@/components/agent/AgentProperties";
+import { AgentProperties } from "@/features/admin-agents/agent-dashboard/components/agent-properties/AgentProperties";
 
 export default function Page() {
   return <AgentProperties />;

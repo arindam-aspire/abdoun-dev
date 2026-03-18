@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { BrandLogo } from "@/components/layout/brand-logo";
-import { AgentInviteForm } from "@/components/agent/AgentInviteForm";
+import { AgentInviteForm } from "@/features/admin-agents/agent-dashboard/components/agent-invite/AgentInviteForm";
 import { useTranslations } from "@/hooks/useTranslations";
 import { getInviteByToken } from "@/services/agentInviteMockService";
 import { completeAgentOnboarding } from "@/services/agentOnboardingApiService";
-import type { AgentInviteFormPayload } from "@/components/agent/AgentInviteForm";
+import type { AgentInviteFormPayload } from "@/features/admin-agents/agent-dashboard/components/agent-invite/AgentInviteForm";
 
 export default function InviteAgentByTokenPage() {
   const params = useParams<{ locale: string; token: string }>();

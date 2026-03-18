@@ -582,7 +582,8 @@
     "whatsappModalIntro": "Une conversation s'ouvrira avec nous. Le message sera pré-rempli pour indiquer le bien qui vous intéresse.",
     "whatsappModalRefLabel": "Référence du bien",
     "whatsappModalOpenButton": "Ouvrir WhatsApp",
-    "noDataFound": "Aucune donnée trouvée."
+    "noDataFound": "Aucune donnée trouvée.",
+    "loginToContact": "Connectez-vous pour contacter l'agent ou enregistrer ce bien."
   },
   "HomePage": {
     "title": "Abdoun Immobilier",

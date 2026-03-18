@@ -4,7 +4,7 @@ import type { AppDispatch } from "@/store";
 import { logout as logoutAction } from "@/features/auth/authSlice";
 import { clearProfileForUser } from "@/features/profile/profileSlice";
 import { clearFavourites } from "@/features/favourites/favouritesSlice";
-import { clearSavedSearches } from "@/features/savedSearches/savedSearchesSlice";
+import { clearSavedSearches } from "@/features/saved-searches/savedSearchesSlice";
 import { clearCompare } from "@/features/compare/compareSlice";
 import { resetAdminAgents } from "@/features/admin-agents/adminAgentsSlice";
 import { clearAuthSession } from "@/lib/auth/sessionCookies";

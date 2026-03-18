@@ -11,16 +11,18 @@ import {
   clearSavedSearches,
   hydrateSavedSearches,
   type SavedSearchItem,
-} from "@/features/savedSearches/savedSearchesSlice";
+} from "@/features/saved-searches/savedSearchesSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { login } from "@/features/auth/authSlice";
 import {
-  clearAuthSession,
-  persistAuthSession,
-  readAuthSessionFromBrowser,
-} from "@/lib/auth/sessionCookies";
+  clearSession,
+  getCurrentSession,
+  getStoredTokens,
+  persistSession,
+} from "@/lib/auth/sessionManager";
 import { selectCurrentUser } from "@/store/selectors";
-import { getCurrentUser, enrichWithPhoneParts, toSessionUserForProfile } from "@/services/authService";
+import { enrichWithPhoneParts } from "@/lib/auth/enrichSessionUser";
+import { getCurrentUser, toSessionUserForProfile } from "@/features/auth/api/auth.api";
 
 const buildFavouritesStorageKey = (userId: string) =>
   `abdoun:favourites:${userId}`;
@@ -50,33 +52,32 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const fromCookie = readAuthSessionFromBrowser();
-    if (fromCookie) {
-      dispatch(login(enrichWithPhoneParts(fromCookie)));
+    const session = getCurrentSession();
+    if (session?.user) {
+      dispatch(login(enrichWithPhoneParts(session.user)));
       return;
     }
 
-    const accessToken = window.localStorage.getItem("accessToken");
-    const refreshToken = window.localStorage.getItem("refreshToken");
-    if (!accessToken || !refreshToken) return;
+    const tokens = session?.tokens ?? getStoredTokens();
+    if (!tokens) return;
 
     void (async () => {
       try {
         const me = await getCurrentUser();
 
         if (me.requires_password_set) {
-          clearAuthSession();
+          clearSession();
           router.push(`/${locale}/force-change-password`);
           return;
         }
 
         const sessionUser = toSessionUserForProfile(me);
-        persistAuthSession(sessionUser);
+        persistSession({ user: sessionUser });
         dispatch(login(sessionUser));
       } catch {
         // Tokens are invalid/expired and refresh failed (or backend unavailable).
         // Keep UI unauthenticated and clear cookies to prevent stale "logged in" role.
-        clearAuthSession();
+        clearSession();
       }
     })();
   }, [dispatch, user, router, locale]);

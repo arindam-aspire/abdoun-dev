@@ -1,13 +1,13 @@
 "use client";
 
-import { AuthPopup } from "@/components/auth/AuthPopup";
+import { AuthPopup } from "@/features/auth/components/modals/AuthPopup";
 import {
   APP_HEADER_CONFIG,
   type HeaderRole,
   resolvePublicLinksVisibility,
 } from "@/components/layout/app-header.config";
 import { BrandLogo } from "@/components/layout/brand-logo";
-import { ProfileModal } from "@/components/profile/ProfileModal";
+import { ProfileModal } from "@/features/profile/components/modals/ProfileModal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   DialogDescription,

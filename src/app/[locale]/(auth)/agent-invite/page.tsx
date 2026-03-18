@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { BrandLogo } from "@/components/layout/brand-logo";
-import { AgentInviteForm } from "@/components/agent/AgentInviteForm";
+import { AgentInviteForm } from "@/features/admin-agents/agent-dashboard/components/agent-invite/AgentInviteForm";
 import { useTranslations } from "@/hooks/useTranslations";
 import {
   getInviteByToken,
@@ -12,7 +12,7 @@ import {
 } from "@/services/agentInviteMockService";
 import { validateInviteToken } from "@/services/adminAgentApiService";
 import { completeAgentOnboarding } from "@/services/agentOnboardingApiService";
-import type { AgentInviteFormPayload } from "@/components/agent/AgentInviteForm";
+import type { AgentInviteFormPayload } from "@/features/admin-agents/agent-dashboard/components/agent-invite/AgentInviteForm";
 
 /** Decode email from query: handle %22 (quotes) and trim. */
 function parseEmailFromParams(value: string | null): string | null {

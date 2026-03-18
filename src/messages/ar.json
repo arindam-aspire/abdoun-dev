@@ -582,7 +582,8 @@
     "whatsappModalIntro": "ستفتح محادثة معنا. سيتم تعبئة الرسالة تلقائياً لمعرفة العقار الذي يهمك.",
     "whatsappModalRefLabel": "رقم المرجع",
     "whatsappModalOpenButton": "فتح واتساب",
-    "noDataFound": "لا توجد بيانات."
+    "noDataFound": "لا توجد بيانات.",
+    "loginToContact": "سجّل الدخول للتواصل مع الوكيل أو حفظ هذا العقار."
   },
   "HomePage": {
     "title": "عقارات عبدون",

@@ -8,7 +8,7 @@ import uiReducer from "@/features/ui/uiSlice";
 import authReducer from "@/features/auth/authSlice";
 import favouritesReducer from "@/features/favourites/favouritesSlice";
 import compareReducer from "@/features/compare/compareSlice";
-import savedSearchesReducer from "@/features/savedSearches/savedSearchesSlice";
+import savedSearchesReducer from "@/features/saved-searches/savedSearchesSlice";
 import adminAgentsReducer from "@/features/admin-agents/adminAgentsSlice";
 import propertySearchReducer from "@/features/property-search/propertySearchSlice";
 import propertyDetailsReducer from "@/features/property-details/propertyDetailsSlice";

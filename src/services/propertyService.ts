@@ -5,8 +5,8 @@ import type {
   CategoryKey,
   SearchResultListing,
   StatusTabKey,
-} from "@/components/search-result/types";
-import type { Property as HomeProperty } from "@/components/home/types";
+} from "@/features/property-search/types";
+import type { Property as HomeProperty } from "@/features/public-home/components/types";
 
 type PropertySearchApiItem = {
   id: number;

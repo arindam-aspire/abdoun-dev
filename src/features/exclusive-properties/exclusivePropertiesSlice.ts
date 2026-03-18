@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import type { Property } from "@/components/home/types";
-import { fetchExclusiveProperties } from "@/services/propertyService";
+import type { Property } from "@/features/public-home/components/types";
+import { getExclusiveProperties } from "@/features/exclusive-properties/api/exclusiveProperties.api";
 
 type ExclusivePropertiesState = {
   items: Property[];
@@ -26,7 +26,7 @@ export const fetchExclusivePropertiesOnce = createAsyncThunk(
   "exclusiveProperties/fetchExclusivePropertiesOnce",
   async (_: void, thunkApi) => {
     try {
-      return await fetchExclusiveProperties();
+      return await getExclusiveProperties();
     } catch (error) {
       if (error instanceof Error && error.message) {
         return thunkApi.rejectWithValue(error.message);

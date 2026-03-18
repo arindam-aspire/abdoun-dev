@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import {
   fetchPropertyDetailsById,
   type PropertyDetailsApiResponse,
-} from "@/services/propertyService";
+} from "@/features/property-details/api/propertyDetails.api";
 
 type PropertyDetailsState = {
   item: PropertyDetailsApiResponse | null;

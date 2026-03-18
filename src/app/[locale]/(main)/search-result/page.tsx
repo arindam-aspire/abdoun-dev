@@ -6,8 +6,8 @@ import type { AppLocale } from "@/i18n/routing";
 import { JORDAN_CITIES_WITH_AREAS } from "@/lib/mocks/jordanCities";
 import { getAreasByCityName } from "@/lib/mocks/jordanCities";
 import { useLocale } from "next-intl";
-import { SearchFields } from "@/components/search-result/SearchFields";
-import { SearchResults } from "@/components/search-result/SearchResults";
+import { SearchFields } from "@/features/property-search/components/SearchFields";
+import { SearchResults } from "@/features/property-search/components/SearchResults";
 
 function getPageTitle(
   t: (key: string, values?: Record<string, string>) => string,

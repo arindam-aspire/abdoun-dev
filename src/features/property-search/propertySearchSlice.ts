@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import type { SearchResultListing } from "@/components/search-result/types";
-import { fetchPropertiesByQuery } from "@/services/propertyService";
+import type { SearchResultListing } from "@/features/property-search/types";
+import { searchPropertiesByQuery } from "@/features/property-search/api/propertySearch.api";
 
 type PropertySearchState = {
   items: SearchResultListing[];
@@ -26,7 +26,7 @@ export const fetchProperties = createAsyncThunk(
   "propertySearch/fetchProperties",
   async (queryString: string, thunkApi) => {
     try {
-      return await fetchPropertiesByQuery(queryString);
+      return await searchPropertiesByQuery(queryString);
     } catch (error) {
       const fallbackMessage = "Failed to load properties";
       if (error instanceof Error && error.message) {

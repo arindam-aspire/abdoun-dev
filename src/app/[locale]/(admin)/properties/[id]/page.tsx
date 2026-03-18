@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useLocale } from "next-intl";
-import { AdminPropertyDetailsMain } from "@/components/admin/properties/property-details/AdminPropertyDetailsMain";
+import { AdminPropertyDetailsMain } from "@/features/admin-agents/admin-dashboard/components/property-details/AdminPropertyDetailsMain";
 import type { AppLocale } from "@/i18n/routing";
 
 export default function AdminPropertyDetailsPage() {

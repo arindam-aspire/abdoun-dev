@@ -1,4 +1,4 @@
-import { AddPropertyForm } from "@/components/agent/add-property/AddPropertyForm";
+import { AddPropertyForm } from "@/features/admin-agents/agent-dashboard/components/add-property/AddPropertyForm";
 
 export default function AddPropertyRoute() {
   return <AddPropertyForm />;

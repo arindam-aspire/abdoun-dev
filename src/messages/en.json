@@ -759,7 +759,8 @@
     "whatsappModalIntro": "You'll open a chat with us. The message below will be pre-filled so we know which property you're interested in.",
     "whatsappModalRefLabel": "Property reference",
     "whatsappModalOpenButton": "Open WhatsApp",
-    "noDataFound": "No Data Found."
+    "noDataFound": "No Data Found.",
+    "loginToContact": "Sign in to contact the agent or save this property."
   },
   "HomePage": {
     "title": "Abdoun Real Estate",

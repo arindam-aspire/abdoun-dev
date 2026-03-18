@@ -1,15 +1,17 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import { ArrowLeft } from "lucide-react";
 import type { AppLocale } from "@/i18n/routing";
 import { useTranslations } from "@/hooks/useTranslations";
-import { SearchResultPropertyCard } from "@/components/search-result/SearchResultPropertyCard";
-import { MOCK_SEARCH_RESULTS } from "@/components/search-result/mockSearchResults";
-import type { SearchResultListing } from "@/components/search-result/types";
+import { SearchResultPropertyCard } from "@/features/property-search/components/SearchResultPropertyCard";
+import { MOCK_SEARCH_RESULTS } from "@/lib/mocks/mockSearchResults";
+import type { SearchResultListing } from "@/features/property-search/types";
+import { parseCompareIds } from "@/features/compare/utils/compareIds";
+import { useCompareSelection } from "@/features/compare/hooks/useCompareSelection";
 
 function getListingsByIds(ids: number[]): SearchResultListing[] {
   const byId = new Map(MOCK_SEARCH_RESULTS.map((l) => [l.id, l]));
@@ -24,15 +26,19 @@ export default function ComparePage() {
   const isRtl = locale === "ar";
   const t = useTranslations("compare");
   const tSearch = useTranslations("searchResult");
+  const { toggleSelected, clearAll } = useCompareSelection();
 
   const ids = useMemo(() => {
-    const raw = searchParams.get("ids");
-    if (!raw) return [];
-    return raw
-      .split(",")
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => Number.isFinite(n));
+    return parseCompareIds(searchParams.get("ids"));
   }, [searchParams]);
+
+  // Keep redux selection in sync with URL ids (client-only state model).
+  useEffect(() => {
+    // If there are no ids in the URL, keep existing compare selection unchanged.
+    if (ids.length === 0) return;
+    clearAll();
+    for (const id of ids) toggleSelected(id);
+  }, [clearAll, ids, toggleSelected]);
 
   const listings = useMemo(() => getListingsByIds(ids), [ids]);
 

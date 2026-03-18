@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import type { AppLocale } from "@/i18n/routing";
-import { AgentPropertyDetails } from "@/components/agent/properties/AgentPropertyDetails";
+import { AgentPropertyDetails } from "@/features/admin-agents/agent-dashboard/components/agent-properties/AgentPropertyDetails";
 
 export default function AgentPropertyDetailsPage() {
   const language = useLocale() as AppLocale;

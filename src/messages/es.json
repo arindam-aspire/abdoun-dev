@@ -582,7 +582,8 @@
     "whatsappModalIntro": "Se abrirá un chat con nosotros. El mensaje se rellenará automáticamente con la propiedad que le interesa.",
     "whatsappModalRefLabel": "Referencia de la propiedad",
     "whatsappModalOpenButton": "Abrir WhatsApp",
-    "noDataFound": "No se encontraron datos."
+    "noDataFound": "No se encontraron datos.",
+    "loginToContact": "Inicia sesión para contactar al agente o guardar esta propiedad."
   },
   "HomePage": {
     "title": "Abdoun Bienes Raices",
