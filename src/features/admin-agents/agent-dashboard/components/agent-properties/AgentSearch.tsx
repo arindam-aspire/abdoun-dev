@@ -19,6 +19,7 @@ function getPageTitle(
 export function AgentSearch({ language }: AgentSearchProps) {
   const searchParams = useSearchParams();
   const t = useTranslations("searchResult");
+  const tSaved = useTranslations("savedSearches");
   const isRtl = language === "ar";
   const pageTitle = getPageTitle(t, searchParams);
   return (
@@ -79,6 +80,7 @@ export function AgentSearch({ language }: AgentSearchProps) {
               swimmingPool: t("swimmingPool"),
               garden: t("garden"),
               airConditioning: t("airConditioning"),
+              saveSearch: tSaved("saveSearch"),
             }}
           />
         </div>

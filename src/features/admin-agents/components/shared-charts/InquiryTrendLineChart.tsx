@@ -6,6 +6,8 @@ import type { ChartOptions, TooltipItem } from "chart.js";
 
 export interface InquiryTrendLineChartProps {
   values: number[];
+  /** Optional custom labels for each point (e.g. month names). */
+  labels?: string[];
   title?: string;
   subtitle?: string;
   viewDetailsLabel?: string;
@@ -19,6 +21,7 @@ const PRIMARY_FILL = "rgba(43, 91, 166, 0.2)";
 
 export function InquiryTrendLineChart({
   values,
+  labels: customLabels,
   title,
   subtitle,
   viewDetailsLabel,
@@ -26,7 +29,7 @@ export function InquiryTrendLineChart({
   yAxisTitle,
   className = "",
 }: InquiryTrendLineChartProps) {
-  const labels = values.map((_, i) => (i + 1).toString());
+  const labels = customLabels ?? values.map((_, i) => (i + 1).toString());
 
   const data = {
     labels,
@@ -52,7 +55,7 @@ export function InquiryTrendLineChart({
       tooltip: {
         callbacks: {
           label: (ctx: TooltipItem<"line">) =>
-            `Day ${ctx.dataIndex + 1}: ${ctx.parsed.y ?? 0}`,
+            `${labels[ctx.dataIndex] ?? `Point ${ctx.dataIndex + 1}`}: ${ctx.parsed.y ?? 0}`,
         },
       },
     },
@@ -86,15 +89,18 @@ export function InquiryTrendLineChart({
               <h3 className="text-sm font-semibold text-charcoal">{title}</h3>
             ) : null}
             {viewDetailsLabel ? (
-              <span className="text-xs font-medium text-[var(--brand-secondary)] hover:text-brand-secondary/80 transition shrink-0">
+              <button
+                type="button"
+                className="text-xs font-medium text-(--brand-secondary) hover:text-brand-secondary/80 transition shrink-0"
+              >
                 {viewDetailsLabel}
-              </span>
+              </button>
             ) : null}
           </div>
           {subtitle ? <p className="mt-1 text-xs text-charcoal/65">{subtitle}</p> : null}
         </div>
       ) : null}
-      <div className="h-[200px] w-full">
+      <div className="h-[208px] w-full">
         <Line data={data} options={options} />
       </div>
     </section>

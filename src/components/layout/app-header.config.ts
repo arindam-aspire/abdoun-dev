@@ -9,6 +9,7 @@ export interface HeaderNavItem {
   label: string;
   path: string;
   roles: HeaderRole[];
+  placement?: "header" | "profile";
   publicOnly?: boolean;
 }
 

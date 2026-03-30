@@ -168,6 +168,18 @@ export function addListing(listing: Pick<AgentListing, "title" | "type" | "price
   return Promise.resolve(newListing);
 }
 
+export function getListingsThisMonthCountForDashboard(): number {
+  const currentMonthPrefix = new Date().toISOString().slice(0, 7); // e.g. "2026-03"
+  return listingsStore.filter((listing) =>
+    typeof listing.lastUpdated === "string" &&
+    listing.lastUpdated.startsWith(currentMonthPrefix)
+  ).length;
+}
+
+export function getPendingApprovalsCountForDashboard(): number {
+  return listingsStore.filter((listing) => listing.status === "pending_approval").length;
+}
+
 export function getInquiries(): Promise<AgentInquiry[]> {
   return Promise.resolve([...inquiriesStore].sort((a, b) => b.dateReceived.localeCompare(a.dateReceived)));
 }

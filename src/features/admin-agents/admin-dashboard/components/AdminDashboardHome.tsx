@@ -1,7 +1,15 @@
 "use client";
 
+import { useAdminDashboard } from "@/features/admin-agents/admin-dashboard/hooks/useAdminDashboard";
+import { DotLineChart } from "@/features/admin-agents/components/shared-charts/DotLineChart";
+import { InquiryTrendLineChart } from "@/features/admin-agents/components/shared-charts/InquiryTrendLineChart";
+import { SparkBarsChart } from "@/features/admin-agents/components/shared-charts/SparkBarsChart";
+import type { AppLocale } from "@/i18n/routing";
+import type { AdminDashboardData } from "@/services/adminDashboardMockService";
+import { getAdminDashboardData } from "@/services/adminDashboardMockService";
+import { getClosedLeadsCountForDashboard } from "@/services/leadInquiriesMockService";
+import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard";
 import {
-  AlertTriangle,
   BarChart3,
   Building2,
   CheckCircle2,
@@ -11,18 +19,13 @@ import {
   MapPin,
   PhoneCall,
   ShieldCheck,
-  TrendingUp,
   UserPlus,
-  Users,
-  UserSquare2,
+  Users
 } from "lucide-react";
-import Link from "next/link";
 import { useLocale } from "next-intl";
-import { useAdminDashboard } from "@/features/admin-agents/admin-dashboard/hooks/useAdminDashboard";
-import type { AppLocale } from "@/i18n/routing";
-import { InquiryTrendLineChart } from "@/features/admin-agents/components/shared-charts/InquiryTrendLineChart";
-import { SparkBarsChart } from "@/features/admin-agents/components/shared-charts/SparkBarsChart";
-import { DotLineChart } from "@/features/admin-agents/components/shared-charts/DotLineChart";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { PerformanceBarChart } from "../../components/shared-charts/PerformanceBarChart";
 
 /* ------------------------------------------------------------------ */
 /*  Types & helpers                                                    */
@@ -32,6 +35,7 @@ type KpiCard = {
   label: string;
   value: string;
   delta: string;
+  deltaTrend?: number;
   icon: React.ComponentType<{ className?: string }>;
   tone: "neutral" | "info" | "warning" | "success";
 };
@@ -71,6 +75,7 @@ type TopAgent = {
 /*  Static mock data (non-KPI sections)                                */
 /* ------------------------------------------------------------------ */
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const APPROVAL_QUEUE: QueueItem[] = [
   {
     ref: "PROP-4832",
@@ -106,6 +111,7 @@ const APPROVAL_QUEUE: QueueItem[] = [
   },
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const LEAD_SOURCES: LeadSource[] = [
   { source: "Organic Search", leads: 1264, conversionRate: "12.4%", share: 41 },
   { source: "WhatsApp", leads: 894, conversionRate: "16.8%", share: 29 },
@@ -156,6 +162,7 @@ const TOP_AGENTS: TopAgent[] = [
 /*  Style helpers                                                      */
 /* ------------------------------------------------------------------ */
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function statusPillClass(status: QueueItemStatus): string {
   if (status === "approved") {
     return "bg-emerald-100 text-emerald-800 border-emerald-200";
@@ -205,6 +212,7 @@ function kpiToneClass(tone: KpiCard["tone"]): {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function formatDelta(value: number, suffix = ""): string {
   const sign = value >= 0 ? "+" : "";
   return `${sign}${value}${suffix} vs last month`;
@@ -231,126 +239,167 @@ export function AdminDashboardHome() {
     );
   }
 
-  const kpiCards: KpiCard[] = [
-    {
-      label: "Users this month",
-      value: data.usersThisMonth.toLocaleString(),
-      delta: formatDelta(data.usersMoMDelta, "%"),
-      icon: Users,
-      tone: "neutral",
-    },
-    {
-      label: "Agents this month",
-      value: String(data.agentsThisMonth),
-      delta: formatDelta(data.agentsMoMDelta, "%"),
-      icon: UserSquare2,
-      tone: "info",
-    },
-    {
-      label: "Pending approvals",
-      value: String(data.pendingApprovals),
-      delta: `+${data.pendingApprovalsToday} today`,
-      icon: Clock3,
-      tone: "warning",
-    },
-    {
-      label: "Listings this month",
-      value: data.listingsThisMonth.toLocaleString(),
-      delta: formatDelta(data.listingsMoMDelta, "%"),
-      icon: Building2,
-      tone: "info",
-    },
-    {
-      label: "Leads this month",
-      value: data.leadsThisMonth.toLocaleString(),
-      delta: formatDelta(data.leadsMoMDelta, "%"),
-      icon: BarChart3,
-      tone: "success",
-    },
+  const closedLeadsThisMonth = getClosedLeadsCountForDashboard();
+
+  const monthParam = new Date().toISOString().slice(0, 7);
+  const shortMonthParam = new Date().toISOString().slice(2, 7); // "26-03"
+
+  const metricCards: Array<
+    { id: "users" | "closedDeals" | "pendingApprovals" | "listings" | "leads" } & Omit<
+      React.ComponentProps<typeof DashboardMetricCard>,
+      "className"
+    >
+  > = [
+    (() => {
+      const toneClass = kpiToneClass("neutral");
+      return {
+        id: "users",
+        label: "Users this Month",
+        value: data.usersThisMonth.toLocaleString(),
+        icon: Users,
+        href: `/${locale}/users?month=${encodeURIComponent(monthParam)}`,
+        iconBgClassName: toneClass.iconWrap,
+        iconClassName: toneClass.icon,
+        valueClassName: toneClass.value,
+        deltaTrend: data.usersMoMDelta,
+      };
+    })(),
+    (() => {
+      const toneClass = kpiToneClass("success");
+      const conversionRate =
+        data.leadsThisMonth > 0
+          ? ((closedLeadsThisMonth / data.leadsThisMonth) * 100).toFixed(1)
+          : "0.0";
+      return {
+        id: "closedDeals",
+        label: "Deal Closed this Month",
+        value: closedLeadsThisMonth.toLocaleString(),
+        icon: CheckCircle2,
+        href: `/${locale}/deals?month=${encodeURIComponent(shortMonthParam)}`,
+        iconBgClassName: toneClass.iconWrap,
+        iconClassName: toneClass.icon,
+        valueClassName: toneClass.value,
+        deltaTrend: data.leadsMoMDelta,
+        subLine: `Conversion Rate: ${conversionRate}%`,
+        subLineClassName: toneClass.delta,
+      };
+    })(),
+    (() => {
+      const toneClass = kpiToneClass("warning");
+      return {
+        id: "pendingApprovals",
+        label: "Pending Approvals",
+        value: String(data.pendingApprovals),
+        icon: Clock3,
+        href: `/${locale}/listings?status=pending_approval`,
+        iconBgClassName: toneClass.iconWrap,
+        iconClassName: toneClass.icon,
+        valueClassName: toneClass.value,
+        subLine: `+${data.pendingApprovalsToday} today`,
+        subLineClassName: toneClass.delta,
+      };
+    })(),
+    (() => {
+      const toneClass = kpiToneClass("info");
+      return {
+        id: "listings",
+        label: "Listings this Month",
+        value: data.listingsThisMonth.toLocaleString(),
+        icon: Building2,
+        href: `/${locale}/listings?month=${encodeURIComponent(shortMonthParam)}`,
+        iconBgClassName: toneClass.iconWrap,
+        iconClassName: toneClass.icon,
+        valueClassName: toneClass.value,
+        deltaTrend: data.listingsMoMDelta,
+      };
+    })(),
+    (() => {
+      const toneClass = kpiToneClass("success");
+      return {
+        id: "leads",
+        label: "Leads this Month",
+        value: data.leadsThisMonth.toLocaleString(),
+        icon: BarChart3,
+        href: `/${locale}/leads?month=${encodeURIComponent(shortMonthParam)}`,
+        iconBgClassName: toneClass.iconWrap,
+        iconClassName: toneClass.icon,
+        valueClassName: toneClass.value,
+        deltaTrend: data.leadsMoMDelta,
+      };
+    })(),
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="px-1">
         <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
           Admin Dashboard
         </h1>
         <p className="mt-1 text-size-sm text-charcoal/70">
-          Monthly overview of platform growth, moderation queue, and operations.
+          Monthly overview of platform growth and operations.
         </p>
       </div>
 
       {/* ── KPI Cards ── */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {kpiCards.map((item) => {
-          const Icon = item.icon;
-          const toneClass = kpiToneClass(item.tone);
-          return (
-            <article
-              key={item.label}
-              className="rounded-2xl border border-subtle bg-white p-4 shadow-sm transition hover:shadow-md"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-charcoal/70">{item.label}</p>
-                <span
-                  className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${toneClass.iconWrap}`}
-                >
-                  <Icon className={`h-4 w-4 ${toneClass.icon}`} />
-                </span>
-              </div>
-              <p className={`mt-3 text-2xl font-semibold ${toneClass.value}`}>{item.value}</p>
-              <p className={`mt-1 text-xs font-medium ${toneClass.delta}`}>{item.delta}</p>
-            </article>
-          );
-        })}
+        {metricCards.map(({ id, ...card }) => (
+          <DashboardMetricCard key={id} {...card} className="transition hover:shadow-md" />
+        ))}
       </section>
 
       {/* ── Charts (Chart.js) ── */}
-      <section className="grid gap-4 xl:grid-cols-3">
-        <InquiryTrendLineChart
-          values={data.userGrowthSeries}
-          title="User growth"
-          subtitle="New user signups over the last 12 months"
-        />
-        <SparkBarsChart
-          values={data.listingGrowthSeries}
-          title="Listing activity"
-          subtitle="New listings created per month"
-        />
-        <DotLineChart
-          labels={data.monthLabels}
-          values={data.leadGrowthSeries}
-          title="Lead volume"
-          subtitle="Total leads generated per month"
-        />
+      <section className="grid gap-4 md:grid-cols-2">
+        <Link href={`/${locale}/dashboard/user-growth`} className="block transition hover:opacity-95">
+          <InquiryTrendLineChart
+            labels={data.monthLabels}
+            values={data.userGrowthSeries}
+            title="User growth"
+            subtitle="New user signups over the last 12 months"
+            viewDetailsLabel="View details"
+            xAxisTitle="Month"
+            yAxisTitle="Users"
+          />
+        </Link>
+        <Link
+          href={`/${locale}/dashboard/listing-activity`}
+          className="block transition hover:opacity-95"
+        >
+          <SparkBarsChart
+            labels={data.monthLabels}
+            values={data.listingGrowthSeries}
+            title="Listed Properties"
+            subtitle="New listings created per month"
+            viewDetailsLabel="View details"
+          />
+        </Link>
+        <Link
+          href={`/${locale}/dashboard/lead-volume`}
+          className="block transition hover:opacity-95"
+        >
+          <DotLineChart
+            labels={data.monthLabels}
+            values={data.leadGrowthSeries}
+            title="Lead volume"
+            subtitle="Total leads generated per month"
+            viewDetailsLabel="View details"
+          />
+        </Link>
+        <Link
+          href={`/${locale}/property-performance`}
+          className="block transition hover:opacity-95"
+        >
+          <PerformanceBarChart
+            data={data.propertyPerformanceSeries}
+            title="Property Performance"
+            viewDetailsLabel="View details"
+            xAxisTitle="Views"
+            yAxisTitle="Property"
+          />
+        </Link>
       </section>
-
-      {/* ── Alerts panel + Quick actions (original layout) ── */}
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-charcoal">
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
-            Alerts panel
-          </h2>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <div className="rounded-xl border border-subtle bg-surface p-3">
-              <p className="text-xs font-semibold text-charcoal">Pending agent KYC approvals</p>
-              <p className="mt-2 text-2xl font-semibold text-amber-700">21</p>
-              <p className="mt-1 text-xs text-charcoal/70">Needs manual verification</p>
-            </div>
-            <div className="rounded-xl border border-subtle bg-surface p-3">
-              <p className="text-xs font-semibold text-charcoal">Pending property approvals</p>
-              <p className="mt-2 text-2xl font-semibold text-amber-700">35</p>
-              <p className="mt-1 text-xs text-charcoal/70">Awaiting moderation</p>
-            </div>
-            <div className="rounded-xl border border-subtle bg-surface p-3">
-              <p className="text-xs font-semibold text-charcoal">Subscription expiries</p>
-              <p className="mt-2 text-2xl font-semibold text-rose-700">14</p>
-              <p className="mt-1 text-xs text-charcoal/70">Expiring within 7 days</p>
-            </div>
-          </div>
-        </article>
-
+ 
+      {/* ── Quick actions + Recent activity ── */}
+      <section className="grid gap-4 lg:grid-cols-2">
         <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-charcoal">
             <ShieldCheck className="h-4 w-4 text-secondary" />
@@ -364,6 +413,13 @@ export function AdminDashboardHome() {
               <span>Review agents</span>
               <UserPlus className="h-4 w-4" />
             </Link>
+            <Link
+              href={`/${locale}/users`}
+              className="flex w-full items-center justify-between rounded-xl border border-subtle bg-surface px-3 py-2 text-sm text-charcoal transition hover:bg-primary/5"
+            >
+              <span>View users</span>
+              <Users className="h-4 w-4" />
+            </Link>
             <button
               type="button"
               className="flex w-full items-center justify-between rounded-xl border border-subtle bg-surface px-3 py-2 text-sm text-charcoal transition hover:bg-primary/5"
@@ -371,93 +427,52 @@ export function AdminDashboardHome() {
               <span>Review listings</span>
               <Building2 className="h-4 w-4" />
             </button>
-            <button
-              type="button"
+            <Link
+              href={`/${locale}/leads`}
               className="flex w-full items-center justify-between rounded-xl border border-subtle bg-surface px-3 py-2 text-sm text-charcoal transition hover:bg-primary/5"
             >
               <span>View leads</span>
               <BarChart3 className="h-4 w-4" />
-            </button>
-          </div>
-        </article>
-      </section>
-
-      {/* ── Moderation queue + Lead source quality (original layout) ── */}
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-charcoal">Moderation queue</h2>
-            <span className="inline-flex items-center gap-1 rounded-full border border-subtle bg-surface px-2 py-1 text-[11px] text-charcoal/75">
-              <Clock3 className="h-3.5 w-3.5" />
-              {APPROVAL_QUEUE.length} items
-            </span>
-          </div>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[620px] text-left">
-              <thead>
-                <tr className="border-b border-subtle text-xs text-charcoal/65">
-                  <th className="px-2 py-2 font-medium">Reference</th>
-                  <th className="px-2 py-2 font-medium">Property</th>
-                  <th className="px-2 py-2 font-medium">Submitted by</th>
-                  <th className="px-2 py-2 font-medium">City</th>
-                  <th className="px-2 py-2 font-medium">Time</th>
-                  <th className="px-2 py-2 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {APPROVAL_QUEUE.map((item) => (
-                  <tr
-                    key={item.ref}
-                    className="border-b border-subtle/70 text-sm last:border-b-0"
-                  >
-                    <td className="px-2 py-3 font-medium text-secondary">{item.ref}</td>
-                    <td className="px-2 py-3 text-charcoal">{item.title}</td>
-                    <td className="px-2 py-3 text-charcoal/80">{item.submittedBy}</td>
-                    <td className="px-2 py-3 text-charcoal/80">{item.city}</td>
-                    <td className="px-2 py-3 text-charcoal/70">{item.submittedAt}</td>
-                    <td className="px-2 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full border px-2 py-1 text-[11px] font-medium capitalize ${statusPillClass(item.status)}`}
-                      >
-                        {item.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            </Link>
           </div>
         </article>
 
         <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-charcoal">
-            <TrendingUp className="h-4 w-4 text-secondary" />
-            Lead source quality
+          <h2 className="text-sm font-semibold text-charcoal">
+            Recent activity
           </h2>
-          <div className="mt-4 space-y-3">
-            {LEAD_SOURCES.map((item) => (
-              <div key={item.source} className="rounded-xl border border-subtle bg-surface p-3">
-                <div className="flex items-center justify-between gap-2 text-xs text-charcoal/80">
-                  <span className="font-medium">{item.source}</span>
-                  <span>{item.conversionRate} CVR</span>
-                </div>
-                <p className="mt-1 text-sm font-semibold text-charcoal">
-                  {item.leads.toLocaleString()} leads
-                </p>
-                <div className="mt-2 h-2 rounded-full bg-white">
-                  <div
-                    className="h-2 rounded-full bg-primary"
-                    style={{ width: `${item.share}%` }}
-                  />
+          <div className="mt-4 space-y-2">
+            {RECENT_ACTIVITY.map((item) => (
+              <div
+                key={`${item.text}-${item.time}`}
+                className="rounded-xl border border-subtle bg-surface px-3 py-2"
+              >
+                <div className="flex items-start gap-2">
+                  {item.tone === "success" ? (
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                  ) : item.tone === "warning" ? (
+                    <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                  ) : (
+                    <Mail className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
+                  )}
+                  <div className="flex flex-1 items-center justify-between gap-2 min-w-0">
+                    <p className="text-sm text-charcoal">{item.text}</p>
+                    <span className="text-xs text-charcoal/65 shrink-0">{item.time}</span>
+                  </div>
                 </div>
               </div>
             ))}
+            <div className="rounded-xl border border-dashed border-subtle bg-white px-3 py-2">
+              <p className="flex items-center gap-2 text-xs text-charcoal/70">
+                <PhoneCall className="h-3.5 w-3.5 shrink-0" />
+                Support line queue currently: 6 active tickets.
+              </p>
+            </div>
           </div>
         </article>
       </section>
-
-      {/* ── Top agents + Recent activity (original layout) ── */}
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+           {/* ── Top agents ── */}
+      <section className="grid gap-4">
         <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
           <h2 className="text-sm font-semibold text-charcoal">Top agents this month</h2>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -480,38 +495,6 @@ export function AdminDashboardHome() {
                 </div>
               </div>
             ))}
-          </div>
-        </article>
-
-        <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
-          <h2 className="text-sm font-semibold text-charcoal">Recent activity</h2>
-          <div className="mt-4 space-y-3">
-            {RECENT_ACTIVITY.map((item) => (
-              <div
-                key={`${item.text}-${item.time}`}
-                className="rounded-xl border border-subtle bg-surface p-3"
-              >
-                <div className="flex items-start gap-2">
-                  {item.tone === "success" ? (
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
-                  ) : item.tone === "warning" ? (
-                    <CircleAlert className="mt-0.5 h-4 w-4 text-amber-600" />
-                  ) : (
-                    <Mail className="mt-0.5 h-4 w-4 text-secondary" />
-                  )}
-                  <div>
-                    <p className="text-sm text-charcoal">{item.text}</p>
-                    <p className="mt-1 text-xs text-charcoal/65">{item.time}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-            <div className="rounded-xl border border-dashed border-subtle bg-white p-3">
-              <p className="flex items-center gap-2 text-xs text-charcoal/70">
-                <PhoneCall className="h-3.5 w-3.5" />
-                Support line queue currently: 6 active tickets.
-              </p>
-            </div>
           </div>
         </article>
       </section>

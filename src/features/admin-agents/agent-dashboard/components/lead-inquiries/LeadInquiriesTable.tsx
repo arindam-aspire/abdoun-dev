@@ -62,6 +62,8 @@ export interface LeadInquiriesTableProps {
   pageSize: number;
   basePath: string;
   onOpenLead: (id: string) => void;
+  /** Visual wrapper style. "card" (default) renders a bordered/rounded container. */
+  variant?: "card" | "plain";
   paginationTranslations: {
     previous: string;
     next: string;
@@ -81,14 +83,14 @@ export function LeadInquiriesTable({
   pageSize,
   basePath,
   onOpenLead,
+  variant = "card",
   paginationTranslations,
 }: LeadInquiriesTableProps) {
   const t = useTranslations("leadInquiries");
 
-  return (
-    <article className="rounded-2xl border border-subtle bg-white shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[800px] text-left">
+  const Table = (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[800px] text-left">
           <thead>
             <tr className="border-b border-subtle bg-surface text-xs text-charcoal/65">
               <th className="px-4 py-3 font-medium">{t("tableProperty")}</th>
@@ -150,25 +152,42 @@ export function LeadInquiriesTable({
               </tr>
             ))}
           </tbody>
-        </table>
-      </div>
-      {leads.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Mail className="h-10 w-10 text-charcoal/40" aria-hidden />
-          <p className="mt-2 text-sm text-charcoal/70">{t("noLeads")}</p>
-        </div>
-      ) : (
-        <div className="border-t border-subtle px-4 py-4 md:px-5">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            pageSize={pageSize}
-            basePath={basePath}
-            translations={paginationTranslations}
-          />
-        </div>
-      )}
+      </table>
+    </div>
+  );
+
+  const Empty = (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <Mail className="h-10 w-10 text-charcoal/40" aria-hidden />
+      <p className="mt-2 text-sm text-charcoal/70">{t("noLeads")}</p>
+    </div>
+  );
+
+  const Pager = (
+    <div className={variant === "card" ? "border-t border-subtle px-4 py-4 md:px-5" : "mt-4"}>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        pageSize={pageSize}
+        basePath={basePath}
+        translations={paginationTranslations}
+      />
+    </div>
+  );
+
+  const content = (
+    <>
+      {Table}
+      {leads.length === 0 ? Empty : Pager}
+    </>
+  );
+
+  if (variant === "plain") return content;
+
+  return (
+    <article className="rounded-2xl border border-subtle bg-white shadow-sm overflow-hidden">
+      {content}
     </article>
   );
 }

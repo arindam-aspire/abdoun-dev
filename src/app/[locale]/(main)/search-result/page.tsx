@@ -44,6 +44,7 @@ function getPageTitle(
 export default function SearchResultPage() {
   const searchParams = useSearchParams();
   const t = useTranslations("searchResult");
+  const tSaved = useTranslations("savedSearches");
   const language = useLocale() as AppLocale;
   const isRtl = language === "ar";
   const pageTitle = getPageTitle(t, searchParams);
@@ -109,6 +110,7 @@ export default function SearchResultPage() {
               swimmingPool: t("swimmingPool"),
               garden: t("garden"),
               airConditioning: t("airConditioning"),
+              saveSearch: tSaved("saveSearch"),
             }}
             isRtl={isRtl}
           />

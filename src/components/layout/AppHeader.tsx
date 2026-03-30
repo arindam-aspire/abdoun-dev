@@ -68,11 +68,13 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
     pathname,
     showPublicLinks,
   );
-  const navItems = APP_HEADER_CONFIG.navItems.filter(
+  const roleNavItems = APP_HEADER_CONFIG.navItems.filter(
     (item) =>
       item.roles.includes(activeRole) &&
       (!item.publicOnly || shouldShowPublicLinks),
   );
+  const navItems = roleNavItems.filter((item) => item.placement !== "profile");
+  const profileNavItems = roleNavItems.filter((item) => item.placement === "profile");
   const canShowListProperty = APP_HEADER_CONFIG.actions.listProperty.roles.includes(activeRole);
   const profileMenuConfig = user ? APP_HEADER_CONFIG.profileMenu[user.role] : null;
 
@@ -188,6 +190,21 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
     setIsProfileOpen(false);
   };
 
+  const renderProfileNavLinks = (onClick: () => void) =>
+    profileNavItems.map((item) => (
+      <Link
+        key={item.id}
+        href={`/${activeLanguage}${item.path}`}
+        onClick={onClick}
+        className={cn(
+          "block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer",
+          isRTL ? "text-right" : "text-left",
+        )}
+      >
+        {item.label}
+      </Link>
+    ));
+
   return (
     <header
       className="sticky top-0 z-30 border-b border-white/20 bg-[rgba(26,59,92,0.95)] text-white backdrop-blur relative overflow-x-clip"
@@ -276,6 +293,10 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                     </p>
                   </div>
                   <nav className="py-1 px-1" aria-label="Account menu">
+                    {renderProfileNavLinks(() => {
+                      setIsProfileOpen(false);
+                      setIsAccountSettingsHover(false);
+                    })}
                     {profileMenuConfig?.showFavourites ? (
                       <Link
                         href={`/${activeLanguage}/favourites`}
@@ -427,6 +448,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                     </p>
                   </div>
                   <nav className="py-1 px-1" aria-label="Account menu">
+                    {renderProfileNavLinks(() => setIsProfileOpen(false))}
                     {profileMenuConfig?.showFavourites ? (
                       <Link
                         href={`/${activeLanguage}/favourites`}

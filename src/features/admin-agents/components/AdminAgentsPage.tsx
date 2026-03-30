@@ -82,8 +82,13 @@ export function AdminAgentsPage() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [generatedInviteLink, setGeneratedInviteLink] = useState("");
   const [copied, setCopied] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<AgentStatusFilterValue>("all");
-  const [toast, setToast] = useState<{ kind: "info" | "error" | "success"; message: string } | null>(null);
+  const [statusFilter, setStatusFilter] =
+    useState<AgentStatusFilterValue>("all");
+  const [query, setQuery] = useState<string>(searchParams.get("q") ?? "");
+  const [toast, setToast] = useState<{
+    kind: "info" | "error" | "success";
+    message: string;
+  } | null>(null);
 
   const PAGE_PARAM = "page";
   const PAGE_SIZE_PARAM = "pageSize";
@@ -171,9 +176,40 @@ export function AdminAgentsPage() {
       const atB = new Date(b.invitedAt ?? 0).getTime();
       return atB - atA;
     });
-    if (statusFilter === "all") return sorted;
-    return sorted.filter((a) => a.status === statusFilter);
-  }, [currentItems, statusFilter]);
+    const statusFiltered =
+      statusFilter === "all" ? sorted : sorted.filter((a) => a.status === statusFilter);
+
+    const q = query.trim().toLowerCase();
+    if (!q) return statusFiltered;
+    return statusFiltered.filter((agent) => {
+      const haystack = [
+        agent.fullName,
+        agent.email,
+        agent.phone,
+        agent.city,
+        agent.invitedBy,
+        agent.status,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [currentItems, query, statusFilter]);
+
+  useEffect(() => {
+    setQuery(searchParams.get("q") ?? "");
+  }, [searchParams]);
+
+  const updateQueryParam = (value: string) => {
+    setQuery(value);
+    const params = new URLSearchParams(searchParams.toString());
+    if (!value.trim()) params.delete("q");
+    else params.set("q", value);
+    params.set(PAGE_PARAM, "1");
+    const next = params.toString();
+    router.push(next ? `${pathname}?${next}` : pathname, { scroll: false });
+  };
 
   const currentPage = useMemo(() => {
     const page = searchParams.get(PAGE_PARAM);
@@ -517,8 +553,42 @@ export function AdminAgentsPage() {
       </ConfirmDialog>
 
       <Card className="rounded-2xl border-subtle">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">All agents</CardTitle>
+        <CardHeader className="flex flex-col gap-3 space-y-0 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-secondary" />
+            <CardTitle className="text-size-sm text-charcoal">
+              Agent list
+            </CardTitle>
+          </div>
+          <div className="flex w-full justify-end md:w-auto">
+            <div className="flex w-full flex-col gap-2 md:flex-row md:items-center md:justify-end">
+              <div className="w-full md:w-64 lg:w-80">
+                <Input
+                  value={query}
+                  onChange={(event) => updateQueryParam(event.target.value)}
+                  placeholder="Search agents..."
+                  className="h-10 w-full rounded-xl"
+                />
+              </div>
+              <div className="flex w-full items-center gap-2 md:w-auto">
+                <span className="text-size-xs text-charcoal/70">Status</span>
+                <Dropdown
+                  buttonId="agent-status-filter"
+                  label="All"
+                  value={statusFilter}
+                  onChange={(value) => {
+                    const next = value as AgentStatusFilterValue;
+                    applyStatusFilter(next);
+                  }}
+                  align="right"
+                  options={AGENT_STATUS_FILTER_OPTIONS.map((opt) => ({
+                    value: opt.value,
+                    label: opt.label,
+                  }))}
+                />
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

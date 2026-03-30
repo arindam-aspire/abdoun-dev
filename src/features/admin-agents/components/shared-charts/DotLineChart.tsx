@@ -9,6 +9,8 @@ export interface DotLineChartProps {
   values: number[];
   title?: string;
   subtitle?: string;
+  /** Optional "View details" action, shown top-right. */
+  viewDetailsLabel?: string;
   className?: string;
 }
 
@@ -19,8 +21,9 @@ export function DotLineChart({
   values,
   title,
   subtitle,
+  viewDetailsLabel,
   className = "",
-}: DotLineChartProps) {
+}: Readonly<DotLineChartProps>) {
   const safeLabels = labels ?? [];
   const safeValues = values ?? [];
 
@@ -75,8 +78,20 @@ export function DotLineChart({
     >
       {title ? (
         <div className="mb-3">
-          <h3 className="text-sm font-semibold text-charcoal">{title}</h3>
-          {subtitle ? <p className="mt-1 text-xs text-charcoal/65">{subtitle}</p> : null}
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-charcoal">{title}</h3>
+            {viewDetailsLabel ? (
+              <button
+                type="button"
+                className="text-xs font-medium text-(--brand-secondary) hover:text-brand-secondary/80 transition shrink-0"
+              >
+                {viewDetailsLabel}
+              </button>
+            ) : null}
+          </div>
+          {subtitle ? (
+            <p className="mt-1 text-xs text-charcoal/65">{subtitle}</p>
+          ) : null}
         </div>
       ) : null}
       <div className="h-[200px] w-full">

@@ -1,7 +1,6 @@
-import type { ReactNode } from "react";
-import { cn } from "@/lib/cn";
 import { Card, CardContent } from "@/components/ui/card";
-import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/cn";
+import type { ReactNode } from "react";
 
 export interface GuardRedirectScreenProps {
   logo: ReactNode;
@@ -43,16 +42,23 @@ export function GuardRedirectScreen({
           <CardContent className="p-6 sm:p-10">
             <div className="mx-auto flex w-full max-w-md flex-col items-center">
               <div className="mb-6">{logo}</div>
-
-              <Spinner
-                size="lg"
-                className="border-charcoal/20 border-t-primary"
-                aria-label="Redirecting"
-              />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                height="40px"
+                viewBox="0 0 24 24"
+                width="40px"
+                fill="currentColor"
+                className="animate-spin text-primary"
+              >
+                <path d="M0 0h24v24H0z" fill="none" />
+                <path d="M12 6v3l4-4-4-4v3c-4.42 0-8 3.58-8 8 0 1.57.46 3.03 1.24 4.26L6.7 14.8c-.45-.83-.7-1.79-.7-2.8 0-3.31 2.69-6 6-6zm6.76 1.74L17.3 9.2c.44.84.7 1.79.7 2.8 0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3c4.42 0 8-3.58 8-8 0-1.57-.46-3.03-1.24-4.26z" />
+              </svg>
               <h1 className="mt-5 text-size-lg fw-semibold text-charcoal sm:text-size-xl">
                 {title}
               </h1>
-              <p className="mt-2 text-size-sm text-charcoal/70">{description}</p>
+              <p className="mt-2 text-size-sm text-charcoal/70">
+                {description}
+              </p>
             </div>
           </CardContent>
         </Card>

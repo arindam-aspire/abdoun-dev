@@ -221,6 +221,7 @@
     "totalPropertyViewsDelta": "All listings",
     "dealCloseCount": "Deal Closed",
     "dealCloseCountDelta": "Deals closed",
+    "dealCloseQuickActionLabel": "Deal Closed",
     "conversionRateLabel": "Conversion Rate",
     "totalProperties": "Total Properties",
     "activeProperties": "Active Properties",

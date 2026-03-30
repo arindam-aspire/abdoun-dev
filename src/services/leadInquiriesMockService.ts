@@ -15,7 +15,7 @@ function isoNow(): string {
   return new Date().toISOString();
 }
 
-const leadsStore: LeadInquiry[] = [
+const baseLeadsStore: LeadInquiry[] = [
   { id: "LD1", propertyId: "L1", propertyName: "Villa Abdoun, 4BR", source: "contact_form", dateReceived: isoDaysAgo(0), status: "new", message: "Is the villa still available? Interested in viewing.", contactName: "Ahmad Hassan", contactEmail: "ahmad.h@example.com", contactPhone: "+962 79 123 4567" },
   { id: "LD2", propertyId: "L2", propertyName: "Apartment Sweifieh", source: "email", dateReceived: isoDaysAgo(1), status: "contacted", message: "What are the monthly fees?", response: "Fees are JOD 45/month.", respondedAt: isoDaysAgo(0), lastActivityAt: isoDaysAgo(0), contactName: "Sara Mahmoud", contactEmail: "sara.m@example.com" },
   { id: "LD3", propertyId: "L1", propertyName: "Villa Abdoun, 4BR", source: "phone", dateReceived: isoDaysAgo(2), status: "contacted", message: "Call: discussed price and viewing. Callback agreed.", contactName: "Omar Khalil", contactPhone: "+962 77 234 5678", lastActivityAt: isoDaysAgo(2) },
@@ -37,6 +37,44 @@ const leadsStore: LeadInquiry[] = [
   { id: "LD19", propertyId: "L3", propertyName: "Office Space, Shmeisani", source: "email", dateReceived: isoDaysAgo(4), status: "new", message: "Square footage and layout?", contactEmail: "office@example.com" },
   { id: "LD20", propertyId: "L7", propertyName: "Family House, Khalda", source: "phone", dateReceived: isoDaysAgo(0), status: "new", message: "Incoming call. School district?", contactName: "Family Buyer", contactPhone: "+962 78 345 6789" },
 ];
+
+const extraLeads: LeadInquiry[] = Array.from({ length: 100 }).map((_, index) => {
+  const n = index + 21;
+  const sources: LeadInquirySource[] = ["contact_form", "email", "phone", "whatsapp"];
+  const statuses: LeadStatus[] = ["new", "contacted", "closed"];
+  const properties = [
+    { id: "L1", name: "Villa Abdoun, 4BR" },
+    { id: "L2", name: "Apartment Sweifieh" },
+    { id: "L3", name: "Office Space, Shmeisani" },
+    { id: "L5", name: "Penthouse, Fifth Circle" },
+    { id: "L7", name: "Family House, Khalda" },
+    { id: "L8", name: "Duplex, Dabouq" },
+    { id: "L10", name: "Garden Apartment, Um Uthaina" },
+  ];
+
+  const property = properties[index % properties.length];
+  const source = sources[index % sources.length];
+  const status = statuses[index % statuses.length];
+  const daysAgo = (index % 30) + 1;
+
+  return {
+    id: `LD${n}`,
+    propertyId: property.id,
+    propertyName: property.name,
+    source,
+    dateReceived: isoDaysAgo(daysAgo),
+    status,
+    message:
+      status === "closed"
+        ? "Deal closed after follow-up communication."
+        : "New inquiry about availability, pricing, and viewing schedule.",
+    contactName: `Lead ${n}`,
+    contactEmail: `lead${n}@example.com`,
+    contactPhone: "+962 79 000 0000",
+  } as LeadInquiry;
+});
+
+const leadsStore: LeadInquiry[] = [...baseLeadsStore, ...extraLeads];
 
 const leadNotesStore: LeadInquiryNote[] = [
   { id: "LN1", leadId: "LD1", authorName: "Agent", content: "Called back, viewing scheduled for Saturday.", createdAt: isoDaysAgo(0) },
@@ -103,4 +141,23 @@ export function addLeadNote(
   const idx = leadsStore.findIndex((l) => l.id === leadId);
   if (idx !== -1) leadsStore[idx] = { ...leadsStore[idx], lastActivityAt: now };
   return Promise.resolve(note);
+}
+
+export function getClosedLeadsCountForDashboard(): number {
+  const currentMonthPrefix = new Date().toISOString().slice(0, 7); // e.g. "2026-03"
+  return leadsStore.filter(
+    (lead) =>
+      lead.status === "closed" &&
+      typeof lead.dateReceived === "string" &&
+      lead.dateReceived.startsWith(currentMonthPrefix)
+  ).length;
+}
+
+export function getLeadsThisMonthCountForDashboard(): number {
+  const currentMonthPrefix = new Date().toISOString().slice(0, 7); // e.g. "2026-03"
+  return leadsStore.filter(
+    (lead) =>
+      typeof lead.dateReceived === "string" &&
+      lead.dateReceived.startsWith(currentMonthPrefix)
+  ).length;
 }

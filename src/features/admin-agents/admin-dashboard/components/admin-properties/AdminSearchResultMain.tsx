@@ -46,6 +46,7 @@ function getPageTitle(
 export function AdminSearchResultMain({ language }: AdminSearchResultMainProps) {
   const searchParams = useSearchParams();
   const t = useTranslations("searchResult");
+  const tSaved = useTranslations("savedSearches");
   const isRtl = language === "ar";
   const pageTitle = getPageTitle(t, searchParams);
 
@@ -106,7 +107,7 @@ export function AdminSearchResultMain({ language }: AdminSearchResultMainProps) 
               swimmingPool: t("swimmingPool"),
               garden: t("garden"),
               airConditioning: t("airConditioning"),
-              saveSearch: "",
+              saveSearch: tSaved("saveSearch"),
             }}
             isRtl={isRtl}
           />

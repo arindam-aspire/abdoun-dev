@@ -26,6 +26,8 @@ export interface LeadInquiriesFiltersProps {
   status: LeadStatus | "all";
   period: PeriodFilter;
   source: LeadInquirySource | "all";
+  /** When false, hides the left "Filter" label/icon and divider. */
+  showFilterLabel?: boolean;
   onStatusChange: (value: LeadStatus | "all") => void;
   onPeriodChange: (value: PeriodFilter) => void;
   onSourceChange: (value: LeadInquirySource | "all") => void;
@@ -35,6 +37,7 @@ export function LeadInquiriesFilters({
   status,
   period,
   source,
+  showFilterLabel = true,
   onStatusChange,
   onPeriodChange,
   onSourceChange,
@@ -81,11 +84,15 @@ export function LeadInquiriesFilters({
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-      <div className="flex items-center gap-2 text-xs font-medium text-charcoal/80">
-        <Filter className="h-4 w-4" aria-hidden />
-        {t("filter")}
-      </div>
-      <div className="hidden h-4 w-px bg-subtle sm:block" />
+      {showFilterLabel ? (
+        <>
+          <div className="flex items-center gap-2 text-xs font-medium text-charcoal/80">
+            <Filter className="h-4 w-4" aria-hidden />
+            {t("filter")}
+          </div>
+          <div className="hidden h-4 w-px bg-subtle sm:block" />
+        </>
+      ) : null}
       <div className="flex flex-1 flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
         <Dropdown
           buttonId="lead-status-filter"

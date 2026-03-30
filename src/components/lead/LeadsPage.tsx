@@ -1,11 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useLocale } from "next-intl";
-import type { AppLocale } from "@/i18n/routing";
-import { ArrowLeft } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import {
   addLeadResponse,
   addLeadNote,
@@ -21,9 +18,11 @@ import type {
   LeadStatus,
 } from "@/types/leadInquiry";
 import { useTranslations } from "@/hooks/useTranslations";
-import { LeadInquiriesFilters, type PeriodFilter } from "./LeadInquiriesFilters";
-import { LeadInquiriesTable } from "./LeadInquiriesTable";
-import { LeadInquiryDetailModal } from "./LeadInquiryDetailModal";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui";
+import { LeadInquiriesFilters, PeriodFilter } from "@/features/admin-agents/agent-dashboard/components/lead-inquiries/LeadInquiriesFilters";
+import { LeadInquiriesTable } from "@/features/admin-agents/agent-dashboard/components/lead-inquiries/LeadInquiriesTable";
+import { LeadInquiryDetailModal } from "@/features/admin-agents/agent-dashboard/components/lead-inquiries/LeadInquiryDetailModal";
 
 const PAGE_SIZE = 10;
 
@@ -36,8 +35,7 @@ function isWithinDays(iso: string, days: number): boolean {
   return date >= cutoff;
 }
 
-export function LeadInquiriesPage() {
-  const locale = useLocale() as AppLocale;
+export function LeadsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -48,6 +46,7 @@ export function LeadInquiriesPage() {
   const periodParam = searchParams.get("period");
   const sourceParam = searchParams.get("source");
   const monthParam = searchParams.get("month");
+  const queryParam = searchParams.get("q") ?? "";
   const pageParam = Number(searchParams.get("page") ?? "1");
 
   const statusFilter: LeadStatus | "all" =
@@ -66,6 +65,7 @@ export function LeadInquiriesPage() {
       ? sourceParam
       : "all";
   const monthFilter: string | "all" = monthParam && monthParam.length === 5 ? monthParam : "all";
+  const query = queryParam.trim();
 
   const [leads, setLeads] = useState<LeadInquiry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +88,7 @@ export function LeadInquiriesPage() {
       const query = params.toString();
       router.push(query ? `${pathname}?${query}` : pathname);
     },
-    [pathname, router, searchParams],
+    [pathname, router, searchParams]
   );
 
   const load = useCallback(() => {
@@ -144,7 +144,7 @@ export function LeadInquiriesPage() {
     if (!selectedId || !noteText.trim()) return;
     setAddingNote(true);
     try {
-      const added = await addLeadNote(selectedId, noteText.trim());
+      const added = await addLeadNote(selectedId, noteText.trim(), "Admin");
       if (added) {
         setNotes((prev) => [added, ...prev]);
         setNoteText("");
@@ -167,6 +167,19 @@ export function LeadInquiriesPage() {
     return leads.filter((lead) => {
       if (statusFilter !== "all" && lead.status !== statusFilter) return false;
       if (sourceFilter !== "all" && lead.source !== sourceFilter) return false;
+      if (query) {
+        const haystack = [
+          lead.propertyName,
+          lead.contactName,
+          lead.contactEmail,
+          lead.contactPhone,
+          lead.message,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(query.toLowerCase())) return false;
+      }
       if (monthFilter !== "all") {
         const prefix = `20${monthFilter}`; // e.g. "26-03" -> "2026-03"
         if (!lead.dateReceived.startsWith(prefix)) return false;
@@ -176,69 +189,87 @@ export function LeadInquiriesPage() {
       if (periodFilter === "yearly") return isWithinDays(lead.dateReceived, 365);
       return true;
     });
-  }, [leads, statusFilter, sourceFilter, periodFilter, monthFilter]);
+  }, [leads, statusFilter, sourceFilter, periodFilter, monthFilter, query]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage =
     Number.isFinite(pageParam) && pageParam > 0 ? Math.min(pageParam, totalPages) : 1;
   const paginatedLeads = filtered.slice(
     (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
+    currentPage * PAGE_SIZE
   );
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <p className="text-charcoal/70">{t("loadingLeads")}</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link
-          href={`/${locale}/agent-dashboard`}
-          className="inline-flex items-center gap-2 text-sm font-medium text-charcoal/80 hover:text-charcoal transition"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden />
-          {t("backToDashboard")}
-        </Link>
-      </div>
-      <div className="px-1">
-        <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
-          {t("title")}
-        </h1>
-        <p className="mt-1 text-size-sm text-charcoal/70">{t("subtitle")}</p>
+      <div className="flex flex-col gap-3 px-1 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
+            {t("title")}
+          </h1>
+          <p className="mt-1 text-size-sm text-charcoal/70">{t("subtitle")}</p>
+        </div>
       </div>
 
-      <LeadInquiriesFilters
-        status={statusFilter}
-        period={periodFilter}
-        source={sourceFilter}
-        onStatusChange={(val) => updateQueryParams({ status: val })}
-        onPeriodChange={(val) => updateQueryParams({ period: val })}
-        onSourceChange={(val) => updateQueryParams({ source: val })}
-      />
-
-      <LeadInquiriesTable
-        leads={paginatedLeads}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={filtered.length}
-        pageSize={PAGE_SIZE}
-        basePath={pathname}
-        onOpenLead={openLead}
-        paginationTranslations={{
-          previous: tSearch("paginationPrevious"),
-          next: tSearch("paginationNext"),
-          page: tSearch("paginationPage"),
-          of: tSearch("paginationOf"),
-          showing: tSearch("paginationShowing"),
-          to: tSearch("paginationTo"),
-          results: tSearch("paginationResults"),
-        }}
-      />
+      <Card className="rounded-2xl border-subtle">
+        <CardHeader className="flex flex-col gap-3 space-y-0 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-secondary" />
+            <CardTitle className="text-size-sm text-charcoal">
+              Lead list
+            </CardTitle>
+          </div>
+          <div className="flex w-full justify-end md:w-auto">
+            <div className="flex w-full flex-col gap-2 md:flex-row md:items-center md:justify-end">
+              <div className="w-full md:w-64 lg:w-80">
+                <Input
+                  value={queryParam}
+                  onChange={(event) => updateQueryParams({ q: event.target.value })}
+                  placeholder="Search leads..."
+                  className="h-10 w-full rounded-xl"
+                />
+              </div>
+              <div className="w-full md:w-auto">
+                <LeadInquiriesFilters
+                  status={statusFilter}
+                  period={periodFilter}
+                  source={sourceFilter}
+                  showFilterLabel={false}
+                  onStatusChange={(val) => updateQueryParams({ status: val })}
+                  onPeriodChange={(val) => updateQueryParams({ period: val })}
+                  onSourceChange={(val) => updateQueryParams({ source: val })}
+                />
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <p className="py-8 text-center text-size-sm text-charcoal/70">
+              {t("loadingLeads")}
+            </p>
+          ) : (
+            <LeadInquiriesTable
+              leads={paginatedLeads}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filtered.length}
+              pageSize={PAGE_SIZE}
+              basePath={pathname}
+              onOpenLead={openLead}
+              variant="plain"
+              paginationTranslations={{
+                previous: tSearch("paginationPrevious"),
+                next: tSearch("paginationNext"),
+                page: tSearch("paginationPage"),
+                of: tSearch("paginationOf"),
+                showing: tSearch("paginationShowing"),
+                to: tSearch("paginationTo"),
+                results: tSearch("paginationResults"),
+              }}
+            />
+          )}
+        </CardContent>
+      </Card>
 
       <LeadInquiryDetailModal
         open={!!selectedId}

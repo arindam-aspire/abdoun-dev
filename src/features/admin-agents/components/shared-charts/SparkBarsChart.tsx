@@ -9,6 +9,13 @@ export interface SparkBarsChartProps {
   labels?: string[];
   title?: string;
   subtitle?: string;
+  /** Optional "View details" action, shown top-right. */
+  viewDetailsLabel?: string;
+  /** When true, show every x-axis label (disable auto-skip). */
+  showAllXTicks?: boolean;
+  /** When true, draw value labels above each bar. */
+  showValueLabels?: boolean;
+  /** Show latest value, total, and change-from-previous summary below bars */
   showSummary?: boolean;
   xAxisTitle?: string;
   yAxisTitle?: string;
@@ -25,6 +32,9 @@ export function SparkBarsChart({
   labels: customLabels,
   title,
   subtitle,
+  viewDetailsLabel,
+  showAllXTicks = false,
+  showValueLabels = false,
   showSummary = true,
   xAxisTitle,
   yAxisTitle,
@@ -32,10 +42,10 @@ export function SparkBarsChart({
   summaryTotalLabel = "Total",
   summaryDeltaLabel = "Change from previous",
   className = "",
-}: SparkBarsChartProps) {
+}: Readonly<SparkBarsChartProps>) {
   const labels = customLabels ?? values.map((_, i) => (i + 1).toString());
-  const latest = values[values.length - 1] ?? 0;
-  const previous = values[values.length - 2] ?? latest;
+  const latest = values.at(-1) ?? 0;
+  const previous = values.at(-2) ?? latest;
   const delta = latest - previous;
   const total = values.reduce((sum, v) => sum + v, 0);
 
@@ -66,10 +76,10 @@ export function SparkBarsChart({
     scales: {
       x: {
         grid: { display: false },
-        ticks: { maxTicksLimit: 8, font: { size: 10 } },
-        title: xAxisTitle
-          ? { display: true, text: xAxisTitle, font: { size: 11 } }
-          : undefined,
+        ticks: showAllXTicks
+          ? { autoSkip: false, maxRotation: 0, minRotation: 0, font: { size: 10 } }
+          : { maxTicksLimit: 8, font: { size: 10 } },
+        title: xAxisTitle ? { display: true, text: xAxisTitle, font: { size: 11 } } : undefined,
       },
       y: {
         beginAtZero: true,
@@ -79,6 +89,31 @@ export function SparkBarsChart({
           ? { display: true, text: yAxisTitle, font: { size: 11 } }
           : undefined,
       },
+    },
+  };
+
+  const valueLabelsPlugin = {
+    id: "sparkBarsValueLabels",
+    afterDatasetsDraw(chart: any) {
+      if (!showValueLabels) return;
+      const { ctx } = chart;
+      const meta = chart.getDatasetMeta(0);
+      if (!meta?.data?.length) return;
+
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.fillStyle = "rgba(17, 24, 39, 0.8)"; // near-charcoal
+      ctx.font = "600 10px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+
+      meta.data.forEach((bar: any, i: number) => {
+        const v = values[i];
+        if (typeof v !== "number") return;
+        const pos = bar.tooltipPosition();
+        ctx.fillText(String(v), pos.x, pos.y - 4);
+      });
+
+      ctx.restore();
     },
   };
 
@@ -92,16 +127,20 @@ export function SparkBarsChart({
             {title ? <h3 className="text-sm font-semibold text-charcoal">{title}</h3> : null}
             {subtitle ? <p className="mt-1 text-xs text-charcoal/65">{subtitle}</p> : null}
           </div>
-          {showSummary ? (
-            <div className="rounded-lg bg-surface px-2.5 py-1.5 text-right">
-              <p className="text-xs text-charcoal/65">{summaryLatestLabel}</p>
-              <p className="text-sm font-semibold text-charcoal">{latest}</p>
-            </div>
-          ) : null}
+          <div className="flex flex-col items-end gap-2">
+            {viewDetailsLabel ? (
+              <button
+                type="button"
+                className="text-xs font-medium text-(--brand-secondary) hover:text-brand-secondary/80 transition shrink-0"
+              >
+                {viewDetailsLabel}
+              </button>
+            ) : null}
+          </div>
         </div>
       ) : null}
       <div className="h-36 w-full">
-        <Bar data={chartData} options={options} />
+        <Bar data={chartData} options={options} plugins={showValueLabels ? [valueLabelsPlugin] : undefined} />
       </div>
       {showSummary ? (
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">

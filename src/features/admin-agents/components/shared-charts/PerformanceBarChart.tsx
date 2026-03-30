@@ -84,7 +84,7 @@ export function PerformanceBarChart({
           ) : null}
         </div>
       ) : null}
-      <div className="h-[200px] w-full">
+      <div className="h-[216px] w-full">
         <Bar data={chartData} options={options} />
       </div>
     </section>

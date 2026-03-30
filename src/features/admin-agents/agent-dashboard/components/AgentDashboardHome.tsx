@@ -1,5 +1,14 @@
 "use client";
 
+import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard";
+import { useAgentDashboard } from "@/features/admin-agents/agent-dashboard/hooks/useAgentDashboard";
+import { ChartContainer } from "@/features/admin-agents/components/ChartContainer";
+import { InquiryTrendLineChart } from "@/features/admin-agents/components/shared-charts/InquiryTrendLineChart";
+import { PerformanceBarChart } from "@/features/admin-agents/components/shared-charts/PerformanceBarChart";
+import { useAppSelector } from "@/hooks/storeHooks";
+import { useTranslations } from "@/hooks/useTranslations";
+import type { AppLocale } from "@/i18n/routing";
+import { selectCurrentUser } from "@/store/selectors";
 import {
   Building2,
   CheckCircle2,
@@ -9,21 +18,10 @@ import {
   Mail,
   Plus,
   ShieldCheck,
-  TrendingDown,
-  TrendingUp,
   UserSquare2,
 } from "lucide-react";
-import Link from "next/link";
 import { useLocale } from "next-intl";
-import type { AppLocale } from "@/i18n/routing";
-import { useTranslations } from "@/hooks/useTranslations";
-import { useAppSelector } from "@/hooks/storeHooks";
-import { selectCurrentUser } from "@/store/selectors";
-import { useAgentDashboard } from "@/features/admin-agents/agent-dashboard/hooks/useAgentDashboard";
-import { InquiryTrendLineChart } from "@/features/admin-agents/components/shared-charts/InquiryTrendLineChart";
-import { PerformanceBarChart } from "@/features/admin-agents/components/shared-charts/PerformanceBarChart";
-import { ChartContainer } from "@/features/admin-agents/components/ChartContainer";
-import { MetricCard } from "@/features/admin-agents/components/MetricCard";
+import Link from "next/link";
 
 export function AgentDashboardHome() {
   const locale = useLocale() as AppLocale;
@@ -45,14 +43,15 @@ export function AgentDashboardHome() {
     );
   }
 
+  const shortMonthParam = new Date().toISOString().slice(2, 7);
+
   const metricCards = [
     {
       label: tAgent("myListings"),
       value: String(data.totalProperties),
-      delta: tAgent("myListingsDelta"),
       deltaTrend: 2,
       icon: Building2,
-      iconBgClass:
+      iconBgClassName:
         "bg-[var(--color-charcoal)]/8 ring-1 ring-[var(--color-charcoal)]/15",
       href: `/${locale}/agent-dashboard/listings`,
       subLine: null as string | null,
@@ -60,31 +59,29 @@ export function AgentDashboardHome() {
     {
       label: tAgent("leadsThisMonth"),
       value: String(data.leadsThisMonth),
-      delta: tAgent("leadsThisMonthDelta"),
       deltaTrend: -1,
       icon: Mail,
-      iconBgClass:
+      iconBgClassName:
         "bg-[var(--color-royal-blue)]/12 ring-1 ring-[var(--color-royal-blue)]/20",
-      href: `/${locale}/agent-dashboard/leads`,
+      href: `/${locale}/agent-dashboard/leads?month=${encodeURIComponent(shortMonthParam)}`,
       subLine: null as string | null,
     },
     {
       label: tAgent("dealCloseCount"),
       value: String(data.dealCloseCount),
-      delta: tAgent("dealCloseCountDelta"),
       deltaTrend: 3,
       icon: Handshake,
-      iconBgClass: "bg-amber-500/14 ring-1 ring-amber-500/20",
-      href: `/${locale}/agent-dashboard/inquiries?view=deal-close&status=closed`,
+      iconBgClassName: "bg-amber-500/14 ring-1 ring-amber-500/20",
+      href: `/${locale}/agent-dashboard/deals?status=closed`,
       subLine: `${tAgent("conversionRateLabel")}: ${data.conversionRate}%`,
+      subLineClassName: "text-amber-700/80",
     },
     {
       label: tAgent("totalPropertyViews"),
       value: String(data.totalPropertyViews),
-      delta: tAgent("totalPropertyViewsDelta"),
       deltaTrend: 0.5,
       icon: Eye,
-      iconBgClass: "bg-emerald-500/14 ring-1 ring-emerald-500/20",
+      iconBgClassName: "bg-emerald-500/14 ring-1 ring-emerald-500/20",
       href: `/${locale}/agent-dashboard/view-rate`,
       subLine: null as string | null,
     },
@@ -103,18 +100,7 @@ export function AgentDashboardHome() {
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {metricCards.map((item) => (
-          <MetricCard
-            key={item.label}
-            label={item.label}
-            value={item.value}
-            icon={item.icon}
-            iconBgClass={item.iconBgClass}
-            href={item.href}
-            subLine={item.subLine}
-            deltaTrend={item.deltaTrend}
-            deltaIconUp={<TrendingUp className="h-4 w-4 shrink-0" aria-hidden />}
-            deltaIconDown={<TrendingDown className="h-4 w-4 shrink-0" aria-hidden />}
-          />
+          <DashboardMetricCard key={item.label} {...item} />
         ))}
       </section>
 
@@ -166,6 +152,13 @@ export function AgentDashboardHome() {
             >
               <span>{tAgent("inquiryInbox")}</span>
               <Mail className="h-4 w-4" />
+            </Link>
+            <Link
+              href={`/${locale}/agent-dashboard/inquiries?view=deal-close&status=closed`}
+              className="flex w-full items-center justify-between rounded-xl border border-subtle bg-surface px-3 py-2 text-sm text-charcoal transition hover:bg-primary/5"
+            >
+              <span>{tAgent("dealCloseQuickActionLabel") ?? "Deal closed"}</span>
+              <Handshake className="h-4 w-4" />
             </Link>
             <Link
               href={`/${locale}/agent-dashboard`}

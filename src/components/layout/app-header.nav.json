@@ -5,6 +5,7 @@
       "label": "About Us",
       "path": "/about",
       "roles": ["guest", "user", "agent", "admin"],
+      "placement": "header",
       "publicOnly": true
     },
     {
@@ -12,37 +13,43 @@
       "label": "Our Team",
       "path": "/team",
       "roles": ["guest", "user", "agent", "admin"],
+      "placement": "header",
       "publicOnly": true
     },
     {
       "id": "agentDashboard",
       "label": "Dashboard",
       "path": "/agent-dashboard",
-      "roles": ["agent"]
+      "roles": ["agent"],
+      "placement": "header"
     },
     {
       "id": "agentProperties",
       "label": "Properties",
       "path": "/agent-properties",
-      "roles": ["agent"]
+      "roles": ["agent"],
+      "placement": "profile"
     },
     {
       "id": "adminDashboard",
       "label": "Dashboard",
       "path": "/dashboard",
-      "roles": ["admin"]
+      "roles": ["admin"],
+      "placement": "header"
     },
     {
       "id": "adminProperties",
       "label": "Properties",
       "path": "/properties",
-      "roles": ["admin"]
+      "roles": ["admin"],
+      "placement": "profile"
     },
     {
       "id": "adminAgents",
       "label": "Agents",
       "path": "/agents",
-      "roles": ["admin"]
+      "roles": ["admin"],
+      "placement": "profile"
     }
   ],
   "actions": {
