@@ -25,7 +25,7 @@ import type { AppLocale } from "@/i18n/routing";
 import { performClientLogout } from "@/lib/auth/logoutClient";
 import { cn } from "@/lib/cn";
 import { selectCurrentUser } from "@/store/selectors";
-import { Menu, X } from "lucide-react";
+import { Bell, Menu, X, PlusCircle } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -77,6 +77,35 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
   const profileNavItems = roleNavItems.filter((item) => item.placement === "profile");
   const canShowListProperty = APP_HEADER_CONFIG.actions.listProperty.roles.includes(activeRole);
   const profileMenuConfig = user ? APP_HEADER_CONFIG.profileMenu[user.role] : null;
+  const firstName = user?.name?.split(" ").find(Boolean) ?? tCommon("myProfile");
+  const desktopNavItems =
+    activeRole === "guest" || activeRole === "user"
+      ? [
+        {
+          id: "properties",
+          href: `/${activeLanguage}/search-result`,
+          label: "Properties",
+          isActive:
+            pathname === `/${activeLanguage}/search-result` ||
+            pathname.startsWith(`/${activeLanguage}/search-result/`),
+        },
+        ...navItems.map((item) => ({
+          id: item.id,
+          href: `/${activeLanguage}${item.path}`,
+          label: item.label,
+          isActive:
+            pathname === `/${activeLanguage}${item.path}` ||
+            pathname.startsWith(`/${activeLanguage}${item.path}/`),
+        })),
+      ]
+      : navItems.map((item) => ({
+        id: item.id,
+        href: `/${activeLanguage}${item.path}`,
+        label: item.label,
+        isActive:
+          pathname === `/${activeLanguage}${item.path}` ||
+          pathname.startsWith(`/${activeLanguage}${item.path}/`),
+      }));
 
   const initials =
     user?.name
@@ -207,39 +236,37 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
 
   return (
     <header
-      className="sticky top-0 z-30 border-b border-white/20 bg-[rgba(26,59,92,0.95)] text-white backdrop-blur relative overflow-x-clip"
+      className="sticky top-0 z-30 border-b border-white/10 bg-[#294a6d] text-white backdrop-blur relative overflow-x-clip"
       dir={isRTL ? "rtl" : "ltr"}
     >
       <div
-        className={`container mx-auto flex items-center justify-between gap-2 px-4 transition-all duration-200 md:grid md:grid-cols-3 md:gap-4 ${
-          isScrolled ? "py-2 md:px-8" : "py-4 md:px-8"
-        }`}
+        className={`container mx-auto flex items-center justify-between gap-3 px-4 transition-all duration-200 md:px-6 lg:px-8 ${isScrolled ? "py-2.5" : "py-3"
+          }`}
       >
-        <div className={`flex items-center gap-2 shrink-0 min-w-0 ${isRTL ? "md:justify-end" : "md:justify-start"} ${isRTL ? "flex-row-reverse" : ""}`}>
+        <div className={cn("flex items-center shrink-0 min-w-0", isRTL && "flex-row-reverse")}>
           <BrandLogo
             locale={activeLanguage}
             priority
-            imageClassName={isScrolled ? "h-7 md:h-9" : "h-8 md:h-10"}
+            variant="white"
+            imageClassName={isScrolled ? "h-8 lg:h-9 w-auto" : "h-9 lg:h-16 w-auto"}
           />
-          <span className="hidden md:inline-flex flex-col items-center text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-accent)] md:px-2.5 md:text-[11px] leading-tight">
-            <span>Since</span>
-            <span>1988</span>
-          </span>
         </div>
 
         <nav
-          className={`hidden md:flex items-center justify-center gap-6 text-size-base fw-bold text-white/80 ${isRTL ? "flex-row-reverse" : ""}`}
+          className={cn(
+            "hidden flex-1 items-center justify-start gap-6 px-6 md:flex",
+            isRTL && "flex-row-reverse justify-end",
+          )}
           aria-label="Main navigation"
         >
-          {navItems.map((item) => {
-            const isActive = pathname === `/${activeLanguage}${item.path}` || pathname.startsWith(`/${activeLanguage}${item.path}/`);
+          {desktopNavItems.map((item) => {
             return (
               <Link
                 key={item.id}
-                href={`/${activeLanguage}${item.path}`}
+                href={item.href}
                 className={cn(
-                  "border-b-2 transition hover:border-accent hover:text-white",
-                  isActive ? "border-accent text-white" : "border-transparent text-white/80",
+                  "text-sm font-semibold transition hover:text-[#ffe04f]",
+                  item.isActive ? "text-[#ffe04f]" : "text-white",
                 )}
               >
                 {item.label}
@@ -249,10 +276,17 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
         </nav>
 
         {/* Desktop: actions in header */}
-        <div className={`hidden md:flex items-center gap-2 md:gap-3 md:justify-end`}>
-          <div className="hidden md:block">
-            <LanguageSelect value={activeLanguage} showFullLabels />
-          </div>
+        <div className={cn("hidden md:flex items-center gap-3", isRTL && "flex-row-reverse")}>
+          {user && profileMenuConfig?.showNotifications ? (
+            <Link
+              href={`/${activeLanguage}/notifications`}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#334155] shadow-sm transition hover:bg-slate-100 shrink-0"
+              aria-label={tCommon("notifications")}
+            >
+              <Bell className="h-4.5 w-4.5" strokeWidth={2.1} />
+            </Link>
+          ) : null}
+
           {canShowListProperty ? (
             <button
               type="button"
@@ -263,18 +297,19 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                 }
                 setIsListPropertyModalOpen(true);
               }}
-              className="inline-flex h-8 items-center rounded-full border border-[var(--brand-accent)] bg-[var(--brand-accent)] px-3 text-[11px] font-semibold text-[var(--brand-secondary)] transition hover:brightness-95 md:h-9 md:px-4 md:text-xs"
+              className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#ffe03a] px-6 text-sm font-semibold text-[#203f5f] shadow-[0_6px_18px_rgba(255,224,58,0.28)] transition hover:brightness-95 shrink-0"
             >
+              <PlusCircle className="h-4 w-4" strokeWidth={2} />
               {t("nav.listProperty")}
             </button>
           ) : null}
+
           {user ? (
-            <>
-              <div className="relative" ref={profileRef}>
+            <div className="relative" ref={profileRef}>
               <button
                 type="button"
                 onClick={() => setIsProfileOpen((prev) => !prev)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/50 bg-white/20 text-size-xs fw-bold text-white hover:bg-white/30 cursor-pointer"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-white bg-[#6e8fb7] text-base font-semibold text-white shadow-sm transition hover:brightness-95 cursor-pointer"
                 aria-label="Profile menu"
               >
                 {initials}
@@ -400,16 +435,22 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                 </div>
               ) : null}
             </div>
-            </>
           ) : (
             <button
               type="button"
               onClick={() => setIsAuthOpen(true)}
-              className="inline-flex h-8 items-center rounded-full text-accent border border-accent bg-transparent px-3 text-size-11 fw-semibold transition-all duration-200 hover:bg-accent/15 hover:border-yellow-300 md:h-9 md:px-4 md:text-size-xs cursor-pointer"
+              className="inline-flex h-11 items-center rounded-xl bg-white px-4 text-sm font-semibold text-[#334155] shadow-sm transition hover:bg-slate-100 shrink-0"
             >
               {tCommon("signUpSignIn")}
             </button>
           )}
+
+          <div className="hidden md:block">
+            <LanguageSelect
+              value={activeLanguage}
+              showFullLabels={false}
+              />
+          </div>
         </div>
 
         {/* Mobile: header actions */}
@@ -530,7 +571,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
         </div>
       </div>
 
-{/* Mobile menu overlay — starts below header (3.5rem) */}
+      {/* Mobile menu overlay — starts below header (3.5rem) */}
       <div
         className={cn(
           "fixed left-0 right-0 bottom-0 top-18 z-20 bg-[var(--brand-primary)] md:hidden transition-opacity duration-200",

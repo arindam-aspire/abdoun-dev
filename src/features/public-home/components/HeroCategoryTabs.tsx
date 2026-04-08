@@ -1,5 +1,7 @@
 "use client";
 
+import { BriefcaseBusiness, Building2, Trees } from "lucide-react";
+
 export type HeroCategoryTabKey = "commercial" | "realEstate" | "land";
 
 export interface HeroCategoryTabsProps {
@@ -15,31 +17,36 @@ export function HeroCategoryTabs({
   labels,
   isRtl,
 }: HeroCategoryTabsProps) {
-  const tabs: { key: HeroCategoryTabKey; label: string }[] = [
-    { key: "realEstate", label: labels.realEstate },
-    { key: "commercial", label: labels.commercial },
-    { key: "land", label: labels.land },
+  const tabs: {
+    key: HeroCategoryTabKey;
+    label: string;
+    icon: typeof Building2;
+  }[] = [
+    { key: "realEstate", label: labels.realEstate, icon: Building2 },
+    { key: "commercial", label: labels.commercial, icon: BriefcaseBusiness },
+    { key: "land", label: labels.land, icon: Trees },
   ];
 
   return (
     <div
-      className={`w-full max-w-5xl overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+      className={`w-full overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
         isRtl ? "flex-row-reverse" : ""
       }`}
       dir={isRtl ? "rtl" : "ltr"}
     >
-      <div className="mx-auto inline-flex min-w-max rounded-2xl bg-white/95 p-1.5 shadow-lg ring-1 ring-subtle backdrop-blur-sm">
-        {tabs.map(({ key, label }) => (
+      <div className="mx-auto inline-flex min-w-max rounded-2xl bg-white px-2 py-2 shadow-[0_24px_50px_rgba(18,24,56,0.22)] ring-1 ring-white/70">
+        {tabs.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             type="button"
             onClick={() => onTabChange(key)}
-            className={`relative cursor-pointer rounded-xl px-3 py-2 text-size-xs fw-medium transition sm:px-5 sm:py-2.5 sm:text-size-sm ${
+            className={`relative inline-flex min-w-[180px] items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-semibold transition cursor-pointer ${
               activeTab === key
-                ? "bg-secondary text-white shadow-sm"
-                : "text-charcoal hover:bg-white/80 hover:text-secondary"
+                ? "bg-[#355777] text-white shadow-sm"
+                : "text-slate-700 hover:bg-slate-50 hover:text-[#355777]"
             }`}
           >
+            <Icon className="h-5 w-5" aria-hidden />
             {label}
           </button>
         ))}
@@ -47,4 +54,3 @@ export function HeroCategoryTabs({
     </div>
   );
 }
-

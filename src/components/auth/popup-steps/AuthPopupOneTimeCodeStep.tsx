@@ -1,5 +1,9 @@
 import { Button } from "@/components/ui";
 import { AuthPopupField, OTPVerificationBlock } from "@/components/auth";
+import {
+  AUTH_POPUP_PRIMARY_BUTTON,
+  AUTH_POPUP_STEP_STACK,
+} from "@/components/auth/authPopupStyles";
 import type { useTranslations } from "@/hooks/useTranslations";
 
 interface AuthPopupOneTimeCodeStepProps {
@@ -40,7 +44,7 @@ export function AuthPopupOneTimeCodeStep({
   onResendCode,
 }: AuthPopupOneTimeCodeStepProps) {
   return (
-    <div className="space-y-5">
+    <div className={AUTH_POPUP_STEP_STACK}>
       {otcStep === "request" ? (
         <>
           <AuthPopupField
@@ -56,7 +60,7 @@ export function AuthPopupOneTimeCodeStep({
             type="button"
             variant="accent"
             size="lg"
-            className="h-12 w-full rounded-full"
+            className={AUTH_POPUP_PRIMARY_BUTTON}
             disabled={otcLoading}
             onClick={onSendCode}
           >
@@ -66,7 +70,7 @@ export function AuthPopupOneTimeCodeStep({
       ) : (
         <>
           {otcDebugOtp ? (
-            <p className="rounded bg-zinc-100 px-3 py-2 text-size-xs">
+            <p className="rounded-[0.7rem] bg-slate-100 px-3 py-2 text-xs text-slate-600">
               Demo OTP: {otcDebugOtp}
             </p>
           ) : null}

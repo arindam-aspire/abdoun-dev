@@ -2,6 +2,13 @@ import { Eye, EyeOff, Mail, Phone } from "lucide-react";
 import { Button } from "@/components/ui";
 import { AuthPopupField, OTPVerificationBlock, PasswordPolicyHelper } from "@/components/auth";
 import { AuthProviderLogo } from "@/components/auth/popup-steps/AuthProviderLogo";
+import {
+  AUTH_POPUP_DIVIDER,
+  AUTH_POPUP_FOOTER,
+  AUTH_POPUP_OUTLINE_BUTTON,
+  AUTH_POPUP_PRIMARY_BUTTON,
+  AUTH_POPUP_STEP_STACK,
+} from "@/components/auth/authPopupStyles";
 import type { SignupFlowState } from "@/components/auth/popup-steps/types";
 import type { useTranslations } from "@/hooks/useTranslations";
 
@@ -33,20 +40,21 @@ export function AuthPopupSignupStep({
   onFocusPassword,
 }: AuthPopupSignupStepProps) {
   return (
-    <div className="space-y-5">
+    <div className={AUTH_POPUP_STEP_STACK}>
       {signup.screen === "landing" ? (
         <>
           <Button
             type="button"
             variant="outline"
             size="lg"
-            className="h-11 w-full border-sky-500 justify-center rounded-full bg-white text-zinc-800 hover:bg-zinc-50 sm:h-12"
+            className={AUTH_POPUP_OUTLINE_BUTTON}
             disabled={loading}
             onClick={() => onSocial("google")}
           >
             <AuthProviderLogo
-              text="G"
-              className="bg-white text-red-500 shadow-sm"
+              src="/svg/google_logo.svg"
+              alt="Google"
+              className="bg-white"
             />{" "}
             {t("joinWithGoogle")}
           </Button>
@@ -54,26 +62,26 @@ export function AuthPopupSignupStep({
             type="button"
             variant="outline"
             size="lg"
-            className="h-11 w-full border-sky-500 justify-center rounded-full bg-white text-zinc-800 hover:bg-zinc-50 sm:h-12"
+            className={AUTH_POPUP_OUTLINE_BUTTON}
             disabled={loading}
             onClick={() => onSocial("facebook")}
           >
-            <AuthProviderLogo text="f" className="bg-blue-600 text-white" />{" "}
+            <AuthProviderLogo src="/svg/facebook_logo.svg" alt="Facebook" className="bg-white" />{" "}
             {t("joinWithFacebook")}
           </Button>
           <Button
             type="button"
             variant="outline"
             size="lg"
-            className="h-11 w-full border-sky-500 justify-center rounded-full bg-white text-zinc-800 hover:bg-zinc-50 sm:h-12"
+            className={AUTH_POPUP_OUTLINE_BUTTON}
             disabled={loading}
             onClick={() => onSocial("apple")}
           >
-            <AuthProviderLogo text="A" className="bg-black text-white" />{" "}
+            <AuthProviderLogo src="/svg/apple_logo.svg" alt="Apple" className="bg-white" />{" "}
             {t("loginWithApple")}
           </Button>
 
-          <div className="py-1 text-center text-size-base text-zinc-700 sm:text-size-base">
+          <div className={AUTH_POPUP_DIVIDER}>
             {t("or")}
           </div>
 
@@ -81,27 +89,27 @@ export function AuthPopupSignupStep({
             type="button"
             variant="outline"
             size="lg"
-            className="h-11 w-full border-sky-500 justify-center rounded-full bg-white text-zinc-800 hover:bg-zinc-50 sm:h-12"
+            className={AUTH_POPUP_OUTLINE_BUTTON}
             disabled={loading}
             onClick={signup.actions.goManual}
           >
             <Mail className="h-5 w-5" /> {t("joinWithEmail")}
           </Button>
 
-          <p className="px-2 text-center text-size-sm text-zinc-700">
+          <p className="px-2 text-center text-xs leading-6 text-slate-600">
             {t("signupTermsPrefix")}{" "}
-            <span className="fw-semibold underline">
+            <span className="font-semibold underline">
               {t("termsAndConditions")}
             </span>{" "}
             {t("and")}{" "}
-            <span className="fw-semibold underline">
+            <span className="font-semibold underline">
               {t("privacyPolicy")}
             </span>
           </p>
 
           <button
             type="button"
-            className="mt-2 cursor-pointer w-full text-center text-size-base fw-semibold text-sky-800 hover:text-sky-900 sm:mt-4 sm:text-size-base"
+            className={`w-full cursor-pointer text-sm font-semibold text-[#0a84ff] hover:text-[#0668c7] ${AUTH_POPUP_FOOTER}`}
             onClick={onBackToLogin}
           >
             {t("alreadyHaveAccountLogin")}
@@ -173,7 +181,7 @@ export function AuthPopupSignupStep({
             type="button"
             variant="accent"
             size="lg"
-            className="h-12 w-full rounded-full"
+            className={AUTH_POPUP_PRIMARY_BUTTON}
             disabled={signup.loading}
             onClick={signup.actions.submitManualSignup}
           >
@@ -181,7 +189,7 @@ export function AuthPopupSignupStep({
           </Button>
           <button
             type="button"
-            className="mt-2 w-full cursor-pointer text-center text-size-base fw-semibold text-sky-800 hover:text-sky-900 sm:mt-4 sm:text-size-base"
+            className={`w-full cursor-pointer text-sm font-semibold text-[#0a84ff] hover:text-[#0668c7] ${AUTH_POPUP_FOOTER}`}
             onClick={onBackToLogin}
           >
             {t("alreadyHaveAccountLogin")}
@@ -192,7 +200,7 @@ export function AuthPopupSignupStep({
       {signup.screen === "otp" ? (
         <>
           {signup.debugOtp ? (
-            <p className="rounded bg-zinc-100 px-3 py-2 text-size-xs">
+            <p className="rounded-[0.7rem] bg-slate-100 px-3 py-2 text-xs text-slate-600">
               Demo OTP: {signup.debugOtp}
             </p>
           ) : null}

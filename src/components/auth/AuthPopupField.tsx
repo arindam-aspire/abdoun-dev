@@ -1,10 +1,9 @@
 import type { ReactNode } from "react";
 import { Input, PhoneNumberInputField } from "@/components/ui";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/cn";
 
 const authFieldInputClass =
-  "h-14 rounded-full border-2 border-[rgba(43,91,166,0.35)] bg-white px-5 text-size-base text-zinc-900 placeholder:text-zinc-500 focus:border-primary focus:ring-2 focus:ring-[rgba(26,59,92,0.2)] focus:ring-offset-0";
+  "h-12 rounded-[0.7rem] border border-[#b7c6ff] bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#6f8cff] focus:ring-2 focus:ring-[#6f8cff]/15 focus:ring-offset-0";
 
 interface AuthPopupFieldProps {
   id: string;
@@ -41,8 +40,8 @@ export function AuthPopupField({
   const isPhone = type === "phone";
 
   return (
-    <div className="flex flex-col">
-      <Label htmlFor={id} className="mb-2 text-size-base fw-semibold text-zinc-800">
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor={id} className="text-sm font-medium text-slate-800">
         {label}
       </Label>
       <div className="relative">
@@ -57,7 +56,7 @@ export function AuthPopupField({
             showCountryCode={showCountryCode}
             showDialCode={showDialCode}
             rightAdornment={rightAdornment}
-            className="[&>div:first-of-type]:h-14 [&>div:first-of-type]:rounded-full [&>div:first-of-type]:border-2 [&>div:first-of-type]:border-[rgba(43,91,166,0.35)] [&>div:first-of-type]:focus-within:border-primary [&>div:first-of-type]:focus-within:ring-2 [&>div:first-of-type]:focus-within:ring-[rgba(26,59,92,0.2)] [&>div:first-of-type]:focus-within:ring-offset-0 [&>div:first-of-type]:shadow-none"
+            className="[&>div:first-of-type]:h-12 [&>div:first-of-type]:rounded-[0.7rem] [&>div:first-of-type]:border [&>div:first-of-type]:border-[#b7c6ff] [&>div:first-of-type]:focus-within:border-[#6f8cff] [&>div:first-of-type]:focus-within:ring-2 [&>div:first-of-type]:focus-within:ring-[#6f8cff]/15 [&>div:first-of-type]:focus-within:ring-offset-0 [&>div:first-of-type]:shadow-none"
           />
         ) : (
           <Input

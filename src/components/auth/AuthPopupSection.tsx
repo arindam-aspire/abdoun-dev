@@ -7,5 +7,5 @@ interface AuthPopupSectionProps {
 }
 
 export function AuthPopupSection({ children, className }: AuthPopupSectionProps) {
-  return <div className={cn("mt-4 flex-1 overflow-y-auto pb-3 pr-1", className)}>{children}</div>;
+  return <div className={cn("mt-4 flex-1 overflow-y-auto pb-1", className)}>{children}</div>;
 }

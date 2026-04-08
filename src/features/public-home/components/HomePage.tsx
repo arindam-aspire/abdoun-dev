@@ -5,7 +5,9 @@ import type { AppLocale } from "@/i18n/routing";
 import { HeroSection } from "@/features/public-home/components/HeroSection";
 import { ExclusivePropertiesSection } from "@/features/public-home/components/ExclusivePropertiesSection";
 import { AboutPreviewSection } from "@/features/public-home/components/AboutPreviewSection";
+import { ServicesSection } from "@/features/public-home/components/ServicesSection";
 import { useExclusiveProperties } from "@/features/public-home/hooks/useExclusiveProperties";
+import { SERVICE_CARD_CONTENT } from "@/features/public-home/components/constants";
 
 export interface HomePageProps {
   language: AppLocale;
@@ -17,6 +19,7 @@ export interface HomePageProps {
  */
 export function HomePage({ language }: HomePageProps) {
   const t = useTranslations("home");
+  const tAboutPage = useTranslations("aboutUsPage");
   const isRtl = language === "ar";
   const {
     items: exclusiveProperties,
@@ -42,6 +45,7 @@ export function HomePage({ language }: HomePageProps) {
     budgetYearlyMinLabel: t("heroBudgetYearlyMinLabel"),
     budgetYearlyMaxLabel: t("heroBudgetYearlyMaxLabel"),
     search: t("heroSearch"),
+    resetSearch: t("heroResetSearch"),
   };
 
   const exclusiveTranslations = {
@@ -56,10 +60,31 @@ export function HomePage({ language }: HomePageProps) {
     content: t("aboutUsContent"),
     seeMore: t("aboutUsSeeMore"),
   };
+  const servicesTranslations = {
+    title: t("servicesTitle"),
+    subtitle: "Comprehensive real estate solutions tailored to your needs",
+    description: t("servicesDescription"),
+    cards: SERVICE_CARD_CONTENT,
+  };
 
   return (
     <>
       <HeroSection translations={heroTranslations} isRtl={isRtl} />
+      <AboutPreviewSection
+        title={aboutUsTranslations.title}
+        subtitle="Trusted Real Estate Partner"
+        content={aboutUsTranslations.content}
+        stats={[
+          { value: "15+", label: tAboutPage("stats.yearsExperience") },
+          { value: "500+", label: tAboutPage("stats.propertiesSold") },
+          { value: "98%", label: "Client Satisfaction" },
+        ]}
+        imageSrc="/about_us.png"
+        imageAlt={aboutUsTranslations.title}
+        seeMoreLabel="View More"
+        seeMoreHref={`/${language}/about`}
+        isRtl={isRtl}
+      />
       <ExclusivePropertiesSection
         translations={exclusiveTranslations}
         properties={exclusiveProperties}
@@ -68,11 +93,10 @@ export function HomePage({ language }: HomePageProps) {
         loading={exclusiveLoading}
         error={exclusiveError}
       />
-      <AboutPreviewSection
-        title={aboutUsTranslations.title}
-        content={aboutUsTranslations.content}
-        seeMoreLabel={aboutUsTranslations.seeMore}
-        seeMoreHref={`/${language}/about`}
+      <ServicesSection
+        translations={servicesTranslations}
+        ctaLabel="View More"
+        ctaHref={`/${language}/our-services`}
         isRtl={isRtl}
       />
     </>

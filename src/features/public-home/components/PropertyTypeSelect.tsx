@@ -2,6 +2,8 @@
 
 import { useRef } from "react";
 import { HeroDropdown } from "@/features/public-home/components/HeroDropdown";
+import { cn } from "@/lib/cn";
+import { ChevronDown } from "lucide-react";
 
 export type PropertyType = string;
 
@@ -33,30 +35,29 @@ export function PropertyTypeSelect({
   return (
     <div className="relative flex-[1.2]">
       <label
-        className={`mb-1 block text-size-11 fw-semibold uppercase tracking-[0.18em] text-[rgba(51,51,51,0.7)] ${
-          isRtl ? "text-right" : "text-left"
-        }`}
+        className="sr-only"
       >
         {label}
       </label>
       <button
         ref={triggerRef}
         type="button"
-        className="flex h-14 w-full cursor-pointer items-center gap-2 rounded-full border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 text-left shadow-[0_0_0_1px_rgba(26,59,92,0.03)] transition-colors hover:border-[rgba(43,91,166,0.6)] focus:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-[rgba(26,59,92,0.2)]"
+        className={cn(
+          "flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border border-[#b8c8ea] bg-white px-4 text-sm text-slate-700 shadow-sm transition-colors hover:border-[#8fa6d8] focus:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-[rgba(26,59,92,0.12)]",
+          isRtl ? "text-right" : "text-left",
+        )}
         onClick={onToggle}
       >
-        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface text-size-2xs fw-medium text-secondary">
-          PT
-        </span>
         <span
-          className={`w-full truncate text-size-sm ${
+          className={`w-full truncate ${
             value
-              ? "text-charcoal fw-medium"
-              : "text-[rgba(51,51,51,0.45)] fw-normal"
+              ? "font-medium text-slate-700"
+              : "font-normal text-slate-500"
           }`}
         >
           {value || placeholder}
         </span>
+        <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
       </button>
 
       <HeroDropdown

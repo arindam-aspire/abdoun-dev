@@ -28,6 +28,7 @@ export interface HeroTranslations {
   budgetYearlyMinLabel: string;
   budgetYearlyMaxLabel: string;
   search: string;
+  resetSearch: string;
 }
 
 export interface FeaturedTranslations {
@@ -41,6 +42,7 @@ export interface FeaturedTranslations {
 export type ServiceCardIcon = "home" | "trending-up" | "building";
 
 export interface ServiceItem {
+  id: string;
   title: string;
   description: string;
   cta: string;

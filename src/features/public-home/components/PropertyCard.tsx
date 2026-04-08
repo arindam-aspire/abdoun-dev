@@ -1,132 +1,96 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
+import { Bath, BedDouble, Maximize2 } from "lucide-react";
 import { useLocale } from "next-intl";
-import { Bath, BedDouble, MapPin, Maximize2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import type { AppLocale } from "@/i18n/routing";
 import type { Property } from "@/features/public-home/components/types";
-import { FavouriteButton } from "@/features/favourites/components/FavouriteButton";
 import { useBackendTranslation } from "@/hooks/useBackendTranslation";
+import { PropertyCardNew } from "@/components/ui/PropertyCardNew";
 
 export interface PropertyCardProps {
-  property: Property;
+  property?: Property;
   agentLabel?: string;
-  /** Use "minimal" on property details page for a borderless, soft look */
   variant?: "default" | "minimal";
+  loading?: boolean;
 }
 
 export function PropertyCard({
   property,
   agentLabel = "Abdoun Real Estate",
   variant = "default",
+  loading = false,
 }: PropertyCardProps) {
   const language = useLocale() as AppLocale;
   const { tBackend } = useBackendTranslation();
   const isRtl = language === "ar";
-  const isMinimal = variant === "minimal";
+  if (loading || !property) {
+    return (
+      <PropertyCardNew
+        loading
+        title=""
+        price=""
+        location=""
+        agentLabel={agentLabel}
+        href="#"
+        propertyId={0}
+        images={[]}
+        imageAlt=""
+        isRtl={isRtl}
+        showImageNavigation={false}
+        badges={[]}
+        metrics={[]}
+        cardClassName={
+          variant === "minimal"
+            ? "rounded-[22px] border-[#edf1f5] shadow-[0_10px_30px_rgba(15,23,42,0.06)] hover:shadow-[0_18px_38px_rgba(15,23,42,0.1)]"
+            : undefined
+        }
+        contentClassName={variant === "minimal" ? "px-5 py-4" : undefined}
+        titleClassName={variant === "minimal" ? "text-[1.05rem]" : undefined}
+        imageSizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+      />
+    );
+  }
+
   const title = tBackend(property.title) || "Untitled Property";
   const location = tBackend(property.location) || "Location unavailable";
 
   return (
-    <article
-      className={`group relative overflow-hidden bg-white transition ${
-        isMinimal
-          ? "rounded-lg shadow-[0_2px_12px_rgba(15,23,42,0.06)] hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)]"
-          : "rounded-2xl border border-subtle shadow-sm hover:-translate-y-1 hover:shadow-lg"
-      } ${
-        isRtl
-          ? "flex h-full flex-col text-right"
-          : "flex h-full flex-col text-left"
+    <PropertyCardNew
+      title={title}
+      price={property.price}
+      location={location}
+      agentLabel={agentLabel}
+      href={`/${language}/property-details/${property.id}${
+        property.badge === "Exclusive" ? "?exclusive=1" : ""
       }`}
-    >
-      <div className="relative overflow-hidden">
-        <div className="relative h-52 w-full">
-          <Image
-            src={property.image}
-            alt={title}
-            fill
-            sizes="(min-width: 768px) 33vw, 100vw"
-            className="object-cover transition duration-500 group-hover:scale-105"
-          />
-        </div>
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[rgba(26,59,92,0.45)] via-[rgba(26,59,92,0.1)] to-transparent opacity-80" />
-        <div
-          className={`absolute top-4 flex items-center gap-2 ${
-            isRtl ? "right-4 flex-row-reverse" : "left-4"
-          }`}
-        >
-          <Badge variant="exclusive">{property.badge}</Badge>
-        </div>
-        <FavouriteButton
-          propertyId={property.id}
-          className={`absolute top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-secondary shadow-sm hover:bg-white ${
-            isMinimal ? "" : "ring-1 ring-subtle"
-          } ${isRtl ? "left-4" : "right-4"}`}
-          iconClassName="h-4 w-4"
-        />
-      </div>
-
-      <div className="flex flex-1 flex-col gap-3 px-4 py-4">
-        <div
-          className={`flex items-start justify-between gap-3 ${
-            isRtl ? "flex-row-reverse" : ""
-          }`}
-        >
-          <div>
-            <p className="text-size-xs fw-semibold uppercase tracking-[0.16em] text-[rgba(51,51,51,0.7)]">
-              {agentLabel}
-            </p>
-            <h3 className="mt-1 h-10 overflow-hidden text-size-sm fw-semibold leading-5 text-secondary">
-              {title}
-            </h3>
-          </div>
-          <p className="shrink-0 text-size-sm fw-semibold text-secondary">
-            {property.price}
-          </p>
-        </div>
-
-        <div
-          className={`flex items-center gap-1 text-size-xs text-[rgba(51,51,51,0.75)] ${
-            isRtl ? "flex-row-reverse" : ""
-          }`}
-        >
-          <MapPin className="h-3 w-3 shrink-0" />
-          <span className="block truncate">{location}</span>
-        </div>
-
-        <div
-          className={`flex items-center justify-between px-3 py-2 text-size-11 text-[rgba(51,51,51,0.85)] ${
-            isMinimal ? "bg-surface/60" : "rounded-xl bg-surface"
-          } ${isRtl ? "mt-auto flex-row-reverse" : "mt-auto"}`}
-        >
-          <div className="flex items-center gap-1.5">
-            <BedDouble className="h-3.5 w-3.5 shrink-0" />
-            <span>{property.beds} Beds</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Bath className="h-3.5 w-3.5 shrink-0" />
-            <span>{property.baths} Baths</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Maximize2 className="h-3.5 w-3.5 shrink-0" />
-            <span>{property.area} sq.ft</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Invisible overlay link to make the whole card clickable */}
-      <Link
-        href={`/${language}/property-details/${property.id}${
-          property.badge === "Exclusive" ? "?exclusive=1" : ""
-        }`}
-        className="absolute inset-0 z-10"
-        aria-label={`View details for ${title}`}
-        target="_blank"
-        rel="noopener noreferrer"
-      />
-    </article>
+      propertyId={property.id}
+      images={[property.image]}
+      imageAlt={title}
+      isRtl={isRtl}
+      showImageNavigation={false}
+      badges={
+        property.badge
+          ? [
+              {
+                label: property.badge,
+                variant: property.badge === "Exclusive" ? "exclusive" : "secondary",
+              },
+            ]
+          : []
+      }
+      metrics={[
+        { icon: BedDouble, label: `${property.beds} Beds` },
+        { icon: Bath, label: `${property.baths} Baths` },
+        { icon: Maximize2, label: `${property.area} sq.ft` },
+      ]}
+      cardClassName={
+        variant === "minimal"
+          ? "rounded-[22px] border-[#edf1f5] shadow-[0_10px_30px_rgba(15,23,42,0.06)] hover:shadow-[0_18px_38px_rgba(15,23,42,0.1)]"
+          : undefined
+      }
+      contentClassName={variant === "minimal" ? "px-5 py-4" : undefined}
+      titleClassName={variant === "minimal" ? "text-[1.05rem]" : undefined}
+      imageSizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+    />
   );
 }
-

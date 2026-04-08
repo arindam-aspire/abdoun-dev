@@ -17,6 +17,14 @@
       "publicOnly": true
     },
     {
+      "id": "services",
+      "label": "Our Services",
+      "path": "/our-services",
+      "roles": ["guest", "user", "agent", "admin"],
+      "placement": "header",
+      "publicOnly": true
+    },
+    {
       "id": "agentDashboard",
       "label": "Dashboard",
       "path": "/agent-dashboard",

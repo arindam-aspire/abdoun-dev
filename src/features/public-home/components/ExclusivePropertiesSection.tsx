@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { Property, FeaturedTranslations } from "@/features/public-home/components/types";
+import type {
+  Property,
+  FeaturedTranslations,
+} from "@/features/public-home/components/types";
 import { PropertyCard } from "@/features/public-home/components/PropertyCard";
 
 export interface ExclusivePropertiesSectionProps {
@@ -27,9 +30,10 @@ export function ExclusivePropertiesSection({
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
   const displayedProperties = properties;
+  const showSkeletonState = loading || Boolean(error);
 
   const shouldUseCarousel =
-    useCarouselOnOverflow && displayedProperties.length > 3;
+    useCarouselOnOverflow && displayedProperties.length > 4;
 
   useEffect(() => {
     if (!shouldUseCarousel) return;
@@ -144,29 +148,33 @@ export function ExclusivePropertiesSection({
   };
 
   return (
-    <section className="bg-surface" dir={isRtl ? "rtl" : "ltr"}>
-      <div className="container mx-auto px-4 py-10 md:px-8 md:py-14">
-        <div className="mb-6 flex flex-col items-start justify-between gap-4 md:mb-8 md:flex-row md:items-end">
+    <section className="bg-white" dir={isRtl ? "rtl" : "ltr"}>
+      <div className="container mx-auto px-4 py-14 md:px-8 md:py-18">
+        <div className="mb-10 flex flex-col items-start justify-between gap-4 md:flex-row md:items-start">
           <div className={isRtl ? "md:text-right" : ""}>
-            <p className="text-size-xs fw-semibold uppercase tracking-[0.18em] text-primary">
-              {t.title}
-            </p>
-            <h2 className="mt-2 text-size-xl fw-semibold text-secondary md:text-size-2xl">
-              {t.subtitle}
-            </h2>
+            <header className="space-y-4">
+              <div className="text-xl font-bold tracking-tight text-[#2843a2] md:text-3xl">
+                {t.title}
+              </div>
+              <div className="text-lg font-medium leading-tight tracking-tight text-slate-900 md:text-3xl">
+                {t.subtitle}
+              </div>
+            </header>
           </div>
-          <div className={`flex items-center gap-2 ${isRtl ? "flex-row-reverse" : ""}`}>
+          <div
+            className={`flex items-center gap-2 ${isRtl ? "flex-row-reverse" : ""}`}
+          >
             {t.viewAllHref != null ? (
               <Link
                 href={t.viewAllHref}
-                className="text-size-sm fw-semibold text-primary hover:text-secondary"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#355777] px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
               >
                 {t.viewAll}
               </Link>
             ) : (
               <button
                 type="button"
-                className="text-size-sm fw-semibold text-primary hover:text-secondary"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#355777] px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
               >
                 {t.viewAll}
               </button>
@@ -174,40 +182,27 @@ export function ExclusivePropertiesSection({
           </div>
         </div>
 
-        {shouldUseCarousel ? (
+        {showSkeletonState ? (
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <PropertyCard key={`exclusive-property-skeleton-${index}`} loading />
+            ))}
+          </div>
+        ) : shouldUseCarousel ? (
           <div className="relative">
-            {canScrollPrev && (
-              <div
-                className={`pointer-events-none absolute inset-y-0 z-10 hidden w-20 md:block ${
-                  isRtl
-                    ? "right-0 bg-gradient-to-l from-surface to-transparent"
-                    : "left-0 bg-gradient-to-r from-surface to-transparent"
-                }`}
-              />
-            )}
-            {canScrollNext && (
-              <div
-                className={`pointer-events-none absolute inset-y-0 z-10 hidden w-20 md:block ${
-                  isRtl
-                    ? "left-0 bg-gradient-to-r from-surface to-transparent"
-                    : "right-0 bg-gradient-to-l from-surface to-transparent"
-                }`}
-              />
-            )}
-
             {canScrollPrev && (
               <button
                 type="button"
                 aria-label="Previous properties"
                 onClick={() => scrollByPage("prev")}
-                className={`cursor-pointer absolute top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-subtle bg-white text-secondary shadow-md transition hover:bg-surface md:inline-flex ${
+                className={`cursor-pointer absolute top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-600 shadow-[0_10px_28px_rgba(15,23,42,0.14)] transition hover:bg-slate-50 lg:inline-flex ${
                   isRtl ? "right-0 translate-x-1/2" : "left-0 -translate-x-1/2"
                 }`}
               >
                 {isRtl ? (
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-5 w-5" />
                 ) : (
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-5 w-5" />
                 )}
               </button>
             )}
@@ -216,14 +211,14 @@ export function ExclusivePropertiesSection({
                 type="button"
                 aria-label="Next properties"
                 onClick={() => scrollByPage("next")}
-                className={`cursor-pointer absolute top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-subtle bg-white text-secondary shadow-md transition hover:bg-surface md:inline-flex ${
+                className={`cursor-pointer absolute top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-600 shadow-[0_10px_28px_rgba(15,23,42,0.14)] transition hover:bg-slate-50 lg:inline-flex ${
                   isRtl ? "left-0 -translate-x-1/2" : "right-0 translate-x-1/2"
                 }`}
               >
                 {isRtl ? (
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-5 w-5" />
                 ) : (
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-5 w-5" />
                 )}
               </button>
             )}
@@ -235,7 +230,7 @@ export function ExclusivePropertiesSection({
               {displayedProperties.map((property) => (
                 <div
                   key={property.id}
-                  className="min-w-0 shrink-0 snap-start basis-[88%] sm:basis-[62%] md:basis-[calc((100%-3rem)/3.2)]"
+                  className="min-w-0 shrink-0 snap-start basis-[88%] sm:basis-[62%] lg:basis-[calc((100%-4.5rem)/4.2)]"
                 >
                   <PropertyCard property={property} />
                 </div>
@@ -243,29 +238,17 @@ export function ExclusivePropertiesSection({
             </div>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             {displayedProperties.map((property) => (
               <PropertyCard key={property.id} property={property} />
             ))}
           </div>
         )}
 
-        {loading && (
+        {!showSkeletonState && displayedProperties.length === 0 && (
           <p
-            className={`mt-4 text-sm text-[var(--brand-secondary)]/70 ${
-              isRtl ? "text-right" : "text-left"
-            }`}
+            className={`mt-4 text-sm text-zinc-500 ${isRtl ? "text-right" : "text-left"}`}
           >
-            Loading exclusive properties...
-          </p>
-        )}
-        {!loading && error && (
-          <p className={`mt-4 text-sm text-red-600 ${isRtl ? "text-right" : "text-left"}`}>
-            {error}
-          </p>
-        )}
-        {!loading && !error && displayedProperties.length === 0 && (
-          <p className={`mt-4 text-sm text-zinc-500 ${isRtl ? "text-right" : "text-left"}`}>
             No exclusive properties found.
           </p>
         )}
@@ -273,4 +256,3 @@ export function ExclusivePropertiesSection({
     </section>
   );
 }
-

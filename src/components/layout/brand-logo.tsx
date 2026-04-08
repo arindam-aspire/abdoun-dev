@@ -9,6 +9,7 @@ interface BrandLogoProps {
   imageClassName?: string;
   ariaLabel?: string;
   priority?: boolean;
+  variant?: "white" | "black";
 }
 
 export function BrandLogo({
@@ -17,10 +18,13 @@ export function BrandLogo({
   imageClassName,
   ariaLabel = "Go to home page",
   priority = false,
+  variant = "white",
 }: BrandLogoProps) {
+  const imgSrc = variant === "white" ? "/abdoun_logo_white.png" : "/abdoun_logo_black.png";
+  
   const image = (
     <Image
-      src="/header-logo.png"
+      src={imgSrc}
       alt="Abdoun Real Estate"
       width={200}
       height={51}

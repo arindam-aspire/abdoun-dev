@@ -1,6 +1,16 @@
 import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { Button, LoadingButton } from "@/components/ui";
 import { AuthPopupField } from "@/components/auth";
+import {
+  AUTH_POPUP_DIVIDER,
+  AUTH_POPUP_FOOTER,
+  AUTH_POPUP_FOOTER_CAPTION,
+  AUTH_POPUP_FOOTER_LINK,
+  AUTH_POPUP_OUTLINE_BUTTON,
+  AUTH_POPUP_PRIMARY_BUTTON,
+  AUTH_POPUP_STEP_STACK,
+  AUTH_POPUP_TEXT_LINK,
+} from "@/components/auth/authPopupStyles";
 import type { useTranslations } from "@/hooks/useTranslations";
 
 interface AuthPopupEmailStepProps {
@@ -46,7 +56,7 @@ export function AuthPopupEmailStep({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className={AUTH_POPUP_STEP_STACK}>
       <AuthPopupField
         id="auth-email-or-phone"
         label={t("emailOrPhone")}
@@ -82,27 +92,27 @@ export function AuthPopupEmailStep({
       />
       <button
         type="button"
-        className="text-size-sm text-sky-800 hover:underline"
+        className={AUTH_POPUP_TEXT_LINK}
         onClick={onForgotPassword}
       >
         {t("forgotPassword")}
       </button>
       <LoadingButton
         type="submit"
-        className="h-12 w-full rounded-full"
+        className={AUTH_POPUP_PRIMARY_BUTTON}
         loading={loading}
       >
         {t("logIn")}
       </LoadingButton>
 
-      <div className="py-1 text-center text-size-base text-zinc-700 sm:text-size-base">
+      <div className={AUTH_POPUP_DIVIDER}>
         {t("or")}
       </div>
       <Button
         type="button"
         variant="outline"
         size="lg"
-        className="h-11 w-full border-sky-500 justify-center rounded-full bg-white text-zinc-800 hover:bg-zinc-50 sm:h-12"
+        className={AUTH_POPUP_OUTLINE_BUTTON}
         disabled={loading}
         onClick={onGoOneTimeCode}
       >
@@ -110,12 +120,15 @@ export function AuthPopupEmailStep({
       </Button>
       <button
         type="button"
-        className="mt-2 w-full cursor-pointer text-center text-size-base fw-semibold text-black sm:mt-3 sm:text-size-base"
+        className={`w-full cursor-pointer ${AUTH_POPUP_FOOTER}`}
         onClick={onGoSignup}
       >
-        {t.rich("newHereCreate", {
-          action: (chunks) => <span className="text-secondary hover:underline">{chunks}</span>,
-        })}
+        <span className={AUTH_POPUP_FOOTER_CAPTION}>
+          New to Abdoun Real Estate?
+        </span>
+        <span className={AUTH_POPUP_FOOTER_LINK}>
+          Create an account
+        </span>
       </button>
     </form>
   );

@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { HeroDropdown } from "@/features/public-home/components/HeroDropdown";
+import { ChevronDown } from "lucide-react";
 
 export interface HeroAreaSelectProps {
   label: string;
@@ -40,9 +41,7 @@ export function HeroAreaSelect({
   return (
     <div className="relative min-w-0 flex-[1.2]">
       <label
-        className={`mb-1 block text-size-11 fw-semibold uppercase tracking-[0.18em] text-[rgba(51,51,51,0.7)] ${
-          isRtl ? "text-right" : "text-left"
-        }`}
+        className="sr-only"
       >
         {label}
       </label>
@@ -50,24 +49,21 @@ export function HeroAreaSelect({
         ref={triggerRef}
         type="button"
         disabled={disabled}
-        className={`flex h-14 w-full cursor-pointer items-center gap-2 rounded-full border-2 bg-white px-4 text-left shadow-[0_0_0_1px_rgba(26,59,92,0.03)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(26,59,92,0.2)] ${
+        className={`flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border bg-white px-4 text-left text-sm shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(26,59,92,0.12)] ${
           disabled
-            ? "cursor-not-allowed border-[rgba(43,91,166,0.2)] bg-surface/50 text-[rgba(51,51,51,0.5)]"
-            : "border-[rgba(43,91,166,0.35)] hover:border-[rgba(43,91,166,0.6)] focus-visible:border-primary"
+            ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400"
+            : "border-[#b8c8ea] hover:border-[#8fa6d8] focus-visible:border-primary"
         } ${isRtl ? "text-right" : "text-left"}`}
         onClick={() => {
           if (disabled) return;
           onToggle();
         }}
       >
-        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface text-size-2xs fw-medium text-secondary">
-          A
-        </span>
         <span
-          className={`w-full truncate text-size-sm ${
+          className={`w-full truncate ${
             !disabled && selectedAreas.length > 0
-              ? "text-charcoal fw-medium"
-              : "text-[rgba(51,51,51,0.45)] fw-normal"
+              ? "font-medium text-slate-700"
+              : "font-normal text-slate-500"
           }`}
         >
           {disabled
@@ -76,6 +72,7 @@ export function HeroAreaSelect({
               ? selectedAreas.join(", ")
               : placeholder}
         </span>
+        <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
       </button>
       <HeroDropdown
         isOpen={isOpen && !disabled}

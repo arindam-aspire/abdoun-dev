@@ -97,20 +97,26 @@ export const MOCK_EXCLUSIVE_PROPERTIES: Property[] = MOCK_PROPERTIES.filter(
 export const MOCK_LATEST_PROPERTIES: Property[] = MOCK_PROPERTIES.slice(2, 6);
 
 /** Static copy for service cards (descriptions/cta). Titles come from i18n. */
-export const SERVICE_CARD_CONTENT: Omit<ServiceItem, "title">[] = [
+export const SERVICE_CARD_CONTENT: ServiceItem[] = [
   {
+    id: "property-sales",
+    title: "Property Sales",
     description:
       "Access exclusive listings in prime Amman neighborhoods with personalized guidance from local experts.",
     cta: "Learn more →",
     icon: "home",
   },
   {
+    id: "property-marketing",
+    title: "Property Sales",
     description:
       "Maximize your property value with expert staging, marketing, and a curated buyer network.",
     cta: "Learn more →",
     icon: "trending-up",
   },
   {
+    id: "property-management",
+    title: "Property Sales",
     description:
       "End-to-end management for your villas and apartments, from tenant screening to maintenance.",
     cta: "Learn more →",

@@ -19,43 +19,35 @@ export function HeroSection({ translations: t, isRtl }: HeroSectionProps) {
 
   return (
     <section
-      className="relative min-h-[420px] overflow-x-clip bg-secondary text-white md:min-h-[480px]"
+      className="relative min-h-[560px] overflow-x-clip bg-secondary text-white md:min-h-[700px]"
       dir={isRtl ? "rtl" : "ltr"}
     >
-      <div className="pointer-events-none absolute inset-0 z-0 min-h-[420px] md:min-h-[480px]">
+      <div className="pointer-events-none absolute inset-0 z-0">
         <Image
-          // src="/hero-amman.png"
-          src="/slider-1.jpg"
-          alt="Amman city skyline"
+          src="/Hero_Background.png"
+          alt="Hero background"
           fill
           priority
           quality={100}
           sizes="100vw"
-          className="object-cover object-center opacity-90"
+          className="object-cover object-center"
         />
       </div>
 
-      <div className="pointer-events-none absolute inset-0 z-[2] opacity-40 mix-blend-screen">
-        <div
-          className={`absolute top-24 h-80 w-80 rounded-full bg-[rgba(43,91,166,0.35)] blur-3xl ${
-            isRtl ? "-right-20" : "-left-20"
-          }`}
-        />
-        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-[rgba(253,185,19,0.2)] blur-3xl" />
-      </div>
+      <div className="absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(24,49,142,0.08)_0%,rgba(11,28,82,0.22)_52%,rgba(10,19,47,0.46)_100%)]" />
 
       <div
-        className={`relative z-10 mx-auto flex max-w-5xl flex-col px-4 pb-20 pt-16 md:px-6 md:pb-24 md:pt-20 ${
+        className={`relative z-10 mx-auto flex max-w-6xl flex-col px-4 pb-16 pt-24 md:px-6 md:pb-24 md:pt-32 ${
           isRtl ? "items-end text-right" : "items-center text-center"
         }`}
       >
-        <div className="space-y-4 md:space-y-5">
-          <h1 className="text-balance text-size-3xl fw-semibold leading-tight tracking-tight sm:text-size-4xl md:text-size-5xl">
+        <div className="max-w-5xl space-y-3">
+          <h1 className="text-balance text-3xl font-semibold leading-[1.08] tracking-tight text-white drop-shadow-[0_10px_30px_rgba(0,0,0,0.18)] md:text-5xl">
             {t.title}
           </h1>
         </div>
 
-        <div className="mt-8 w-full">
+        <div className="mt-14 w-full">
           <HeroCategoryTabs
             activeTab={activeCategoryTab}
             onTabChange={setActiveCategoryTab}

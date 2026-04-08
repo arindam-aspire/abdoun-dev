@@ -1,6 +1,14 @@
 import { Mail, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui";
 import { AuthProviderLogo } from "@/components/auth/popup-steps/AuthProviderLogo";
+import {
+  AUTH_POPUP_DIVIDER,
+  AUTH_POPUP_FOOTER,
+  AUTH_POPUP_FOOTER_CAPTION,
+  AUTH_POPUP_FOOTER_LINK,
+  AUTH_POPUP_OUTLINE_BUTTON,
+  AUTH_POPUP_STEP_STACK,
+} from "@/components/auth/authPopupStyles";
 import type { useTranslations } from "@/hooks/useTranslations";
 
 interface AuthPopupLandingStepProps {
@@ -21,18 +29,19 @@ export function AuthPopupLandingStep({
   onGoSignup,
 }: AuthPopupLandingStepProps) {
   return (
-    <div className="space-y-2.5 sm:space-y-2.5">
+    <div className={AUTH_POPUP_STEP_STACK}>
       <Button
         type="button"
         variant="outline"
         size="lg"
-        className="h-11 w-full border-sky-500 justify-center rounded-full bg-white text-zinc-800 hover:bg-zinc-50 sm:h-12"
+        className={AUTH_POPUP_OUTLINE_BUTTON}
         disabled={loading}
         onClick={() => onSocial("google")}
       >
         <AuthProviderLogo
-          text="G"
-          className="bg-white border-sky-500 text-red-500 shadow-sm"
+          src="/svg/google_logo.svg"
+          alt="Google"
+          className="bg-white"
         />{" "}
         {t("continueWithGoogle")}
       </Button>
@@ -40,26 +49,26 @@ export function AuthPopupLandingStep({
         type="button"
         variant="outline"
         size="lg"
-        className="h-11 w-full border-sky-500 justify-center rounded-full bg-white text-zinc-800 hover:bg-zinc-50 sm:h-12"
+        className={AUTH_POPUP_OUTLINE_BUTTON}
         disabled={loading}
         onClick={() => onSocial("facebook")}
       >
-        <AuthProviderLogo text="f" className="bg-blue-600 text-white" />{" "}
+        <AuthProviderLogo src="/svg/facebook_logo.svg" alt="Facebook" className="bg-white" />{" "}
         {t("loginWithFacebook")}
       </Button>
       <Button
         type="button"
         variant="outline"
         size="lg"
-        className="h-11 w-full border-sky-500 justify-center rounded-full bg-white text-zinc-800 hover:bg-zinc-50 sm:h-12"
+        className={AUTH_POPUP_OUTLINE_BUTTON}
         disabled={loading}
         onClick={() => onSocial("apple")}
       >
-        <AuthProviderLogo text="A" className="bg-black text-white" />{" "}
+        <AuthProviderLogo src="/svg/apple_logo.svg" alt="Apple" className="bg-white" />{" "}
         {t("loginWithApple")}
       </Button>
 
-      <div className="py-1 text-center text-size-base text-zinc-700 sm:text-size-base">
+      <div className={AUTH_POPUP_DIVIDER}>
         {t("or")}
       </div>
 
@@ -67,7 +76,7 @@ export function AuthPopupLandingStep({
         type="button"
         variant="outline"
         size="lg"
-        className="h-11 w-full border-sky-500 justify-center rounded-full bg-white text-zinc-800 hover:bg-zinc-50 sm:h-12"
+        className={AUTH_POPUP_OUTLINE_BUTTON}
         disabled={loading}
         onClick={onGoEmail}
       >
@@ -77,7 +86,7 @@ export function AuthPopupLandingStep({
         type="button"
         variant="outline"
         size="lg"
-        className="h-11 w-full border-sky-500 justify-center rounded-full bg-white text-zinc-800 hover:bg-zinc-50 sm:h-12"
+        className={AUTH_POPUP_OUTLINE_BUTTON}
         disabled={loading}
         onClick={onGoOneTimeCode}
       >
@@ -86,12 +95,15 @@ export function AuthPopupLandingStep({
 
       <button
         type="button"
-        className="mt-2 w-full cursor-pointer text-center text-size-base fw-semibold text-black sm:mt-4 sm:text-size-base"
+        className={`w-full cursor-pointer ${AUTH_POPUP_FOOTER}`}
         onClick={onGoSignup}
       >
-        {t.rich("newHereCreate", {
-          action: (chunks) => <span className="text-secondary hover:underline">{chunks}</span>,
-        })}
+        <span className={AUTH_POPUP_FOOTER_CAPTION}>
+          New to Abdoun Real Estate?
+        </span>
+        <span className={AUTH_POPUP_FOOTER_LINK}>
+          Create an account
+        </span>
       </button>
     </div>
   );

@@ -76,7 +76,6 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
   const [emailError, setEmailError] = useState<string | undefined>(undefined);
   const [passwordError, setPasswordError] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
 
   const [otcIdentifier, setOtcIdentifier] = useState("");
   const [otcIdentifierTouched, setOtcIdentifierTouched] = useState(false);
@@ -114,7 +113,6 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
       setEmailError(undefined);
       setPasswordError(undefined);
       setLoading(false);
-      setMessage(null);
       setToast(null);
       setOtcIdentifier("");
       setOtcIdentifierTouched(false);
@@ -148,7 +146,6 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
 
   const runSocial = async (provider: "google" | "facebook" | "apple") => {
     setLoading(true);
-    setMessage(null);
     try {
       await new Promise((r) => setTimeout(r, 800));
       if (provider === "facebook") {
@@ -182,7 +179,6 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
     if (nextEmailError || nextPasswordError) return;
 
     setLoading(true);
-    setMessage(null);
     try {
       if (trimmedIdentifier.includes("@")) {
         const normalizedEmail = trimmedIdentifier.toLowerCase();
@@ -299,7 +295,6 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
     if (nextError) return;
 
     setOtcLoading(true);
-    setMessage(null);
     try {
       const { session } = await requestOtpLogin({ username: trimmedIdentifier });
       setOtcChallengeId(session);
@@ -332,7 +327,6 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
       return;
     }
     setOtcLoading(true);
-    setMessage(null);
     setOtcOtpError(null);
     try {
       const tokens = await verifyOtpLogin({
@@ -363,7 +357,6 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
 
   const runResendOtc = async () => {
     setOtcLoading(true);
-    setMessage(null);
     try {
       const { session } = await requestOtpLogin({
         username: otcIdentifier.trim(),
@@ -389,7 +382,6 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
     if (view === "oneTimeCode" && otcStep === "otp") {
       setOtcStep("request");
       setOtcOtpError(null);
-      setMessage(null);
       return;
     }
     setView("landing");
@@ -411,11 +403,11 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
       <DialogRoot
         open={open}
         onClose={onClose}
-        containerClassName="p-0 sm:p-4"
-        className="h-[100dvh] w-full max-w-none overflow-hidden rounded-none border border-subtle bg-gray-400 p-0 sm:h-[92dvh] sm:max-h-[760px] sm:max-w-[460px] sm:rounded-xl"
+        containerClassName="p-4"
+        className="w-full max-w-[430px] overflow-hidden rounded-[1.5rem] border-none bg-white p-0 shadow-[0_26px_60px_rgba(15,23,42,0.28)]"
       >
         <div
-          className="relative flex h-full flex-col bg-gradient-to-b from-white via-surface to-surface p-4 sm:p-6"
+          className="relative flex h-full flex-col bg-white p-5 sm:p-6"
           dir={isRTL ? "rtl" : "ltr"}
         >
           <div className="flex items-center justify-between">
@@ -424,7 +416,7 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="inline-flex items-center gap-1 text-size-sm fw-medium text-zinc-600 hover:text-zinc-900 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 cursor-pointer"
                 >
                   <ArrowLeft className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />{" "}
                   {t("back")}
@@ -441,15 +433,15 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
             </button>
           </div>
 
-          <div className="flex justify-center">
-            <BrandLogo locale={locale} imageClassName="h-12 w-auto" />
+          <div className="mt-3 flex justify-center">
+            <BrandLogo locale={locale} variant="black" imageClassName="h-10 w-auto" />
           </div>
 
-          <h2 className="mt-2 mb-4 text-center text-size-lg leading-tight fw-bold text-zinc-900 sm:mt-5 md:text-size-3xl">
+          <h2 className="mb-3 mt-6 text-center text-[1.85rem] font-semibold leading-[1.15] tracking-[-0.02em] text-slate-900">
             {view === "signup" ? t("signupLandingTitle") : t("loginTitle")}
           </h2>
 
-          <AuthPopupSection>
+          <AuthPopupSection className="mt-2">
             {view === "landing" ? (
               <AuthPopupLandingStep
                 t={t}

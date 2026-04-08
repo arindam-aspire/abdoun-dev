@@ -1,15 +1,40 @@
+import Image from "next/image";
+import { cn } from "@/lib/cn";
+
 interface AuthProviderLogoProps {
-  text: string;
-  className: string;
+  src?: string;
+  alt?: string;
+  text?: string;
+  className?: string;
+  imageClassName?: string;
 }
 
-export function AuthProviderLogo({ text, className }: AuthProviderLogoProps) {
+export function AuthProviderLogo({
+  src,
+  alt = "",
+  text,
+  className,
+  imageClassName,
+}: AuthProviderLogoProps) {
   return (
     <span
-      className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-size-xs fw-bold ${className}`}
+      className={cn(
+        "inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full text-[11px] font-semibold",
+        className,
+      )}
       aria-hidden="true"
     >
-      {text}
+      {src ? (
+        <Image
+          src={src}
+          alt={alt}
+          width={20}
+          height={20}
+          className={cn("h-full w-full object-contain", imageClassName)}
+        />
+      ) : (
+        text
+      )}
     </span>
   );
 }

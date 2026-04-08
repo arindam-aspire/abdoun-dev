@@ -100,8 +100,8 @@ export function OTPVerificationBlock({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label required>OTP code</Label>
-        <div className="flex w-full justify-between p-1 gap-2 sm:gap-2.5">
+        <Label className="text-sm font-medium text-slate-800" required>OTP code</Label>
+        <div className="flex w-full justify-between gap-2">
           {Array.from({ length: OTP_LENGTH }, (_, i) => (
             <input
               key={i}
@@ -117,11 +117,11 @@ export function OTPVerificationBlock({
               onKeyDown={(e) => handleKeyDown(i, e)}
               onPaste={handlePaste}
               className={cn(
-                "h-12 flex-1 min-w-0 max-w-[3rem] rounded-lg border bg-white text-center text-size-lg fw-semibold tabular-nums transition-colors sm:h-14",
-                "focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1",
+                "h-12 flex-1 min-w-0 max-w-[3rem] rounded-[0.7rem] border bg-white text-center text-base font-semibold tabular-nums text-slate-900 transition-colors",
+                "focus:outline-none focus:ring-2 focus:ring-[#6f8cff]/15 focus:ring-offset-0",
                 otpError
-                  ? "border-red-400 focus:border-red-500 focus:ring-red-500"
-                  : "border-zinc-300 hover:border-zinc-400",
+                  ? "border-red-400 focus:border-red-500 focus:ring-red-500/15"
+                  : "border-[#b7c6ff] hover:border-[#8ea4ff] focus:border-[#6f8cff]",
               )}
               aria-label={`Digit ${i + 1}`}
             />
@@ -129,7 +129,7 @@ export function OTPVerificationBlock({
         </div>
       </div>
 
-      <div className="flex items-center justify-between rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-size-xs text-zinc-600">
+      <div className="flex items-center justify-between rounded-[0.7rem] border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
         <span>
           {secondsLeft > 0 ? `Resend in ${secondsLeft}s` : "You can resend OTP now"}
         </span>
@@ -137,7 +137,7 @@ export function OTPVerificationBlock({
           type="button"
           variant="ghost"
           size="sm"
-          className="fw-medium text-sky-700 disabled:text-zinc-400 px-0"
+          className="px-0 font-medium text-[#0a84ff] disabled:text-slate-400"
           disabled={!canResend || loading}
           onClick={onResend}
         >
@@ -149,7 +149,7 @@ export function OTPVerificationBlock({
         type="button"
         variant="accent"
         size="lg"
-        className="w-full"
+        className="h-12 w-full rounded-[0.7rem] text-sm font-semibold"
         disabled={loading || otp.replace(/\s/g, "").length !== OTP_LENGTH}
         onClick={onVerify}
       >

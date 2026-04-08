@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
+import { ChevronDown } from "lucide-react";
 import type {
   HeroTabKey,
   HeroTranslations,
@@ -131,20 +132,34 @@ export function HeroSearchCard({
     return `${minLabel} - ${maxLabel}`;
   };
 
+  const handleReset = () => {
+    setSelectedPropertyTypes({
+      realEstate: "",
+      commercial: "",
+      land: "",
+    });
+    setSelectedCity("");
+    setSelectedAreas([]);
+    setMinBudget("");
+    setMaxBudget("");
+    setOpenDropdown(null);
+    onTabChange("buy");
+  };
+
   return (
-    <div className="mt-4 w-full max-w-5xl">
-      <div className="rounded-3xl bg-white/95 p-4 shadow-2xl ring-1 ring-subtle backdrop-blur-sm md:p-5 lg:p-6">
-        <div className={`mb-2 flex ${isRtl ? "" : "justify-start"}`}>
-          <div className="inline-flex rounded-2xl bg-surface p-1 ring-1 ring-subtle">
+    <div className="mt-10 w-full max-w-[64rem]">
+      <div className="rounded-[1.4rem] border-2 border-[#f2d400] bg-white p-6 shadow-[0_34px_60px_rgba(10,19,47,0.26)] backdrop-blur-sm md:p-8">
+        <div className="mb-6 flex justify-center">
+          <div className="inline-flex w-full gap-3 rounded-2xl bg-transparent">
             {(["buy", "rent"] as const).map((tabKey) => (
               <button
                 key={tabKey}
                 type="button"
                 onClick={() => onTabChange(tabKey)}
-                className={`cursor-pointer rounded-xl px-5 py-2 text-size-sm fw-medium capitalize transition ${
+                className={`w-1/2 cursor-pointer rounded-2xl px-5 py-3 text-lg font-medium capitalize transition ${
                   activeTab === tabKey
-                    ? "bg-secondary text-white shadow-sm"
-                    : "text-[rgba(51,51,51,0.7)] hover:text-secondary"
+                    ? "border border-[#f2d400] bg-white text-[#1f2937]"
+                    : "bg-[#F3F4F6] text-slate-600 hover:text-[#355777]"
                 }`}
               >
                 {t.tabs[tabKey]}
@@ -153,7 +168,7 @@ export function HeroSearchCard({
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 pt-1 text-size-xs text-charcoal md:flex-row md:items-center">
+        <div className="flex flex-col gap-4 pt-1 text-charcoal md:flex-row md:items-end">
           {/* Type / Property Type */}
           <PropertyTypeSelect
             label={t.typeLabel}
@@ -200,32 +215,28 @@ export function HeroSearchCard({
           {/* Budget */}
           <div className="relative flex-[1.2]">
             <label
-              className={`mb-1 block text-size-11 fw-semibold uppercase tracking-[0.18em] text-[rgba(51,51,51,0.7)] ${
-                isRtl ? "text-right" : "text-left"
-              }`}
+              className="sr-only"
             >
               {t.budgetLabel}
             </label>
             <button
               ref={budgetTriggerRef}
               type="button"
-              className="flex h-14 w-full cursor-pointer items-center gap-2 rounded-full border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 text-left shadow-[0_0_0_1px_rgba(26,59,92,0.03)] transition-colors hover:border-[rgba(43,91,166,0.6)] focus:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-[rgba(26,59,92,0.2)]"
+              className="flex h-11 w-full cursor-pointer items-center gap-2 rounded-xl border border-[#b8c8ea] bg-white px-4 text-left text-sm shadow-sm transition-colors hover:border-[#8fa6d8] focus:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-[rgba(26,59,92,0.12)]"
               onClick={() => {
                 toggleDropdown("budget");
               }}
             >
-              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface text-size-2xs fw-medium text-secondary">
-                JD
-              </span>
               <span
-                className={`w-full truncate text-size-sm ${
+                className={`w-full truncate ${
                   minBudget || maxBudget
-                    ? "text-charcoal fw-medium"
-                    : "text-[rgba(51,51,51,0.45)] fw-normal"
+                    ? "font-medium text-slate-700"
+                    : "font-normal text-slate-500"
                 }`}
               >
                 {formatBudgetLabel()}
               </span>
+              <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
             </button>
 
             <HeroDropdown
@@ -256,13 +267,23 @@ export function HeroSearchCard({
           </div>
 
           {/* Search button */}
-          <div className="flex-none self-end pt-2 md:self-auto md:pt-5">
+          <div className="flex-none">
             <button
               type="button"
               onClick={handleSearch}
-              className="inline-flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-accent px-6 text-size-sm fw-semibold text-secondary shadow-md hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(253,185,19,0.45)] md:w-auto"
+              className="inline-flex h-11 w-full min-w-[150px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-6 text-sm font-semibold text-secondary shadow-sm hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(253,185,19,0.45)] md:w-auto"
             >
               {t.search}
+            </button>
+          </div>
+
+          <div className="flex-none">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="inline-flex h-11 w-full min-w-[112px] cursor-pointer items-center justify-center rounded-xl bg-[#f1f3f7] px-4 text-sm font-semibold text-slate-600 transition hover:bg-[#e8ebf1] hover:text-slate-700 md:w-auto"
+            >
+              {t.resetSearch}
             </button>
           </div>
         </div>

@@ -37,11 +37,13 @@ export function LanguageSelect({
     () => [
       { value: "en", label: showFullLabels ? t("en") : "EN" },
       { value: "ar", label: showFullLabels ? t("ar") : "AR" },
-      { value: "es", label: showFullLabels ? t("es") : "ES" },
+      { value: "es", label: showFullLabels ? t("es") : "SP" },
       { value: "fr", label: showFullLabels ? t("fr") : "FR" },
     ],
     [showFullLabels, t],
   );
+
+  const compactMode = showFullLabels === false;
 
   const handleChange = useCallback(
     (next: AppLocale) => {
@@ -89,13 +91,29 @@ export function LanguageSelect({
       <Dropdown
         buttonId={id ?? "language-select-button"}
         label={
-          <span className="flex items-center gap-2">
-            <Globe className="h-4 w-4 text-slate-500 shrink-0" aria-hidden />
-            <span className="text-size-xs fw-medium text-slate-700">
+          <span className="flex items-center">
+            <span
+              className={cn(
+                "font-medium text-[#1a3b5c]",
+                compactMode ? "text-xs" : "text-sm",
+              )}
+            >
               {options.find((opt) => opt.value === value)?.label}
             </span>
           </span>
         }
+        buttonClassName={cn(
+          "border-0 bg-white shadow-sm hover:bg-gray-100 shrink-0 text-sm",
+          compactMode
+            ? "h-9 w-[56px] rounded-xl px-2.5 md:h-11"
+            : "h-9 min-w-0 rounded-xl px-3 md:h-11",
+        )}
+        menuClassName={cn(
+          compactMode && "mt-1.5 w-[56px] min-w-[56px] rounded-md border border-zinc-200 p-0 shadow-lg",
+        )}
+        optionClassName={cn(
+          compactMode && "px-0 py-2 text-center text-xs font-medium text-[#1a3b5c]",
+        )}
         options={options}
         value={value}
         onChange={(next) => handleChange(next as AppLocale)}
