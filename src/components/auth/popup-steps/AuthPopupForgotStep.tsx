@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui";
+import { Button, LoadingButton } from "@/components/ui";
 import { AuthPopupField, OTPVerificationBlock, PasswordPolicyHelper, AuthAlert } from "@/components/auth";
 import {
   AUTH_POPUP_PRIMARY_BUTTON,
@@ -35,16 +35,16 @@ export function AuthPopupForgotStep({
             onFocus={onFocusIdentifier}
             error={forgot.errors.identifier}
           />
-          <Button
+          <LoadingButton
             type="button"
             variant="accent"
             size="lg"
             className={AUTH_POPUP_PRIMARY_BUTTON}
-            disabled={forgot.loading}
+            loading={forgot.loading}
             onClick={forgot.actions.requestOtp}
           >
-            {forgot.loading ? t("sendingOtp") : t("sendOtp")}
-          </Button>
+            {t("sendOtp")}
+          </LoadingButton>
         </>
       ) : null}
 

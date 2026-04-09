@@ -121,7 +121,6 @@ export type ForgotPasswordConfirmPayload = {
 
 export type SetPasswordPayload = {
   password: string;
-  previous_password: string;
 };
 
 export type OtpRequestPayload = {

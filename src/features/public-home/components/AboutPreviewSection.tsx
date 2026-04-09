@@ -29,8 +29,7 @@ export function AboutPreviewSection({
   isRtl,
 }: AboutPreviewSectionProps) {
   return (
-    <section className="bg-white">
-      <div className="container mx-auto px-4 py-14 md:px-8 md:py-18">
+    <section className="bg-white container mx-auto px-4 py-14 md:px-8 md:py-18">
         <div
           className={cn(
             "grid items-center gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-14",
@@ -97,7 +96,6 @@ export function AboutPreviewSection({
               />
             </div>
           </div>
-        </div>
       </div>
     </section>
   );

@@ -36,7 +36,7 @@ export default function ForceChangePasswordPage() {
           const accessToken = window.localStorage.getItem("accessToken");
           const refreshToken = window.localStorage.getItem("refreshToken");
           if (!accessToken || !refreshToken) {
-            router.push(`/${locale}/login`);
+            router.push(`/${locale}`);
             return;
           }
         }
@@ -76,13 +76,12 @@ export default function ForceChangePasswordPage() {
       </p>
       <ChangePasswordForm
         initialLoading={submitting}
-        onSubmit={async (lastPassword, newPassword) => {
+        onSubmit={async (newPassword) => {
           setSubmitError(null);
           setSubmitting(true);
           try {
             await setPasswordAfterLogin({
               password: newPassword,
-              previous_password: lastPassword,
             });
 
             const me = await getCurrentUser();

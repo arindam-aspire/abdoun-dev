@@ -116,3 +116,6 @@ html[lang="ar"] body {
 
 @utility fill-accent { fill: var(--brand-accent); }
 
+button {
+  @apply cursor-pointer inline-flex items-center justify-center transition-colors duration-200;
+}

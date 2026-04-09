@@ -26,6 +26,7 @@ import { useTranslations } from "@/hooks/useTranslations";
 import { useAppSelector } from "@/hooks/storeHooks";
 import { cn } from "@/lib/cn";
 import { selectCurrentUser } from "@/store/selectors";
+import { AuthProviderLogo } from "../auth/popup-steps/AuthProviderLogo";
 
 export interface PropertyCardNewMetric {
   icon: LucideIcon;
@@ -186,12 +187,20 @@ export function PropertyCardNew({
             isRtl && "flex-row-reverse",
           )}
         >
-          <div className={cn("flex flex-wrap items-center gap-2", isRtl && "justify-end")}>
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-2",
+              isRtl && "justify-end",
+            )}
+          >
             {badges.map((badge, index) => (
               <Badge
                 key={`${propertyId}-${index}`}
                 variant={badge.variant ?? "default"}
-                className={cn("rounded-full px-3 py-0.5 text-size-11 fw-semibold", badge.className)}
+                className={cn(
+                  "rounded-full px-3 py-0.5 text-size-11 fw-semibold",
+                  badge.className,
+                )}
               >
                 {badge.label}
               </Badge>
@@ -216,7 +225,11 @@ export function PropertyCardNew({
               )}
               aria-label="Previous image"
             >
-              {isRtl ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              {isRtl ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
             </button>
             <button
               type="button"
@@ -227,7 +240,11 @@ export function PropertyCardNew({
               )}
               aria-label="Next image"
             >
-              {isRtl ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              {isRtl ? (
+                <ChevronLeft className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
             </button>
           </>
         )}
@@ -239,7 +256,9 @@ export function PropertyCardNew({
                 key={`${propertyId}-dot-${index}`}
                 className={cn(
                   "h-2 w-2 rounded-full transition",
-                  index === currentImageIndex ? "bg-white shadow-[0_0_0_4px_rgba(255,255,255,0.25)]" : "bg-white/60",
+                  index === currentImageIndex
+                    ? "bg-white shadow-[0_0_0_4px_rgba(255,255,255,0.25)]"
+                    : "bg-white/60",
                 )}
                 aria-hidden
               />
@@ -258,7 +277,12 @@ export function PropertyCardNew({
         />
       </div>
 
-      <div className={cn("relative z-20 flex flex-1 flex-col px-5 py-4 md:px-5 md:py-4", contentClassName)}>
+      <div
+        className={cn(
+          "relative z-20 flex flex-1 flex-col px-5 py-4 md:px-5 md:py-4",
+          contentClassName,
+        )}
+      >
         <Link
           href={href}
           target={target}
@@ -360,7 +384,11 @@ export function PropertyCardNew({
               aria-label={tSearch("whatsapp")}
               className="inline-flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[10px] border border-[#d9e0ea] bg-white px-0 py-2 text-slate-600 transition hover:bg-slate-50"
             >
-              <MessageCircle className="h-3.5 w-3.5 shrink-0" />
+              <AuthProviderLogo
+                src="/svg/whatsapp_logo.svg"
+                alt="WhatsApp"
+                className="h-5 w-5 shrink-0"
+              />
             </button>
           </div>
         </div>

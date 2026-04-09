@@ -148,8 +148,7 @@ export function ExclusivePropertiesSection({
   };
 
   return (
-    <section className="bg-white" dir={isRtl ? "rtl" : "ltr"}>
-      <div className="container mx-auto px-4 py-14 md:px-8 md:py-18">
+    <section className="bg-white container mx-auto px-4 md:px-8" dir={isRtl ? "rtl" : "ltr"}>
         <div className="mb-10 flex flex-col items-start justify-between gap-4 md:flex-row md:items-start">
           <div className={isRtl ? "md:text-right" : ""}>
             <header className="space-y-4">
@@ -252,7 +251,6 @@ export function ExclusivePropertiesSection({
             No exclusive properties found.
           </p>
         )}
-      </div>
     </section>
   );
 }
