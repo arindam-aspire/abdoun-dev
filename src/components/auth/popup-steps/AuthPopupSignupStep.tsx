@@ -5,6 +5,8 @@ import { AuthProviderLogo } from "@/components/auth/popup-steps/AuthProviderLogo
 import {
   AUTH_POPUP_DIVIDER,
   AUTH_POPUP_FOOTER,
+  AUTH_POPUP_FOOTER_CAPTION,
+  AUTH_POPUP_FOOTER_LINK,
   AUTH_POPUP_OUTLINE_BUTTON,
   AUTH_POPUP_PRIMARY_BUTTON,
   AUTH_POPUP_STEP_STACK,
@@ -112,7 +114,12 @@ export function AuthPopupSignupStep({
             className={`w-full cursor-pointer text-sm font-semibold text-[#0a84ff] hover:text-[#0668c7] ${AUTH_POPUP_FOOTER}`}
             onClick={onBackToLogin}
           >
-            {t("alreadyHaveAccountLogin")}
+            <span className={AUTH_POPUP_FOOTER_CAPTION}>
+              {t("haveAccountSignIn")}
+            </span>
+            <span className={AUTH_POPUP_FOOTER_LINK}>
+              {t("loginTitle")}
+            </span>
           </button>
         </>
       ) : null}
@@ -192,7 +199,12 @@ export function AuthPopupSignupStep({
             className={`w-full cursor-pointer text-sm font-semibold text-[#0a84ff] hover:text-[#0668c7] ${AUTH_POPUP_FOOTER}`}
             onClick={onBackToLogin}
           >
-            {t("alreadyHaveAccountLogin")}
+            <span className={AUTH_POPUP_FOOTER_CAPTION}>
+              {t("haveAccountSignIn")}
+            </span>
+            <span className={AUTH_POPUP_FOOTER_LINK}>
+              {t("loginTitle")}
+            </span>
           </button>
         </>
       ) : null}
