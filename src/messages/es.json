@@ -718,5 +718,55 @@
     "ctaTitle": "¿Quiere Unirse a Nuestro Equipo?",
     "ctaSubtitle": "Siempre buscamos profesionales inmobiliarios talentosos para crecer con nosotros.",
     "ctaButton": "Contáctenos"
+  },
+  "OurServices": {
+    "title": "Our Services",
+    "subtitle": "Comprehensive real estate solutions tailored to your needs",
+    "heroText": "Abdoun Real Estate Services",
+    "heroDescription": "We provide comprehensive real estate solutions including brokerage, property management, appraisal, and transfer services to help you make confident property decisions.",
+    "items": {
+      "realEstateBrokerage": {
+        "title": "Real Estate Brokerage",
+        "description": "We assist you in buying, selling, or renting properties through our market expertise and network, ensuring the best opportunities and value."
+      },
+      "propertyAppraisal": {
+        "title": "Property Appraisal",
+        "description": "We provide accurate property valuation based on market data, location, and property condition to support informed decisions."
+      },
+      "propertyTransfer": {
+        "title": "Property Transfer",
+        "description": "We handle all property transfer procedures efficiently and legally, ensuring a smooth and reliable process."
+      },
+      "propertyManagement": {
+        "title": "Property Management",
+        "description": "We offer full property management services including leasing, tenant follow-up, maintenance, and rent collection to maximize returns."
+      },
+      "relocation": {
+        "title": "Relocation",
+        "description": "We assist you in relocating smoothly by providing suitable options and handling all housing arrangements."
+      }
+    }
+  },
+  "whyChooseUs": {
+    "title": "Why Choose Us",
+    "heroText": "Abdoun Real Estate Services",
+    "items": {
+      "experience": {
+        "title": "Strong Market Experience",
+        "description": "Strong experience in the Jordanian real estate market."
+      },
+      "network": {
+        "title": "Wide Network",
+        "description": "A wide network of relationships to provide the best opportunities."
+      },
+      "speed": {
+        "title": "Fast Execution",
+        "description": "Quick and efficient handling of all transactions."
+      },
+      "transparency": {
+        "title": "Transparency & Trust",
+        "description": "A strong commitment to honesty, transparency, and reliability."
+      }
+    }
   }
 }

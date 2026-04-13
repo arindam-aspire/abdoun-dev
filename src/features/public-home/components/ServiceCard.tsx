@@ -25,23 +25,23 @@ export function ServiceCard({ item, isRtl }: ServiceCardProps) {
 
   return (
     <div
-      className={`group relative min-h-[248px] rounded-3xl border border-[#e5e7eb] bg-white p-8 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-300 hover:shadow-[0_12px_36px_-18px_rgba(15,23,42,0.18)] ${
+      className={`group relative min-h-[220px] rounded-3xl border border-[#e5e7eb] bg-white p-6 md:p-7 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-300 hover:shadow-[0_12px_36px_-18px_rgba(15,23,42,0.18)] ${
         isRtl ? "text-right" : "text-left"
       }`}
     >
       {Icon && (
         <div
-          className={`mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#ffe03a] text-slate-900 ${
+          className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#ffe03a] text-slate-900 ${
             isRtl ? "ml-auto" : ""
           }`}
         >
-          <Icon className="h-7 w-7 stroke-[2.2]" />
+          <Icon className="h-5 w-5 stroke-[2.2]" />
         </div>
       )}
-      <h3 className="text-[1.4rem] font-semibold tracking-tight text-slate-900">
+      <h3 className="text-xl font-semibold leading-tight tracking-tight text-slate-900 md:text-[1.35rem]">
         {item.title}
       </h3>
-      <p className="mt-4 max-w-md text-base leading-8 text-slate-600">
+      <p className="mt-3 max-w-md text-sm leading-7 text-slate-600 md:text-base">
         {item.description}
       </p>
     </div>

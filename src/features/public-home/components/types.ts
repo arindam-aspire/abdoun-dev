@@ -51,8 +51,8 @@ export interface ServiceItem {
 
 export interface ServicesTranslations {
   title: string;
-  subtitle: string;
-  description: string;
+  subtitle?: string;
+  description?: string;
   cards: ServiceItem[];
 }
 

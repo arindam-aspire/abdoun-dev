@@ -8,6 +8,15 @@ import { AboutPreviewSection } from "@/features/public-home/components/AboutPrev
 import { ServicesSection } from "@/features/public-home/components/ServicesSection";
 import { useExclusiveProperties } from "@/features/public-home/hooks/useExclusiveProperties";
 import { SERVICE_CARD_CONTENT } from "@/features/public-home/components/constants";
+import { ServiceCardIcon, ServicesTranslations } from "./types";
+
+export interface ServiceItem {
+  id: string;
+  title: string;
+  description: string;
+  cta: string;
+  icon?: ServiceCardIcon;
+}
 
 export interface HomePageProps {
   language: AppLocale;
@@ -20,6 +29,7 @@ export interface HomePageProps {
 export function HomePage({ language }: HomePageProps) {
   const t = useTranslations("home");
   const tAboutPage = useTranslations("aboutUsPage");
+  const tOurServices = useTranslations("OurServices");
   const isRtl = language === "ar";
   const {
     items: exclusiveProperties,
@@ -60,11 +70,46 @@ export function HomePage({ language }: HomePageProps) {
     content: t("aboutUsContent"),
     seeMore: t("aboutUsSeeMore"),
   };
-  const servicesTranslations = {
-    title: t("servicesTitle"),
-    subtitle: "Comprehensive real estate solutions tailored to your needs",
-    description: t("servicesDescription"),
-    cards: SERVICE_CARD_CONTENT,
+  const serviceSection: ServicesTranslations = {
+    title: tOurServices("title"),
+    subtitle: tOurServices("subtitle"),
+    cards: [
+      {
+        id: "real-estate-brokerage",
+        title: tOurServices("items.realEstateBrokerage.title"),
+        description: tOurServices("items.realEstateBrokerage.description"),
+        cta: "",
+        icon: "home",
+      },
+      {
+        id: "property-appraisal",
+        title: tOurServices("items.propertyAppraisal.title"),
+        description: tOurServices("items.propertyAppraisal.description"),
+        cta: "",
+        icon: "trending-up",
+      },
+      {
+        id: "property-transfer",
+        title: tOurServices("items.propertyTransfer.title"),
+        description: tOurServices("items.propertyTransfer.description"),
+        cta: "",
+        icon: "building",
+      },
+      {
+        id: "property-management",
+        title: tOurServices("items.propertyManagement.title"),
+        description: tOurServices("items.propertyManagement.description"),
+        cta: "",
+        icon: "building",
+      },
+      {
+        id: "relocation",
+        title: tOurServices("items.relocation.title"),
+        description: tOurServices("items.relocation.description"),
+        cta: "",
+        icon: "home",
+      },
+    ],
   };
 
   return (
@@ -94,7 +139,7 @@ export function HomePage({ language }: HomePageProps) {
         error={exclusiveError}
       />
       <ServicesSection
-        translations={servicesTranslations}
+        translations={serviceSection}
         ctaLabel="View More"
         ctaHref={`/${language}/our-services`}
         isRtl={isRtl}
