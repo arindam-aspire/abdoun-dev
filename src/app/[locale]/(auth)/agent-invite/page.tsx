@@ -13,6 +13,7 @@ import {
 import { validateInviteToken } from "@/services/adminAgentApiService";
 import { completeAgentOnboarding } from "@/services/agentOnboardingApiService";
 import type { AgentInviteFormPayload } from "@/features/admin-agents/agent-dashboard/components/agent-invite/AgentInviteForm";
+import { LoadingScreen } from "@/components/ui";
 
 /** Decode email from query: handle %22 (quotes) and trim. */
 function parseEmailFromParams(value: string | null): string | null {
@@ -59,6 +60,7 @@ export default function InviteAgentPage() {
       .catch((err) => {
         if (!cancelled) {
           setInvite(null);
+          console.log("error validating invite token", err);
           setError(err instanceof Error ? err.message : t("inviteNotFound"));
         }
       })
@@ -161,12 +163,7 @@ export default function InviteAgentPage() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
-        <div className="flex justify-center">
-          <BrandLogo locale={locale} imageClassName="h-12 w-auto" />
-        </div>
-        <p className="mt-6 text-center text-sm text-zinc-600">Loading...</p>
-      </div>
+      <LoadingScreen  title="Verifying" description="Please wait while we validate your invite." />
     );
   }
 
@@ -174,7 +171,7 @@ export default function InviteAgentPage() {
     return (
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
         <div className="flex justify-center">
-          <BrandLogo locale={locale} imageClassName="h-12 w-auto" />
+          <BrandLogo locale={locale} variant="black" imageClassName="h-12 w-auto" />
         </div>
         <h1 className="mt-5 text-center text-xl font-bold text-zinc-900 sm:text-2xl">
           {t("inviteTitle")}

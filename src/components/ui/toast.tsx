@@ -16,7 +16,7 @@ export function Toast({
   kind = "info",
   message,
   onClose,
-  duration = 400,
+  duration = 1500,
 }: ToastProps) {
   useEffect(() => {
     if (!onClose) return;
@@ -43,4 +43,3 @@ export function Toast({
   if (typeof document === "undefined") return content;
   return createPortal(content, document.body);
 }
-

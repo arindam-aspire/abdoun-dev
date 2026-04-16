@@ -2,21 +2,6 @@
  * Auth feature API module. Wraps auth HTTP calls with same endpoints and payloads.
  * No API contract changes; single entry for auth-related network calls.
  */
-import {
-  confirmForgotPassword,
-  confirmSignup,
-  getCurrentUser,
-  getCurrentUserPermissions,
-  loginWithPassword,
-  logout,
-  requestForgotPassword,
-  requestOtpLogin,
-  resendConfirmation,
-  setPasswordAfterLogin,
-  signup,
-  refreshToken,
-  verifyOtpLogin,
-} from "@/services/authService";
 
 export type {
   AuthTokens,
@@ -38,6 +23,7 @@ export type {
 } from "@/services/authService";
 
 export {
+  changePassword,
   confirmForgotPassword,
   confirmSignup,
   getCurrentUser,

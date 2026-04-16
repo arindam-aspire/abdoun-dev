@@ -12,6 +12,7 @@ import { ListEmpty } from "@/components/ui/list/ListEmpty";
 import { ListError } from "@/components/ui/list/ListError";
 import type { SearchResultListing } from "@/features/property-search/types";
 import type { SortKey } from "@/features/property-search/components/SearchResultSortDropdown";
+import { Spinner } from "@/components/ui";
 
 const PAGE_SIZE = 12;
 const PAGE_PARAM = "page";
@@ -30,7 +31,10 @@ function toPriceNumber(value: string): number {
   return Number.isFinite(amount) ? amount : 0;
 }
 
-function sortListings(listings: SearchResultListing[], sort: SortKey): SearchResultListing[] {
+function sortListings(
+  listings: SearchResultListing[],
+  sort: SortKey,
+): SearchResultListing[] {
   const arr = [...listings];
   if (sort === "newest") {
     return arr.sort((a, b) => b.id - a.id);
@@ -44,7 +48,10 @@ function sortListings(listings: SearchResultListing[], sort: SortKey): SearchRes
   return arr;
 }
 
-export function SearchResults({ resultsTitle, detailsBasePath }: SearchResultsProps) {
+export function SearchResults({
+  resultsTitle,
+  detailsBasePath,
+}: SearchResultsProps) {
   const t = useTranslations("searchResult");
   const { searchParams, currentPage, sort, view, setSort, setView } =
     useSearchFilters();
@@ -95,10 +102,9 @@ export function SearchResults({ resultsTitle, detailsBasePath }: SearchResultsPr
       {error ? (
         <ListError message={error} />
       ) : loading ? (
-        <LoadingScreen
-          title="Loading properties..."
-          description="Please wait while we fetch matching listings."
-        />
+        <div className="relative flex items-center justify-center">
+          <Spinner size="lg" className="relative text-primary animate-spin" />
+        </div>
       ) : (
         <>
           {sortedListings.length === 0 ? (
@@ -141,4 +147,3 @@ export function SearchResults({ resultsTitle, detailsBasePath }: SearchResultsPr
     </section>
   );
 }
-

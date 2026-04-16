@@ -121,6 +121,7 @@ export type ForgotPasswordConfirmPayload = {
 
 export type SetPasswordPayload = {
   password: string;
+  previous_password?: string;
 };
 
 export type OtpRequestPayload = {
@@ -289,6 +290,16 @@ export async function setPasswordAfterLogin(
 ): Promise<true> {
   const response = await authApi.post<StandardApiResponse<true>>(
     "/auth/set-password",
+    payload,
+  );
+  return unwrap(response.data);
+}
+
+export async function changePassword(
+  payload: SetPasswordPayload,
+): Promise<true> {
+  const response = await authApi.post<StandardApiResponse<true>>(
+    "/auth/change-password",
     payload,
   );
   return unwrap(response.data);

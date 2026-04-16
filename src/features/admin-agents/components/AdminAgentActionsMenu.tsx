@@ -5,7 +5,10 @@ import { MoreVertical } from "lucide-react";
 import { ActionsMenu, IconButton } from "@/components/ui";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AGENT_STATUS } from "@/constants/agentStatus";
-import { inviteAdminAgent, type AdminAgent } from "@/services/adminAgentApiService";
+import {
+  resendAdminAgentInvitation,
+  type AdminAgent,
+} from "@/services/adminAgentApiService";
 import {
   approveAdminAgent,
   declineAdminAgent,
@@ -235,7 +238,11 @@ export function AdminAgentActionsMenu({ agent, adminId, onToast }: AdminAgentAct
 
     switch (key) {
       case "resend-invite": {
-        await run(key, async () => inviteAdminAgent(agent.email), `Invitation resent to ${agent.email}.`);
+        await run(
+          key,
+          async () => resendAdminAgentInvitation(agentId),
+          `Invitation resent to ${agent.email}.`,
+        );
         resetPending();
         break;
       }

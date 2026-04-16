@@ -8,6 +8,7 @@ import {
   Dropdown,
   Input,
   LoadingScreen,
+  Spinner,
   Toast,
 } from "@/components/ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -609,7 +610,9 @@ export function AdminAgentsPage() {
           </div>
 
           {loading ? (
-            <LoadingScreen />
+            <div className="relative flex items-center justify-center my-6">
+              <Spinner size="lg" className="relative text-primary animate-spin" />
+            </div>
           ) : error ? (
             <div className="text-sm text-rose-700">{error}</div>
           ) : (

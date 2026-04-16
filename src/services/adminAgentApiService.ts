@@ -2,6 +2,7 @@
 
 import { normalizeAgentStatus, type AgentStatusValue } from "@/constants/agentStatus";
 import { createHttpClients } from "@/lib/http";
+import { getApiErrorMessage } from "@/lib/http";
 import { type StandardApiResponse } from "@/services/userService";
 
 export type AdminAgentStatus = AgentStatusValue;
@@ -79,6 +80,15 @@ export async function inviteAdminAgent(
   return unwrap(response.data);
 }
 
+export async function resendAdminAgentInvitation(
+  agentId: string,
+): Promise<InviteAgentResponse> {
+  const response = await authApi.post<StandardApiResponse<InviteAgentResponse>>(
+    `/agents/${agentId}/resend-invitation`,
+  );
+  return unwrap(response.data);
+}
+
 export type ValidateInviteTokenResult = ValidateInviteTokenResponse & {
   message?: string | null;
 };
@@ -86,15 +96,19 @@ export type ValidateInviteTokenResult = ValidateInviteTokenResponse & {
 export async function validateInviteToken(
   token: string,
 ): Promise<ValidateInviteTokenResult> {
-  const response = await authApi.get<
-    StandardApiResponse<ValidateInviteTokenResponse> & { message?: string | null }
-  >("/agents/invite/validate", {
-    params: { token },
-  });
-  const body = response.data;
-  const payload = unwrap(body);
-  const message = "message" in body && body.message != null ? body.message : undefined;
-  return { ...payload, message };
+  try {
+    const response = await authApi.get<
+      StandardApiResponse<ValidateInviteTokenResponse> & { message?: string | null }
+    >("/agents/invite/validate", {
+      params: { token },
+    });
+    const body = response.data;
+    const payload = unwrap(body);
+    const message = "message" in body && body.message != null ? body.message : undefined;
+    return { ...payload, message };
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error));
+  }
 }
 
 export async function listAdminAgents(

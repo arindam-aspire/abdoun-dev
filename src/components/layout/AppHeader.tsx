@@ -1,6 +1,6 @@
 "use client";
 
-import { AuthPopup } from "@/features/auth/components/modals/AuthPopup";
+import { AuthPopup, AuthPopupView } from "@/features/auth/components/modals/AuthPopup";
 import {
   APP_HEADER_CONFIG,
   type HeaderRole,
@@ -52,7 +52,9 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
   const user = useAppSelector(selectCurrentUser);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [authInitialView, setAuthInitialView] = useState<"email" | undefined>(undefined);
+  const [authInitialView, setAuthInitialView] = useState<"email" | "password" | unknown>(
+    "email",
+  );
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isListPropertyModalOpen, setIsListPropertyModalOpen] = useState(false);
@@ -74,38 +76,44 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
       (!item.publicOnly || shouldShowPublicLinks),
   );
   const navItems = roleNavItems.filter((item) => item.placement !== "profile");
-  const profileNavItems = roleNavItems.filter((item) => item.placement === "profile");
-  const canShowListProperty = APP_HEADER_CONFIG.actions.listProperty.roles.includes(activeRole);
-  const profileMenuConfig = user ? APP_HEADER_CONFIG.profileMenu[user.role] : null;
-  const firstName = user?.name?.split(" ").find(Boolean) ?? tCommon("myProfile");
+  const profileNavItems = roleNavItems.filter(
+    (item) => item.placement === "profile",
+  );
+  const canShowListProperty =
+    APP_HEADER_CONFIG.actions.listProperty.roles.includes(activeRole);
+  const profileMenuConfig = user
+    ? APP_HEADER_CONFIG.profileMenu[user.role]
+    : null;
+  const firstName =
+    user?.name?.split(" ").find(Boolean) ?? tCommon("myProfile");
   const desktopNavItems =
     activeRole === "guest" || activeRole === "user"
       ? [
-        {
-          id: "properties",
-          href: `/${activeLanguage}/search-result`,
-          label: "Properties",
-          isActive:
-            pathname === `/${activeLanguage}/search-result` ||
-            pathname.startsWith(`/${activeLanguage}/search-result/`),
-        },
-        ...navItems.map((item) => ({
+          {
+            id: "properties",
+            href: `/${activeLanguage}/search-result`,
+            label: "Properties",
+            isActive:
+              pathname === `/${activeLanguage}/search-result` ||
+              pathname.startsWith(`/${activeLanguage}/search-result/`),
+          },
+          ...navItems.map((item) => ({
+            id: item.id,
+            href: `/${activeLanguage}${item.path}`,
+            label: item.label,
+            isActive:
+              pathname === `/${activeLanguage}${item.path}` ||
+              pathname.startsWith(`/${activeLanguage}${item.path}/`),
+          })),
+        ]
+      : navItems.map((item) => ({
           id: item.id,
           href: `/${activeLanguage}${item.path}`,
           label: item.label,
           isActive:
             pathname === `/${activeLanguage}${item.path}` ||
             pathname.startsWith(`/${activeLanguage}${item.path}/`),
-        })),
-      ]
-      : navItems.map((item) => ({
-        id: item.id,
-        href: `/${activeLanguage}${item.path}`,
-        label: item.label,
-        isActive:
-          pathname === `/${activeLanguage}${item.path}` ||
-          pathname.startsWith(`/${activeLanguage}${item.path}/`),
-      }));
+        }));
 
   const initials =
     user?.name
@@ -240,15 +248,23 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
       dir={isRTL ? "rtl" : "ltr"}
     >
       <div
-        className={`container mx-auto flex items-center justify-between gap-3 px-4 transition-all duration-200 md:px-6 lg:px-8 ${isScrolled ? "py-2.5" : "py-3"
-          }`}
+        className={`container mx-auto flex items-center justify-between gap-3 px-4 transition-all duration-200 md:px-6 lg:px-8 ${
+          isScrolled ? "py-2.5" : "py-3"
+        }`}
       >
-        <div className={cn("flex items-center shrink-0 min-w-0", isRTL && "flex-row-reverse")}>
+        <div
+          className={cn(
+            "flex items-center shrink-0 min-w-0",
+            isRTL && "flex-row-reverse",
+          )}
+        >
           <BrandLogo
             locale={activeLanguage}
             priority
             variant="white"
-            imageClassName={isScrolled ? "h-8 lg:h-9 w-auto" : "h-9 lg:h-16 w-auto"}
+            imageClassName={
+              isScrolled ? "h-8 lg:h-9 w-auto" : "h-9 lg:h-16 w-auto"
+            }
           />
         </div>
 
@@ -276,7 +292,12 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
         </nav>
 
         {/* Desktop: actions in header */}
-        <div className={cn("hidden md:flex items-center gap-3", isRTL && "flex-row-reverse")}>
+        <div
+          className={cn(
+            "hidden md:flex items-center gap-3",
+            isRTL && "flex-row-reverse",
+          )}
+        >
           {user && profileMenuConfig?.showNotifications ? (
             <Link
               href={`/${activeLanguage}/notifications`}
@@ -322,7 +343,9 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                   )}
                 >
                   <div className="border-b border-subtle px-4 py-3">
-                    <p className="truncate text-size-sm fw-semibold">{user.name}</p>
+                    <p className="truncate text-size-sm fw-semibold">
+                      {user.name}
+                    </p>
                     <p className="mt-0.5 truncate text-size-xs text-zinc-500">
                       {user.email}
                     </p>
@@ -368,10 +391,18 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                         >
                           <button
                             type="button"
-                            className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline"
+                            className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline"
                           >
                             {tCommon("myAccountSettings")}
-                            <span className={cn("text-zinc-400", isRTL ? "" : "")} aria-hidden>{"\u203A"}</span>
+                            <span
+                              className={cn(
+                                "text-zinc-400 ms-4",
+                                isRTL ? "" : "",
+                              )}
+                              aria-hidden
+                            >
+                              {"\u203A"}
+                            </span>
                           </button>
                           {isAccountSettingsHover ? (
                             <div
@@ -385,7 +416,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                                 type="button"
                                 onClick={openAccountSettings}
                                 className={cn(
-                                  "block w-full rounded-md px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer",
+                                  "block rounded-md px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer",
                                   isRTL ? "text-right" : "text-left",
                                 )}
                                 role="menuitem"
@@ -414,7 +445,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                           type="button"
                           onClick={openAccountSettings}
                           className={cn(
-                            "block w-full rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer",
+                            "block rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer",
                             isRTL ? "text-right" : "text-left",
                           )}
                         >
@@ -446,10 +477,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
           )}
 
           <div className="hidden md:block">
-            <LanguageSelect
-              value={activeLanguage}
-              showFullLabels={false}
-              />
+            <LanguageSelect value={activeLanguage} showFullLabels={false} />
           </div>
         </div>
 
@@ -483,7 +511,9 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                   )}
                 >
                   <div className="border-b border-[var(--border-subtle)] px-4 py-3">
-                    <p className="truncate text-sm font-semibold">{user.name}</p>
+                    <p className="truncate text-sm font-semibold">
+                      {user.name}
+                    </p>
                     <p className="mt-0.5 truncate text-xs text-zinc-500">
                       {user.email}
                     </p>
@@ -575,7 +605,9 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
       <div
         className={cn(
           "fixed left-0 right-0 bottom-0 top-18 z-20 bg-[var(--brand-primary)] md:hidden transition-opacity duration-200",
-          mobileMenuOpen ? "visible opacity-100" : "invisible opacity-0 pointer-events-none",
+          mobileMenuOpen
+            ? "visible opacity-100"
+            : "invisible opacity-0 pointer-events-none",
         )}
         aria-hidden={!mobileMenuOpen}
       >
@@ -586,9 +618,14 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
           )}
           dir={isRTL ? "rtl" : "ltr"}
         >
-          <nav className="flex flex-col gap-1 px-4 py-4 text-white" aria-label="Mobile navigation">
+          <nav
+            className="flex flex-col gap-1 px-4 py-4 text-white"
+            aria-label="Mobile navigation"
+          >
             {navItems.map((item) => {
-              const isActive = pathname === `/${activeLanguage}${item.path}` || pathname.startsWith(`/${activeLanguage}${item.path}/`);
+              const isActive =
+                pathname === `/${activeLanguage}${item.path}` ||
+                pathname.startsWith(`/${activeLanguage}${item.path}/`);
               return (
                 <Link
                   key={item.id}
@@ -636,7 +673,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
           setAuthInitialView(undefined);
         }}
         locale={activeLanguage}
-        initialView={authInitialView}
+        initialView={authInitialView as AuthPopupView}
       />
       <ProfileModal
         open={isProfileModalOpen}
@@ -674,6 +711,3 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
     </header>
   );
 }
-
-
-

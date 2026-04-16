@@ -78,71 +78,18 @@ export function ExclusivePropertiesSection({
   const scrollByPage = (direction: "prev" | "next") => {
     const node = scrollRef.current;
     if (!node) return;
-
-    const cards = Array.from(node.children) as HTMLElement[];
-    if (cards.length === 0) return;
-
-    const containerRect = node.getBoundingClientRect();
-    const threshold = 4;
-
-    let target: HTMLElement | null = null;
-
-    if (isRtl) {
-      if (direction === "next") {
-        for (let i = cards.length - 1; i >= 0; i -= 1) {
-          if (
-            cards[i].getBoundingClientRect().left <
-            containerRect.left - threshold
-          ) {
-            target = cards[i];
-            break;
-          }
-        }
-      } else {
-        for (let i = 0; i < cards.length; i += 1) {
-          if (
-            cards[i].getBoundingClientRect().right >
-            containerRect.right + threshold
-          ) {
-            target = cards[i];
-            break;
-          }
-        }
-      }
-    } else if (direction === "next") {
-      for (let i = 0; i < cards.length; i += 1) {
-        if (
-          cards[i].getBoundingClientRect().right >
-          containerRect.right + threshold
-        ) {
-          target = cards[i];
-          break;
-        }
-      }
-    } else {
-      for (let i = cards.length - 1; i >= 0; i -= 1) {
-        if (
-          cards[i].getBoundingClientRect().left <
-          containerRect.left - threshold
-        ) {
-          target = cards[i];
-          break;
-        }
-      }
-    }
-
-    if (target) {
-      target.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-        inline: "nearest",
-      });
-      return;
-    }
-
     const fallbackAmount = node.clientWidth * 0.9;
+    const isNext = direction === "next";
+    const signedAmount = isRtl
+      ? isNext
+        ? -fallbackAmount
+        : fallbackAmount
+      : isNext
+        ? fallbackAmount
+        : -fallbackAmount;
+
     node.scrollBy({
-      left: direction === "next" ? fallbackAmount : -fallbackAmount,
+      left: signedAmount,
       behavior: "smooth",
     });
   };
@@ -194,7 +141,7 @@ export function ExclusivePropertiesSection({
                 type="button"
                 aria-label="Previous properties"
                 onClick={() => scrollByPage("prev")}
-                className={`cursor-pointer absolute top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-600 shadow-[0_10px_28px_rgba(15,23,42,0.14)] transition hover:bg-slate-50 lg:inline-flex ${
+                className={`cursor-pointer absolute top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-600 shadow-[0_10px_28px_rgba(15,23,42,0.14)] transition hover:bg-slate-50 md:inline-flex ${
                   isRtl ? "right-0 translate-x-1/2" : "left-0 -translate-x-1/2"
                 }`}
               >
@@ -210,7 +157,7 @@ export function ExclusivePropertiesSection({
                 type="button"
                 aria-label="Next properties"
                 onClick={() => scrollByPage("next")}
-                className={`cursor-pointer absolute top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-600 shadow-[0_10px_28px_rgba(15,23,42,0.14)] transition hover:bg-slate-50 lg:inline-flex ${
+                className={`cursor-pointer absolute top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-600 shadow-[0_10px_28px_rgba(15,23,42,0.14)] transition hover:bg-slate-50 md:inline-flex ${
                   isRtl ? "left-0 -translate-x-1/2" : "right-0 translate-x-1/2"
                 }`}
               >
@@ -224,12 +171,12 @@ export function ExclusivePropertiesSection({
 
             <div
               ref={scrollRef}
-              className="flex snap-x snap-mandatory gap-6 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:h-0"
+              className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 sm:gap-5 lg:gap-6 [scrollbar-width:none] [&::-webkit-scrollbar]:h-0"
             >
               {displayedProperties.map((property) => (
                 <div
                   key={property.id}
-                  className="min-w-0 shrink-0 snap-start basis-[88%] sm:basis-[62%] lg:basis-[calc((100%-4.5rem)/4.2)]"
+                  className="min-w-0 shrink-0 snap-start basis-[94%] sm:basis-[72%] md:basis-[48%] lg:basis-[33%] xl:basis-[24%]"
                 >
                   <PropertyCard property={property} />
                 </div>

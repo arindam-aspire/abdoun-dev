@@ -149,7 +149,10 @@ export function SignInSecurityTab({
           {t("save")}
         </Button>
         {phoneError ? (
-          <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+          <p
+            className="mt-2 text-sm text-red-600 dark:text-red-400"
+            role="alert"
+          >
             {phoneError}
           </p>
         ) : null}
@@ -240,12 +243,18 @@ export function SignInSecurityTab({
               />
             </div>
             {passwordError && (
-              <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+              <p
+                className="text-sm text-red-600 dark:text-red-400"
+                role="alert"
+              >
                 {passwordError}
               </p>
             )}
             {passwordSuccess && (
-              <p className="text-sm text-green-600 dark:text-green-400" role="status">
+              <p
+                className="text-sm text-green-600 dark:text-green-400"
+                role="status"
+              >
                 {t("passwordUpdated")}
               </p>
             )}
@@ -253,7 +262,10 @@ export function SignInSecurityTab({
               type="button"
               size="sm"
               onClick={handleUpdatePassword}
-              disabled={loading || !currentPassword || !newPassword || !confirmPassword}
+              className="mt-3 text-white"
+              disabled={
+                loading || !currentPassword || !newPassword || !confirmPassword
+              }
             >
               {loading ? "..." : t("updatePassword")}
             </Button>
@@ -270,4 +282,3 @@ export function SignInSecurityTab({
     </div>
   );
 }
-

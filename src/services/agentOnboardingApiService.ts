@@ -1,4 +1,5 @@
 import { createHttpClients } from "@/lib/http";
+import { getApiErrorMessage } from "@/lib/http";
 import type { StandardApiResponse } from "@/services/userService";
 
 const { authApi } = createHttpClients();
@@ -25,14 +26,18 @@ export async function completeAgentOnboarding(
   token: string,
   payload: AgentOnboardingRequest,
 ): Promise<AgentOnboardingResult> {
-  const response = await authApi.post<
-    StandardApiResponse<AgentOnboardingResponse>
-  >("/agents/onboarding", payload, {
-    params: { token },
-  });
-  const body = response.data;
-  const payloadData = unwrap(body);
-  const message = body.message ?? undefined;
-  return { ...payloadData, message };
+  try {
+    const response = await authApi.post<
+      StandardApiResponse<AgentOnboardingResponse>
+    >("/agents/onboarding", payload, {
+      params: { token },
+    });
+    const body = response.data;
+    const payloadData = unwrap(body);
+    const message = body.message ?? undefined;
+    return { ...payloadData, message };
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error));
+  }
 }
 

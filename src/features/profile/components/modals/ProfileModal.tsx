@@ -7,8 +7,10 @@ import { DialogRoot } from "@/components/ui/dialog";
 import { ProfilePhoto } from "@/features/profile/components/ProfilePhoto";
 import { PersonalInformationTab } from "@/features/profile/components/PersonalInformationTab";
 import { SignInSecurityTab } from "@/features/profile/components/SignInSecurityTab";
+import { changePassword } from "@/features/auth/api/auth.api";
 import { useProfile } from "@/hooks/useProfile";
 import { cn } from "@/lib/cn";
+import { getApiErrorMessage } from "@/lib/http";
 
 export type ProfileTabId = "personal" | "security" | "privacy";
 
@@ -58,6 +60,20 @@ export function ProfileModal({
       }
     },
     [profileData],
+  );
+
+  const handlePasswordChange = useCallback(
+    async (currentPassword: string, newPassword: string) => {
+      try {
+        await changePassword({
+          password: newPassword,
+          previous_password: currentPassword,
+        });
+      } catch (error) {
+        throw new Error(getApiErrorMessage(error));
+      }
+    },
+    [],
   );
 
   if (!open) return null;
@@ -112,7 +128,10 @@ export function ProfileModal({
 
             {/* Tabs */}
             <div className="flex shrink-0 border-b border-zinc-200 dark:border-zinc-700">
-              <nav className="flex gap-1 px-4 md:px-6" aria-label="Profile sections">
+              <nav
+                className="flex gap-1 px-4 md:px-6"
+                aria-label="Profile sections"
+              >
                 {TABS.map((tab) => {
                   const Icon = tab.icon;
                   return (
@@ -155,6 +174,7 @@ export function ProfileModal({
                   }}
                   lastSignInText="Today at 2:30 PM"
                   isRtl={isRtl}
+                  onPasswordChange={handlePasswordChange}
                 />
               )}
               {/* {activeTab === "privacy" && <PrivacyCookiesTab isRtl={isRtl} />} */}

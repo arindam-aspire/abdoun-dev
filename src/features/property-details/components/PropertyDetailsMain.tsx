@@ -86,7 +86,7 @@ export function PropertyDetailsMain({
     return (
       <div className="container mx-auto px-4 py-10 md:px-8">
         <LoadingScreen
-          title="Loading property details..."
+          title="Loading property details"
           description="Please wait while we fetch property information."
         />
       </div>

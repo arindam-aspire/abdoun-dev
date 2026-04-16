@@ -9,6 +9,7 @@ import { useTranslations } from "@/hooks/useTranslations";
 import { getInviteByToken } from "@/services/agentInviteMockService";
 import { completeAgentOnboarding } from "@/services/agentOnboardingApiService";
 import type { AgentInviteFormPayload } from "@/features/admin-agents/agent-dashboard/components/agent-invite/AgentInviteForm";
+import { LoadingScreen } from "@/components/ui";
 
 export default function InviteAgentByTokenPage() {
   const params = useParams<{ locale: string; token: string }>();
@@ -50,12 +51,7 @@ export default function InviteAgentByTokenPage() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
-        <div className="flex justify-center">
-          <BrandLogo locale={locale} imageClassName="h-12 w-auto" />
-        </div>
-        <p className="mt-6 text-center text-sm text-zinc-600">Loading...</p>
-      </div>
+      <LoadingScreen title="Loading" description="Please wait while we validate your invite." />
     );
   }
 
@@ -63,7 +59,7 @@ export default function InviteAgentByTokenPage() {
     return (
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
         <div className="flex justify-center">
-          <BrandLogo locale={locale} imageClassName="h-12 w-auto" />
+          <BrandLogo locale={locale} variant="black" imageClassName="h-12 w-auto" />
         </div>
         <h1 className="mt-5 text-center text-xl font-bold text-zinc-900 sm:text-2xl">
           {t("inviteTitle")}
