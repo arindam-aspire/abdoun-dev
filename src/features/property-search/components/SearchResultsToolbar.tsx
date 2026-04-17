@@ -27,7 +27,7 @@ export function SearchResultsToolbar({
   listLabel: string;
 }) {
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-3">
+    <div className="mb-6 flex flex-wrap items-center gap-3">
       <h2 className="min-w-0 flex-1 text-lg font-semibold text-[var(--color-charcoal)]">
         {title}
       </h2>

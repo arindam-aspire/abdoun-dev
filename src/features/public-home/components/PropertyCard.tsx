@@ -60,6 +60,7 @@ export function PropertyCard({
       price={property.price}
       location={location}
       agentLabel={agentLabel}
+      owners={property.owners}
       href={`/${language}/property-details/${property.id}${
         property.badge === "Exclusive" ? "?exclusive=1" : ""
       }`}

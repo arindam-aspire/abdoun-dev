@@ -10,6 +10,13 @@ export interface Property {
   beds: number;
   baths: number;
   area: string;
+  owners?: Array<{
+    owner_id?: string;
+    full_name?: string;
+    phone?: string;
+    email?: string;
+    is_active?: boolean;
+  }>;
 }
 
 export type HeroTabKey = "buy" | "rent";

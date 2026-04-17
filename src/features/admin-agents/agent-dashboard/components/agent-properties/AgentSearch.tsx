@@ -53,6 +53,7 @@ export function AgentSearch({ language }: AgentSearchProps) {
               advanceSearch: t("advanceSearch"),
               advancedSearch: t("advancedSearch"),
               clear: t("clear"),
+              resetSearch: t("resetSearch"),
               furnitureStatus: t("furnitureStatus"),
               furnitureFurnished: t("furnitureFurnished"),
               furnitureSemiFurnished: t("furnitureSemiFurnished"),

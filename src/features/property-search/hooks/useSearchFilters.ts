@@ -39,7 +39,8 @@ export type UseSearchFiltersResult = {
 
 /**
  * Search filters derived from URL params with setters that preserve current behavior:
- * - changing sort/view clears page param
+ * - changing sort clears page param
+ * - changing view preserves page param
  * - uses router.replace with scroll:false
  */
 export function useSearchFilters(): UseSearchFiltersResult {
@@ -67,7 +68,6 @@ export function useSearchFilters(): UseSearchFiltersResult {
     (newView: ViewKey) => {
       const next = new URLSearchParams(searchParams.toString());
       next.set(VIEW_PARAM, newView);
-      next.delete(PAGE_PARAM);
       router.replace(`?${next.toString()}`, { scroll: false });
     },
     [router, searchParams],

@@ -124,7 +124,7 @@ function DropdownInner({
         id={buttonId}
         suppressHydrationWarning
         className={cn(
-          "inline-flex w-full justify-center rounded-full border outline-none bg-white px-4 py-2 text-xs fw-medium text-zinc-900 shadow-sm hover:bg-zinc-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 gap-2 items-center",
+          "inline-flex w-full justify-center rounded-lg border outline-none bg-white px-4 py-2 text-xs fw-medium text-zinc-900 shadow-sm hover:bg-zinc-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 gap-2 items-center",
           cursor === "pointer" ? "cursor-pointer" : "cursor-default",
           buttonClassName,
         )}

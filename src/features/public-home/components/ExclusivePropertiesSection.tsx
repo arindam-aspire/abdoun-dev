@@ -16,6 +16,7 @@ export interface ExclusivePropertiesSectionProps {
   useCarouselOnOverflow?: boolean;
   loading?: boolean;
   error?: string | null;
+  status?: "idle" | "loading" | "succeeded" | "failed";
 }
 
 export function ExclusivePropertiesSection({
@@ -25,12 +26,14 @@ export function ExclusivePropertiesSection({
   useCarouselOnOverflow = false,
   loading = false,
   error = null,
+  status = "idle",
 }: ExclusivePropertiesSectionProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
   const displayedProperties = properties;
-  const showSkeletonState = loading || Boolean(error);
+  const showSkeletonState =
+    status === "idle" || loading || (status === "failed" && Boolean(error));
 
   const shouldUseCarousel =
     useCarouselOnOverflow && displayedProperties.length > 4;
@@ -137,13 +140,15 @@ export function ExclusivePropertiesSection({
         ) : shouldUseCarousel ? (
           <div className="relative">
             {canScrollPrev && (
-             <button
-                  type="button"
-                  onClick={() => scrollByPage("prev")}
-                  className="absolute left-0 top-1/2 z-10 hidden h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-600 shadow-[0_8px_24px_rgba(15,23,42,0.14)] lg:inline-flex"
-                  aria-label="Previous services"
-                >
-                  {isRtl ? (
+              <button
+                type="button"
+                aria-label="Previous properties"
+                onClick={() => scrollByPage("prev")}
+                className={`cursor-pointer absolute top-1/2 z-24 hidden h-12 w-12 -translate-y-1/2 transform-gpu items-center justify-center rounded-full bg-white text-slate-600 shadow-[0_10px_28px_rgba(15,23,42,0.14)] transition-colors will-change-transform hover:bg-slate-50 md:inline-flex ${
+                  isRtl ? "right-0 translate-x-1/2" : "left-0 -translate-x-1/2"
+                }`}
+              >
+                {isRtl ? (
                   <ChevronRight className="h-5 w-5" />
                 ) : (
                   <ChevronLeft className="h-5 w-5" />
@@ -154,8 +159,9 @@ export function ExclusivePropertiesSection({
               <button
                 type="button"
                 onClick={() => scrollByPage("next")}
-                className="absolute right-0 top-1/2 z-10 hidden h-11 w-11 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-600 shadow-[0_8px_24px_rgba(15,23,42,0.14)] lg:inline-flex"
-                aria-label="Next services"
+                className={`cursor-pointer absolute top-1/2 z-24 hidden h-12 w-12 -translate-y-1/2 transform-gpu items-center justify-center rounded-full bg-white text-slate-600 shadow-[0_10px_28px_rgba(15,23,42,0.14)] transition-colors will-change-transform hover:bg-slate-50 md:inline-flex ${
+                  isRtl ? "left-0 -translate-x-1/2" : "right-0 translate-x-1/2"
+                }`}
               >
                 {isRtl ? (
                   <ChevronLeft className="h-5 w-5" />

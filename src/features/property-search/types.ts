@@ -31,6 +31,7 @@ export interface SearchFieldsTranslations {
   advanceSearch: string;
   advancedSearch: string;
   clear: string;
+  resetSearch: string;
   furnitureStatus: string;
   furnitureFurnished: string;
   furnitureSemiFurnished: string;
@@ -97,6 +98,14 @@ export const CATEGORY_TO_PROPERTY_TYPES: Record<CategoryKey, string[]> = {
   ],
 };
 
+export interface ListingOwnerDetails {
+  owner_id?: string;
+  full_name?: string;
+  phone?: string;
+  email?: string;
+  is_active?: boolean;
+}
+
 /** Single listing for search results (Bayut-style card). */
 export interface SearchResultListing {
   id: number;
@@ -136,5 +145,8 @@ export interface SearchResultListing {
   brokerLogo?: string;
   /** When true, listing appears when search has ?exclusive=1 (exclusive-only view). */
   exclusive?: boolean;
+  /** API snake_case variant of exclusive flag. */
+  is_exclusive?: boolean;
+  owners?: ListingOwnerDetails[];
 }
 

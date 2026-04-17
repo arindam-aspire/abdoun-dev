@@ -6,6 +6,7 @@ import type { AppLocale } from "@/i18n/routing";
 import { JORDAN_CITIES_WITH_AREAS } from "@/lib/mocks/jordanCities";
 import { getAreasByCityName } from "@/lib/mocks/jordanCities";
 import { useLocale } from "next-intl";
+import { StickySearchWrapper } from "@/components/ui/StickySearchWrapper";
 import { SearchFields } from "@/features/property-search/components/SearchFields";
 import { SearchResults } from "@/features/property-search/components/SearchResults";
 
@@ -22,7 +23,10 @@ function getPageTitle(
     (c) => c.name.toLowerCase() === (cityParam ?? "").toLowerCase(),
   )?.name;
   const areas: string[] = locationsParam
-    ? locationsParam.split(",").map((p) => p.trim()).filter(Boolean)
+    ? locationsParam
+        .split(",")
+        .map((p) => p.trim())
+        .filter(Boolean)
     : [];
   const cityAreas = city ? getAreasByCityName(city) : [];
   const selectedAreas = areas.filter((a) =>
@@ -50,71 +54,68 @@ export default function SearchResultPage() {
   const pageTitle = getPageTitle(t, searchParams);
 
   return (
-    <section
-      className="mx-auto container w-full px-4 py-8 md:px-8"
-      dir={isRtl ? "rtl" : "ltr"}
-    >
-      <div className="space-y-4">
-        {/* Sticky search bar below header (header is sticky top-0 z-30, ~64px height) */}
-        <div className="sticky top-16 z-20 bg-white pt-2 -mt-2 md:top-[52px]">
-          <SearchFields
-            translations={{
-              rent: t("rent"),
-              buy: t("buy"),
-              enterLocation: t("enterLocation"),
-              cityPlaceholder: t("cityPlaceholder"),
-              areasPlaceholder: t("areasPlaceholder"),
-              areasSelectAll: t("areasSelectAll"),
-              areasDeselectAll: t("areasDeselectAll"),
-              areasMoreLabel: (count) => t("areasMoreLabel", { count }),
-              residential: t("residential"),
-              commercial: t("commercial"),
-              land: t("land"),
-              priceLabel: t("priceLabel"),
-              areaLabel: t("areaLabel"),
-              budgetLabel: t("budgetLabel"),
-              budgetPlaceholder: t("budgetPlaceholder"),
-              budgetMin: t("budgetMin"),
-              budgetMax: t("budgetMax"),
-              budgetYearlyMin: t("budgetYearlyMin"),
-              budgetYearlyMax: t("budgetYearlyMax"),
-              budgetYearlyMinLabel: t("budgetYearlyMinLabel"),
-              budgetYearlyMaxLabel: t("budgetYearlyMaxLabel"),
-              advanceSearch: t("advanceSearch"),
-              advancedSearch: t("advancedSearch"),
-              clear: t("clear"),
-              furnitureStatus: t("furnitureStatus"),
-              furnitureFurnished: t("furnitureFurnished"),
-              furnitureSemiFurnished: t("furnitureSemiFurnished"),
-              furnitureUnfurnished: t("furnitureUnfurnished"),
-              bathrooms: t("bathrooms"),
-              floorLevel: t("floorLevel"),
-              parking: t("parking"),
-              propertyAge: t("propertyAge"),
-              minArea: t("minArea"),
-              maxArea: t("maxArea"),
-              bedrooms: t("bedrooms"),
-              rooms: t("rooms"),
-              minPlotArea: t("minPlotArea"),
-              maxPlotArea: t("maxPlotArea"),
-              allRooms: t("allRooms"),
-              allBaths: t("allBaths"),
-              allParking: t("allParking"),
-              selectFurnitureStatus: t("selectFurnitureStatus"),
-              selectFloorLevel: t("selectFloorLevel"),
-              selectPropertyAge: t("selectPropertyAge"),
-              garage: t("garage"),
-              maidsRoom: t("maidsRoom"),
-              heatingUnderfloor: t("heatingUnderfloor"),
-              fireplace: t("fireplace"),
-              swimmingPool: t("swimmingPool"),
-              garden: t("garden"),
-              airConditioning: t("airConditioning"),
-              saveSearch: tSaved("saveSearch"),
-            }}
-            isRtl={isRtl}
-          />
-        </div>
+    <section className="mx-auto container w-full" dir={isRtl ? "rtl" : "ltr"}>
+      <StickySearchWrapper className="px-4 md:px-8">
+        <SearchFields
+          translations={{
+            rent: t("rent"),
+            buy: t("buy"),
+            enterLocation: t("enterLocation"),
+            cityPlaceholder: t("cityPlaceholder"),
+            areasPlaceholder: t("areasPlaceholder"),
+            areasSelectAll: t("areasSelectAll"),
+            areasDeselectAll: t("areasDeselectAll"),
+            areasMoreLabel: (count) => t("areasMoreLabel", { count }),
+            residential: t("residential"),
+            commercial: t("commercial"),
+            land: t("land"),
+            priceLabel: t("priceLabel"),
+            areaLabel: t("areaLabel"),
+            budgetLabel: t("budgetLabel"),
+            budgetPlaceholder: t("budgetPlaceholder"),
+            budgetMin: t("budgetMin"),
+            budgetMax: t("budgetMax"),
+            budgetYearlyMin: t("budgetYearlyMin"),
+            budgetYearlyMax: t("budgetYearlyMax"),
+            budgetYearlyMinLabel: t("budgetYearlyMinLabel"),
+            budgetYearlyMaxLabel: t("budgetYearlyMaxLabel"),
+            advanceSearch: t("advanceSearch"),
+            advancedSearch: t("advancedSearch"),
+            clear: t("clear"),
+            resetSearch: t("resetSearch"),
+            furnitureStatus: t("furnitureStatus"),
+            furnitureFurnished: t("furnitureFurnished"),
+            furnitureSemiFurnished: t("furnitureSemiFurnished"),
+            furnitureUnfurnished: t("furnitureUnfurnished"),
+            bathrooms: t("bathrooms"),
+            floorLevel: t("floorLevel"),
+            parking: t("parking"),
+            propertyAge: t("propertyAge"),
+            minArea: t("minArea"),
+            maxArea: t("maxArea"),
+            bedrooms: t("bedrooms"),
+            rooms: t("rooms"),
+            minPlotArea: t("minPlotArea"),
+            maxPlotArea: t("maxPlotArea"),
+            allRooms: t("allRooms"),
+            allBaths: t("allBaths"),
+            allParking: t("allParking"),
+            selectFurnitureStatus: t("selectFurnitureStatus"),
+            selectFloorLevel: t("selectFloorLevel"),
+            selectPropertyAge: t("selectPropertyAge"),
+            garage: t("garage"),
+            maidsRoom: t("maidsRoom"),
+            heatingUnderfloor: t("heatingUnderfloor"),
+            fireplace: t("fireplace"),
+            swimmingPool: t("swimmingPool"),
+            garden: t("garden"),
+            airConditioning: t("airConditioning"),
+            saveSearch: tSaved("saveSearch"),
+          }}
+          isRtl={isRtl}
+        />
+      </StickySearchWrapper>
+      <div className="px-4 py-8 md:px-8">
         <SearchResults resultsTitle={pageTitle} />
       </div>
     </section>

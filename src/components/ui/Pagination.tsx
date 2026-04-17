@@ -43,6 +43,8 @@ export interface PaginationProps {
   };
   /** Optional class for the nav */
   className?: string;
+  /** Show "Page X of Y" status text (hidden by default). */
+  showPageStatus?: boolean;
 }
 
 function range(start: number, end: number): number[] {
@@ -93,6 +95,7 @@ export function Pagination({
   siblingCount = 2,
   translations = {},
   className,
+  showPageStatus = false,
 }: PaginationProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -169,9 +172,11 @@ export function Pagination({
       )}
 
       <div className="order-1 flex items-center gap-1 sm:order-2">
-        <span className="mr-2 hidden text-size-sm text-charcoal/70 sm:inline">
-          {t.page} {currentPage} {t.of} {totalPages}
-        </span>
+        {showPageStatus && (
+          <span className="mr-2 hidden text-size-sm text-charcoal/70 sm:inline">
+            {t.page} {currentPage} {t.of} {totalPages}
+          </span>
+        )}
 
         <div className="mr-2 hidden items-center gap-2 sm:flex">
           <span className="text-size-sm text-charcoal/70">Per page</span>

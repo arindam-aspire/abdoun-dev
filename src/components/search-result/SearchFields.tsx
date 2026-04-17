@@ -799,10 +799,14 @@ export function SearchFields({
       exclusiveParam === "1" || exclusiveParam === "true" ? "?exclusive=1" : "";
     router.replace(`${pathname}${query}`, { scroll: false });
   };
+  const activeStatusIndex = Math.max(
+    0,
+    STATUS_TABS.findIndex((tabKey) => tabKey === status),
+  );
 
   return (
     <section
-      className="min-w-0 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-subtle sm:p-4"
+      className="min-w-0 w-full"
       dir={isRtl ? "rtl" : "ltr"}
     >
       <div
@@ -821,10 +825,17 @@ export function SearchFields({
         <div className="col-span-2 md:col-span-1 flex items-center" dir={isRtl ? "rtl" : "ltr"}>
           <div
             className={cn(
-              "inline-flex h-11 w-full shrink-0 rounded-xl bg-surface ring-1 ring-subtle",
+              "relative inline-flex bg-gray-200 rounded-[10px] p-1 w-full h-11",
               isRtl && "flex-row-reverse",
             )}
           >
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-y-1 w-[calc(50%-4px)] rounded-lg bg-secondary shadow-sm transition-transform duration-300 ease-out"
+              style={{
+                transform: `translateX(${isRtl ? (1 - activeStatusIndex) * 100 : activeStatusIndex * 100}%)`,
+              }}
+            />
             {STATUS_TABS.map((tabKey) => (
               <button
                 key={tabKey}
@@ -834,9 +845,9 @@ export function SearchFields({
                   setStatus(tabKey);
                 }}
                 className={cn(
-                  "flex h-full flex-1 cursor-pointer items-center justify-center rounded-xl px-5 text-size-sm fw-medium capitalize transition",
+                  "relative z-10 flex h-full flex-1 cursor-pointer items-center justify-center rounded-lg px-5 text-size-sm fw-medium capitalize transition-colors duration-300",
                   status === tabKey
-                    ? "bg-secondary text-white shadow-sm"
+                    ? "text-white"
                     : "text-[rgba(51,51,51,0.7)] hover:text-secondary",
                 )}
               >
@@ -857,7 +868,7 @@ export function SearchFields({
             title={categoryLabel}
             onClick={() => toggleTopDropdown(categoryOpen, setCategoryOpen)}
             className={cn(
-              "flex h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 py-2 text-size-sm text-charcoal transition hover:border-[rgba(43,91,166,0.6)]",
+              "flex h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-lg border-1 border-[#D1D5DC] bg-white px-4 py-2 text-size-sm text-charcoal transition hover:border-[rgba(43,91,166,0.6)]",
               categoryOpen && "border-secondary",
               isRtl && "flex-row-reverse",
             )}
@@ -885,7 +896,7 @@ export function SearchFields({
                     setCategoryOpen(false);
                   }}
                   className={cn(
-                    "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-size-sm transition hover:bg-surface",
+                    "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-3 text-left text-size-sm transition hover:bg-surface",
                     category === key
                       ? "bg-surface text-secondary fw-medium"
                       : "text-charcoal",
@@ -912,7 +923,7 @@ export function SearchFields({
               toggleTopDropdown(propertyTypeOpen, setPropertyTypeOpen)
             }
             className={cn(
-              "flex h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 py-2 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
+              "flex h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-lg border-1 border-[#D1D5DC] bg-white px-4 py-3 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
               propertyType ? "text-charcoal fw-medium" : "text-[rgba(51,51,51,0.5)] fw-normal",
               propertyTypeOpen && "border-secondary",
               isRtl && "flex-row-reverse",
@@ -981,7 +992,7 @@ export function SearchFields({
             title={city || t.cityPlaceholder}
             onClick={() => toggleTopDropdown(cityOpen, setCityOpen)}
             className={cn(
-              "flex h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 py-2 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
+              "flex h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-lg border-1 border-[#D1D5DC] bg-white px-4 py-3 text-size-sm transition hover:border-[rgba(43,91,166,0.6)]",
               city ? "text-charcoal fw-medium" : "text-[rgba(51,51,51,0.5)] fw-normal",
               cityOpen && "border-secondary",
               isRtl && "flex-row-reverse",
@@ -1062,7 +1073,7 @@ export function SearchFields({
               toggleTopDropdown(areasOpen, setAreasOpen);
             }}
             className={cn(
-              "flex h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-xl border-2 bg-white px-4 py-2 text-size-sm transition",
+              "flex h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-lg border-1 border-[#D1D5DC] bg-white px-4 py-3 text-size-sm transition",
               !city
                 ? "cursor-not-allowed border-[rgba(43,91,166,0.2)] bg-surface/50 text-[rgba(51,51,51,0.5)]"
                 : "border-[rgba(43,91,166,0.35)] hover:border-[rgba(43,91,166,0.6)]",
@@ -1178,7 +1189,7 @@ export function SearchFields({
             title={formatBudgetLabel()}
             onClick={() => toggleTopDropdown(isBudgetOpen, setIsBudgetOpen)}
             className={cn(
-              "flex h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[rgba(43,91,166,0.35)] bg-white px-4 py-2 text-size-sm text-charcoal transition hover:border-[rgba(43,91,166,0.6)]",
+              "flex h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-lg border-1 border-[#D1D5DC] bg-white px-4 py-3 text-size-sm text-charcoal transition hover:border-[rgba(43,91,166,0.6)]",
               budgetMin || budgetMax ? "text-charcoal fw-medium" : "text-[rgba(51,51,51,0.5)] fw-normal",
               isBudgetOpen && "border-secondary",
               isRtl && "flex-row-reverse",
@@ -1227,7 +1238,7 @@ export function SearchFields({
             title={t.advancedSearch}
             onClick={() => setAdvancedSearchOpen((o) => !o)}
             className={cn(
-              "col-span-2 flex h-11 min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-secondary bg-secondary px-4 py-2.5 text-size-sm fw-medium text-white transition hover:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:px-5 md:col-span-1 md:min-w-0 md:flex-1 md:shrink-0",
+              "col-span-2 flex h-11 min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border-1 border-secondary bg-secondary px-4 py-2.5 text-size-sm fw-medium text-white transition hover:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:px-5 md:col-span-1 md:min-w-0 md:flex-1 md:shrink-0",
               isRtl && "flex-row-reverse",
             )}
           >
@@ -1240,17 +1251,17 @@ export function SearchFields({
           </button>
           <button
             type="button"
-            title={t.clear}
+            title={t.resetSearch}
             onClick={() => {
               handleClearAll();
             }}
             className={cn(
-              "col-start-1 row-start-2 flex h-11 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-xl border-2 border-subtle bg-white px-4 py-2 text-size-sm fw-medium text-charcoal transition hover:border-secondary/50 hover:bg-surface md:col-start-auto md:row-start-auto",
+              "col-start-1 row-start-2 flex h-11 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-lg bg-[#F3F4F6] px-4 py-2 text-size-sm fw-semibold text-charcoal transition hover:border-secondary/50 hover:bg-[#E5E7EB] md:col-start-auto md:row-start-auto",
               t.saveSearch == null || t.saveSearch === "" ? "col-span-2" : "",
               isRtl && "flex-row-reverse",
             )}
           >
-            {t.clear}
+            {t.resetSearch}
           </button>
           {trailingAction != null ? (
             <div className="col-span-2 row-start-3 md:col-span-1 md:row-start-auto md:min-w-0 md:flex-1">
@@ -1265,11 +1276,10 @@ export function SearchFields({
                 authUser ? setSaveSearchOpen(true) : setAuthOpen(true)
               }
               className={cn(
-                "col-start-2 row-start-2 flex h-11 min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border-2 border-subtle bg-white px-3 py-2 text-size-sm fw-medium text-charcoal transition hover:border-secondary/50 hover:bg-surface md:col-start-auto md:row-start-auto",
+                "col-start-2 row-start-2 flex h-11 min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-[#F3F4F6] px-3 py-2 text-size-sm fw-semibold text-charcoal transition hover:border-secondary/50 hover:bg-[#E5E7EB] md:col-start-auto md:row-start-auto",
                 isRtl && "flex-row-reverse",
               )}
             >
-              <BookmarkPlus className="h-4 w-4 shrink-0" aria-hidden />
               <span className="truncate">{t.saveSearch}</span>
             </button>
           ) : null}

@@ -17,7 +17,7 @@ const initialState: PropertySearchState = {
   total: 0,
   page: 1,
   pageSize: 12,
-  loading: false,
+  loading: true,
   error: null,
   lastQuery: "",
 };

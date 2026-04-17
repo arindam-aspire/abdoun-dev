@@ -6,15 +6,14 @@ import { usePropertySearch } from "@/features/property-search/hooks/usePropertyS
 import { SearchResultsToolbar } from "@/features/property-search/components/SearchResultsToolbar";
 import { PropertyGrid } from "@/features/property-search/components/PropertyGrid";
 import { PropertyList } from "@/features/property-search/components/PropertyList";
+import { PropertyResultsSkeleton } from "@/features/property-search/components/PropertyResultsSkeleton";
 import { Pagination } from "@/components/ui/Pagination";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ListEmpty } from "@/components/ui/list/ListEmpty";
 import { ListError } from "@/components/ui/list/ListError";
 import type { SearchResultListing } from "@/features/property-search/types";
 import type { SortKey } from "@/features/property-search/components/SearchResultSortDropdown";
-import { Spinner } from "@/components/ui";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 10;
 const PAGE_PARAM = "page";
 const SORT_PARAM = "sort";
 const VIEW_PARAM = "view";
@@ -85,7 +84,7 @@ export function SearchResults({
   };
 
   return (
-    <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-[var(--border-subtle)] md:p-5">
+    <section className="">
       <SearchResultsToolbar
         title={resultsTitle}
         totalItems={totalItems}
@@ -102,9 +101,7 @@ export function SearchResults({
       {error ? (
         <ListError message={error} />
       ) : loading ? (
-        <div className="relative flex items-center justify-center">
-          <Spinner size="lg" className="relative text-primary animate-spin" />
-        </div>
+        <PropertyResultsSkeleton view={view} />
       ) : (
         <>
           {sortedListings.length === 0 ? (

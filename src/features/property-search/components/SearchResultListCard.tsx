@@ -5,10 +5,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { useLocale } from "next-intl";
 import {
+  BedDouble,
+  Bath,
+  Expand,
   ChevronLeft,
   ChevronRight,
   MapPin,
-  Info,
   Mail,
   Phone,
   CheckCircle2,
@@ -58,6 +60,9 @@ export function SearchResultListCard({
   const isRtl = locale === "ar";
   const tSearch = useTranslations("searchResult");
   const signedInUser = useAppSelector(selectCurrentUser);
+  const currentUserRole = signedInUser?.role?.toLowerCase();
+  const canViewOwnerDetails =
+    currentUserRole === "agent" || currentUserRole === "admin";
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
@@ -71,6 +76,9 @@ export function SearchResultListCard({
           "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg?auto=compress&cs=tinysrgb&w=800",
         ];
   const totalImages = images.length;
+  const visibleDotCount = Math.min(totalImages, 3);
+  const activeDotIndex =
+    totalImages <= 3 ? currentImageIndex : currentImageIndex % visibleDotCount;
 
   const goPrev = useCallback(
     (e: React.MouseEvent) => {
@@ -100,7 +108,7 @@ export function SearchResultListCard({
 
   const detailsHref =
     `/${locale}/${detailsBasePath}/${listing.id}` +
-    (listing.exclusive || listing.badges?.includes("Exclusive")
+    (listing.exclusive || listing.is_exclusive || listing.badges?.includes("Exclusive")
       ? "?exclusive=1"
       : "");
   const linkProps = {
@@ -108,18 +116,24 @@ export function SearchResultListCard({
     rel: "noopener noreferrer",
   };
 
-  const developerName = listing.brokerName ?? "";
+  const ownerEntries =
+    listing.owners
+      ?.map((owner) => ({
+        name: owner.full_name?.trim() ?? "",
+        phone: owner.phone?.trim() ?? "",
+      }))
+      .filter((owner) => owner.name || owner.phone) ?? [];
+  const hasOwnerDetails = canViewOwnerDetails && ownerEntries.length > 0;
   const isExclusiveListing =
     listing.exclusive === true ||
+    listing.is_exclusive === true ||
     (Array.isArray(listing.badges) && listing.badges.includes("Exclusive"));
-  const showVerified =
-    Array.isArray(listing.badges) && listing.badges.includes("Verified");
   const showExclusive = isExclusiveListing;
 
   return (
     <article
       className={cn(
-        "group flex overflow-hidden rounded-xl border border-subtle bg-white shadow-sm transition hover:shadow-md",
+        "group flex overflow-hidden rounded-xl border border-[#e7ebf1] bg-white transition duration-300 hover:-translate-y-1",
         "min-h-0 flex-col md:flex-row",
       )}
       dir={isRtl ? "rtl" : "ltr"}
@@ -131,9 +145,9 @@ export function SearchResultListCard({
         href={detailsHref}
         {...linkProps}
         className={cn(
-          "relative flex-shrink-0 overflow-hidden bg-charcoal-5",
-          "w-full md:w-[min(50%,420px)]",
-          "aspect-[4/3] md:min-h-[220px] md:aspect-[4/3]",
+          "relative flex-shrink-0 overflow-hidden",
+          "w-full md:w-[320px]",
+          "aspect-[4/3] md:aspect-auto",
           "rounded-t-xl md:rounded-t-none",
           isRtl ? "md:rounded-r-xl" : "md:rounded-l-xl",
         )}
@@ -145,13 +159,13 @@ export function SearchResultListCard({
               src={images[currentImageIndex] ?? images[0]}
               alt={listing.title}
               fill
-              sizes="(max-width: 767px) 100vw, 420px"
-              className="object-cover transition duration-300"
+              sizes="(max-width: 767px) 100vw, 320px"
+              className="object-cover transition-[transform,opacity,filter] duration-500 group-hover:scale-[1.03]"
             />
           )}
         </div>
 
-        {/* Badges: Exclusive and/or Verified */}
+        {/* Badges: Exclusive */}
         <div
           className={cn(
             "absolute top-2 z-10 flex flex-wrap items-center gap-1.5",
@@ -159,19 +173,13 @@ export function SearchResultListCard({
           )}
         >
           {showExclusive && <Badge variant="exclusive">Exclusive</Badge>}
-          {showVerified && (
-            <Badge variant="verified">
-              <CheckCircle2 className="h-3 w-3" />
-              Verified
-            </Badge>
-          )}
         </div>
 
         {/* Favourite button (same as grid view) */}
         <FavouriteButton
           propertyId={listing.id}
           className={cn(
-            "absolute top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-charcoal shadow-sm ring-1 ring-subtle hover:bg-white hover:text-red-500",
+            "absolute top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-secondary ring-1 ring-black/5 backdrop-blur-sm transition hover:bg-white",
             isRtl ? "left-2" : "right-2",
           )}
           iconClassName="h-5 w-5"
@@ -183,7 +191,7 @@ export function SearchResultListCard({
               type="button"
               onClick={goPrev}
               className={cn(
-                "absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-charcoal shadow-sm ring-1 ring-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:bg-white",
+                "absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-charcoal shadow-sm ring-1 ring-black/10 transition-opacity duration-200 hover:bg-white",
                 isRtl && "left-auto right-2",
               )}
               aria-label="Previous image"
@@ -194,7 +202,7 @@ export function SearchResultListCard({
               type="button"
               onClick={goNext}
               className={cn(
-                "absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-charcoal shadow-sm ring-1 ring-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:bg-white",
+                "absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-charcoal shadow-sm ring-1 ring-black/10 transition-opacity duration-200 hover:bg-white",
                 isRtl && "right-auto left-2",
               )}
               aria-label="Next image"
@@ -204,43 +212,46 @@ export function SearchResultListCard({
           </>
         )}
 
-        {/* Pagination dots at bottom-center (same as grid – visible on card hover) */}
-        {totalImages > 1 && (
-          <div
-            className={cn(
-              "absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100",
-              isRtl && "flex-row-reverse",
-            )}
-          >
-            {images.map((_, i) => (
-              <span
-                key={i}
-                className={cn(
-                  "h-1.5 w-1.5 rounded-full transition",
-                  i === currentImageIndex
-                    ? "bg-white ring-2 ring-white/50"
-                    : "bg-white/60",
-                )}
-                aria-hidden
-              />
-            ))}
-          </div>
-        )}
-        {/* Broker name on image (subtle, same as grid) */}
         <div
           className={cn(
-            "absolute bottom-8 left-1/2 z-0 -translate-x-1/2 text-size-2xs fw-medium text-white/70",
-            isRtl && "translate-x-1/2",
+            "absolute bottom-3 z-10 flex w-full items-center justify-between px-3",
+            isRtl && "flex-row-reverse",
           )}
         >
-          {listing.brokerName}
+          {/* Broker name on image */}
+          <div className="min-w-0 rounded-full bg-black/20 px-2 py-1 backdrop-blur-sm text-size-xs fw-medium text-white">
+            <span className="block truncate">{listing.brokerName}</span>
+          </div>
+
+          {/* Pagination dots (visible on card hover) */}
+          {totalImages > 1 && (
+            <div
+              className={cn(
+                "flex shrink-0 items-center gap-1.5 rounded-full bg-black/20 px-2 py-1.5 backdrop-blur-sm transition-opacity duration-200",
+                isRtl && "flex-row-reverse",
+              )}
+            >
+              {Array.from({ length: visibleDotCount }).map((_, i) => (
+                <span
+                  key={i}
+                  className={cn(
+                    "h-2 w-2 rounded-full transition-all duration-300",
+                    i === activeDotIndex
+                      ? "h-3 w-3 bg-white shadow-[0_0_0_4px_rgba(255,255,255,0.25)]"
+                      : "bg-white/60 hover:bg-white/85",
+                  )}
+                  aria-hidden
+                />
+              ))}
+            </div>
+          )}
         </div>
       </Link>
 
       {/* Right: Details */}
       <div
         className={cn(
-          "flex min-w-0 flex-1 flex-col justify-between p-4 md:p-5",
+          "flex min-w-0 flex-1 flex-col justify-between p-4 md:p-6",
           isRtl ? "text-right" : "text-left",
         )}
       >
@@ -248,135 +259,156 @@ export function SearchResultListCard({
           <Link
             href={detailsHref}
             {...linkProps}
-            className="block outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg -m-1 p-1"
+            className="block outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             aria-label={`View details for ${listing.title}`}
           >
-            <h3 className="text-size-xl fw-bold leading-tight text-charcoal">
+            <h3 className="text-size-lg fw-medium leading-tight">
               {listing.title}
             </h3>
-            {developerName && (
-              <p className="mt-0.5 text-size-sm text-charcoal/80">
-                {t.byDeveloper(developerName)}
-              </p>
-            )}
           </Link>
 
-          {/* Key metrics: Launch Price, Payment Plan, Handover */}
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl bg-surface px-3 py-2">
-              <p className="text-size-2xs fw-semibold uppercase tracking-wider text-charcoal/60">
-                {t.launchPrice}
-              </p>
-              <p className="mt-1 text-size-sm fw-bold text-charcoal">
-                {listing.price}
-              </p>
-            </div>
-            <div className="rounded-xl bg-surface px-3 py-2">
-              <p className="text-size-2xs fw-semibold uppercase tracking-wider text-charcoal/60">
-                {t.paymentPlan}
-              </p>
-              <p className="mt-1 text-size-sm fw-bold text-charcoal">
-                {listing.paymentPlan ?? "-"}
-              </p>
-              {t.paymentPlanInfo && (
-                <p className="mt-1 text-size-2xs text-charcoal/70">
-                  {t.paymentPlanInfo}
-                </p>
-              )}
-            </div>
-            <div className="rounded-xl bg-surface px-3 py-2">
-              <p className="text-size-2xs fw-semibold uppercase tracking-wider text-charcoal/60">
-                {t.handover}
-              </p>
-              <p className="mt-1 text-size-sm fw-bold text-charcoal">
-                {listing.handover ?? "-"}
-              </p>
-            </div>
-          </div>
-
-          {/* Location */}
           <div
             className={cn(
-              "mt-3 flex items-center gap-1 text-size-sm text-charcoal/75",
+              "my-2 flex items-center gap-1 text-size-sm text-[#717182]",
               isRtl && "flex-row-reverse justify-end",
             )}
           >
-            <MapPin className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-[#6A7282]" aria-hidden />
             <span className="truncate">{listing.location}</span>
           </div>
 
-          {/* Info line */}
           <div
             className={cn(
-              "mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-size-xs text-charcoal/70",
-              isRtl && "justify-end",
+              "flex items-center justify-between",
+              isRtl && "flex-row-reverse",
             )}
           >
-            <span className="inline-flex items-center gap-1">
-              <Info className="h-3.5 w-3.5 shrink-0" aria-hidden />
-              {listing.acres
-                ? `${listing.acres} acres`
-                : `${listing.area} sqft`}
-            </span>
-            <span className="text-charcoal/40">•</span>
-            <span>{listing.propertyType}</span>
+            <div
+              className={cn(
+                "flex min-w-0 flex-wrap items-center gap-6 text-[#717182]",
+                isRtl && "flex-row-reverse",
+              )}
+            >
+              <span className="inline-flex items-center gap-2">
+                <BedDouble className="h-4 w-4 shrink-0 text-[#717182]" aria-hidden />
+                {listing.beds} Beds
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <Bath className="h-4 w-4 shrink-0 text-[#717182]" aria-hidden />
+                {listing.baths} Bathrooms
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <Expand className="h-4 w-4 shrink-0 text-[#717182]" aria-hidden />
+                {listing.acres
+                  ? `${listing.acres} acres`
+                  : `${listing.area} sqft`}
+              </span>
+            </div>
+
+            <div
+              className={cn(
+                "shrink-0 text-size-2xl fw-bold tracking-tight text-[#364153]",
+                isRtl ? "text-left" : "text-right",
+              )}
+            >
+              {listing.price}
+            </div>
+          </div>
+
+          <div className="my-3 h-px w-full bg-[#E5E7EB]" />
+
+          <div
+            className={cn(
+              "grid items-center gap-3",
+              hasOwnerDetails ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1",
+            )}
+          >
+            {hasOwnerDetails ? (
+              <div className={cn("min-w-0", isRtl && "text-right")}>
+                <div
+                  className={cn(
+                    "flex items-center gap-2 text-size-xs tracking-wide text-[#717182]",
+                    isRtl && "flex-row-reverse justify-end",
+                  )}
+                >
+                  <span>Owner Details</span>
+                </div>
+                <div
+                  className={cn(
+                    "mt-1 space-y-1",
+                    isRtl && "text-right",
+                  )}
+                >
+                  {ownerEntries.map((owner, index) => (
+                    <div
+                      key={`${listing.id}-owner-${index}`}
+                      className={cn(
+                        "flex min-w-0 items-center gap-2 text-size-base",
+                        isRtl && "flex-row-reverse justify-end",
+                      )}
+                    >
+                      <span className="truncate">{owner.name || "-"}</span>
+                      {owner.name && owner.phone ? (
+                        <span className="inline-flex w-3 justify-center text-charcoal/40">
+                          |
+                        </span>
+                      ) : null}
+                      <span className="truncate">{owner.phone}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div
+              className={cn(
+                "flex items-center gap-2",
+                isRtl && "flex-row-reverse",
+                isRtl ? "md:justify-start" : "md:justify-end",
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  if (!signedInUser) return;
+                  setEmailModalOpen(true);
+                }}
+                className="inline-flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-[#D1D5DC] bg-white px-4 text-size-sm fw-medium text-[#364153] transition hover:bg-slate-50"
+                aria-label={t.email}
+                disabled={!signedInUser}
+              >
+                <Mail className="h-4 w-4 shrink-0" aria-hidden />
+                <span>{t.email}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!signedInUser) return;
+                  setContactModalOpen(true);
+                }}
+                className="inline-flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-[#D1D5DC] bg-white px-4 text-size-sm fw-medium text-[#364153] transition hover:bg-slate-50"
+                aria-label={t.call}
+                disabled={!signedInUser}
+              >
+                <Phone className="h-4 w-4 shrink-0" aria-hidden />
+                <span>{t.call}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!signedInUser) return;
+                  setWhatsappModalOpen(true);
+                }}
+                className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-[#D1D5DC] bg-white text-[#364153] transition hover:bg-slate-50"
+                aria-label={t.whatsapp}
+                disabled={!signedInUser}
+              >
+                <WhatsAppIcon className="h-4 w-4 shrink-0" />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              if (!signedInUser) return;
-              setWhatsappModalOpen(true);
-            }}
-            className={cn(
-              "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-subtle bg-white px-3 py-2 text-size-xs fw-semibold text-secondary shadow-sm hover:bg-surface",
-              isRtl && "flex-row-reverse",
-            )}
-            disabled={!signedInUser}
-          >
-            <WhatsAppIcon className="h-4 w-4 shrink-0" aria-hidden />
-            {t.whatsapp}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (!signedInUser) return;
-              setEmailModalOpen(true);
-            }}
-            className={cn(
-              "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-subtle bg-white px-3 py-2 text-size-xs fw-semibold text-secondary shadow-sm hover:bg-surface",
-              isRtl && "flex-row-reverse",
-            )}
-            disabled={!signedInUser}
-          >
-            <Mail className="h-4 w-4 shrink-0" aria-hidden />
-            {t.email}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (!signedInUser) return;
-              setContactModalOpen(true);
-            }}
-            className={cn(
-              "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-subtle bg-white px-3 py-2 text-size-xs fw-semibold text-secondary shadow-sm hover:bg-surface",
-              isRtl && "flex-row-reverse",
-            )}
-            disabled={!signedInUser}
-          >
-            <Phone className="h-4 w-4 shrink-0" aria-hidden />
-            {t.call}
-          </button>
-        </div>
-
-        {!signedInUser && (
-          <div className="mt-3 rounded-lg bg-surface px-3 py-2 text-size-xs text-charcoal/70">
-            {tSearch("loginToContact")}
-          </div>
-        )}
       </div>
 
       <EmailAgentModal

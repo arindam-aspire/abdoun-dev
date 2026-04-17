@@ -21,7 +21,7 @@ export function PropertyList({
 }) {
   return (
     <ul
-      className="grid grid-cols-1 gap-4 md:gap-5 items-stretch"
+      className="grid grid-cols-1 gap-4 md:gap-6 items-stretch"
       aria-label="Property listings"
     >
       {listings.map((listing) => (

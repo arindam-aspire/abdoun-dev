@@ -24,23 +24,13 @@ export function SearchResultPropertyCard({
 
   const detailsHref =
     `/${locale}/${detailsBasePath}/${listing.id}` +
-    (listing.exclusive || listing.badges?.includes("Exclusive") ? "?exclusive=1" : "");
+    (listing.exclusive || listing.is_exclusive || listing.badges?.includes("Exclusive")
+      ? "?exclusive=1"
+      : "");
 
   const badges: PropertyCardNewBadge[] = [];
-  if (listing.exclusive || listing.badges?.includes("Exclusive")) {
+  if (listing.exclusive || listing.is_exclusive || listing.badges?.includes("Exclusive")) {
     badges.push({ label: "Exclusive", variant: "exclusive" });
-  }
-  if (listing.badges?.includes("Verified")) {
-    badges.push({
-      label: (
-        <>
-          <CheckCircle2 className="h-3.5 w-3.5" />
-          Verified
-        </>
-      ),
-      variant: "verified",
-      className: "gap-1.5 bg-black/68 text-white",
-    });
   }
 
   return (
@@ -48,8 +38,10 @@ export function SearchResultPropertyCard({
       <PropertyCardNew
         title={listing.title}
         price={listing.price}
+        summaryLine={`${listing.area} sqft · ${listing.propertyType}`}
         location={listing.location}
         agentLabel={listing.brokerName}
+        owners={listing.owners}
         href={detailsHref}
         propertyId={listing.id}
         images={listing.images}

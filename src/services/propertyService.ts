@@ -3,6 +3,7 @@
 import { createHttpClients } from "@/lib/http";
 import type {
   CategoryKey,
+  ListingOwnerDetails,
   SearchResultListing,
   StatusTabKey,
 } from "@/features/property-search/types";
@@ -51,11 +52,22 @@ type PropertySearchApiItem = {
   acres?: string | null;
   highlights?: string | null;
   badges?: string[] | null;
+  exclusive?: boolean | number | string | null;
+  is_exclusive?: boolean | number | string | null;
   handover?: string | null;
   paymentPlan?: string | null;
   validatedDate?: string | null;
   brokerName?: string | null;
   brokerLogo?: string | null;
+  owners?:
+    | Array<{
+        owner_id?: string | null;
+        full_name?: string | null;
+        email?: string | null;
+        phone?: string | null;
+        is_active?: boolean | null;
+      }>
+    | null;
 };
 
 type PropertySearchApiResponse = {
@@ -236,6 +248,32 @@ const extractLocationString = (item: PropertySearchApiItem): string => {
   return toDisplayText(locationField);
 };
 
+const toBooleanFlag = (value: boolean | number | string | null | undefined): boolean => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "1" || normalized === "true" || normalized === "yes";
+  }
+  return false;
+};
+
+const normalizeOwnerDetails = (
+  owners: PropertySearchApiItem["owners"],
+): ListingOwnerDetails[] | undefined => {
+  if (!Array.isArray(owners)) return undefined;
+  const normalized = owners
+    .map((owner) => ({
+      owner_id: owner.owner_id ?? undefined,
+      full_name: owner.full_name?.trim() || undefined,
+      email: owner.email?.trim() || undefined,
+      phone: owner.phone?.trim() || undefined,
+      is_active: owner.is_active ?? undefined,
+    }))
+    .filter((owner) => owner.full_name || owner.phone || owner.email);
+  return normalized.length > 0 ? normalized : undefined;
+};
+
 const toListing = (item: PropertySearchApiItem): SearchResultListing => ({
   id: item.id,
   title: toDisplayText(item.title) || "Untitled Property",
@@ -254,11 +292,14 @@ const toListing = (item: PropertySearchApiItem): SearchResultListing => ({
   acres: item.acres ?? undefined,
   highlights: item.highlights ?? undefined,
   badges: item.badges ?? undefined,
+  exclusive: toBooleanFlag(item.exclusive),
+  is_exclusive: toBooleanFlag(item.is_exclusive),
   handover: item.handover ?? undefined,
   paymentPlan: item.paymentPlan ?? undefined,
   validatedDate: item.validatedDate ?? undefined,
   brokerName: item.brokerName || "Abdoun Real Estate",
   brokerLogo: item.brokerLogo ?? undefined,
+  owners: normalizeOwnerDetails(item.owners),
 });
 
 const FALLBACK_PROPERTY_IMAGE =
@@ -274,6 +315,7 @@ const toHomeProperty = (item: PropertySearchApiItem): HomeProperty => ({
   beds: item.beds ?? 0,
   baths: item.baths ?? 0,
   area: item.area ?? "0",
+  owners: normalizeOwnerDetails(item.owners),
 });
 
 const normalizeQueryParams = (rawQueryString: string): URLSearchParams => {

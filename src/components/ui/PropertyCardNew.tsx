@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useLocale } from "next-intl";
@@ -21,6 +21,7 @@ import { FavouriteButton } from "@/features/favourites/components/FavouriteButto
 import { ContactPropertyModal } from "@/features/property-search/components/modals/ContactPropertyModal";
 import { EmailAgentModal } from "@/features/property-search/components/modals/EmailAgentModal";
 import { WhatsAppContactModal } from "@/features/property-search/components/modals/WhatsAppContactModal";
+import type { ListingOwnerDetails } from "@/features/property-search/types";
 import type { AppLocale } from "@/i18n/routing";
 import { useTranslations } from "@/hooks/useTranslations";
 import { useAppSelector } from "@/hooks/storeHooks";
@@ -35,7 +36,7 @@ export interface PropertyCardNewMetric {
 
 export interface PropertyCardNewBadge {
   label: ReactNode;
-  variant?: "default" | "secondary" | "outline" | "success" | "warning" | "destructive" | "exclusive" | "verified";
+  variant?: "default" | "secondary" | "outline" | "success" | "warning" | "destructive" | "exclusive";
   className?: string;
 }
 
@@ -43,8 +44,12 @@ export interface PropertyCardNewProps {
   loading?: boolean;
   title: string;
   price: string;
+  summaryLine?: string;
   location: string;
   agentLabel: string;
+  ownerName?: string;
+  contactNumber?: string;
+  owners?: ListingOwnerDetails[];
   href: string;
   propertyId: number;
   images: string[];
@@ -102,8 +107,10 @@ export function PropertyCardNew({
   loading = false,
   title,
   price,
+  summaryLine,
   location,
   agentLabel,
+  owners,
   href,
   propertyId,
   images,
@@ -123,6 +130,9 @@ export function PropertyCardNew({
   const locale = useLocale() as AppLocale;
   const tSearch = useTranslations("searchResult");
   const signedInUser = useAppSelector(selectCurrentUser);
+  const currentUserRole = signedInUser?.role?.toLowerCase();
+  const canViewOwnerDetails =
+    currentUserRole === "agent" || currentUserRole === "admin";
   const safeImages =
     images.length > 0
       ? images
@@ -135,20 +145,69 @@ export function PropertyCardNew({
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
   const [authPopupOpen, setAuthPopupOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isImageTransitioning, setIsImageTransitioning] = useState(false);
+  const imageTransitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const totalImages = safeImages.length;
   const canNavigateImages = showImageNavigation ?? totalImages > 1;
+  const ownerEntries =
+    owners
+      ?.map((owner) => ({
+        name: owner.full_name?.trim() ?? "",
+        phone: owner.phone?.trim() ?? "",
+      }))
+      .filter((owner) => owner.name || owner.phone) ?? [];
+  const hasOwnerDetails = canViewOwnerDetails && ownerEntries.length > 0;
+  const visibleDotIndices =
+    totalImages <= 3
+      ? Array.from({ length: totalImages }, (_, index) => index)
+      : currentImageIndex <= 1
+        ? [0, 1, 2]
+        : currentImageIndex >= totalImages - 2
+          ? [totalImages - 3, totalImages - 2, totalImages - 1]
+          : [currentImageIndex - 1, currentImageIndex, currentImageIndex + 1];
+
+  const runImageTransition = useCallback(() => {
+    setIsImageTransitioning(true);
+    if (imageTransitionTimeoutRef.current) {
+      clearTimeout(imageTransitionTimeoutRef.current);
+    }
+    imageTransitionTimeoutRef.current = setTimeout(() => {
+      setIsImageTransitioning(false);
+    }, 260);
+  }, []);
 
   const goPrev = useCallback((event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
+    runImageTransition();
     setCurrentImageIndex((index) => (index === 0 ? totalImages - 1 : index - 1));
-  }, [totalImages]);
+  }, [runImageTransition, totalImages]);
 
   const goNext = useCallback((event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
+    runImageTransition();
     setCurrentImageIndex((index) => (index === totalImages - 1 ? 0 : index + 1));
-  }, [totalImages]);
+  }, [runImageTransition, totalImages]);
+
+  const goToImage = useCallback(
+    (event: MouseEvent<HTMLButtonElement>, index: number) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (index === currentImageIndex) return;
+      runImageTransition();
+      setCurrentImageIndex(index);
+    },
+    [currentImageIndex, runImageTransition],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (imageTransitionTimeoutRef.current) {
+        clearTimeout(imageTransitionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const requireLoginForContact = useCallback(() => {
     if (signedInUser) return false;
@@ -164,20 +223,23 @@ export function PropertyCardNew({
   return (
     <article
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-[22px] border border-[#e7ebf1] bg-white transition duration-300 hover:-translate-y-1",
+        "group relative flex h-full flex-col overflow-hidden rounded-xl border border-[#e7ebf1] bg-white transition duration-300 hover:-translate-y-1",
         isRtl ? "text-right" : "text-left",
         cardClassName,
       )}
       dir={isRtl ? "rtl" : "ltr"}
     >
-      <div className="relative overflow-hidden rounded-t-[22px]">
+      <div className="relative overflow-hidden rounded-t-xl">
         <div className="relative h-0 w-full pb-[67%]">
           <Image
             src={safeImages[currentImageIndex] ?? safeImages[0]}
             alt={imageAlt ?? title}
             fill
             sizes={imageSizes}
-            className="object-cover transition duration-500 group-hover:scale-[1.03]"
+            className={cn(
+              "object-cover transition-[transform,opacity,filter] duration-500 group-hover:scale-[1.03]",
+              isImageTransitioning ? "opacity-85 blur-[1px]" : "opacity-100 blur-0",
+            )}
           />
         </div>
 
@@ -209,62 +271,62 @@ export function PropertyCardNew({
 
           <FavouriteButton
             propertyId={propertyId}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-secondary shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5 backdrop-blur-sm transition hover:bg-white"
-            iconClassName="h-4.5 w-4.5"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-secondary shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5 backdrop-blur-sm transition hover:bg-white"
+            iconClassName="h-4 w-4"
           />
         </div>
 
-        {canNavigateImages && (
+        {canNavigateImages ? (
           <>
             <button
               type="button"
               onClick={goPrev}
               className={cn(
-                "absolute top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-secondary shadow-sm opacity-0 transition duration-200 group-hover:opacity-100 hover:bg-white",
-                isRtl ? "right-3" : "left-3",
+                "absolute left-2 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-charcoal shadow-sm ring-1 ring-black/10 transition-opacity duration-200 hover:bg-white",
+                isRtl && "left-auto right-2",
               )}
               aria-label="Previous image"
             >
-              {isRtl ? (
-                <ChevronRight className="h-4 w-4" />
-              ) : (
-                <ChevronLeft className="h-4 w-4" />
-              )}
+              <ChevronLeft className="h-5 w-5" aria-hidden />
             </button>
             <button
               type="button"
               onClick={goNext}
               className={cn(
-                "absolute top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-secondary shadow-sm opacity-0 transition duration-200 group-hover:opacity-100 hover:bg-white",
-                isRtl ? "left-3" : "right-3",
+                "absolute right-2 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-charcoal shadow-sm ring-1 ring-black/10 transition-opacity duration-200 hover:bg-white",
+                isRtl && "right-auto left-2",
               )}
               aria-label="Next image"
             >
-              {isRtl ? (
-                <ChevronLeft className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
+              <ChevronRight className="h-5 w-5" aria-hidden />
             </button>
           </>
-        )}
+        ) : null}
 
-        {canNavigateImages && (
-          <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5">
-            {safeImages.map((_, index) => (
-              <span
-                key={`${propertyId}-dot-${index}`}
-                className={cn(
-                  "h-2 w-2 rounded-full transition",
-                  index === currentImageIndex
-                    ? "bg-white shadow-[0_0_0_4px_rgba(255,255,255,0.25)]"
-                    : "bg-white/60",
-                )}
-                aria-hidden
-              />
-            ))}
+        <div className="pointer-events-none absolute bottom-4 left-3 right-3 z-10 flex items-center justify-between gap-3">
+          <div className="min-w-0 rounded-full bg-black/20 px-2 py-1 backdrop-blur-sm text-size-xs fw-medium text-white">
+            {agentLabel}
           </div>
-        )}
+          {canNavigateImages && (
+            <div className="pointer-events-auto flex flex-row items-center justify-center gap-1.5 rounded-full bg-black/20 px-2 py-1.5 backdrop-blur-sm transition-all duration-300">
+              {visibleDotIndices.map((index) => (
+                <button
+                  key={`${propertyId}-dot-${index}`}
+                  type="button"
+                  onClick={(event) => goToImage(event, index)}
+                  aria-label={`View image ${index + 1}`}
+                  className={cn(
+                    "h-2 w-2 rounded-full transition-all duration-300",
+                    index === currentImageIndex
+                      ? "h-3 w-3 bg-white shadow-[0_0_0_4px_rgba(255,255,255,0.25)]"
+                      : "bg-white/60 hover:bg-white/85",
+                  )}
+                  aria-current={index === currentImageIndex}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
         {imageOverlayContent}
 
@@ -279,7 +341,7 @@ export function PropertyCardNew({
 
       <div
         className={cn(
-          "relative z-20 flex flex-1 flex-col px-5 py-4 md:px-5 md:py-4",
+          "relative z-20 flex flex-1 flex-col p-4",
           contentClassName,
         )}
       >
@@ -290,23 +352,31 @@ export function PropertyCardNew({
           className="block space-y-1 rounded-2xl outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           aria-label={`View details for ${title}`}
         >
-          <p className="text-size-2xs fw-medium uppercase tracking-[0.14em] text-slate-500 md:text-size-11">
-            {agentLabel}
-          </p>
-          <h3
-            className={cn(
-              "text-size-sm fw-semibold leading-tight tracking-tight text-[#2843a2] md:text-size-base",
-              titleClassName,
-            )}
-          >
-            {title}
-          </h3>
-          <p className="text-size-lg fw-semibold leading-tight tracking-tight text-slate-900 md:text-size-xl">
+          <p className="text-size-lg fw-bold leading-tight tracking-tight text-slate-900 md:text-size-xl">
             {price}
           </p>
+          {summaryLine ? (
+            <p
+              className={cn(
+                "text-size-sm leading-tight tracking-tight text-[#4A5565] md:text-size-base",
+                titleClassName,
+              )}
+            >
+              {summaryLine}
+            </p>
+          ) : (
+            <h3
+              className={cn(
+                "text-size-sm leading-tight tracking-tight text-[#4A5565] md:text-size-base",
+                titleClassName,
+              )}
+            >
+              {title}
+            </h3>
+          )}
           <div
             className={cn(
-              "flex items-center gap-1.5 text-size-xs text-slate-500 md:text-size-sm",
+              "flex items-center gap-1.5 text-size-xs md:text-size-sm",
               isRtl && "flex-row-reverse justify-end",
             )}
           >
@@ -315,34 +385,33 @@ export function PropertyCardNew({
           </div>
         </Link>
 
-        <div className="mt-4 border-t border-[#edf1f5] pt-3.5">
-          {metrics.length > 0 && (
-            <div
-              className={cn(
-                "grid grid-cols-3 gap-2 rounded-2xl bg-[#f8fafc] px-3 py-2.5 text-size-2xs fw-medium text-slate-600 md:text-size-xs",
-                isRtl && "text-right",
-              )}
-            >
-              {metrics.map((metric, index) => {
-                const Icon = metric.icon;
+        {hasOwnerDetails ? (
+          <div
+            className={cn(
+              "mt-4 space-y-2 text-size-xs text-[#6A7282]",
+              isRtl && "text-right",
+            )}
+          >
+            {ownerEntries.map((owner, index) => (
+              <div
+                key={`${propertyId}-owner-${index}`}
+                className="rounded-md bg-[#F8FAFC] px-2 py-1.5"
+              >
+                <p className="truncate text-size-sm text-[#364153]">
+                  {owner.name || "-"}
+                </p>
+                {owner.phone ? (
+                  <p className="mt-0.5 truncate text-size-xs text-[#6A7282]">
+                    {owner.phone}
+                  </p>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        ) : null}
 
-                return (
-                  <div
-                    key={`${propertyId}-metric-${index}`}
-                    className={cn(
-                      "flex min-w-0 items-center gap-1.5",
-                      isRtl ? "flex-row-reverse justify-end" : "justify-start",
-                    )}
-                  >
-                    <Icon className="h-3 w-3 shrink-0 text-slate-600" />
-                    <span className="truncate">{metric.label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="mt-3.5 flex items-center gap-2">
+        <div className="mt-auto pt-4">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => {
@@ -351,7 +420,7 @@ export function PropertyCardNew({
               }}
               aria-label={tSearch("email")}
               className={cn(
-                "inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[#d9e0ea] bg-white px-3 py-2 text-size-xs fw-medium text-slate-600 transition hover:bg-slate-50",
+                "inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#D1D5DC] bg-white py-3 text-size-sm fw-medium text-[#364153] transition hover:bg-slate-50",
                 isRtl && "flex-row-reverse",
               )}
             >
@@ -367,7 +436,7 @@ export function PropertyCardNew({
               }}
               aria-label={tSearch("call")}
               className={cn(
-                "inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[#d9e0ea] bg-white px-3 py-2 text-size-xs fw-medium text-slate-600 transition hover:bg-slate-50",
+                "inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#D1D5DC] bg-white py-3 text-size-sm fw-medium text-[#364153] transition hover:bg-slate-50",
                 isRtl && "flex-row-reverse",
               )}
             >
@@ -382,7 +451,7 @@ export function PropertyCardNew({
                 setWhatsappModalOpen(true);
               }}
               aria-label={tSearch("whatsapp")}
-              className="inline-flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[10px] border border-[#d9e0ea] bg-white px-0 py-2 text-slate-600 transition hover:bg-slate-50"
+              className="inline-flex w-[48px] items-center justify-center rounded-lg border border-[#D1D5DC] bg-white py-3.5 text-[#364153] transition hover:bg-slate-50"
             >
               <AuthProviderLogo
                 src="/svg/whatsapp_logo.svg"

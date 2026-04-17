@@ -35,6 +35,7 @@ export function HomePage({ language }: HomePageProps) {
     items: exclusiveProperties,
     loading: exclusiveLoading,
     error: exclusiveError,
+    status: exclusiveStatus,
   } = useExclusiveProperties();
 
   const heroTranslations = {
@@ -137,6 +138,7 @@ export function HomePage({ language }: HomePageProps) {
         useCarouselOnOverflow
         loading={exclusiveLoading}
         error={exclusiveError}
+        status={exclusiveStatus}
       />
       <ServicesSection
         translations={serviceSection}
