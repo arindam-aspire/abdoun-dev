@@ -12,12 +12,6 @@ export function PropertyNeighborhood({ property }: PropertyNeighborhoodProps) {
         <p className="text-sm fw-bold uppercase tracking-[0.16em] text-primary">
           Neighborhood
         </p>
-        <button
-          type="button"
-          className="text-size-11 fw-semibold text-primary hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-        >
-          Explore Abdoun
-        </button>
       </div>
 
       <div className="grid items-stretch gap-6 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">

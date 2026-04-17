@@ -69,6 +69,7 @@
       "amenities": "Amenities",
       "features": "Features",
       "location": "Location",
+      "documents": "Documents",
       "reviews": "Reviews",
       "virtualTour": "Virtual Tour"
     },

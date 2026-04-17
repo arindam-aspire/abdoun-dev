@@ -185,7 +185,7 @@ export function PropertyDetailsHero({
 
   return (
     <section
-      className={`property-details-hero hero-section py-4 ${isRtl ? "hero-section--rtl" : ""}`}
+      className={`property-details-hero hero-section ${isRtl ? "hero-section--rtl" : ""}`}
       dir={isRtl ? "rtl" : "ltr"}
     >
       <div className="hero-container">

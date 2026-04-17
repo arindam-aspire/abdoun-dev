@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import type {
-  Property,
-  FeaturedTranslations,
-} from "@/features/public-home/components/types";
 import { PropertyCard } from "@/features/public-home/components/PropertyCard";
+import type {
+  FeaturedTranslations,
+  Property,
+} from "@/features/public-home/components/types";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
 export interface ExclusivePropertiesSectionProps {
   translations: FeaturedTranslations;
@@ -137,29 +137,25 @@ export function ExclusivePropertiesSection({
         ) : shouldUseCarousel ? (
           <div className="relative">
             {canScrollPrev && (
-              <button
-                type="button"
-                aria-label="Previous properties"
-                onClick={() => scrollByPage("prev")}
-                className={`cursor-pointer absolute top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-600 shadow-[0_10px_28px_rgba(15,23,42,0.14)] transition hover:bg-slate-50 md:inline-flex ${
-                  isRtl ? "right-0 translate-x-1/2" : "left-0 -translate-x-1/2"
-                }`}
-              >
-                {isRtl ? (
+             <button
+                  type="button"
+                  onClick={() => scrollByPage("prev")}
+                  className="absolute left-0 top-1/2 z-10 hidden h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-600 shadow-[0_8px_24px_rgba(15,23,42,0.14)] lg:inline-flex"
+                  aria-label="Previous services"
+                >
+                  {isRtl ? (
                   <ChevronRight className="h-5 w-5" />
                 ) : (
                   <ChevronLeft className="h-5 w-5" />
                 )}
-              </button>
-            )}
+                </button>
+              )}
             {canScrollNext && (
               <button
                 type="button"
-                aria-label="Next properties"
                 onClick={() => scrollByPage("next")}
-                className={`cursor-pointer absolute top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-600 shadow-[0_10px_28px_rgba(15,23,42,0.14)] transition hover:bg-slate-50 md:inline-flex ${
-                  isRtl ? "left-0 -translate-x-1/2" : "right-0 translate-x-1/2"
-                }`}
+                className="absolute right-0 top-1/2 z-10 hidden h-11 w-11 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-600 shadow-[0_8px_24px_rgba(15,23,42,0.14)] lg:inline-flex"
+                aria-label="Next services"
               >
                 {isRtl ? (
                   <ChevronLeft className="h-5 w-5" />
@@ -167,7 +163,7 @@ export function ExclusivePropertiesSection({
                   <ChevronRight className="h-5 w-5" />
                 )}
               </button>
-            )}
+              )}
 
             <div
               ref={scrollRef}

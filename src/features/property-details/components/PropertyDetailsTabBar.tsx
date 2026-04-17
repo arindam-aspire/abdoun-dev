@@ -1,18 +1,24 @@
 "use client";
 
-import { Info, Map, Sparkles, Video } from "lucide-react";
+import { FileText, Info, MapPin, Sparkles } from "lucide-react";
 import { useTranslations } from "@/hooks/useTranslations";
 
-export type PropertyDetailsTabKey = "overview" | "amenities" | "location" | "reviews" | "virtualTour";
+export type PropertyDetailsTabKey =
+  | "overview"
+  | "amenities"
+  | "location"
+  | "documents"
+  | "reviews"
+  | "virtualTour";
 
 export interface PropertyDetailsTabBarProps {
   activeTab: PropertyDetailsTabKey;
   onTabChange: (tab: PropertyDetailsTabKey) => void;
   isRtl?: boolean;
-  /** When true, the Map/Location tab is shown (for exclusive properties). */
+  /** When true, the Location tab is shown. */
   showLocationTab?: boolean;
-   /** When true, the Virtual Tour tab is shown (only when property has virtual tour). */
-  showVirtualTourTab?: boolean;
+  /** When true, the Documents tab is shown. */
+  showDocumentsTab?: boolean;
 }
 
 export function PropertyDetailsTabBar({
@@ -20,24 +26,18 @@ export function PropertyDetailsTabBar({
   onTabChange,
   isRtl = false,
   showLocationTab = false,
-  showVirtualTourTab = true,
+  showDocumentsTab = false,
 }: PropertyDetailsTabBarProps) {
   const t = useTranslations("home");
 
   const tabs: { key: PropertyDetailsTabKey; label: string; icon: React.ReactNode }[] = [
     { key: "overview", label: t("propertyTabs.overview"), icon: <Info className="h-3.5 w-3.5" /> },
     { key: "amenities", label: t("propertyTabs.features"), icon: <Sparkles className="h-3.5 w-3.5" /> },
-    ...(showVirtualTourTab
-      ? [
-          {
-            key: "virtualTour" as const,
-            label: t("propertyTabs.virtualTour"),
-            icon: <Video className="h-3.5 w-3.5" />,
-          },
-        ]
-      : []),
     ...(showLocationTab
-      ? [{ key: "location" as const, label: t("propertyTabs.location"), icon: <Map className="h-3.5 w-3.5" /> }]
+      ? [{ key: "location" as const, label: t("propertyTabs.location"), icon: <MapPin className="h-3.5 w-3.5" /> }]
+      : []),
+    ...(showDocumentsTab
+      ? [{ key: "documents" as const, label: t("propertyTabs.documents"), icon: <FileText className="h-3.5 w-3.5" /> }]
       : []),
   ];
 

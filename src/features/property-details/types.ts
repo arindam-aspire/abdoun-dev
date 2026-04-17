@@ -38,5 +38,5 @@ export type HeroMediaItem =
 export interface PropertyStat {
   label: string;
   value: string;
-  helper?: string;
+  description?: string;
 }

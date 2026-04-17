@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/cn";
-import type { ServicesTranslations } from "@/features/public-home/components/types";
 import { ServiceCard } from "@/features/public-home/components/ServiceCard";
+import type { ServicesTranslations } from "@/features/public-home/components/types";
+import { cn } from "@/lib/cn";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
 export interface ServicesSectionProps {
   translations: ServicesTranslations;
@@ -177,9 +177,9 @@ export function ServicesSection({
                   aria-label="Previous services"
                 >
                   {isRtl ? (
-                    <ArrowRight className="h-5 w-5" />
+                    <ChevronRight className="h-5 w-5" />
                   ) : (
-                    <ArrowLeft className="h-5 w-5" />
+                    <ChevronLeft className="h-5 w-5" />
                   )}
                 </button>
               ) : null}
@@ -192,9 +192,9 @@ export function ServicesSection({
                   aria-label="Next services"
                 >
                   {isRtl ? (
-                    <ArrowLeft className="h-5 w-5" />
+                    <ChevronLeft className="h-5 w-5" />
                   ) : (
-                    <ArrowRight className="h-5 w-5" />
+                    <ChevronRight className="h-5 w-5" />
                   )}
                 </button>
               ) : null}

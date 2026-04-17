@@ -356,7 +356,7 @@ type SimilarPropertiesApiResponse =
     };
 
 export async function fetchSimilarPropertiesById(
-  propertyId: number,
+  propertyId: string,
 ): Promise<SearchResultListing[]> {
   const response = await publicApi.get<SimilarPropertiesApiResponse>(
     `/properties/${propertyId}/similar`,
