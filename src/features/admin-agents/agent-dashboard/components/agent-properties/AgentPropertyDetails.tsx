@@ -77,6 +77,15 @@ export function AgentPropertyDetails({ language, propertyId }: AgentPropertyDeta
           video: baseProperty.video ?? "/7578547-uhd_3840_2160_30fps.mp4",
         }
       : baseProperty;
+  const overview = {
+    title: "Overview",
+    description: [displayProperty.description],
+    media: {
+      video_label: "Property Video",
+      platform: "YouTube",
+      video_link: displayProperty.youtubeUrl ?? "",
+    },
+  };
 
   // Preserve signature: propertyId is currently unused (mock page)
   void propertyId;
@@ -111,7 +120,7 @@ export function AgentPropertyDetails({ language, propertyId }: AgentPropertyDeta
           <section className="space-y-6 md:space-y-7">
             <section className="scroll-mt-36 md:scroll-mt-40">
               <PropertyHighlights property={displayProperty} stats={MOCK_AGENT_STATS} />
-              <PropertyOverview property={displayProperty} />
+              <PropertyOverview overview={overview} />
             </section>
 
             <section className="scroll-mt-36 md:scroll-mt-40">

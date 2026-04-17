@@ -43,7 +43,7 @@ export function PropertyDetailsSimilarProperties({ propertyId }: PropertyDetails
   useEffect(() => {
     let mounted = true;
 
-    void fetchSimilarPropertiesById(propertyId)
+    void fetchSimilarPropertiesById(String(propertyId))
       .then((data) => {
         if (!mounted) return;
         setItems(data.filter((item) => item.id !== propertyId));

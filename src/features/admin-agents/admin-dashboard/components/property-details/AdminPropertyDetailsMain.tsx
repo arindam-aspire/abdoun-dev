@@ -146,6 +146,15 @@ export function AdminPropertyDetailsMain({ language, propertyId }: AdminProperty
     exclusiveFromUrl && !isExclusiveByBadge
       ? { ...baseProperty, badge: "Exclusive", video: baseProperty.video ?? "/7578547-uhd_3840_2160_30fps.mp4" }
       : baseProperty;
+  const overview = {
+    title: "Overview",
+    description: [displayProperty.description],
+    media: {
+      video_label: "Property Video",
+      platform: "YouTube",
+      video_link: displayProperty.youtubeUrl ?? "",
+    },
+  };
 
   void propertyId;
 
@@ -183,7 +192,7 @@ export function AdminPropertyDetailsMain({ language, propertyId }: AdminProperty
             {activeTab === "overview" ? (
               <section className="scroll-mt-36 md:scroll-mt-40">
                 <PropertyHighlights property={displayProperty} stats={MOCK_ADMIN_STATS} />
-                <PropertyOverview property={displayProperty} />
+                <PropertyOverview overview={overview} />
               </section>
             ) : null}
 
