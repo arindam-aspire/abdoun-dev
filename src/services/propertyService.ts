@@ -139,7 +139,7 @@ export type PropertyDetailsApiResponse = {
     | null;
 };
 
-const { publicApi } = createHttpClients();
+const { publicApi, authApi } = createHttpClients();
 
 const DEFAULT_STATUS: StatusTabKey = "buy";
 const DEFAULT_CATEGORY: CategoryKey = "residential";
@@ -385,7 +385,7 @@ export async function fetchExclusiveProperties(
 export async function fetchPropertyDetailsById(
   propertyId: number,
 ): Promise<PropertyDetailsApiResponse> {
-  const response = await publicApi.get<PropertyDetailsApiResponse>(
+  const response = await authApi.get<PropertyDetailsApiResponse>(
     `/properties/${propertyId}`,
   );
   return response.data;

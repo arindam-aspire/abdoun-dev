@@ -630,6 +630,16 @@
     "addToCompare": "Compare",
     "listLabel": "Favourite property listings"
   },
+  "recentlyViewed": {
+    "title": "Recently Viewed",
+    "emptyTitle": "You have not viewed any properties yet.",
+    "emptySubtitle": "Browse properties and your recently viewed list will appear here.",
+    "searchButton": "Search",
+    "clearAll": "Clear All",
+    "removeItem": "Remove from recently viewed",
+    "listLabel": "Recently viewed property listings",
+    "loading": "Loading recently viewed properties..."
+  },
   "savedSearches": {
     "title": "Saved Searches",
     "emptyTitle": "You haven't saved any searches.",

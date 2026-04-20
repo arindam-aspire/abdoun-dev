@@ -454,6 +454,16 @@
     "addToCompare": "Comparer",
     "listLabel": "Liste des biens favoris"
   },
+  "recentlyViewed": {
+    "title": "Récemment consultés",
+    "emptyTitle": "Vous n'avez encore consulté aucun bien.",
+    "emptySubtitle": "Parcourez les biens et votre liste récemment consultée apparaîtra ici.",
+    "searchButton": "Rechercher",
+    "clearAll": "Tout effacer",
+    "removeItem": "Retirer des récemment consultés",
+    "listLabel": "Liste des biens récemment consultés",
+    "loading": "Chargement des biens récemment consultés..."
+  },
   "savedSearches": {
     "title": "Recherches enregistrées",
     "emptyTitle": "Vous n'avez enregistré aucune recherche.",

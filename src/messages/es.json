@@ -454,6 +454,16 @@
     "addToCompare": "Comparar",
     "listLabel": "Listado de propiedades favoritas"
   },
+  "recentlyViewed": {
+    "title": "Vistos recientemente",
+    "emptyTitle": "Aún no has visto ninguna propiedad.",
+    "emptySubtitle": "Explora propiedades y tu lista de vistos recientemente aparecerá aquí.",
+    "searchButton": "Buscar",
+    "clearAll": "Limpiar todo",
+    "removeItem": "Quitar de vistos recientemente",
+    "listLabel": "Listado de propiedades vistas recientemente",
+    "loading": "Cargando propiedades vistas recientemente..."
+  },
   "savedSearches": {
     "title": "Búsquedas guardadas",
     "emptyTitle": "No has guardado ninguna búsqueda.",
