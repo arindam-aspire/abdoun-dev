@@ -26,15 +26,9 @@ const savedSearchesSlice = createSlice({
     },
     addSavedSearch(
       state,
-      action: PayloadAction<{ name: string; queryString: string }>,
+      action: PayloadAction<SavedSearchItem>,
     ) {
-      const { name, queryString } = action.payload;
-      state.items.push({
-        id: `ss-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        name,
-        queryString,
-        createdAt: Date.now(),
-      });
+      state.items.push(action.payload);
     },
     updateSavedSearch(
       state,

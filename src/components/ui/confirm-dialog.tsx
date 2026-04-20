@@ -15,6 +15,7 @@ type ConfirmDialogProps = {
   title: string;
   description?: ReactNode;
   confirmLabel?: string;
+  loadingConfirmLabel?: string;
   cancelLabel?: string;
   confirmButtonClassName?: string;
   cancelButtonClassName?: string;
@@ -35,6 +36,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel = "Confirm",
+  loadingConfirmLabel,
   cancelLabel = "Cancel",
   confirmButtonClassName,
   cancelButtonClassName,
@@ -103,7 +105,7 @@ export function ConfirmDialog({
               }
             }}
           >
-            {confirmLabel}
+            {loading && loadingConfirmLabel ? loadingConfirmLabel : confirmLabel}
           </LoadingButton>
         </DialogFooter>
       ) : null}

@@ -29,6 +29,7 @@ import { useAppSelector } from "@/hooks/storeHooks";
 import { selectCurrentUser } from "@/store/selectors";
 import { AuthPopup } from "@/features/auth/components/modals/AuthPopup";
 import { SaveSearchModal } from "@/features/saved-searches/components/modals/SaveSearchModal";
+import { Toast } from "@/components/ui";
 
 export type { SearchFieldsProps, SearchFieldsTranslations } from "@/features/property-search/types";
 
@@ -46,6 +47,12 @@ const slugify = (value: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-");
+
+const fromCamelCase = (value: string): string =>
+  value
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/([A-Z])([A-Z][a-z])/g, "$1 $2")
+    .trim();
 
 const BATH_OPTIONS = ["", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 const ROOM_OPTIONS = ["", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
@@ -341,9 +348,24 @@ export function SearchFields({
 
   const [saveSearchOpen, setSaveSearchOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [toast, setToast] = useState<{
+    kind: "success" | "error" | "info";
+    message: string;
+  } | null>(null);
+  const stripSavedSearchMetaOnNextSyncRef = useRef(false);
   const authUser = useAppSelector(selectCurrentUser);
   const locale = useLocale();
-  const queryString = searchParams.toString();
+  const metaSource = searchParams.get("source");
+  const metaSavedSearchId = searchParams.get("savedSearchId");
+  const metaSavedSearchName = searchParams.get("savedSearchName");
+  const decodedSavedSearchName = metaSavedSearchName
+    ? fromCamelCase(metaSavedSearchName)
+    : null;
+  const queryParams = new URLSearchParams(searchParams.toString());
+  queryParams.delete("source");
+  queryParams.delete("savedSearchId");
+  queryParams.delete("savedSearchName");
+  const queryString = queryParams.toString();
 
   const closeAllAdvancedDropdowns = () => {
     setAdvFurnitureOpen(false);
@@ -604,9 +626,28 @@ export function SearchFields({
 
   const exclusiveParam = searchParams.get("exclusive");
   const similarToParam = searchParams.get("similar_to");
+  const sourceParam = searchParams.get("source");
+  const savedSearchIdParam = searchParams.get("savedSearchId");
+  const savedSearchNameParam = searchParams.get("savedSearchName");
 
   const syncToUrl = useCallback(() => {
     const params = new URLSearchParams();
+    const shouldStripSavedSearchMeta = stripSavedSearchMetaOnNextSyncRef.current;
+    if (!shouldStripSavedSearchMeta && sourceParam) params.set("source", sourceParam);
+    if (
+      !shouldStripSavedSearchMeta &&
+      sourceParam === "saved-search" &&
+      savedSearchIdParam
+    ) {
+      params.set("savedSearchId", savedSearchIdParam);
+    }
+    if (
+      !shouldStripSavedSearchMeta &&
+      sourceParam === "saved-search" &&
+      savedSearchNameParam
+    ) {
+      params.set("savedSearchName", savedSearchNameParam);
+    }
     if (exclusiveParam === "1" || exclusiveParam === "true")
       params.set("exclusive", "1");
     if (similarToParam && similarToParam.trim())
@@ -670,6 +711,9 @@ export function SearchFields({
     router.replace(query ? `${pathname}?${query}` : pathname, {
       scroll: false,
     });
+    if (shouldStripSavedSearchMeta) {
+      stripSavedSearchMetaOnNextSyncRef.current = false;
+    }
   }, [
     exclusiveParam,
     similarToParam,
@@ -740,6 +784,9 @@ export function SearchFields({
     showZonedUseAmenity,
     showWaterSourceAmenity,
     showElectricityNearbyAmenity,
+    sourceParam,
+    savedSearchIdParam,
+    savedSearchNameParam,
     pathname,
     router,
   ]);
@@ -789,6 +836,7 @@ export function SearchFields({
 
   /** Clear all filters (main + advanced) and sync URL to pathname (preserving query flags). */
   const handleClearAll = () => {
+    stripSavedSearchMetaOnNextSyncRef.current = true;
     setStatus("buy");
     setCategory("residential");
     setPropertyType("");
@@ -2022,13 +2070,21 @@ export function SearchFields({
         open={saveSearchOpen}
         onClose={() => setSaveSearchOpen(false)}
         queryString={queryString}
+        updateId={metaSource === "saved-search" ? (metaSavedSearchId ?? undefined) : undefined}
+        initialName={
+          metaSource === "saved-search" ? (decodedSavedSearchName ?? undefined) : undefined
+        }
         isRtl={isRtl}
+        onToast={setToast}
       />
       <AuthPopup
         open={authOpen}
         locale={locale}
         onClose={() => setAuthOpen(false)}
       />
+      {toast ? (
+        <Toast kind={toast.kind} message={toast.message} onClose={() => setToast(null)} />
+      ) : null}
     </section>
   );
 }

@@ -15,9 +15,11 @@ export interface SavedSearchListProps {
   onCancelEdit: () => void;
   onSaveEdit: () => void;
   onDelete: (id: string) => void;
-  onRun: (queryString: string) => void;
+  onRun: (item: SavedSearch) => void;
+  runningId?: string | null;
   labels: {
     runSearch: string;
+    updatingSearch?: string;
     edit: string;
     delete: string;
     save: string;
@@ -37,6 +39,7 @@ export function SavedSearchList({
   onSaveEdit,
   onDelete,
   onRun,
+  runningId,
   labels,
 }: SavedSearchListProps) {
   return (
@@ -87,11 +90,14 @@ export function SavedSearchList({
                 >
                   <button
                     type="button"
-                    onClick={() => onRun(item.queryString)}
+                    onClick={() => onRun(item)}
+                    disabled={runningId === item.id}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--brand-secondary)] px-3 py-2 text-sm font-medium text-white hover:opacity-95"
                   >
                     <Search className="h-4 w-4" aria-hidden />
-                    {labels.runSearch}
+                    {runningId === item.id
+                      ? (labels.updatingSearch ?? "Updating...")
+                      : labels.runSearch}
                   </button>
                   <button
                     type="button"

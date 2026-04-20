@@ -6,11 +6,17 @@ export type Language = "en" | "ar" | "fr" | "es";
 export interface UiState {
   theme: Theme;
   language: Language;
+  savedSearchContext: {
+    id: string;
+    name: string;
+    queryString: string;
+  } | null;
 }
 
 const initialState: UiState = {
   theme: "light",
   language: "en",
+  savedSearchContext: null,
 };
 
 const uiSlice = createSlice({
@@ -23,9 +29,23 @@ const uiSlice = createSlice({
     setLanguage(state, action: PayloadAction<Language>) {
       state.language = action.payload;
     },
+    setSavedSearchContext(
+      state,
+      action: PayloadAction<{ id: string; name: string; queryString: string }>,
+    ) {
+      state.savedSearchContext = action.payload;
+    },
+    clearSavedSearchContext(state) {
+      state.savedSearchContext = null;
+    },
   },
 });
 
-export const { setTheme, setLanguage } = uiSlice.actions;
+export const {
+  setTheme,
+  setLanguage,
+  setSavedSearchContext,
+  clearSavedSearchContext,
+} = uiSlice.actions;
 export default uiSlice.reducer;
 

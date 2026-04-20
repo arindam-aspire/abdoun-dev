@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { LanguageSelect } from "@/components/ui/language-select";
+import { Toast } from "@/components/ui/toast";
 import { logout } from "@/features/auth/authSlice";
 import { clearProfileForUser } from "@/features/profile/profileSlice";
 import { clearAuthSession } from "@/lib/auth/sessionCookies";
@@ -60,6 +61,11 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
   const [isListPropertyModalOpen, setIsListPropertyModalOpen] = useState(false);
   const [isAccountSettingsHover, setIsAccountSettingsHover] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [toast, setToast] = useState<{
+    kind: "success" | "error" | "info";
+    message: string;
+  } | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const rafRef = useRef<number | null>(null);
   const profileRef = useRef<HTMLDivElement | null>(null);
@@ -221,10 +227,23 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
   };
 
   const handleConfirmLogout = async () => {
-    setIsLogoutConfirmOpen(false);
-    if (!user) return;
-    await performClientLogout(dispatch, user.id);
-    setIsProfileOpen(false);
+    if (!user || isLoggingOut) return;
+
+    setIsLoggingOut(true);
+    try {
+      await performClientLogout(dispatch, user.id);
+      setIsLogoutConfirmOpen(false);
+      setIsProfileOpen(false);
+      setMobileMenuOpen(false);
+      setToast({ kind: "success", message: tCommon("logoutSuccess") });
+      window.setTimeout(() => {
+        router.replace(`/${activeLanguage}`);
+      }, 300);
+    } catch {
+      setToast({ kind: "error", message: tCommon("logoutError") });
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   const renderProfileNavLinks = (onClick: () => void) =>
@@ -682,14 +701,26 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
       />
       <ConfirmDialog
         open={isLogoutConfirmOpen}
-        onCancel={() => setIsLogoutConfirmOpen(false)}
+        onCancel={() => {
+          if (isLoggingOut) return;
+          setIsLogoutConfirmOpen(false);
+        }}
         onConfirm={handleConfirmLogout}
         title={tCommon("signOut")}
         description={tCommon("confirmSignOut")}
         confirmLabel={tCommon("signOut")}
+        loadingConfirmLabel={tCommon("signingOut")}
         cancelLabel={tCommon("cancel")}
         confirmButtonClassName="bg-rose-700 text-white hover:bg-rose-800"
       />
+      {toast ? (
+        <Toast
+          kind={toast.kind}
+          message={toast.message}
+          onClose={() => setToast(null)}
+          duration={1800}
+        />
+      ) : null}
       <DialogRoot
         open={isListPropertyModalOpen}
         onClose={() => setIsListPropertyModalOpen(false)}

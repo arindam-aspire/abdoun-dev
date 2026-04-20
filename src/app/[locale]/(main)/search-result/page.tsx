@@ -52,6 +52,13 @@ export default function SearchResultPage() {
   const language = useLocale() as AppLocale;
   const isRtl = language === "ar";
   const pageTitle = getPageTitle(t, searchParams);
+  const source = searchParams.get("source");
+  const activeSavedSearchId =
+    source === "saved-search" ? searchParams.get("savedSearchId") : null;
+  const saveSearchLabel =
+    activeSavedSearchId && activeSavedSearchId.trim()
+      ? "Update Search"
+      : tSaved("saveSearch");
 
   return (
     <section className="mx-auto container w-full" dir={isRtl ? "rtl" : "ltr"}>
@@ -110,7 +117,7 @@ export default function SearchResultPage() {
             swimmingPool: t("swimmingPool"),
             garden: t("garden"),
             airConditioning: t("airConditioning"),
-            saveSearch: tSaved("saveSearch"),
+            saveSearch: saveSearchLabel,
           }}
           isRtl={isRtl}
         />

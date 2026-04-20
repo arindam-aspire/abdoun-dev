@@ -21,6 +21,39 @@ type FavoriteListItem = {
   property_hash?: number | null;
   property?: {
     id?: number | null;
+    title?: { en?: string; ar?: string; fr?: string; esp?: string } | null;
+    price?: string | null;
+    status?: "buy" | "rent" | null;
+    category?: "residential" | "commercial" | "land" | null;
+    searchPropertyType?: string | null;
+    city?: string | null;
+    areaName?: string | null;
+    propertyType?: string | null;
+    media?: {
+      thumbnail?: string | null;
+      images?: Array<{ thumb_url?: string | null; url?: string | null }> | null;
+    } | null;
+    location?: {
+      address?: { en?: string; ar?: string; fr?: string; esp?: string } | null;
+      city?: string | null;
+      region?: string | null;
+    } | null;
+    beds?: number | null;
+    baths?: number | null;
+    area?: string | number | null;
+    highlights?: string | null;
+    badges?: string[] | null;
+    validatedDate?: string | null;
+    brokerName?: string | null;
+    brokerLogo?: string | null;
+    owners?: Array<{
+      owner_id?: string;
+      full_name?: string;
+      phone?: string;
+      email?: string;
+      is_active?: boolean;
+    }> | null;
+    is_exclusive?: boolean | null;
   } | null;
 };
 
@@ -53,17 +86,7 @@ export async function bulkAddFavoriteProperties(propertyIds: number[]): Promise<
 }
 
 export async function listFavoriteProperties(): Promise<number[]> {
-  const response = await authApi.get<
-    StandardApiResponse<FavoriteListResponseData | number[]>
-  >("/favorites");
-  const data = unwrap(response.data);
-
-  // Backward compatible: support both [number] and { items: [...] } shapes.
-  if (Array.isArray(data)) {
-    return data.filter((item): item is number => typeof item === "number");
-  }
-
-  const items = Array.isArray(data?.items) ? data.items : [];
+  const items = await listFavoritePropertyItems();
   return items
     .map((item) => {
       if (typeof item.property_hash === "number") return item.property_hash;
@@ -71,4 +94,20 @@ export async function listFavoriteProperties(): Promise<number[]> {
       return null;
     })
     .filter((item): item is number => typeof item === "number");
+}
+
+export async function listFavoritePropertyItems(): Promise<FavoriteListItem[]> {
+  const response = await authApi.get<
+    StandardApiResponse<FavoriteListResponseData | number[]>
+  >("/favorites");
+  const data = unwrap(response.data);
+
+  // Backward compatible: support both [number] and { items: [...] } shapes.
+  if (Array.isArray(data)) {
+    return data
+      .filter((item): item is number => typeof item === "number")
+      .map((propertyId) => ({ property_hash: propertyId }));
+  }
+
+  return Array.isArray(data?.items) ? data.items : [];
 }

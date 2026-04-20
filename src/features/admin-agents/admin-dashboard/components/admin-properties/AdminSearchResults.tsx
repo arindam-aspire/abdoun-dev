@@ -13,7 +13,7 @@ import type { CategoryKey, SearchResultListing, StatusTabKey } from "@/features/
 import type { SortKey } from "@/features/property-search/components/SearchResultSortDropdown";
 import type { ViewKey } from "@/features/property-search/components/SearchResultViewToggle";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 10;
 const PAGE_PARAM = "page";
 const SORT_PARAM = "sort";
 const VIEW_PARAM = "view";

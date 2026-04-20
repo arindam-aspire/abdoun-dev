@@ -10,7 +10,6 @@ import { forceLocalLogout } from "@/lib/auth/logoutClient";
 import {
   clearSavedSearches,
   hydrateSavedSearches,
-  type SavedSearchItem,
 } from "@/features/saved-searches/savedSearchesSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { login } from "@/features/auth/authSlice";
@@ -24,12 +23,7 @@ import { selectCurrentUser } from "@/store/selectors";
 import { enrichWithPhoneParts } from "@/lib/auth/enrichSessionUser";
 import { getCurrentUser, toSessionUserForProfile } from "@/features/auth/api/auth.api";
 import { listFavoriteProperties } from "@/features/favourites/api/favourites.api";
-
-const buildFavouritesStorageKey = (userId: string) =>
-  `abdoun:favourites:${userId}`;
-
-const buildSavedSearchesStorageKey = (userId: string) =>
-  `abdoun:savedSearches:${userId}`;
+import { listSavedSearches } from "@/features/saved-searches/api/savedSearches.api";
 
 export function UiProvider({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
@@ -37,12 +31,18 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
   const theme = useAppSelector((state) => state.ui.theme);
   const locale = useLocale();
   const user = useAppSelector(selectCurrentUser);
-  const propertyIds = useAppSelector((state) => state.favourites.propertyIds);
-  const hydratedUserId = useAppSelector((state) => state.favourites.hydratedUserId);
-  const savedSearchesItems = useAppSelector((state) => state.savedSearches.items);
-  const savedSearchesHydratedUserId = useAppSelector(
-    (state) => state.savedSearches.hydratedUserId,
-  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // One-time cleanup for legacy persisted keys now replaced by API hydration.
+    Object.keys(window.localStorage)
+      .filter(
+        (key) =>
+          key.startsWith("abdoun:favourites:") ||
+          key.startsWith("abdoun:savedSearches:"),
+      )
+      .forEach((key) => window.localStorage.removeItem(key));
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -128,45 +128,15 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
       }
     })();
 
-    const ssKey = buildSavedSearchesStorageKey(user.id);
-    const ssRaw = window.localStorage.getItem(ssKey);
-    if (!ssRaw) {
-      dispatch(hydrateSavedSearches({ userId: user.id, items: [] }));
-    } else {
+    void (async () => {
       try {
-        const parsed = JSON.parse(ssRaw);
-        const items = Array.isArray(parsed)
-          ? (parsed as SavedSearchItem[]).filter(
-              (i) =>
-                i &&
-                typeof i.id === "string" &&
-                typeof i.name === "string" &&
-                typeof i.queryString === "string" &&
-                typeof i.createdAt === "number",
-            )
-          : [];
-        dispatch(hydrateSavedSearches({ userId: user.id, items }));
+        const savedSearches = await listSavedSearches();
+        dispatch(hydrateSavedSearches({ userId: user.id, items: savedSearches }));
       } catch {
         dispatch(hydrateSavedSearches({ userId: user.id, items: [] }));
       }
-    }
+    })();
   }, [dispatch, user]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!user || hydratedUserId !== user.id) return;
-
-    const key = buildFavouritesStorageKey(user.id);
-    window.localStorage.setItem(key, JSON.stringify(propertyIds));
-  }, [hydratedUserId, propertyIds, user]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!user || savedSearchesHydratedUserId !== user.id) return;
-
-    const key = buildSavedSearchesStorageKey(user.id);
-    window.localStorage.setItem(key, JSON.stringify(savedSearchesItems));
-  }, [savedSearchesHydratedUserId, savedSearchesItems, user]);
 
   return <>{children}</>;
 }
