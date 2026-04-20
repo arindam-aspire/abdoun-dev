@@ -2,6 +2,17 @@ import { useCallback, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { clearFavourites, toggleFavourite } from "@/features/favourites/favouritesSlice";
 import { selectCurrentUser } from "@/store/selectors";
+import { getApiErrorMessage } from "@/lib/http/apiError";
+import {
+  addFavoriteProperty,
+  removeFavoriteProperty,
+} from "@/features/favourites/api/favourites.api";
+
+type ToggleFavouriteResult = {
+  ok: boolean;
+  action: "added" | "removed" | null;
+  message?: string;
+};
 
 export type UseFavouritesResult = {
   /** Raw favourite ids for current session (still stored in Redux). */
@@ -9,7 +20,7 @@ export type UseFavouritesResult = {
   /** Whether the current authenticated user has this property favourited. */
   isFavourite: (propertyId: number) => boolean;
   /** Toggle favourite for the current user. No-ops if not authenticated. */
-  toggleFavouriteForUser: (propertyId: number) => void;
+  toggleFavouriteForUser: (propertyId: number) => Promise<ToggleFavouriteResult>;
   /** Clear favourites in Redux (also clears hydrated user id). */
   clearAll: () => void;
   /** Convenience for consumers that need auth-gating. */
@@ -29,11 +40,30 @@ export function useFavourites(): UseFavouritesResult {
   );
 
   const toggleFavouriteForUser = useCallback(
-    (propertyId: number) => {
-      if (!user) return;
+    async (propertyId: number) => {
+      if (!user) return { ok: false, action: null, message: "Please sign in first." };
+
+      const wasFavourite = propertyIds.includes(propertyId);
       dispatch(toggleFavourite(propertyId));
+
+      try {
+        if (wasFavourite) {
+          await removeFavoriteProperty(propertyId);
+          return { ok: true, action: "removed" } satisfies ToggleFavouriteResult;
+        }
+        await addFavoriteProperty(propertyId);
+        return { ok: true, action: "added" } satisfies ToggleFavouriteResult;
+      } catch (error) {
+        // Roll back local optimistic update if API call fails.
+        dispatch(toggleFavourite(propertyId));
+        return {
+          ok: false,
+          action: null,
+          message: getApiErrorMessage(error),
+        } satisfies ToggleFavouriteResult;
+      }
     },
-    [dispatch, user],
+    [dispatch, propertyIds, user],
   );
 
   const clearAll = useCallback(() => {

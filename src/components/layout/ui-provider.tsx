@@ -23,6 +23,7 @@ import {
 import { selectCurrentUser } from "@/store/selectors";
 import { enrichWithPhoneParts } from "@/lib/auth/enrichSessionUser";
 import { getCurrentUser, toSessionUserForProfile } from "@/features/auth/api/auth.api";
+import { listFavoriteProperties } from "@/features/favourites/api/favourites.api";
 
 const buildFavouritesStorageKey = (userId: string) =>
   `abdoun:favourites:${userId}`;
@@ -115,22 +116,17 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const key = buildFavouritesStorageKey(user.id);
-    const raw = window.localStorage.getItem(key);
-
-    if (!raw) {
-      dispatch(hydrateFavourites({ userId: user.id, propertyIds: [] }));
-    } else {
+    void (async () => {
       try {
-        const parsed = JSON.parse(raw);
-        const favoriteIds = Array.isArray(parsed)
-          ? parsed.filter((item): item is number => typeof item === "number")
+        const favoriteIds = await listFavoriteProperties();
+        const safeFavoriteIds = Array.isArray(favoriteIds)
+          ? favoriteIds.filter((item): item is number => typeof item === "number")
           : [];
-        dispatch(hydrateFavourites({ userId: user.id, propertyIds: favoriteIds }));
+        dispatch(hydrateFavourites({ userId: user.id, propertyIds: safeFavoriteIds }));
       } catch {
         dispatch(hydrateFavourites({ userId: user.id, propertyIds: [] }));
       }
-    }
+    })();
 
     const ssKey = buildSavedSearchesStorageKey(user.id);
     const ssRaw = window.localStorage.getItem(ssKey);
