@@ -296,9 +296,9 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
 
     setOtcLoading(true);
     try {
-      const { session } = await requestOtpLogin({ username: trimmedIdentifier });
+      const { session, otp } = await requestOtpLogin({ username: trimmedIdentifier });
       setOtcChallengeId(session);
-      setOtcDebugOtp(null);
+      setOtcDebugOtp(otp ?? null);
       setToast({ kind: "success", message: "One-time code sent." });
       otcTimer.restart(60);
       setOtcStep("otp");
@@ -358,11 +358,11 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
   const runResendOtc = async () => {
     setOtcLoading(true);
     try {
-      const { session } = await requestOtpLogin({
+      const { session, otp } = await requestOtpLogin({
         username: otcIdentifier.trim(),
       });
       setOtcChallengeId(session);
-      setOtcDebugOtp(null);
+      setOtcDebugOtp(otp ?? null);
       setOtcOtp("");
       setOtcOtpError(null);
       otcTimer.restart(60);

@@ -57,6 +57,7 @@ export function toDetailedProperty(
     gallery,
     propertyType: item.category ?? "Property",
     media: item.media,
+    virtualTourUrl: item.media?.virtual_tour_url ?? undefined,
   };
 }
 

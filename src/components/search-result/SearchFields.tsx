@@ -603,11 +603,14 @@ export function SearchFields({
   };
 
   const exclusiveParam = searchParams.get("exclusive");
+  const similarToParam = searchParams.get("similar_to");
 
   const syncToUrl = useCallback(() => {
     const params = new URLSearchParams();
     if (exclusiveParam === "1" || exclusiveParam === "true")
       params.set("exclusive", "1");
+    if (similarToParam && similarToParam.trim())
+      params.set("similar_to", similarToParam.trim());
     params.set("status", status);
     params.set("category", category);
     if (propertyType) params.set("type", slugify(propertyType));
@@ -669,6 +672,7 @@ export function SearchFields({
     });
   }, [
     exclusiveParam,
+    similarToParam,
     status,
     category,
     propertyType,
@@ -783,7 +787,7 @@ export function SearchFields({
     setElectricityNearby(false);
   };
 
-  /** Clear all filters (main + advanced) and sync URL to pathname (preserving exclusive if set). */
+  /** Clear all filters (main + advanced) and sync URL to pathname (preserving query flags). */
   const handleClearAll = () => {
     setStatus("buy");
     setCategory("residential");
@@ -794,10 +798,17 @@ export function SearchFields({
     setBudgetMax("");
     setAdvancedSearchOpen(false);
     handleClearAdvanced();
+    const nextParams = new URLSearchParams();
     const exclusiveParam = searchParams.get("exclusive");
-    const query =
-      exclusiveParam === "1" || exclusiveParam === "true" ? "?exclusive=1" : "";
-    router.replace(`${pathname}${query}`, { scroll: false });
+    const similarToParam = searchParams.get("similar_to");
+    if (exclusiveParam === "1" || exclusiveParam === "true") {
+      nextParams.set("exclusive", "1");
+    }
+    if (similarToParam && similarToParam.trim()) {
+      nextParams.set("similar_to", similarToParam.trim());
+    }
+    const query = nextParams.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   };
   const activeStatusIndex = Math.max(
     0,

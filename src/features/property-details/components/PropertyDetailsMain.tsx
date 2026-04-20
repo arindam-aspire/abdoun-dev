@@ -24,6 +24,7 @@ import { mapPropertyStats } from "@/features/property-details/utils/statsMapper"
 import { usePropertyDetails } from "@/features/property-details/hooks/usePropertyDetails";
 import { usePropertyDetailsTabs } from "@/features/property-details/hooks/usePropertyDetailsTabs";
 import { SimilarProperties } from "./SimilarProperties";
+import { PropertyVirtualTour } from "./PropertyVirtualTour";
 
 export interface PropertyDetailsMainProps {
   language: AppLocale;
@@ -215,10 +216,12 @@ export function PropertyDetailsMain({
             <div key={displayTab} ref={tabPanelRef}>
             {displayTab === "overview" && (
               <section
-                className="bg-white/95 shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
+                // className="bg-white/95 shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
+                className=""
               >
                 <PropertyHighlights property={displayProperty} stats={stats} />
                 <PropertyOverview overview={overview} />
+                <PropertyVirtualTour property={displayProperty} />
               </section>
             )}
 

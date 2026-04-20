@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale } from "next-intl";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Property } from "@/features/public-home/components/types";
@@ -29,8 +29,10 @@ function toPropertyCard(item: SearchResultListing): Property {
 
 export function SimilarProperties() {
   const params = useParams<{ id?: string | string[] }>();
+  const searchParams = useSearchParams();
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const isRtl = useLocale() === "ar";
+  const locale = useLocale();
+  const isRtl = locale === "ar";
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
   const [items, setItems] = useState<SearchResultListing[] | null>(null);
@@ -46,7 +48,8 @@ export function SimilarProperties() {
     () => (items ?? []).map(toPropertyCard),
     [items],
   );
-  const loading = items == null && !error;
+  const invalidRouteId = !routeId;
+  const loading = !invalidRouteId && items == null && !error;
   const shouldUseCarousel = similarProperties.length > 4;
 
   useEffect(() => {
@@ -163,18 +166,15 @@ export function SimilarProperties() {
 
   useEffect(() => {
     if (!routeId) {
-      setError("Invalid property id.");
-      setItems([]);
       return;
     }
 
     let mounted = true;
-    setError(null);
-    setItems(null);
 
     void fetchSimilarPropertiesById(routeId)
       .then((data) => {
         if (!mounted) return;
+        setError(null);
         setItems(data.filter((item) => String(item.id) !== routeId));
       })
       .catch((err) => {
@@ -192,6 +192,25 @@ export function SimilarProperties() {
     };
   }, [routeId]);
 
+  const hasSimilarProperties = similarProperties.length > 4;
+  const viewMoreHref = useMemo(() => {
+    const query = new URLSearchParams({
+      status: "buy",
+      category: "residential",
+    });
+
+    if (routeId) {
+      query.set("similar_to", routeId);
+    }
+
+    const exclusiveParam = searchParams.get("exclusive");
+    if (exclusiveParam && exclusiveParam.trim().length > 0) {
+      query.set("exclusive", exclusiveParam);
+    }
+
+    return `/${locale}/search-result?${query.toString()}`;
+  }, [locale, routeId, searchParams]);
+
   return (
     <section
       className="bg-white container mx-auto mt-8"
@@ -203,12 +222,14 @@ export function SimilarProperties() {
         <div className="text-xl font-bold tracking-tight text-[#2843a2] md:text-3xl">
           Similar Properties
         </div>
-        <Link
-          href={`/search-result?status=buy&category=residential&similar_to=${routeId}`}
-          className="inline-flex items-center gap-2 rounded-2xl bg-[#355777] px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
-        >
-          View More
-        </Link>
+        {hasSimilarProperties && routeId && (
+          <Link
+            href={viewMoreHref}
+            className="inline-flex items-center gap-2 rounded-2xl bg-[#355777] px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
+          >
+            View More
+          </Link>
+        )}
       </div>
 
       {loading ? (
@@ -274,9 +295,11 @@ export function SimilarProperties() {
         </div>
       )}
 
-      {!loading && similarProperties.length === 0 && (
+      {!loading && (invalidRouteId || similarProperties.length === 0) && (
         <p className={`mt-4 text-sm ${error ? "text-red-600" : "text-zinc-500"} ${isRtl ? "text-right" : "text-left"}`}>
-          {error ?? "No similar properties found."}
+          {invalidRouteId
+            ? "Invalid property id."
+            : (error ?? "No similar properties found.")}
         </p>
       )}
     </section>

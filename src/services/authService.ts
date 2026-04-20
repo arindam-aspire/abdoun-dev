@@ -140,6 +140,7 @@ export type PermissionsResponse = {
 
 type OtpRequestResponse = {
   session: string;
+  otp?: string | null;
 };
 
 type OtpVerifyResponse = AuthTokens;

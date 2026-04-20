@@ -40,8 +40,8 @@ export function PropertyVirtualTour({ property }: Readonly<PropertyVirtualTourPr
   if (!url) return null;
 
   return (
-    <section>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <section className="mt-7 md:mt-8">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm fw-bold uppercase tracking-[0.16em] text-primary">
           Virtual Tour
         </p>
