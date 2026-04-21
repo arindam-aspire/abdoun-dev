@@ -76,7 +76,7 @@ export function AdminAgentsPage() {
   const [manualFullName, setManualFullName] = useState("");
   const [manualEmail, setManualEmail] = useState("");
   const [manualPhone, setManualPhone] = useState<string | undefined>();
-  const [manualServiceArea, setManualServiceArea] = useState("");
+  const [manualServiceArea, setManualServiceArea] = useState<string[]>([]);
   const [manualOnboarding, setManualOnboarding] = useState(false);
   const [isOnboardModalOpen, setIsOnboardModalOpen] = useState(false);
   const [onboardStep, setOnboardStep] = useState<"choice" | "email" | "manual">("choice");
@@ -269,16 +269,15 @@ export function AdminAgentsPage() {
     return !isValidPhoneNumber(trimmed) ? "Please enter valid Phone Number" : undefined;
   };
 
-  const getServiceAreaError = (value: string) => {
-    const trimmed = value.trim();
-    return !trimmed ? "Service Area is required" : undefined;
+  const getServiceAreaError = (value: string[]) => {
+    return value.length === 0 ? "Service Area is required" : undefined;
   };
 
   const resetManualForm = () => {
     setManualFullName("");
     setManualEmail("");
     setManualPhone(undefined);
-    setManualServiceArea("");
+    setManualServiceArea([]);
     setFullNameIdentifierTouched(false);
     setEmailIdentifierTouched(false);
     setPhoneIdentifierTouched(false);
@@ -343,7 +342,7 @@ export function AdminAgentsPage() {
           fullName: manualFullName,
           email: manualEmail,
           phone: manualPhone ?? "",
-          city: manualServiceArea,
+          city: manualServiceArea.join(", "),
         }),
       );
 
