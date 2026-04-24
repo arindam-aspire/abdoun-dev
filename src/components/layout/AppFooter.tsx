@@ -39,7 +39,7 @@ export default function AppFooter(): React.JSX.Element {
   return (
     <footer
       className={cn(
-        "overflow-x-clip bg-[#355777] pt-10 pb-6 text-white",
+        "overflow-x-clip border-t border-gray-200 bg-[#355777] pt-10 pb-6 text-white",
         isArabic ? "text-right" : "text-left",
       )}
     >

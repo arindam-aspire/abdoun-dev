@@ -11,6 +11,8 @@ export interface PerformanceComparisonItem {
     value: number;
 }
 export interface AdminDashboardData {
+    /** Reporting month (YYYY-MM), from API. */
+    month: string;
     /** KPI cards — current month values */
     usersThisMonth: number;
     usersMoMDelta: number;
@@ -22,6 +24,7 @@ export interface AdminDashboardData {
     listingsMoMDelta: number;
     leadsThisMonth: number;
     leadsMoMDelta: number;
+    closedDealsThisMonth: number;
 
     /** 12-month series for charts */
     userGrowthSeries: number[];
@@ -162,6 +165,7 @@ export function getAdminDashboardData(): Promise<AdminDashboardData> {
     const pendingApprovals = getPendingApprovalsCountForDashboard();
 
     return getPropertyPerformanceSeriesForRole({ role: "admin", limit: 5 }).then((propertyPerformanceSeries) => ({
+        month: new Date().toISOString().slice(0, 7),
         usersThisMonth,
         usersMoMDelta,
         agentsThisMonth: 48,
@@ -172,6 +176,7 @@ export function getAdminDashboardData(): Promise<AdminDashboardData> {
         listingsMoMDelta,
         leadsThisMonth,
         leadsMoMDelta,
+        closedDealsThisMonth: getClosedLeadsCountForDashboard(),
 
         userGrowthSeries,
         listingGrowthSeries,

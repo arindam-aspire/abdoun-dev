@@ -91,6 +91,8 @@ export default function ForceChangePasswordPage() {
 
             if (sessionUser.role === "agent") {
               router.push(`/${locale}/agent-dashboard`);
+            } else if (sessionUser.role === "admin") {
+              router.push(`/${locale}/admin-dashboard`);
             } else {
               router.push(`/${locale}`);
             }

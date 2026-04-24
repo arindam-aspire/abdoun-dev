@@ -1,14 +1,24 @@
 import { cn } from "@/lib/cn";
-import type { ComponentType } from "react";
+import type { ComponentType, MouseEventHandler } from "react";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
+
+const interactiveWrapClass =
+  "block w-full rounded-xl -m-2 p-2 text-left transition hover:bg-surface/50";
 
 export type DashboardMetricCardProps = {
   label: string;
   value: string;
   icon: ComponentType<{ className?: string }>;
-  /** Optional URL wrapper. If provided, the card becomes clickable. */
+  /** Optional URL. The card is only a link when `href` is set and `useLink` is true. */
   href?: string | null;
+  /**
+   * When `href` is set, the card uses Next.js `Link` by default.
+   * Set to `false` to render a non-clickable card (no link; `href` is ignored for interaction).
+   */
+  useLink?: boolean;
+  /** Fires on the `Link` wrapper only when `href` is set and `useLink` is true (e.g. analytics). */
+  onCardClick?: MouseEventHandler<HTMLAnchorElement>;
   /** Tailwind classes for icon bubble background/ring. */
   iconBgClassName?: string;
   /** Tailwind classes for icon color/size. */
@@ -32,6 +42,8 @@ export function DashboardMetricCard({
   value,
   icon: Icon,
   href = null,
+  useLink = true,
+  onCardClick,
   iconBgClassName,
   iconClassName,
   valueClassName,
@@ -81,10 +93,12 @@ export function DashboardMetricCard({
     </>
   );
 
+  const wrapAsLink = Boolean(href) && useLink;
+
   return (
-    <article className={cn("rounded-2xl border border-subtle bg-white p-4 shadow-sm", className)}>
-      {href ? (
-        <Link href={href} className="block rounded-xl -m-2 p-2 transition hover:bg-surface/50">
+    <article className={cn("rounded-xl border border-subtle bg-white p-4 shadow-sm", className)}>
+      {wrapAsLink ? (
+        <Link href={href!} onClick={onCardClick} className={interactiveWrapClass}>
           {content}
         </Link>
       ) : (

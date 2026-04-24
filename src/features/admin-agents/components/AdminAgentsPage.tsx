@@ -375,7 +375,7 @@ export function AdminAgentsPage() {
           <p className="mt-1 text-size-sm text-charcoal/70">Manage your team and invite new agents by email.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button type="button" variant="outline" onClick={() => router.push(`/${locale}/dashboard`)}>
+          <Button type="button" variant="outline" onClick={() => router.push(`/${locale}/admin-dashboard`)}>
             <RefreshCw className="h-4 w-4" />
             Back to dashboard
           </Button>

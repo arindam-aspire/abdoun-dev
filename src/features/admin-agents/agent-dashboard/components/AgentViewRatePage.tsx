@@ -15,6 +15,8 @@ import { Pagination } from "@/components/ui/Pagination";
 const PERIOD_FILTERS = ["all", "weekly", "monthly", "yearly"] as const;
 type PeriodFilter = (typeof PERIOD_FILTERS)[number];
 
+const ITEMS_PER_PAGE = 8;
+
 function getScaledViews(value: number, period: PeriodFilter): number {
   if (period === "weekly") return Math.max(1, Math.ceil(value / 52));
   if (period === "monthly") return Math.max(1, Math.ceil(value / 12));
@@ -51,7 +53,7 @@ export function AgentViewRatePage() {
       ? (periodParam as PeriodFilter)
       : "all";
 
-  const itemsPerPage = 8;
+  const itemsPerPage = ITEMS_PER_PAGE;
   const tSearch = useTranslations("searchResult");
 
   const updateQueryParams = useCallback(
@@ -149,9 +151,9 @@ export function AgentViewRatePage() {
         </div>
 
         <ul className="mt-4 space-y-3">
-          {paginatedData.map((item) => (
+          {paginatedData.map((item, idx) => (
             <li
-              key={item.label}
+              key={`${(currentPage - 1) * itemsPerPage + idx}-${item.label}`}
               className="flex items-center justify-between rounded-xl border border-subtle bg-surface px-4 py-3 text-sm"
             >
               <span className="font-medium text-charcoal truncate pr-2">{item.label}</span>
@@ -193,4 +195,3 @@ export function AgentViewRatePage() {
     </div>
   );
 }
-

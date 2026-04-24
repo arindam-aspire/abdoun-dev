@@ -21,12 +21,13 @@ import { logout } from "@/features/auth/authSlice";
 import { clearProfileForUser } from "@/features/profile/profileSlice";
 import { clearAuthSession } from "@/lib/auth/sessionCookies";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import { useSidebar } from "@/hooks/useSidebar";
 import { useTranslations } from "@/hooks/useTranslations";
 import type { AppLocale } from "@/i18n/routing";
 import { performClientLogout } from "@/lib/auth/logoutClient";
 import { cn } from "@/lib/cn";
 import { selectCurrentUser } from "@/store/selectors";
-import { Bell, Menu, X, PlusCircle } from "lucide-react";
+import { Bell, Menu, PanelLeftClose, PanelLeftOpen, X, PlusCircle } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -72,6 +73,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
   const mobileProfileRef = useRef<HTMLDivElement | null>(null);
   const isRTL = activeLanguage === "ar";
   const activeRole: HeaderRole = user?.role ?? "guest";
+  const { isSidebarRole, isOpen: isSidebarOpen, toggle: toggleSidebar } = useSidebar();
   const shouldShowPublicLinks = resolvePublicLinksVisibility(
     pathname,
     showPublicLinks,
@@ -92,34 +94,74 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
     : null;
   const firstName =
     user?.name?.split(" ").find(Boolean) ?? tCommon("myProfile");
-  const desktopNavItems =
-    activeRole === "guest" || activeRole === "user"
+  const path = pathname ?? "";
+  const isAgentRoute =
+    path.includes("/agent") ||
+    path.includes("/agent-dashboard") ||
+    path.includes("/agent-properties");
+  const isAdminRoute =
+    path.includes("/admin") ||
+    path.includes("/admin-dashboard") ||
+    path.includes("/users") ||
+    path.includes("/agents") ||
+    path.includes("/properties") ||
+    path.includes("/listings") ||
+    path.includes("/leads") ||
+    path.includes("/deals") ||
+    path.includes("/admin-dashboard");
+  const isMainRoute = !isAgentRoute && !isAdminRoute;
+  const publicHeaderIds = ["aboutUs", "ourTeam", "services"] as const;
+  const publicHeaderItems = publicHeaderIds
+    .map((id) => navItems.find((item) => item.id === id))
+    .filter((item): item is (typeof navItems)[number] => Boolean(item))
+    .map((item) => ({
+      id: item.id,
+      href: `/${activeLanguage}${item.path}`,
+      label: item.label,
+      isActive:
+        pathname === `/${activeLanguage}${item.path}` ||
+        pathname.startsWith(`/${activeLanguage}${item.path}/`),
+    }));
+  const dashboardItem =
+    activeRole === "admin"
+      ? navItems.find((item) => item.id === "adminDashboard")
+      : activeRole === "agent"
+      ? navItems.find((item) => item.id === "agentDashboard")
+      : undefined;
+  const roleBaseNavItems =
+    activeRole === "agent" || activeRole === "admin"
       ? [
           {
-            id: "properties",
-            href: `/${activeLanguage}/search-result`,
+            id: `${activeRole}Home`,
+            href: `/${activeLanguage}`,
+            label: "Home",
+            isActive: pathname === `/${activeLanguage}` || pathname === `/${activeLanguage}/`,
+          },
+          {
+            id: `${activeRole}Properties`,
+            href: `/${activeLanguage}/search-result?status=buy&category=residential`,
             label: "Properties",
             isActive:
               pathname === `/${activeLanguage}/search-result` ||
-              pathname.startsWith(`/${activeLanguage}/search-result/`),
+              pathname.startsWith(`/${activeLanguage}/search-result`),
           },
-          ...navItems.map((item) => ({
-            id: item.id,
-            href: `/${activeLanguage}${item.path}`,
-            label: item.label,
-            isActive:
-              pathname === `/${activeLanguage}${item.path}` ||
-              pathname.startsWith(`/${activeLanguage}${item.path}/`),
-          })),
+          ...publicHeaderItems,
+          ...(isMainRoute && dashboardItem
+            ? [
+                {
+                  id: dashboardItem.id,
+                  href: `/${activeLanguage}${dashboardItem.path}`,
+                  label: dashboardItem.label,
+                  isActive:
+                    pathname === `/${activeLanguage}${dashboardItem.path}` ||
+                    pathname.startsWith(`/${activeLanguage}${dashboardItem.path}/`),
+                },
+              ]
+            : []),
         ]
-      : navItems.map((item) => ({
-          id: item.id,
-          href: `/${activeLanguage}${item.path}`,
-          label: item.label,
-          isActive:
-            pathname === `/${activeLanguage}${item.path}` ||
-            pathname.startsWith(`/${activeLanguage}${item.path}/`),
-        }));
+      : publicHeaderItems;
+  const desktopNavItems = roleBaseNavItems;
+  const mobileNavItems = roleBaseNavItems;
 
   const initials =
     user?.name
@@ -213,7 +255,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
   const openAccountSettings = () => {
     setIsProfileOpen(false);
     setIsAccountSettingsHover(false);
-    setIsProfileModalOpen(true);
+    router.push(`/${activeLanguage}/settings/profile`);
   };
   const handleLogout = () => {
     if (user) {
@@ -273,10 +315,40 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
       >
         <div
           className={cn(
-            "flex items-center shrink-0 min-w-0",
+            "flex items-center shrink-0 min-w-0 gap-2",
             isRTL && "flex-row-reverse",
           )}
         >
+          {APP_HEADER_CONFIG.ui.showSidebarToggleInHeader && isSidebarRole ? (
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-white hover:bg-white/10 transition-all duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+              aria-label={isSidebarOpen ? "Hide sidebar" : "Show sidebar"}
+              aria-expanded={isSidebarOpen}
+            >
+              <span className="relative inline-flex h-7 w-7 items-center justify-center">
+                <PanelLeftOpen
+                  className={cn(
+                    "absolute h-7 w-7 transition-all duration-300 ease-in-out",
+                    isSidebarOpen
+                      ? "scale-75 rotate-90 opacity-0"
+                      : "scale-100 rotate-0 opacity-100",
+                  )}
+                  aria-hidden
+                />
+                <PanelLeftClose
+                  className={cn(
+                    "absolute h-7 w-7 transition-all duration-300 ease-in-out",
+                    isSidebarOpen
+                      ? "scale-100 rotate-0 opacity-100"
+                      : "scale-75 -rotate-90 opacity-0",
+                  )}
+                  aria-hidden
+                />
+              </span>
+            </button>
+          ) : null}
           <BrandLogo
             locale={activeLanguage}
             priority
@@ -641,18 +713,15 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
             className="flex flex-col gap-1 px-4 py-4 text-white"
             aria-label="Mobile navigation"
           >
-            {navItems.map((item) => {
-              const isActive =
-                pathname === `/${activeLanguage}${item.path}` ||
-                pathname.startsWith(`/${activeLanguage}${item.path}/`);
+            {mobileNavItems.map((item) => {
               return (
                 <Link
                   key={item.id}
-                  href={`/${activeLanguage}${item.path}`}
+                  href={item.href}
                   onClick={closeMobileMenu}
                   className={cn(
                     "rounded-xl px-4 py-3.5 text-base font-medium transition hover:bg-white/10 hover:text-white",
-                    isActive ? "bg-white/10 text-white" : "text-white/90",
+                    item.isActive ? "bg-white/10 text-white" : "text-white/90",
                   )}
                 >
                   {item.label}

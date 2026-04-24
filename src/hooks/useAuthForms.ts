@@ -342,7 +342,7 @@ export function useLoginFlow(locale: string) {
       dispatch(login(sessionUser));
 
       if (sessionUser.role === "admin") {
-        router.push(`/${locale}/dashboard`);
+        router.push(`/${locale}/admin-dashboard`);
       } else if (sessionUser.role === "agent") {
         router.push(`/${locale}/agent-dashboard`);
       } else {

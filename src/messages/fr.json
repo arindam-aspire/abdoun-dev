@@ -252,6 +252,7 @@
     "editProfile": "Modifier le profil",
     "recentActivity": "Activité récente",
     "loading": "Chargement...",
+    "loadDashboardError": "Impossible de charger le resume du tableau de bord. Veuillez reessayer.",
     "manageListingsTitle": "Gérer les annonces",
     "manageListingsSubtitle": "Modifier, publier les brouillons ou supprimer. Les changements sont enregistrés immédiatement.",
     "inquiryInboxTitle": "Boîte de réception",
@@ -319,6 +320,7 @@
     "loadingListings": "Chargement des annonces...",
     "loadingInquiries": "Chargement des demandes...",
     "loadingTrends": "Chargement des tendances...",
+    "trendsTryAgain": "Réessayer",
     "noListings": "Aucune annonce.",
     "noInquiries": "Aucune demande ne correspond au filtre.",
     "viewRatePageTitle": "Taux de vues par bien",
@@ -400,7 +402,8 @@
     "welcomeUser": "Bienvenue sur votre tableau de bord d'acheteur",
     "welcomeAgent": "Bienvenue dans votre espace agent",
     "welcomeAdmin": "Bienvenue sur la console admin",
-    "mockNotice": "Toutes les donnees affichees ici sont fictives pour la demo UI."
+    "mockNotice": "Toutes les donnees affichees ici sont fictives pour la demo UI.",
+    "loadAdminSummaryError": "Impossible de charger le tableau de bord administrateur. Reessayez."
   },
   "profile": {
     "title": "Page de profil",
@@ -425,6 +428,8 @@
     "displayName": "Nom d'affichage",
     "displayNamePlaceholder": "Comment vous souhaitez être affiché",
     "namePlaceholder": "Votre nom complet",
+    "emailFieldPlaceholder": "nom@exemple.com",
+    "locationFieldPlaceholder": "Ville, pays",
     "personalInformation": "Informations personnelles",
     "signInSecurity": "Connexion et sécurité",
     "privacyCookies": "Confidentialité et cookies",
@@ -444,6 +449,42 @@
     "privacyAnalyticsCookies": "Cookies d'analyse",
     "privacyAnalyticsDescription": "Nous aident à améliorer le site via des données d'usage anonymes.",
     "savePreferences": "Enregistrer les préférences"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "navLabel": "Sections du compte",
+    "navProfile": "Profil",
+    "navPassword": "Mot de passe",
+    "navEmail": "E-mail",
+    "profilePageTitle": "Profil",
+    "profilePageDescription": "Mettez à jour votre photo, votre nom et vos coordonnées.",
+    "sectionPersonal": "Informations personnelles",
+    "sectionContact": "Contact",
+    "passwordPageTitle": "Changer le mot de passe",
+    "passwordPageDescription": "Utilisez un mot de passe fort et unique.",
+    "passwordUpdatedToast": "Mot de passe mis à jour.",
+    "passwordOAuthOnly": "Vous vous êtes connecté via un compte social. Le changement de mot de passe n'est pas disponible.",
+    "emailPageTitle": "Changer l'e-mail",
+    "emailPageDescription": "Nous utiliserons votre nouvel e-mail pour la connexion et les notifications apres validation.",
+    "currentEmail": "E-mail actuel",
+    "newEmail": "Nouvel e-mail",
+    "confirmEmail": "Confirmer l'e-mail",
+    "submitEmail": "Mettre a jour l'e-mail",
+    "updatingEmail": "Mise a jour...",
+    "emailUpdatedToast": "Demande d'e-mail envoyee. Verifiez votre boite pour confirmer.",
+    "toastProfileSaved": "Profil enregistre.",
+    "toastError": "Une erreur s'est produite. Reessayez.",
+    "loading": "Chargement...",
+    "navProfileShort": "Profil",
+    "navPasswordShort": "Secret",
+    "navEmailShort": "Mail",
+    "emailInvalid": "Saisissez une adresse e-mail valide.",
+    "emailMismatch": "Les adresses ne correspondent pas.",
+    "emailRequired": "Ce champ est requis.",
+    "currentPasswordRequired": "Le mot de passe actuel est requis.",
+    "passwordMinLength": "Le mot de passe doit comporter au moins 8 caracteres.",
+    "passwordConfirmMismatch": "Le nouveau mot de passe et la confirmation ne correspondent pas.",
+    "passwordPolicyNotMet": "Le mot de passe doit respecter toute la politique (longueur, casse, chiffre, symbole)."
   },
   "favourites": {
     "title": "Mes favoris",
@@ -805,5 +846,14 @@
         "description": "A strong commitment to honesty, transparency, and reliability."
       }
     }
+  },
+  "underDevelopment": {
+    "badge": "Bientot disponible",
+    "title": "Cette page est en cours de developpement",
+    "subtitle": "Nous construisons cette experience et elle sera bientot disponible.",
+    "backHome": "Retour a l'accueil",
+    "goDashboard": "Aller au tableau de bord",
+    "support": "Besoin d'aide ? Contactez le support.",
+    "expected": "Prevu dans une prochaine version"
   }
 }

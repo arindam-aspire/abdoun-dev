@@ -41,7 +41,7 @@
     {
       "id": "adminDashboard",
       "label": "Dashboard",
-      "path": "/dashboard",
+      "path": "/admin-dashboard",
       "roles": ["admin"],
       "placement": "header"
     },
@@ -65,6 +65,10 @@
       "roles": ["guest", "user"]
     }
   },
+  "ui": {
+    "showSidebarToggleInHeader": true,
+    "reserveSidebarToggleSpace": true
+  },
   "profileMenu": {
     "user": {
       "showFavourites": true,
@@ -78,7 +82,7 @@
       "showFavourites": false,
       "showSavedSearches": false,
       "showRecentlyViewed": false,
-      "showNotifications": false,
+      "showNotifications": true,
       "showAccountSettings": true,
       "showLogout": true
     },
@@ -86,7 +90,7 @@
       "showFavourites": false,
       "showSavedSearches": false,
       "showRecentlyViewed": false,
-      "showNotifications": false,
+      "showNotifications": true,
       "showAccountSettings": true,
       "showLogout": true
     }

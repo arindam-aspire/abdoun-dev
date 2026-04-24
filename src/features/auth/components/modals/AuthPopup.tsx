@@ -91,7 +91,13 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
   const [redirectingToForceChange, setRedirectingToForceChange] = useState(false);
 
   useEffect(() => {
-    if (open && (pathname === `/${locale}/dashboard` || pathname === `/${locale}/agent-dashboard`)) {
+    if (
+      open &&
+      (pathname === `/${locale}/admin-dashboard` ||
+        pathname.startsWith(`/${locale}/admin-dashboard/`) ||
+        pathname === `/${locale}/agent-dashboard` ||
+        pathname.startsWith(`/${locale}/agent-dashboard/`))
+    ) {
       onClose();
     }
   }, [locale, onClose, open, pathname]);
@@ -226,7 +232,7 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
             const withRole = { ...sessionUser, role: "admin" as const };
             persistSessionAndLogin(withRole);
             onClose();
-            router.push(`/${locale}/dashboard`);
+            router.push(`/${locale}/admin-dashboard`);
             return;
           }
         } catch {
@@ -250,7 +256,7 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
 
       if (sessionUser.role === "admin") {
         setToast({ kind: "success", message: "Logged in as admin." });
-        router.push(`/${locale}/dashboard`);
+        router.push(`/${locale}/admin-dashboard`);
       } else if (sessionUser.role === "agent") {
         setToast({ kind: "success", message: "Logged in as agent." });
         router.push(`/${locale}/agent-dashboard`);

@@ -28,16 +28,17 @@ export function BottomNav() {
     { key: "team", href: `${basePath}/team`, label: t("bottomNav.team"), icon: Users, match: () => pathname.startsWith(`${basePath}/team`) },
     {
       key: "account",
-      href: user?.role === "agent"
-        ? `${basePath}/agent-dashboard`
-        : user
-          ? `${basePath}/dashboard`
-          : basePath,
+      href:
+        user?.role === "agent"
+          ? `${basePath}/agent-dashboard`
+          : user?.role === "admin"
+            ? `${basePath}/admin-dashboard`
+            : basePath,
       label: t("bottomNav.account"),
       icon: User,
       match: () =>
         pathname.startsWith(`${basePath}/agent-dashboard`) ||
-        pathname.startsWith(`${basePath}/dashboard`),
+        pathname.startsWith(`${basePath}/admin-dashboard`),
     },
   ];
 

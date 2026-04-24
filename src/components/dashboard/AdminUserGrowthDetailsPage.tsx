@@ -1,37 +1,53 @@
- "use client";
-
+"use client";
 
 import type { AppLocale } from "@/i18n/routing";
-import { getAdminDashboardData } from "@/services/adminDashboardMockService";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SparkBarsChart } from "@/features/admin-agents/components/shared-charts/SparkBarsChart";
+import { AdminUserGrowthDetailsPageSkeleton } from "@/features/admin-agents/admin-dashboard/components/AdminUserGrowthDetailsPageSkeleton";
+import { Toast } from "@/components/ui";
+import type { ToastKind } from "@/components/ui/toast";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import { loadAdminUserGrowthTrends } from "@/features/admin-agents/admin-dashboard/adminUserGrowthTrendsSlice";
 
 type Row = {
   label: string;
   value: number;
 };
 
+const TRENDS_MONTHS = 12;
+
 export function AdminUserGrowthDetailsPage() {
   const locale = useLocale() as AppLocale;
-  const [loading, setLoading] = useState(true);
-  const [labels, setLabels] = useState<string[]>([]);
-  const [values, setValues] = useState<number[]>([]);
+  const dispatch = useAppDispatch();
+  const { monthLabels: labels, values, status, error } = useAppSelector(
+    (state) => state.adminUserGrowthTrends,
+  );
+  const [toast, setToast] = useState<{ kind: ToastKind; message: string } | null>(null);
+  const errorToastSentRef = useRef(false);
 
   useEffect(() => {
-    let cancelled = false;
-    getAdminDashboardData().then((data) => {
-      if (cancelled) return;
-      setLabels(data.monthLabels);
-      setValues(data.userGrowthSeries);
-      setLoading(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    void dispatch(loadAdminUserGrowthTrends(TRENDS_MONTHS));
+  }, [dispatch]);
+
+  const loading = status === "idle" || status === "loading";
+
+  useEffect(() => {
+    if (loading) {
+      errorToastSentRef.current = false;
+      return;
+    }
+    if (status !== "failed" || !error) {
+      return;
+    }
+    if (errorToastSentRef.current) {
+      return;
+    }
+    errorToastSentRef.current = true;
+    setToast({ kind: "error", message: error });
+  }, [loading, status, error]);
 
   const rows = useMemo<Row[]>(() => {
     return labels.map((label, idx) => ({
@@ -57,18 +73,55 @@ export function AdminUserGrowthDetailsPage() {
   }, [labels, values]);
 
   if (loading) {
+    return <AdminUserGrowthDetailsPageSkeleton />;
+  }
+
+  if (status === "failed") {
     return (
       <div className="space-y-6">
-        <p className="text-charcoal/70">Loading trends...</p>
+        <div className="flex items-center gap-4">
+          <Link
+            href={`/${locale}/admin-dashboard`}
+            className="inline-flex items-center gap-2 text-sm font-medium text-charcoal/80 hover:text-charcoal"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Link>
+        </div>
+        <div className="px-1">
+          <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
+            User growth details
+          </h1>
+          <p className="mt-2 text-sm text-red-700" role="alert" aria-live="assertive">
+            {error ?? "Unable to load trends."}
+          </p>
+        </div>
+        {toast ? (
+          <Toast
+            kind={toast.kind}
+            message={toast.message}
+            duration={6000}
+            onClose={() => setToast(null)}
+          />
+        ) : null}
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {toast ? (
+        <Toast
+          kind={toast.kind}
+          message={toast.message}
+          duration={6000}
+          onClose={() => setToast(null)}
+        />
+      ) : null}
+
       <div className="flex items-center gap-4">
         <Link
-          href={`/${locale}/dashboard`}
+          href={`/${locale}/admin-dashboard`}
           className="inline-flex items-center gap-2 text-sm font-medium text-charcoal/80 hover:text-charcoal"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -81,7 +134,7 @@ export function AdminUserGrowthDetailsPage() {
           User growth details
         </h1>
         <p className="mt-1 text-size-sm text-charcoal/70">
-          Monthly signups over the last 12 months.
+          Monthly signups over the last {TRENDS_MONTHS} months.
         </p>
       </div>
 
@@ -89,7 +142,7 @@ export function AdminUserGrowthDetailsPage() {
         values={values}
         labels={labels}
         title="User growth"
-        subtitle="New user signups over the last 12 months"
+        subtitle={`New user signups over the last ${TRENDS_MONTHS} months`}
         showAllXTicks={true}
         showValueLabels={true}
         showSummary={false}
@@ -105,7 +158,7 @@ export function AdminUserGrowthDetailsPage() {
               Quick insights and month-by-month totals.
             </p>
           </div>
-          <p className="text-xs text-charcoal/60">Last 12 months</p>
+          <p className="text-xs text-charcoal/60">Last {TRENDS_MONTHS} months</p>
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
@@ -186,4 +239,3 @@ export function AdminUserGrowthDetailsPage() {
     </div>
   );
 }
-

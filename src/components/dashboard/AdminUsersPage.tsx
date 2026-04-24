@@ -599,7 +599,7 @@ export function AdminUsersPage() {
         </div>
       </div>
 
-      <Card className="rounded-2xl border-subtle">
+      <Card className="rounded-xl border-subtle">
         <CardHeader className="flex flex-col gap-3 space-y-0 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-secondary" />

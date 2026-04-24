@@ -1,7 +1,9 @@
 "use client";
 
 import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard";
+import { Toast } from "@/components/ui";
 import { useAgentDashboard } from "@/features/admin-agents/agent-dashboard/hooks/useAgentDashboard";
+import { AgentDashboardHomeSkeleton } from "@/features/admin-agents/agent-dashboard/components/AgentDashboardHomeSkeleton";
 import { ChartContainer } from "@/features/admin-agents/components/ChartContainer";
 import { InquiryTrendLineChart } from "@/features/admin-agents/components/shared-charts/InquiryTrendLineChart";
 import { PerformanceBarChart } from "@/features/admin-agents/components/shared-charts/PerformanceBarChart";
@@ -22,23 +24,64 @@ import {
 } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import type { ToastKind } from "@/components/ui/toast";
 
 export function AgentDashboardHome() {
   const locale = useLocale() as AppLocale;
   const t = useTranslations("dashboard");
   const tAgent = useTranslations("agentDashboard");
   const user = useAppSelector(selectCurrentUser);
-  const { data, performanceData, loading } = useAgentDashboard();
+  const { data, performanceData, loading, error } = useAgentDashboard();
+  const [toast, setToast] = useState<{
+    kind: ToastKind;
+    message: string;
+  } | null>(null);
+  const errorToastSentRef = useRef(false);
 
-  if (loading || !data) {
+  useEffect(() => {
+    if (loading) {
+      errorToastSentRef.current = false;
+      return;
+    }
+    if (!error) {
+      return;
+    }
+    if (errorToastSentRef.current) {
+      return;
+    }
+    errorToastSentRef.current = true;
+    const message =
+      error instanceof Error ? error.message : tAgent("loadDashboardError");
+    setToast({ kind: "error", message });
+  }, [loading, error, tAgent]);
+
+  if (loading) {
+    return <AgentDashboardHomeSkeleton />;
+  }
+
+  if (error || !data) {
+    const fallbackErrorMessage =
+      error instanceof Error ? error.message : tAgent("loadDashboardError");
+
     return (
       <div className="space-y-6">
         <div className="px-1">
           <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
             {tAgent("agentDashboardTitle")}
           </h1>
-          <p className="mt-1 text-size-sm text-charcoal/70">{tAgent("loading")}</p>
+          <p className="mt-1 text-size-sm text-red-700" role="alert" aria-live="assertive">
+            {fallbackErrorMessage}
+          </p>
         </div>
+        {toast ? (
+          <Toast
+            kind={toast.kind}
+            message={toast.message}
+            duration={6000}
+            onClose={() => setToast(null)}
+          />
+        ) : null}
       </div>
     );
   }
@@ -49,7 +92,7 @@ export function AgentDashboardHome() {
     {
       label: tAgent("myListings"),
       value: String(data.totalProperties),
-      deltaTrend: 2,
+      deltaTrend: data.listingsChangePercent,
       icon: Building2,
       iconBgClassName:
         "bg-[var(--color-charcoal)]/8 ring-1 ring-[var(--color-charcoal)]/15",
@@ -59,7 +102,7 @@ export function AgentDashboardHome() {
     {
       label: tAgent("leadsThisMonth"),
       value: String(data.leadsThisMonth),
-      deltaTrend: -1,
+      deltaTrend: data.leadsChangePercent,
       icon: Mail,
       iconBgClassName:
         "bg-[var(--color-royal-blue)]/12 ring-1 ring-[var(--color-royal-blue)]/20",
@@ -69,7 +112,7 @@ export function AgentDashboardHome() {
     {
       label: tAgent("dealCloseCount"),
       value: String(data.dealCloseCount),
-      deltaTrend: 3,
+      deltaTrend: data.dealsClosedChangePercent,
       icon: Handshake,
       iconBgClassName: "bg-amber-500/14 ring-1 ring-amber-500/20",
       href: `/${locale}/agent-dashboard/deals?status=closed`,
@@ -79,7 +122,7 @@ export function AgentDashboardHome() {
     {
       label: tAgent("totalPropertyViews"),
       value: String(data.totalPropertyViews),
-      deltaTrend: 0.5,
+      deltaTrend: data.propertyViewsChangePercent,
       icon: Eye,
       iconBgClassName: "bg-emerald-500/14 ring-1 ring-emerald-500/20",
       href: `/${locale}/agent-dashboard/view-rate`,
@@ -126,7 +169,7 @@ export function AgentDashboardHome() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
+        <article className="rounded-xl border border-subtle bg-white p-4 shadow-sm md:p-5">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-charcoal">
             <ShieldCheck className="h-4 w-4 text-secondary" />
             {tAgent("quickActions")}
@@ -161,7 +204,7 @@ export function AgentDashboardHome() {
               <Handshake className="h-4 w-4" />
             </Link>
             <Link
-              href={`/${locale}/agent-dashboard`}
+              href={`/${locale}/settings/profile`}
               className="flex w-full items-center justify-between rounded-xl border border-subtle bg-surface px-3 py-2 text-sm text-charcoal transition hover:bg-primary/5"
             >
               <span>{tAgent("editProfile")}</span>
@@ -170,12 +213,12 @@ export function AgentDashboardHome() {
           </div>
         </article>
 
-        <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
+        <article className="rounded-xl border border-subtle bg-white p-4 shadow-sm md:p-5">
           <h2 className="text-sm font-semibold text-charcoal">{tAgent("recentActivity")}</h2>
           <div className="mt-4 space-y-2">
-            {data.recentActivity.map((item) => (
+            {data.recentActivity.map((item, index) => (
               <div
-                key={`${item.text}-${item.time}`}
+                key={`${item.text}-${item.time}-${index}`}
                 className="rounded-xl border border-subtle bg-surface px-3 py-2"
               >
                 <div className="flex items-start gap-2">

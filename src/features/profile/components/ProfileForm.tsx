@@ -42,6 +42,10 @@ export interface ProfileFormProps {
   className?: string;
   /** When true, show a compact layout suitable for modal. Default true. */
   compact?: boolean;
+  /** Fired after a successful save (e.g. toast on settings page). */
+  onSaveSuccess?: () => void;
+  /** Fired when save fails. */
+  onSaveError?: (error: unknown) => void;
 }
 
 /**
@@ -53,6 +57,8 @@ export function ProfileForm({
   isRtl = false,
   className,
   compact = true,
+  onSaveSuccess,
+  onSaveError,
 }: ProfileFormProps) {
   const t = useTranslations("profile");
   const profileData = useProfile();
@@ -152,12 +158,15 @@ export function ProfileForm({
           location: form.location,
           ...(form.avatarUrl !== undefined && { avatarUrl: form.avatarUrl }),
         });
+        onSaveSuccess?.();
         onClose?.();
+      } catch (err) {
+        onSaveError?.(err);
       } finally {
         setSaving(false);
       }
     },
-    [profileData, isDirty, form, onClose],
+    [profileData, isDirty, form, onClose, onSaveSuccess, onSaveError],
   );
 
   if (!profileData) {
@@ -266,8 +275,9 @@ export function ProfileForm({
               type="text"
               value={form.fullName ?? ""}
               onChange={handleChange("fullName")}
-              placeholder="John Doe"
+              placeholder={t("namePlaceholder")}
               autoComplete="name"
+              disabled={saving}
             />
           </div>
           <div>
@@ -279,8 +289,9 @@ export function ProfileForm({
               type="email"
               value={form.email ?? ""}
               onChange={handleChange("email")}
-              placeholder="john.doe@example.com"
+              placeholder={t("emailFieldPlaceholder")}
               autoComplete="email"
+              disabled={saving}
             />
           </div>
           <div>
@@ -296,6 +307,7 @@ export function ProfileForm({
               showFlag={true}
               showCountryCode={true}
               showDialCode={true}
+              disabled={saving}
             />
           </div>
           <div>
@@ -310,7 +322,8 @@ export function ProfileForm({
               type="text"
               value={form.location ?? ""}
               onChange={handleChange("location")}
-              placeholder="Dubai, UAE"
+              placeholder={t("locationFieldPlaceholder")}
+              disabled={saving}
             />
           </div>
         </div>

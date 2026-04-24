@@ -238,15 +238,6 @@ export function AgentListingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link
-          href={`/${locale}/agent-dashboard`}
-          className="inline-flex items-center gap-2 text-sm font-medium text-charcoal/80 hover:text-charcoal"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t("backToDashboard")}
-        </Link>
-      </div>
       <div className="flex items-center justify-between gap-4 px-1">
         <div>
           <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
@@ -258,10 +249,10 @@ export function AgentListingsPage() {
         </div>
         <Link
           href={`/${locale}/agent-dashboard/add-property`}
-          className="inline-flex items-center gap-2 rounded-xl border border-primary bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary/90"
+          className="inline-flex items-center gap-2 rounded-lg border border-primary bg-secondary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
-          {t("addProperty")}
+          {t("addNewProperty")}
         </Link>
       </div>
 
@@ -291,7 +282,7 @@ export function AgentListingsPage() {
         </div>
       </div>
 
-      <article className="rounded-2xl border border-subtle bg-white shadow-sm overflow-hidden">
+      <article className="rounded-xl border border-subtle bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-left">
             <thead>

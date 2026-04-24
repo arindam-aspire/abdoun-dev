@@ -31,6 +31,9 @@ export interface AppHeaderConfig {
   actions: {
     listProperty: HeaderActionConfig;
   };
+  ui: {
+    showSidebarToggleInHeader: boolean;
+  };
   profileMenu: Record<UserRole, HeaderProfileMenuConfig>;
   publicLinks: {
     defaultVisible: boolean;
@@ -38,10 +41,21 @@ export interface AppHeaderConfig {
   };
 }
 
+function parseBooleanEnv(raw: string | undefined, fallback: boolean): boolean {
+  if (raw === undefined) return fallback;
+  return raw.toLowerCase() === "true";
+}
+
 export const APP_HEADER_CONFIG: AppHeaderConfig = {
   navItems: navConfigJson.navItems as HeaderNavItem[],
   actions: {
     listProperty: navConfigJson.actions.listProperty as HeaderActionConfig,
+  },
+  ui: {
+    showSidebarToggleInHeader: parseBooleanEnv(
+      process.env.NEXT_PUBLIC_SHOW_SIDEBAR_TOGGLE_IN_HEADER,
+      false,
+    ),
   },
   profileMenu: navConfigJson.profileMenu as Record<UserRole, HeaderProfileMenuConfig>,
   publicLinks: {

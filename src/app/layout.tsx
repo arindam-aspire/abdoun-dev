@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { hasLocale } from "next-intl";
 import { getLocale } from "next-intl/server";
 import { Geist, Geist_Mono, Tajawal } from "next/font/google";
-import { routing } from "@/i18n/routing";
+import { isRtlLocale, routing } from "@/i18n/routing";
 import { AppShell } from "@/components/layout/app-shell";
 import "./globals.css";
 
@@ -36,7 +36,7 @@ export default async function RootLayout({
   const locale = hasLocale(routing.locales, currentLocale)
     ? currentLocale
     : routing.defaultLocale;
-  const direction = locale === "ar" ? "rtl" : "ltr";
+  const direction = isRtlLocale(locale) ? "rtl" : "ltr";
 
   return (
     <html lang={locale} dir={direction} suppressHydrationWarning>

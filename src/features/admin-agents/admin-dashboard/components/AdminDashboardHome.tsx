@@ -1,14 +1,15 @@
 "use client";
 
 import { useAdminDashboard } from "@/features/admin-agents/admin-dashboard/hooks/useAdminDashboard";
+import { AdminDashboardHomeSkeleton } from "@/features/admin-agents/admin-dashboard/components/AdminDashboardHomeSkeleton";
 import { DotLineChart } from "@/features/admin-agents/components/shared-charts/DotLineChart";
 import { InquiryTrendLineChart } from "@/features/admin-agents/components/shared-charts/InquiryTrendLineChart";
 import { SparkBarsChart } from "@/features/admin-agents/components/shared-charts/SparkBarsChart";
 import type { AppLocale } from "@/i18n/routing";
-import type { AdminDashboardData } from "@/services/adminDashboardMockService";
-import { getAdminDashboardData } from "@/services/adminDashboardMockService";
-import { getClosedLeadsCountForDashboard } from "@/services/leadInquiriesMockService";
 import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard";
+import { Toast } from "@/components/ui";
+import type { ToastKind } from "@/components/ui/toast";
+import { useTranslations } from "@/hooks/useTranslations";
 import {
   BarChart3,
   Building2,
@@ -23,7 +24,7 @@ import {
   Users
 } from "lucide-react";
 import { useLocale } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ComponentProps } from "react";
 import Link from "next/link";
 import { PerformanceBarChart } from "../../components/shared-charts/PerformanceBarChart";
 
@@ -74,51 +75,6 @@ type TopAgent = {
 /* ------------------------------------------------------------------ */
 /*  Static mock data (non-KPI sections)                                */
 /* ------------------------------------------------------------------ */
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const APPROVAL_QUEUE: QueueItem[] = [
-  {
-    ref: "PROP-4832",
-    title: "Modern Villa, Abdoun",
-    submittedBy: "Nour Al-Hassan",
-    city: "Amman",
-    submittedAt: "08:45 AM",
-    status: "pending",
-  },
-  {
-    ref: "PROP-4821",
-    title: "Commercial Office, Sweifieh",
-    submittedBy: "Ahmad Darwish",
-    city: "Amman",
-    submittedAt: "09:10 AM",
-    status: "review",
-  },
-  {
-    ref: "PROP-4817",
-    title: "Apartment, Dabouq",
-    submittedBy: "Rana Majali",
-    city: "Amman",
-    submittedAt: "09:44 AM",
-    status: "pending",
-  },
-  {
-    ref: "PROP-4799",
-    title: "Land Parcel, Airport Road",
-    submittedBy: "Hadeel Naser",
-    city: "Amman",
-    submittedAt: "10:18 AM",
-    status: "approved",
-  },
-];
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const LEAD_SOURCES: LeadSource[] = [
-  { source: "Organic Search", leads: 1264, conversionRate: "12.4%", share: 41 },
-  { source: "WhatsApp", leads: 894, conversionRate: "16.8%", share: 29 },
-  { source: "Meta Ads", leads: 621, conversionRate: "9.6%", share: 20 },
-  { source: "Direct Referral", leads: 299, conversionRate: "18.1%", share: 10 },
-];
-
 const RECENT_ACTIVITY: ActivityItem[] = [
   {
     text: "Agent profile approved for Sami Haddad.",
@@ -224,29 +180,63 @@ function formatDelta(value: number, suffix = ""): string {
 
 export function AdminDashboardHome() {
   const locale = useLocale() as AppLocale;
-  const { data, loading } = useAdminDashboard();
+  const tDashboard = useTranslations("dashboard");
+  const { data, loading, error } = useAdminDashboard();
+  const [toast, setToast] = useState<{ kind: ToastKind; message: string } | null>(null);
+  const errorToastSentRef = useRef(false);
 
-  if (loading || !data) {
+  useEffect(() => {
+    if (loading) {
+      errorToastSentRef.current = false;
+      return;
+    }
+    if (!error) {
+      return;
+    }
+    if (errorToastSentRef.current) {
+      return;
+    }
+    errorToastSentRef.current = true;
+    setToast({
+      kind: "error",
+      message: error.message || tDashboard("loadAdminSummaryError"),
+    });
+  }, [loading, error, tDashboard]);
+
+  if (loading) {
+    return <AdminDashboardHomeSkeleton />;
+  }
+
+  if (error || !data) {
+    const fallbackMessage = error?.message || tDashboard("loadAdminSummaryError");
     return (
       <div className="space-y-6">
         <div className="px-1">
           <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
             Admin Dashboard
           </h1>
-          <p className="mt-1 text-size-sm text-charcoal/70">Loading dashboard data…</p>
+          <p className="mt-1 text-size-sm text-red-700" role="alert" aria-live="assertive">
+            {fallbackMessage}
+          </p>
         </div>
+        {toast ? (
+          <Toast
+            kind={toast.kind}
+            message={toast.message}
+            duration={6000}
+            onClose={() => setToast(null)}
+          />
+        ) : null}
       </div>
     );
   }
 
-  const closedLeadsThisMonth = getClosedLeadsCountForDashboard();
-
-  const monthParam = new Date().toISOString().slice(0, 7);
-  const shortMonthParam = new Date().toISOString().slice(2, 7); // "26-03"
+  const monthParam = data.month;
+  const shortMonthParam = data.month.slice(2);
 
   const metricCards: Array<
     { id: "users" | "closedDeals" | "pendingApprovals" | "listings" | "leads" } & Omit<
-      React.ComponentProps<typeof DashboardMetricCard>,
+      ComponentProps<typeof DashboardMetricCard>,
       "className"
     >
   > = [
@@ -268,18 +258,18 @@ export function AdminDashboardHome() {
       const toneClass = kpiToneClass("success");
       const conversionRate =
         data.leadsThisMonth > 0
-          ? ((closedLeadsThisMonth / data.leadsThisMonth) * 100).toFixed(1)
+          ? ((data.closedDealsThisMonth / data.leadsThisMonth) * 100).toFixed(1)
           : "0.0";
       return {
         id: "closedDeals",
         label: "Deal Closed this Month",
-        value: closedLeadsThisMonth.toLocaleString(),
+        value: data.closedDealsThisMonth.toLocaleString(),
         icon: CheckCircle2,
         href: `/${locale}/deals?month=${encodeURIComponent(shortMonthParam)}`,
         iconBgClassName: toneClass.iconWrap,
         iconClassName: toneClass.icon,
         valueClassName: toneClass.value,
-        deltaTrend: data.leadsMoMDelta,
+        deltaTrend: null,
         subLine: `Conversion Rate: ${conversionRate}%`,
         subLineClassName: toneClass.delta,
       };
@@ -343,13 +333,13 @@ export function AdminDashboardHome() {
       {/* ── KPI Cards ── */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {metricCards.map(({ id, ...card }) => (
-          <DashboardMetricCard key={id} {...card} className="transition hover:shadow-md" />
+          <DashboardMetricCard key={id} {...card} className="transition hover:shadow-md" useLink={false} />
         ))}
       </section>
 
       {/* ── Charts (Chart.js) ── */}
       <section className="grid gap-4 md:grid-cols-2">
-        <Link href={`/${locale}/dashboard/user-growth`} className="block transition hover:opacity-95">
+        <Link href={`/${locale}/admin-dashboard/user-growth`} className="block transition hover:opacity-95">
           <InquiryTrendLineChart
             labels={data.monthLabels}
             values={data.userGrowthSeries}
@@ -361,7 +351,7 @@ export function AdminDashboardHome() {
           />
         </Link>
         <Link
-          href={`/${locale}/dashboard/listing-activity`}
+          href={`/${locale}/admin-dashboard/listing-activity`}
           className="block transition hover:opacity-95"
         >
           <SparkBarsChart
@@ -373,7 +363,7 @@ export function AdminDashboardHome() {
           />
         </Link>
         <Link
-          href={`/${locale}/dashboard/lead-volume`}
+          href={`/${locale}/admin-dashboard/lead-volume`}
           className="block transition hover:opacity-95"
         >
           <DotLineChart
@@ -385,7 +375,7 @@ export function AdminDashboardHome() {
           />
         </Link>
         <Link
-          href={`/${locale}/property-performance`}
+          href={`/${locale}/admin-dashboard/view-rate`}
           className="block transition hover:opacity-95"
         >
           <PerformanceBarChart

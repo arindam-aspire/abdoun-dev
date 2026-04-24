@@ -1,10 +1,10 @@
 import { AuthenticatedRouteGuard } from "@/components/layout/AuthenticatedRouteGuard";
-import { SavedSearchesPage } from "@/features/saved-searches/components/SavedSearchesPage";
+import { SavedSearchesView } from "@/features/saved-searches/components/SavedSearchesView";
 
 export default function SavedSearchesRoutePage() {
   return (
     <AuthenticatedRouteGuard>
-      <SavedSearchesPage />
+      <SavedSearchesView variant="main" />
     </AuthenticatedRouteGuard>
   );
 }

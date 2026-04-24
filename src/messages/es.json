@@ -252,6 +252,7 @@
     "editProfile": "Editar perfil",
     "recentActivity": "Actividad reciente",
     "loading": "Cargando...",
+    "loadDashboardError": "No se pudo cargar el resumen del panel. Inténtalo de nuevo.",
     "manageListingsTitle": "Gestionar anuncios",
     "manageListingsSubtitle": "Editar, publicar borradores o eliminar. Los cambios se guardan al instante.",
     "inquiryInboxTitle": "Bandeja de consultas",
@@ -319,6 +320,7 @@
     "loadingListings": "Cargando anuncios...",
     "loadingInquiries": "Cargando consultas...",
     "loadingTrends": "Cargando tendencias...",
+    "trendsTryAgain": "Intentar de nuevo",
     "noListings": "Aún no hay anuncios.",
     "noInquiries": "Ninguna consulta coincide con el filtro.",
     "viewRatePageTitle": "Tasa de visualización por propiedad",
@@ -400,7 +402,8 @@
     "welcomeUser": "Bienvenido a tu panel de comprador",
     "welcomeAgent": "Bienvenido a tu espacio de agente",
     "welcomeAdmin": "Bienvenido a la consola de administrador",
-    "mockNotice": "Todos los datos mostrados aqui son ficticios para la interfaz."
+    "mockNotice": "Todos los datos mostrados aqui son ficticios para la interfaz.",
+    "loadAdminSummaryError": "No se pudo cargar el panel de administracion. Inténtelo de nuevo."
   },
   "profile": {
     "title": "Pagina de perfil",
@@ -425,6 +428,8 @@
     "displayName": "Nombre para mostrar",
     "displayNamePlaceholder": "Cómo quieres que te muestren",
     "namePlaceholder": "Tu nombre completo",
+    "emailFieldPlaceholder": "nombre@ejemplo.com",
+    "locationFieldPlaceholder": "Ciudad, país",
     "personalInformation": "Información personal",
     "signInSecurity": "Inicio de sesión y seguridad",
     "privacyCookies": "Privacidad y cookies",
@@ -444,6 +449,42 @@
     "privacyAnalyticsCookies": "Cookies de análisis",
     "privacyAnalyticsDescription": "Nos ayudan a mejorar el sitio con datos de uso anónimos.",
     "savePreferences": "Guardar preferencias"
+  },
+  "settings": {
+    "title": "Ajustes",
+    "navLabel": "Secciones de la cuenta",
+    "navProfile": "Perfil",
+    "navPassword": "Contraseña",
+    "navEmail": "Correo",
+    "profilePageTitle": "Perfil",
+    "profilePageDescription": "Actualice su foto, nombre e información de contacto.",
+    "sectionPersonal": "Información personal",
+    "sectionContact": "Contacto",
+    "passwordPageTitle": "Cambiar contraseña",
+    "passwordPageDescription": "Use una contraseña segura que no reutilice en otros sitios.",
+    "passwordUpdatedToast": "Contraseña actualizada correctamente.",
+    "passwordOAuthOnly": "Inició sesión con una red social. No puede cambiar la contraseña con este método.",
+    "emailPageTitle": "Cambiar correo",
+    "emailPageDescription": "Usaremos su nuevo correo para el acceso y notificaciones tras la verificación.",
+    "currentEmail": "Correo actual",
+    "newEmail": "Nuevo correo",
+    "confirmEmail": "Confirmar nuevo correo",
+    "submitEmail": "Actualizar correo",
+    "updatingEmail": "Actualizando...",
+    "emailUpdatedToast": "Solicitud de cambio de correo enviada. Revise su bandeja para confirmar.",
+    "toastProfileSaved": "Perfil guardado correctamente.",
+    "toastError": "Algo salió mal. Inténtelo de nuevo.",
+    "loading": "Cargando...",
+    "navProfileShort": "Perfil",
+    "navPasswordShort": "Clave",
+    "navEmailShort": "Correo",
+    "emailInvalid": "Introduzca un correo válido.",
+    "emailMismatch": "Los correos no coinciden.",
+    "emailRequired": "Este campo es obligatorio.",
+    "currentPasswordRequired": "La contraseña actual es obligatoria.",
+    "passwordMinLength": "La contraseña debe tener al menos 8 caracteres.",
+    "passwordConfirmMismatch": "La nueva contraseña y la confirmación no coinciden.",
+    "passwordPolicyNotMet": "La contraseña debe cumplir la política (longitud, mayúscula, minúscula, número, símbolo)."
   },
   "favourites": {
     "title": "Mis favoritos",
@@ -783,5 +824,14 @@
         "description": "A strong commitment to honesty, transparency, and reliability."
       }
     }
+  },
+  "underDevelopment": {
+    "badge": "Proximamente",
+    "title": "Esta pagina esta en desarrollo",
+    "subtitle": "Estamos construyendo esta experiencia y estara disponible pronto.",
+    "backHome": "Volver al inicio",
+    "goDashboard": "Ir al panel",
+    "support": "Necesitas ayuda? Contacta con soporte.",
+    "expected": "Disponible en una proxima version"
   }
 }

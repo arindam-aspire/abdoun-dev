@@ -112,6 +112,10 @@ export function getDashboardData(): Promise<AgentDashboardData> {
     totalPropertyViews,
     dealCloseCount,
     conversionRate,
+    listingsChangePercent: 2,
+    leadsChangePercent: -1,
+    dealsClosedChangePercent: 3,
+    propertyViewsChangePercent: 0.5,
     inquiryTrendLast30Days: trend,
     recentActivity: [
       { text: "New inquiry on Villa Abdoun, 4BR.", time: "12 min ago", tone: "success" },

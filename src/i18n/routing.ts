@@ -9,3 +9,10 @@ export const routing = defineRouting({
 });
 
 export type AppLocale = (typeof routing.locales)[number];
+
+const RTL_LOCALES: ReadonlySet<AppLocale> = new Set(["ar"]);
+
+/** Locales that use right-to-left layout; keep in sync with <html dir> in app/layout and UiProvider. */
+export function isRtlLocale(locale: string): boolean {
+  return RTL_LOCALES.has(locale as AppLocale);
+}

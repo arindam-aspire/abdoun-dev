@@ -80,10 +80,10 @@ export function InquiryTrendLineChart({
 
   return (
     <section
-      className={`rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5 ${className}`}
+      className={`rounded-xl border border-subtle bg-white p-4 shadow-sm md:p-5 ${className}`}
     >
       {title ?? subtitle ? (
-        <div className="mb-3">
+        <div className="mb-4">
           <div className="flex items-center justify-between gap-2">
             {title ? (
               <h3 className="text-sm font-semibold text-charcoal">{title}</h3>
@@ -100,7 +100,7 @@ export function InquiryTrendLineChart({
           {subtitle ? <p className="mt-1 text-xs text-charcoal/65">{subtitle}</p> : null}
         </div>
       ) : null}
-      <div className="h-[208px] w-full">
+      <div className="h-[216px] w-full">
         <Line data={data} options={options} />
       </div>
     </section>

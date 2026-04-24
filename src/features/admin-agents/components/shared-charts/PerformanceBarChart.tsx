@@ -72,7 +72,7 @@ export function PerformanceBarChart({
 
   return (
     <section
-      className={`rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5 ${className}`}
+      className={`rounded-xl border border-subtle bg-white p-4 shadow-sm md:p-5 ${className}`}
     >
       {title ? (
         <div className="mb-4 flex items-center justify-between gap-2">

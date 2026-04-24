@@ -52,8 +52,13 @@ export interface AgentDashboardData {
   dealCloseCount: number;
   /** Conversion rate = (dealCloseCount / leadsThisMonth) * 100. */
   conversionRate: number;
+  /** Percent change vs prior period from API (optional). Shown on metric cards. */
+  listingsChangePercent: number | null;
+  leadsChangePercent: number | null;
+  dealsClosedChangePercent: number | null;
+  propertyViewsChangePercent: number | null;
   inquiryTrendLast30Days: number[];
-  recentActivity: { text: string; time: string; tone: "neutral" | "success" | "warning" }[];
+  recentActivity: { text: string; time: string; tone: "neutral" | "success" | "warning" | "info" }[];
 }
 
 export interface InquiryTrendDay {

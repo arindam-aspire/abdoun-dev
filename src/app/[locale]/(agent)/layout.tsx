@@ -1,6 +1,6 @@
 import { AgentRouteGuard } from "@/components/layout/AgentRouteGuard";
-import AppFooter from "@/components/layout/AppFooter";
-import { AppHeader } from "@/components/layout/AppHeader";
+import { SidebarLayoutFrame } from "@/components/layout/SidebarLayoutFrame";
+import { SidebarProvider } from "@/context/SidebarContext";
 
 export default function AgentLayout({
   children,
@@ -9,17 +9,13 @@ export default function AgentLayout({
 }) {
   return (
     <AgentRouteGuard>
-      <main className="min-h-screen flex flex-col bg-white text-[var(--foreground)]">
-        <AppHeader />
-        <div className="flex-1 flex flex-col">
-          <section className="flex-1 bg-gradient-to-b from-[var(--surface)] to-white">
-            <div className="container mx-auto px-4 py-6 md:px-8 md:py-8">
-              {children}
-            </div>
+      <SidebarProvider>
+        <SidebarLayoutFrame>
+          <section className="bg-gradient-to-b from-[var(--surface)] to-white">
+            <div className="container mx-auto px-4 py-6 md:px-8 md:py-8">{children}</div>
           </section>
-          <AppFooter />
-        </div>
-      </main>
+        </SidebarLayoutFrame>
+      </SidebarProvider>
     </AgentRouteGuard>
   );
 }

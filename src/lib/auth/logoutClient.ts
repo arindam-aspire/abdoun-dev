@@ -7,6 +7,9 @@ import { clearFavourites } from "@/features/favourites/favouritesSlice";
 import { clearSavedSearches } from "@/features/saved-searches/savedSearchesSlice";
 import { clearCompare } from "@/features/compare/compareSlice";
 import { resetAdminAgents } from "@/features/admin-agents/adminAgentsSlice";
+import { clearAgentDashboardSummary } from "@/features/admin-agents/agent-dashboard/agentDashboardSummarySlice";
+import { clearAdminDashboardSummary } from "@/features/admin-agents/admin-dashboard/adminDashboardSummarySlice";
+import { clearAdminUserGrowthTrends } from "@/features/admin-agents/admin-dashboard/adminUserGrowthTrendsSlice";
 import { clearAuthSession } from "@/lib/auth/sessionCookies";
 import { logout as apiLogout } from "@/services/authService";
 import { LocalStorageTokenStore } from "@/lib/auth/adapters/localStorageTokenStore";
@@ -45,6 +48,9 @@ export async function performClientLogout(
   dispatch(clearSavedSearches());
   dispatch(clearCompare());
   dispatch(resetAdminAgents());
+  dispatch(clearAgentDashboardSummary());
+  dispatch(clearAdminDashboardSummary());
+  dispatch(clearAdminUserGrowthTrends());
   if (userId) {
     dispatch(clearProfileForUser(userId));
   }
@@ -67,6 +73,9 @@ export function forceLocalLogout(
   dispatch(clearSavedSearches());
   dispatch(clearCompare());
   dispatch(resetAdminAgents());
+  dispatch(clearAgentDashboardSummary());
+  dispatch(clearAdminDashboardSummary());
+  dispatch(clearAdminUserGrowthTrends());
   if (userId) {
     dispatch(clearProfileForUser(userId));
   }

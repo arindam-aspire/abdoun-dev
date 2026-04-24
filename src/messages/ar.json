@@ -252,6 +252,7 @@
     "editProfile": "تعديل الملف",
     "recentActivity": "النشاط الأخير",
     "loading": "جاري التحميل...",
+    "loadDashboardError": "تعذر تحميل ملخص لوحة التحكم. يرجى المحاولة مرة أخرى.",
     "manageListingsTitle": "إدارة الإعلانات",
     "manageListingsSubtitle": "تعديل أو نشر المسودات أو الحذف. التغييرات تُحفظ فوراً.",
     "inquiryInboxTitle": "صندوق الاستفسارات",
@@ -319,6 +320,7 @@
     "loadingListings": "جاري تحميل الإعلانات...",
     "loadingInquiries": "جاري تحميل الاستفسارات...",
     "loadingTrends": "جاري تحميل الاتجاهات...",
+    "trendsTryAgain": "حاول مرة أخرى",
     "noListings": "لا توجد إعلانات بعد.",
     "noInquiries": "لا تطابق أي استفسار التصفية.",
     "viewRatePageTitle": "معدل المشاهدات حسب العقار",
@@ -400,7 +402,8 @@
     "welcomeUser": "مرحباً بك في لوحة المشتري",
     "welcomeAgent": "مرحباً بك في مساحة عمل الوكيل",
     "welcomeAdmin": "مرحباً بك في لوحة التحكم الإدارية",
-    "mockNotice": "جميع البيانات المعروضة هنا تجريبية لأغراض الواجهة فقط."
+    "mockNotice": "جميع البيانات المعروضة هنا تجريبية لأغراض الواجهة فقط.",
+    "loadAdminSummaryError": "تعذر تحميل لوحة التحكم الإدارية. يرجى المحاولة مرة أخرى."
   },
   "profile": {
     "title": "صفحة الملف الشخصي",
@@ -425,6 +428,8 @@
     "displayName": "الاسم المعروض",
     "displayNamePlaceholder": "كيف تريد أن يظهر اسمك",
     "namePlaceholder": "اسمك الكامل",
+    "emailFieldPlaceholder": "name@example.com",
+    "locationFieldPlaceholder": "المدينة، البلد",
     "personalInformation": "المعلومات الشخصية",
     "signInSecurity": "تسجيل الدخول والأمان",
     "privacyCookies": "الخصوصية والملفات التعريفية",
@@ -444,6 +449,42 @@
     "privacyAnalyticsCookies": "ملفات التحليلات",
     "privacyAnalyticsDescription": "مساعدتنا في تحسين الموقع بجمع بيانات استخدام مجهولة.",
     "savePreferences": "حفظ التفضيلات"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "navLabel": "أقسام إعدادات الحساب",
+    "navProfile": "الملف الشخصي",
+    "navPassword": "كلمة المرور",
+    "navEmail": "البريد الإلكتروني",
+    "profilePageTitle": "الملف الشخصي",
+    "profilePageDescription": "حدّث صورتك واسمك ومعلومات الاتصال.",
+    "sectionPersonal": "المعلومات الشخصية",
+    "sectionContact": "جهات الاتصال",
+    "passwordPageTitle": "تغيير كلمة المرور",
+    "passwordPageDescription": "استخدم كلمة مرور قوية ولا تُستخدم في مواقع أخرى.",
+    "passwordUpdatedToast": "تم تحديث كلمة المرور بنجاح.",
+    "passwordOAuthOnly": "لقد سجّلت الدخول باستخدام حساب اجتماعي. تغيير كلمة المرور غير متاح لهذه الطريقة.",
+    "emailPageTitle": "تغيير البريد الإلكتروني",
+    "emailPageDescription": "سنستخدم بريدك الجديد للدخول وإشعارات الحساب بعد التأكيد.",
+    "currentEmail": "البريد الحالي",
+    "newEmail": "البريد الجديد",
+    "confirmEmail": "تأكيد البريد الجديد",
+    "submitEmail": "تحديث البريد",
+    "updatingEmail": "جاري التحديث...",
+    "emailUpdatedToast": "تم إرسال طلب تغيير البريد. راجع بريدك للتأكيد.",
+    "toastProfileSaved": "تم حفظ الملف الشخصي بنجاح.",
+    "toastError": "حدث خطأ. يرجى المحاولة مرة أخرى.",
+    "loading": "جاري التحميل...",
+    "navProfileShort": "الملف",
+    "navPasswordShort": "المرور",
+    "navEmailShort": "البريد",
+    "emailInvalid": "أدخل بريداً إلكترونياً صالحاً.",
+    "emailMismatch": "عناوين البريد غير متطابقة.",
+    "emailRequired": "هذا الحقل مطلوب.",
+    "currentPasswordRequired": "كلمة المرور الحالية مطلوبة.",
+    "passwordMinLength": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل.",
+    "passwordConfirmMismatch": "كلمة المرور الجديدة والتأكيد غير متطابقين.",
+    "passwordPolicyNotMet": "يجب أن تستوفي كلمة المرور جميع الشروط (الطول، الأحرف، الرقم، الرمز)."
   },
   "favourites": {
     "title": "المفضلة",
@@ -783,5 +824,14 @@
         "description": "نلتزم بالمصداقية والشفافية في جميع تعاملاتنا."
       }
     }
+  },
+  "underDevelopment": {
+    "badge": "قريباً",
+    "title": "هذه الصفحة قيد التطوير",
+    "subtitle": "نعمل على بناء هذه التجربة وستكون متاحة قريباً.",
+    "backHome": "العودة إلى الرئيسية",
+    "goDashboard": "الانتقال إلى لوحة التحكم",
+    "support": "هل تحتاج مساعدة؟ تواصل مع الدعم.",
+    "expected": "متوقع توفرها في الإصدار القادم"
   }
 }

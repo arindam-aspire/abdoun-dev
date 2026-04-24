@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { isRtlLocale } from "@/i18n/routing";
 import { useLocale } from "next-intl";
 import { clearFavourites, hydrateFavourites } from "@/features/favourites/favouritesSlice";
 import { setClientLogoutNavigate } from "@/lib/auth/adapters/browserLogoutHandler";
@@ -104,7 +105,7 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
     const root = document.documentElement;
     root.setAttribute("lang", locale);
     root.dataset.theme = theme;
-    root.dir = locale === "ar" ? "rtl" : "ltr";
+    root.dir = isRtlLocale(locale) ? "rtl" : "ltr";
   }, [theme, locale]);
 
   useEffect(() => {

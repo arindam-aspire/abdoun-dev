@@ -1,12 +1,19 @@
- "use client";
+"use client";
 
 import type { AppLocale } from "@/i18n/routing";
-import { getAdminDashboardData } from "@/services/adminDashboardMockService";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { InquiryTrendLineChart } from "@/features/admin-agents/components/shared-charts/InquiryTrendLineChart";
+import { AdminLeadVolumeDetailsPageSkeleton } from "@/features/admin-agents/admin-dashboard/components/AdminLeadVolumeDetailsPageSkeleton";
+import { Toast } from "@/components/ui";
+import type { ToastKind } from "@/components/ui/toast";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import {
+  loadAdminDashboardSummary,
+  selectAdminDashboardSummary,
+} from "@/features/admin-agents/admin-dashboard/adminDashboardSummarySlice";
 
 type Row = {
   label: string;
@@ -15,22 +22,34 @@ type Row = {
 
 export function AdminLeadVolumeDetailsPage() {
   const locale = useLocale() as AppLocale;
-  const [loading, setLoading] = useState(true);
-  const [labels, setLabels] = useState<string[]>([]);
-  const [values, setValues] = useState<number[]>([]);
+  const dispatch = useAppDispatch();
+  const { data, status, error } = useAppSelector(selectAdminDashboardSummary);
+  const [toast, setToast] = useState<{ kind: ToastKind; message: string } | null>(null);
+  const errorToastSentRef = useRef(false);
 
   useEffect(() => {
-    let cancelled = false;
-    getAdminDashboardData().then((data) => {
-      if (cancelled) return;
-      setLabels(data.monthLabels);
-      setValues(data.leadGrowthSeries);
-      setLoading(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    void dispatch(loadAdminDashboardSummary());
+  }, [dispatch]);
+
+  const loading = status === "loading" || (status === "idle" && !data);
+
+  useEffect(() => {
+    if (loading) {
+      errorToastSentRef.current = false;
+      return;
+    }
+    if (status !== "failed" || !error) {
+      return;
+    }
+    if (errorToastSentRef.current) {
+      return;
+    }
+    errorToastSentRef.current = true;
+    setToast({ kind: "error", message: error });
+  }, [loading, status, error]);
+
+  const labels = data?.monthLabels ?? [];
+  const values = data?.leadGrowthSeries ?? [];
 
   const rows = useMemo<Row[]>(() => {
     return labels.map((label, idx) => ({ label, value: values[idx] ?? 0 }));
@@ -53,9 +72,38 @@ export function AdminLeadVolumeDetailsPage() {
   }, [labels, values]);
 
   if (loading) {
+    return <AdminLeadVolumeDetailsPageSkeleton />;
+  }
+
+  if (status === "failed" || !data) {
+    const fallbackMessage = error ?? "Unable to load lead volume.";
     return (
       <div className="space-y-6">
-        <p className="text-charcoal/70">Loading trends...</p>
+        <div className="flex items-center gap-4">
+          <Link
+            href={`/${locale}/admin-dashboard`}
+            className="inline-flex items-center gap-2 text-sm font-medium text-charcoal/80 hover:text-charcoal"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Link>
+        </div>
+        <div className="px-1">
+          <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
+            Lead volume details
+          </h1>
+          <p className="mt-2 text-sm text-red-700" role="alert" aria-live="assertive">
+            {fallbackMessage}
+          </p>
+        </div>
+        {toast ? (
+          <Toast
+            kind={toast.kind}
+            message={toast.message}
+            duration={6000}
+            onClose={() => setToast(null)}
+          />
+        ) : null}
       </div>
     );
   }
@@ -64,7 +112,7 @@ export function AdminLeadVolumeDetailsPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link
-          href={`/${locale}/dashboard`}
+          href={`/${locale}/admin-dashboard`}
           className="inline-flex items-center gap-2 text-sm font-medium text-charcoal/80 hover:text-charcoal"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -82,6 +130,7 @@ export function AdminLeadVolumeDetailsPage() {
       </div>
 
       <InquiryTrendLineChart
+        labels={labels}
         values={values}
         title="Lead volume"
         subtitle="Total leads generated per month"
@@ -178,4 +227,3 @@ export function AdminLeadVolumeDetailsPage() {
     </div>
   );
 }
-

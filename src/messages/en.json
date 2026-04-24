@@ -252,7 +252,8 @@
     "editProfile": "Edit profile",
     "recentActivity": "Recent activity",
     "loading": "Loading...",
-    "manageListingsTitle": "Manage Property Listing",
+    "loadDashboardError": "Unable to load dashboard summary. Please try again.",
+    "manageListingsTitle": "Manage Listings",
     "manageListingsSubtitle": "Edit, publish drafts, or delete properties. Changes save immediately.",
     "inquiryInboxTitle": "Inquiry Inbox",
     "inquiryInboxSubtitle": "Open inquiries, send responses, and update status. Changes save immediately.",
@@ -319,6 +320,7 @@
     "loadingListings": "Loading listings...",
     "loadingInquiries": "Loading inquiries...",
     "loadingTrends": "Loading trends...",
+    "trendsTryAgain": "Try again",
     "noListings": "No listings yet.",
     "noInquiries": "No inquiries match the filter.",
     "viewRatePageTitle": "View Rate by Property",
@@ -576,7 +578,8 @@
     "welcomeUser": "Welcome to your buyer dashboard",
     "welcomeAgent": "Welcome to your agent workspace",
     "welcomeAdmin": "Welcome to the admin console",
-    "mockNotice": "All data shown here is mock data for UI and flows only."
+    "mockNotice": "All data shown here is mock data for UI and flows only.",
+    "loadAdminSummaryError": "Unable to load admin dashboard. Please try again."
   },
   "profile": {
     "title": "Profile Page",
@@ -601,6 +604,8 @@
     "displayName": "Display Name",
     "displayNamePlaceholder": "How you'd like to be shown",
     "namePlaceholder": "Your full name",
+    "emailFieldPlaceholder": "name@example.com",
+    "locationFieldPlaceholder": "City, country",
     "personalInformation": "Personal Information",
     "signInSecurity": "Sign-in & Security",
     "privacyCookies": "Privacy & Cookies",
@@ -620,6 +625,42 @@
     "privacyAnalyticsCookies": "Analytics cookies",
     "privacyAnalyticsDescription": "Help us improve the site by collecting anonymous usage data.",
     "savePreferences": "Save preferences"
+  },
+  "settings": {
+    "title": "Settings",
+    "navLabel": "Account settings sections",
+    "navProfile": "Profile",
+    "navPassword": "Password",
+    "navEmail": "Email",
+    "profilePageTitle": "Profile",
+    "profilePageDescription": "Update your photo, name, and contact information.",
+    "sectionPersonal": "Personal information",
+    "sectionContact": "Contact",
+    "passwordPageTitle": "Change Password",
+    "passwordPageDescription": "Use a strong password you do not use anywhere else.",
+    "passwordUpdatedToast": "Password updated successfully.",
+    "passwordOAuthOnly": "You signed in with a social account. Password change is not available for this sign-in method.",
+    "emailPageTitle": "Change Email",
+    "emailPageDescription": "We will use your new email for sign-in and account notifications after verification.",
+    "currentEmail": "Current email",
+    "newEmail": "New email",
+    "confirmEmail": "Confirm new email",
+    "submitEmail": "Update email",
+    "updatingEmail": "Updating...",
+    "emailUpdatedToast": "Email update request sent. Check your inbox to confirm.",
+    "toastProfileSaved": "Profile saved successfully.",
+    "toastError": "Something went wrong. Please try again.",
+    "loading": "Loading...",
+    "navProfileShort": "Profile",
+    "navPasswordShort": "Password",
+    "navEmailShort": "Email",
+    "emailInvalid": "Enter a valid email address.",
+    "emailMismatch": "Email addresses do not match.",
+    "emailRequired": "This field is required.",
+    "currentPasswordRequired": "Current password is required.",
+    "passwordMinLength": "Password must be at least 8 characters.",
+    "passwordConfirmMismatch": "New password and confirmation do not match.",
+    "passwordPolicyNotMet": "Password must meet all policy requirements (length, upper, lower, number, symbol)."
   },
   "favourites": {
     "title": "My Favourites",
@@ -960,5 +1001,14 @@
         "description": "A strong commitment to honesty, transparency, and reliability."
       }
     }
+  },
+  "underDevelopment": {
+    "badge": "Coming Soon",
+    "title": "This page is under development",
+    "subtitle": "We are building this experience and it will be available soon.",
+    "backHome": "Back to Home",
+    "goDashboard": "Go to Dashboard",
+    "support": "Need help? Contact support.",
+    "expected": "Expected in upcoming release"
   }
 }

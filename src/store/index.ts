@@ -13,6 +13,9 @@ import adminAgentsReducer from "@/features/admin-agents/adminAgentsSlice";
 import propertySearchReducer from "@/features/property-search/propertySearchSlice";
 import propertyDetailsReducer from "@/features/property-details/propertyDetailsSlice";
 import exclusivePropertiesReducer from "@/features/exclusive-properties/exclusivePropertiesSlice";
+import agentDashboardSummaryReducer from "@/features/admin-agents/agent-dashboard/agentDashboardSummarySlice";
+import adminUserGrowthTrendsReducer from "@/features/admin-agents/admin-dashboard/adminUserGrowthTrendsSlice";
+import adminDashboardSummaryReducer from "@/features/admin-agents/admin-dashboard/adminDashboardSummarySlice";
 
 /** Syncs auth login payload into profile reducer so profile has user details. */
 const profileUserSyncMiddleware: Middleware =
@@ -43,6 +46,9 @@ export const store = configureStore({
     propertySearch: propertySearchReducer,
     propertyDetails: propertyDetailsReducer,
     exclusiveProperties: exclusivePropertiesReducer,
+    agentDashboardSummary: agentDashboardSummaryReducer,
+    adminUserGrowthTrends: adminUserGrowthTrendsReducer,
+    adminDashboardSummary: adminDashboardSummaryReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(profileUserSyncMiddleware),

@@ -1,41 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import type { AdminDashboardData } from "@/services/adminDashboardMockService";
-import { fetchAdminDashboardData } from "@/features/admin-agents/admin-dashboard/api/adminDashboard.api";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import {
+  loadAdminDashboardSummary,
+  selectAdminDashboardSummary,
+} from "@/features/admin-agents/admin-dashboard/adminDashboardSummarySlice";
 
 type UseAdminDashboardState = {
   data: AdminDashboardData | null;
   loading: boolean;
-  error: unknown;
+  error: Error | null;
 };
 
+/** Ensures summary is loaded (shared Redux cache; avoids duplicate in-flight / refetch when already succeeded). */
 export function useAdminDashboard(): UseAdminDashboardState {
-  const [data, setData] = useState<AdminDashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<unknown>(null);
+  const dispatch = useAppDispatch();
+  const { data, status, error: errorMessage } = useAppSelector(selectAdminDashboardSummary);
 
   useEffect(() => {
-    let cancelled = false;
+    void dispatch(loadAdminDashboardSummary());
+  }, [dispatch]);
 
-    async function run() {
-      try {
-        const dashboard = await fetchAdminDashboardData();
-        if (cancelled) return;
-        setData(dashboard);
-      } catch (e) {
-        if (cancelled) return;
-        setError(e);
-      } finally {
-        if (cancelled) return;
-        setLoading(false);
-      }
-    }
-
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const loading = status === "idle" || status === "loading";
+  const error = errorMessage ? new Error(errorMessage) : null;
 
   return { data, loading, error };
 }
-
