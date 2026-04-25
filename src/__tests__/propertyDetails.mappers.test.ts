@@ -52,6 +52,18 @@ describe("property-details mappers", () => {
     expect(out).toEqual(expect.arrayContaining(["Named feature", "Labeled feature"]));
   });
 
+  it("mapAmenities humanizes features.amenities string slugs", () => {
+    const item: PropertyDetailsApiResponse = {
+      ...base,
+      features: { amenities: ["elevator", "water_well", "laundry_room"] } as any,
+      more_features: null,
+    };
+    const out = mapAmenities(item, tBackend);
+    expect(out).toEqual(
+      expect.arrayContaining(["Elevator", "Water Well", "Laundry Room"]),
+    );
+  });
+
   it("mapGallery prefers item.images and falls back safely", () => {
     expect(mapGallery(base)).toEqual(["img1.jpg", "img2.jpg"]);
     const withoutImages: PropertyDetailsApiResponse = {
@@ -100,6 +112,21 @@ describe("property-details mappers", () => {
     expect(mapped.lat).toBe(31.95);
     expect(mapped.lng).toBe(35.93);
     expect(mapped.amenities.length).toBeGreaterThan(0);
+  });
+
+  it("toDetailedProperty uses location_detail when location_name is missing", () => {
+    const item: PropertyDetailsApiResponse = {
+      ...base,
+      location_name: null,
+      location_detail: {
+        country: "Jordan",
+        city: "Amman",
+        region: "Abdoun",
+        address: { en: "" },
+      },
+    };
+    const mapped = toDetailedProperty(item, tBackend);
+    expect(mapped.location).toBe("Abdoun, Amman, Jordan");
   });
 
   it("mapPropertyStats includes category, status, and coordinates", () => {

@@ -176,7 +176,7 @@ export function AgentDashboardHome() {
           </h2>
           <div className="mt-4 space-y-2">
             <Link
-              href={`/${locale}/agent-dashboard/add-property`}
+              href={`/${locale}/agent-dashboard/add-property?new=1`}
               className="flex w-full items-center justify-between rounded-xl border border-subtle bg-surface px-3 py-2 text-sm text-charcoal transition hover:bg-primary/5"
             >
               <span>{tAgent("addNewProperty")}</span>

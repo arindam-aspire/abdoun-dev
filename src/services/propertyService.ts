@@ -93,18 +93,36 @@ export type ExclusivePropertiesResult = {
 
 export type PropertyDetailsApiResponse = {
   id: number;
+  reference_number?: string | null;
   url?: string | null;
   title: string | Record<string, string | null | undefined>;
   description?: string | Record<string, string | null | undefined> | null;
   category?: string | null;
+  property_type?: string | null;
+  propertyType?: string | null;
   status?: string | null;
+  listing_type?: string | null;
+  is_exclusive?: boolean | null;
   selling_price_amount?: number | null;
   selling_price_currency?: string | null;
   rent_price_amount?: number | null;
   rent_price_currency?: string | null;
+  /** Nested pricing (may mirror top-level amounts). */
+  pricing?: {
+    listing_type?: string | null;
+    selling_price?: number | null;
+    currency?: string | null;
+    price_on_request?: boolean | null;
+    is_negotiable?: boolean | null;
+    installment_available?: boolean | null;
+    payment_method?: string | null;
+    contract_duration?: string | null;
+    rent_commission_percent?: number | null;
+  } | null;
   bedrooms?: number | null;
   bathrooms?: number | null;
   built_up_area?: number | null;
+  details?: { built_up_area?: number | null; maid_rooms?: number | null } | null;
   features?: unknown[] | Record<string, unknown> | null;
   more_features?: unknown[] | Record<string, unknown> | null;
   images?: string[] | null;
@@ -113,11 +131,34 @@ export type PropertyDetailsApiResponse = {
     images?:
       | string[]
       | Array<{
+          id?: number;
           url?: string | null;
           thumb_url?: string | null;
+          is_primary?: boolean;
+          order?: number;
+          caption?: string | null;
         }>
       | null;
+    videos?: unknown;
     virtual_tour_url?: string | null;
+    floor_plan_images?: unknown;
+    documents?: Array<{
+      id: number;
+      url?: string | null;
+      thumb_url?: string | null;
+      caption?: string | null;
+      order?: number;
+    }> | null;
+  } | null;
+  /** Listing agent (when API includes it). */
+  agent?: {
+    id?: number;
+    name?: string | null;
+    phone?: string | null;
+    whatsapp?: string | null;
+    email?: string | null;
+    photo?: string | null;
+    license_number?: string | null;
   } | null;
   latitude?: number | null;
   longitude?: number | null;
@@ -127,16 +168,25 @@ export type PropertyDetailsApiResponse = {
     | {
         city?: string | null;
         region?: string | null;
+        country?: string | null;
         address?: string | Record<string, string | null | undefined> | null;
+        latitude?: number | null;
+        longitude?: number | null;
+        map_embed_url?: string | null;
       }
     | null;
-  location_detail?:
-    | {
-        city?: string | null;
-        region?: string | null;
-        address?: string | Record<string, string | null | undefined> | null;
-      }
-    | null;
+  location_detail?: {
+    country_id?: number;
+    country?: string | null;
+    city_id?: number;
+    city?: string | null;
+    region_id?: number;
+    region?: string | null;
+    address?: string | Record<string, string | null | undefined> | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    map_embed_url?: string | null;
+  } | null;
 };
 
 const { publicApi, authApi } = createHttpClients();

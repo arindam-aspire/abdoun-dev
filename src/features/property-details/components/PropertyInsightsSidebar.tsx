@@ -7,6 +7,9 @@ export interface PropertyInsightsSidebarProps {
     id: number;
     title: string;
     brokerName: string;
+    /** When API returns an agent, shown in the card */
+    agentName?: string;
+    agentTagline?: string;
   };
 }
 

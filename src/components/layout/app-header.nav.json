@@ -58,6 +58,13 @@
       "path": "/agents",
       "roles": ["admin"],
       "placement": "profile"
+    },
+    {
+      "id": "adminPropertySubmissions",
+      "label": "Listing submissions",
+      "path": "/property-submissions",
+      "roles": ["admin"],
+      "placement": "profile"
     }
   ],
   "actions": {

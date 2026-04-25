@@ -16,17 +16,23 @@ import {
   Filter,
 } from "lucide-react";
 import {
+  fetchAgentProperties,
+  type AgentDraftSubmissionItem,
+} from "@/features/admin-agents/agent-dashboard/api/agentProperties.api";
+import { mapAgentPropertyItemToAgentListing } from "@/features/admin-agents/agent-dashboard/lib/mapAgentPropertyListItem";
+import {
   deleteListing,
-  getListings,
   publishDraft,
   updateListing,
 } from "@/services/agentDashboardMockService";
 import type { AgentListing, ListingStatus, PropertyType } from "@/types/agent";
+import { getApiErrorMessage } from "@/lib/http/apiError";
 import { useTranslations } from "@/hooks/useTranslations";
 import { DialogRoot, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button, Input, Label } from "@/components/ui";
 import { Dropdown } from "@/components/ui/dropdown";
 import { Pagination } from "@/components/ui/Pagination";
+import { Toast } from "@/components/ui/toast";
 
 function statusClass(status: string): string {
   if (status === "active") return "bg-emerald-100 text-emerald-800 border-emerald-200";
@@ -44,6 +50,43 @@ function statusLabel(status: string, t: (k: string) => string): string {
   if (status === "rejected") return t("statusRejected");
   if (status === "deactivated") return t("statusDeactivated");
   return status;
+}
+
+/** Badge colors when `property_listing_submissions.status` is set on the row. */
+function statusClassForListing(listing: AgentListing): string {
+  const sub = listing.submissionStatus?.toLowerCase();
+  if (sub) {
+    if (sub === "submitted" || sub === "changes_requested" || sub === "in_progress") {
+      return "bg-sky-100 text-sky-800 border-sky-200";
+    }
+    if (sub === "draft") {
+      return "bg-slate-100 text-slate-700 border-slate-200";
+    }
+    if (sub === "approved") {
+      return "bg-violet-100 text-violet-800 border-violet-200";
+    }
+    if (sub === "rejected") {
+      return "bg-rose-100 text-rose-800 border-rose-200";
+    }
+  }
+  return statusClass(listing.status);
+}
+
+function listingStatusBadgeText(
+  listing: AgentListing,
+  t: (k: string) => string,
+): string {
+  const sub = listing.submissionStatus?.toLowerCase();
+  if (!sub) {
+    return listing.statusDisplayName || statusLabel(listing.status, t);
+  }
+  if (sub === "submitted") return t("statusPendingApproval");
+  if (sub === "changes_requested") return t("statusChangesRequested");
+  if (sub === "in_progress") return t("statusInProgress");
+  if (sub === "draft") return t("statusDraft");
+  if (sub === "approved") return t("statusApproved");
+  if (sub === "rejected") return t("statusRejected");
+  return listing.submissionStatus || statusLabel(listing.status, t);
 }
 
 function formatDate(iso: string): string {
@@ -114,6 +157,10 @@ export function AgentListingsPage() {
   const [editTitle, setEditTitle] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [draftSubmissions, setDraftSubmissions] = useState<AgentDraftSubmissionItem[]>([]);
+  const [draftSubmissionsTotal, setDraftSubmissionsTotal] = useState(0);
+  const [submittedToast, setSubmittedToast] = useState(false);
 
   const statusParam = searchParams.get("status");
   const periodParam = searchParams.get("period");
@@ -143,19 +190,39 @@ export function AgentListingsPage() {
 
   const load = useCallback(() => {
     setLoading(true);
-    getListings().then((list) => {
-      setListings(list);
-      setLoading(false);
-    });
+    setLoadError(null);
+    fetchAgentProperties({ page: 1, limit: 200 })
+      .then((res) => {
+        const list = res.items.map(mapAgentPropertyItemToAgentListing);
+        setListings(list);
+        setDraftSubmissions(res.draft_submissions ?? []);
+        setDraftSubmissionsTotal(res.draft_submissions_total ?? 0);
+      })
+      .catch((e: unknown) => {
+        setListings([]);
+        setLoadError(getApiErrorMessage(e));
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (searchParams.get("submitted") !== "1") return;
+    setSubmittedToast(true);
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete("submitted");
+    const q = next.toString();
+    router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+  }, [searchParams, pathname, router]);
+
   const filteredListings = useMemo(() => {
     return listings.filter((listing) => {
-      if (listing.status === "draft") return false;
+      if (listing.status === "draft" && !listing.isFromApi) return false;
       if (statusFilter !== "all" && listing.status !== statusFilter) {
         return false;
       }
@@ -204,7 +271,7 @@ export function AgentListingsPage() {
   };
 
   const handleSave = async () => {
-    if (!editing) return;
+    if (!editing || editing.isFromApi) return;
     const price = Number(editPrice);
     if (Number.isNaN(price) || price < 0) return;
     setSaving(true);
@@ -218,11 +285,15 @@ export function AgentListingsPage() {
   };
 
   const handlePublish = async (id: string) => {
+    const row = listings.find((l) => l.id === id);
+    if (row?.isFromApi) return;
     await publishDraft(id);
     load();
   };
 
   const handleDelete = async (id: string) => {
+    const row = listings.find((l) => l.id === id);
+    if (row?.isFromApi) return;
     if (!confirm(t("deleteConfirm"))) return;
     await deleteListing(id);
     load();
@@ -236,8 +307,51 @@ export function AgentListingsPage() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-medium">{t("loadListingsError")}</p>
+          <p className="mt-1 text-amber-800/90">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => load()}
+            className="mt-3 inline-flex items-center rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100/80"
+          >
+            {t("retryLoadListings")}
+          </button>
+        </div>
+        <div className="flex items-center gap-4">
+          <Link
+            href={`/${locale}/agent-dashboard`}
+            className="inline-flex items-center gap-2 text-sm font-medium text-charcoal/80 hover:text-charcoal"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {t("backToDashboard")}
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {submittedToast ? (
+        <Toast
+          kind="success"
+          message={t("listingSubmittedRedirect")}
+          onClose={() => setSubmittedToast(false)}
+        />
+      ) : null}
+      <div className="flex items-center gap-4">
+        <Link
+          href={`/${locale}/agent-dashboard`}
+          className="inline-flex items-center gap-2 text-sm font-medium text-charcoal/80 hover:text-charcoal"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t("backToDashboard")}
+        </Link>
+      </div>
       <div className="flex items-center justify-between gap-4 px-1">
         <div>
           <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
@@ -248,8 +362,8 @@ export function AgentListingsPage() {
           </p>
         </div>
         <Link
-          href={`/${locale}/agent-dashboard/add-property`}
-          className="inline-flex items-center gap-2 rounded-lg border border-primary bg-secondary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary/90"
+          href={`/${locale}/agent-dashboard/add-property?new=1`}
+          className="inline-flex items-center gap-2 rounded-xl border border-primary bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
           {t("addNewProperty")}
@@ -282,7 +396,40 @@ export function AgentListingsPage() {
         </div>
       </div>
 
-      <article className="rounded-xl border border-subtle bg-white shadow-sm overflow-hidden">
+      {draftSubmissions.length > 0 ? (
+        <section className="rounded-2xl border border-amber-200/80 bg-amber-50/50 p-4 md:p-5">
+          <h2 className="text-size-sm fw-semibold text-charcoal">
+            {t("draftSubmissionsHeading", { count: draftSubmissionsTotal || draftSubmissions.length })}
+          </h2>
+          <p className="mt-1 text-size-sm text-charcoal/70">{t("draftSubmissionsHint")}</p>
+          <ul className="mt-3 space-y-2">
+            {draftSubmissions.map((d) => (
+              <li
+                key={d.submission_id}
+                className="flex flex-col gap-2 rounded-xl border border-subtle bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-charcoal">
+                    {d.title?.trim() || t("draftUntitled")}
+                  </p>
+                  <p className="text-size-xs text-charcoal/60">
+                    {d.status} · {t("draftStepLabel", { step: d.current_step ?? "—" })}{" "}
+                    {d.updated_at ? `· ${formatDate(d.updated_at)}` : null}
+                  </p>
+                </div>
+                <Link
+                  href={`/${locale}/agent-dashboard/add-property?submission=${encodeURIComponent(d.submission_id)}`}
+                  className="inline-flex shrink-0 items-center justify-center rounded-lg border border-primary bg-primary px-3 py-1.5 text-size-sm font-medium text-white hover:bg-primary/90"
+                >
+                  {t("continueDraft")}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <article className="rounded-2xl border border-subtle bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-left">
             <thead>
@@ -301,15 +448,22 @@ export function AgentListingsPage() {
                   key={row.id}
                   className="border-b border-subtle/70 text-sm last:border-b-0"
                 >
-                  <td className="px-4 py-3 font-medium text-charcoal">{row.title}</td>
+                  <td className="px-4 py-3 font-medium text-charcoal">
+                    <span className="block">{row.title}</span>
+                    {row.catalogStatusName && row.submissionStatus ? (
+                      <span className="mt-0.5 block text-size-xs font-normal text-charcoal/55">
+                        {t("catalogStatusLine", { status: row.catalogStatusName })}
+                      </span>
+                    ) : null}
+                  </td>
                   <td className="px-4 py-3 text-charcoal/80">
                     {formatTypeWithSubType(row.type, row.subType)}
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-medium ${statusClass(row.status)}`}
+                      className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-medium ${statusClassForListing(row)}`}
                     >
-                      {statusLabel(row.status, t)}
+                      {listingStatusBadgeText(row, t)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-charcoal/80">{formatDate(row.lastUpdated)}</td>
@@ -323,7 +477,8 @@ export function AgentListingsPage() {
                         <Eye className="h-3.5 w-3.5" />
                         {t("view")}
                       </Link>
-                      {row.status !== "active" &&
+                      {!row.isFromApi &&
+                      row.status !== "active" &&
                       row.status !== "pending_approval" &&
                       row.status !== "approved" ? (
                         <button
@@ -335,7 +490,7 @@ export function AgentListingsPage() {
                           {t("edit")}
                         </button>
                       ) : null}
-                      {row.status === "approved" ? (
+                      {!row.isFromApi && row.status === "approved" ? (
                         <button
                           type="button"
                           onClick={() => handlePublish(row.id)}
@@ -345,7 +500,7 @@ export function AgentListingsPage() {
                           {t("publish")}
                         </button>
                       ) : null}
-                      {row.status !== "pending_approval" ? (
+                      {!row.isFromApi && row.status !== "pending_approval" ? (
                         <button
                           type="button"
                           onClick={() => handleDelete(row.id)}

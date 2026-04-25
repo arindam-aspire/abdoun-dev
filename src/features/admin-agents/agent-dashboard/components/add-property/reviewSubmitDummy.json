@@ -1,0 +1,116 @@
+{
+  "title": "Review & Submit",
+  "editButtonText": "Edit Information",
+  "sections": [
+    {
+      "title": "Basic Information",
+      "columns": [
+        [
+          { "label": "Listing Purpose", "value": "For Sale" },
+          { "label": "Property Type", "value": "Villa" },
+          { "label": "Description", "value": "Elegant 5-bedroom villa in Jumeirah with landscaped garden, private pool, and premium interior finishes. Includes maid room and rooftop lounge." }
+        ],
+        [
+          { "label": "Category", "value": "Residential" },
+          { "label": "Property Title", "value": "Luxury 5BR Villa with Pool and Sea Views" }
+        ]
+      ]
+    },
+    {
+      "title": "Location",
+      "columns": [
+        [
+          { "label": "City", "value": "Downtown" },
+          { "label": "Address", "value": "Dead Sea Road, Plot 247, Sweimeh, Al-Balqa Governorate, Jordan" }
+        ],
+        [
+          { "label": "Area", "value": "Dead Sea Resort Area" }
+        ]
+      ]
+    },
+    {
+      "title": "Owner Information",
+      "columns": [
+        [
+          { "label": "Owner Name", "value": "Omar Al-Masri" },
+          { "label": "Email", "value": "omar@shorelinehomes.jo" },
+          { "label": "Social Security ID", "value": "A12345-67890" }
+        ],
+        [
+          { "label": "Phone Number", "value": "+962 79 555 5678" },
+          { "label": "Nationality", "value": "Jordanian" },
+          { "label": "Address", "value": "Abdali, Amman, Jordan" }
+        ]
+      ]
+    },
+    {
+      "title": "Property Details",
+      "columns": [
+        [
+          { "label": "Bedrooms", "value": "5" },
+          { "label": "Parking Spaces", "value": "4 Cars" },
+          { "label": "Total Floors", "value": "2" },
+          { "label": "Reference Number", "value": "JO-DS-2026-0047" }
+        ],
+        [
+          { "label": "Bathrooms", "value": "8" },
+          { "label": "Property Age", "value": "4 Years" },
+          { "label": "Occupancy", "value": "Vacant" },
+          { "label": "Permit/DLD Number", "value": "DLD-11190-2026-458" }
+        ],
+        [
+          { "label": "Built-up Area", "value": "950 sq ft" },
+          { "label": "Completion Status", "value": "Completed" },
+          { "label": "Ownership Type", "value": "Freehold" },
+          { "label": "Orientation", "value": "West (Dead Sea View)" }
+        ]
+      ]
+    },
+    {
+      "title": "Pricing",
+      "columns": [
+        [
+          { "label": "Price", "value": "2,850,000 JOD" },
+          { "label": "Service Charge", "value": "125 JOD / month" }
+        ],
+        [
+          { "label": "Maintenance Fee", "value": "480 JOD / month" }
+        ]
+      ]
+    }
+  ],
+  "amenities": [
+    "Infinity Pool",
+    "Home Theater",
+    "Majlis Room",
+    "Smart Home System",
+    "Gourmet Kitchen",
+    "Dead Sea View",
+    "Private Pool Access",
+    "Gym & Spa",
+    "BBQ Area",
+    "Landscaped Garden",
+    "Outdoor BBQ Area",
+    "Traditional Fireplace",
+    "Security System",
+    "Solar Panels",
+    "Electric Car Charging"
+  ],
+  "mediaPreviewCount": 10,
+  "documents": [
+    { "name": "Property_Deed.pdf", "size": "2.4 MB" },
+    { "name": "Title_Report.pdf", "size": "1.9 MB" },
+    { "name": "Inspection_Report.pdf", "size": "1.3 MB" },
+    { "name": "Floor_Plans.pdf", "size": "3.8 MB" }
+  ],
+  "terms": [
+    "I confirm that all information above is accurate and complete to the best of my knowledge.",
+    "I agree to the platform's terms of service and privacy policy.",
+    "I authorize the platform to display this property listing publicly.",
+    "I understand that marketing fees and commissions apply as per the platform pricing policy."
+  ],
+  "footerButtons": {
+    "back": "Go Back",
+    "submit": "Submit Listing"
+  }
+}

@@ -20,7 +20,8 @@ import type { PropertyDetailsTabKey } from "./PropertyDetailsTabBar";
 import { useBackendTranslation } from "@/hooks/useBackendTranslation";
 import { useSession } from "@/features/auth/hooks/useSession";
 import { toDetailedProperty } from "@/features/property-details/utils/propertyDetailsMapper";
-import { mapPropertyStats } from "@/features/property-details/utils/statsMapper";
+import { buildPropertyDocumentSections } from "@/features/property-details/utils/propertyDocumentsMapper";
+import { mapPropertyOverviewStats } from "@/features/property-details/utils/statsMapper";
 import { usePropertyDetails } from "@/features/property-details/hooks/usePropertyDetails";
 import { usePropertyDetailsTabs } from "@/features/property-details/hooks/usePropertyDetailsTabs";
 import { SimilarProperties } from "./SimilarProperties";
@@ -36,23 +37,6 @@ export function PropertyDetailsMain({
   language,
   propertyId = "1",
 }: PropertyDetailsMainProps) {
-  const dummyDocumentSections: PropertyDocumentSection[] = [
-    {
-      title: "Documents",
-      items: [
-        { id: "doc-1", name: "assets.zip", size: "5.3MB" },
-        { id: "doc-2", name: "theprojekts-design-tokens.zip", size: "5.3MB" },
-      ],
-    },
-    {
-      title: "Social Security Documents",
-      items: [
-        { id: "doc-3", name: "assets.zip", size: "5.3MB" },
-        { id: "doc-4", name: "assets.zip", size: "5.3MB" },
-      ],
-    },
-  ];
-
   const tabPanelRef = useRef<HTMLDivElement | null>(null);
   const searchParams = useSearchParams();
   const isRtl = language === "ar";
@@ -64,37 +48,49 @@ export function PropertyDetailsMain({
     () => (item ? toDetailedProperty(item, tBackend) : null),
     [item, tBackend],
   );
-  // const stats = useMemo(() => (item ? mapPropertyStats(item) : []), [item]);
-  const stats = [
-    {
-      label: "Payment plan",
-      value: "30/70",
-      description: "Flexible handover terms available on request."
-    },
-    {
-      label: "Service charge",
-      value: "On request",
-      description: "Estimated based on current building management rates."
-    },
-    {
-      label: "Expected rental yield",
-      value: "6.5% - 7.2%",
-      description: "Industrial range based on comparable properties in Abdoun."
-    }
-  ]
 
-  const overview = {
-    "title": "Overview",
-    "description": [
-      "Experience elevated living in this sprawling eco-smart penthouse overlooking Abdoun and the Amman skyline. Thoughtfully crafted with double-height ceilings, floor-to-ceiling windows and a private rooftop plunge pool, The Azure Penthouse combines contemporary design with warm, natural finishes.",
-      "A dedicated concierge lobby, direct lift access and three private parking bays ensure complete privacy and convenience for you and your guests."
-    ],
-    "media": {
-      "video_label": "Watch property video on YouTube",
-      "platform": "YouTube",
-      "video_link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  const stats = useMemo(
+    () => (item ? mapPropertyOverviewStats(item) : []),
+    [item],
+  );
+
+  const documentSections: PropertyDocumentSection[] = useMemo(
+    () => (item ? buildPropertyDocumentSections(item) : []),
+    [item],
+  );
+
+  const overview = useMemo(() => {
+    if (!item) {
+      return {
+        title: "Overview",
+        description: [
+          "No description has been provided for this listing yet.",
+        ] as string[],
+        media: {
+          video_label: "Watch property video on YouTube",
+          platform: "",
+          video_link: "",
+        },
+      };
     }
-  }
+    const raw = tBackend(item.description ?? "")?.trim();
+    const description: string[] = raw
+      ? raw
+          .split(/\n{2,}/)
+          .map((p) => p.trim())
+          .filter(Boolean)
+      : ["No description has been provided for this listing yet."];
+
+    return {
+      title: "Overview",
+      description,
+      media: {
+        video_label: "Watch property video on YouTube",
+        platform: "",
+        video_link: "",
+      },
+    };
+  }, [item, tBackend]);
 
   const exclusiveFromUrl =
     searchParams.get("exclusive") === "1" ||
@@ -246,7 +242,7 @@ export function PropertyDetailsMain({
             )}
 
             {displayTab === "documents" && canShowDocumentsTab && (
-              <PropertyDetailsDocumentsTab sections={dummyDocumentSections} />
+              <PropertyDetailsDocumentsTab sections={documentSections} />
             )}
             </div>
           </section>
@@ -254,12 +250,20 @@ export function PropertyDetailsMain({
           <div
             className={`${isRtl ? "md:pl-0 md:pr-4" : "md:pl-4"} self-start md:sticky md:top-[124px]`}
           >
-            <PropertyDetailsPriceCard price={displayProperty.price} />
+            <PropertyDetailsPriceCard
+              price={displayProperty.price}
+              pricePerM2={displayProperty.pricePerSqm}
+              documentVerificationLabel={displayProperty.documentVerificationStatus}
+            />
             <PropertyInsightsSidebar
               listing={{
                 id: displayProperty.id,
                 title: displayProperty.title,
                 brokerName: displayProperty.brokerName ?? "Abdoun Real Estate",
+                agentName: displayProperty.agent?.name,
+                agentTagline: displayProperty.agent?.licenseNumber
+                  ? `License ${displayProperty.agent.licenseNumber}`
+                  : undefined,
               }}
             />
           </div>

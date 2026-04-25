@@ -12,14 +12,15 @@ import { EmailAgentModal } from "@/features/property-search/components/modals/Em
 import { WhatsAppContactModal } from "@/features/property-search/components/modals/WhatsAppContactModal";
 import { cn } from "@/lib/cn";
 
-const DEFAULT_AGENT_NAME = "Jalal Yance";
-const DEFAULT_AGENT_SPECIALTY = "Luxury specialist — Abdoun & Dabouq";
+const DEFAULT_AGENT_SPECIALTY = "Listing specialist";
 
 export interface PropertyDetailsAgentSectionProps {
   listing: {
     id: number;
     title: string;
     brokerName: string;
+    agentName?: string;
+    agentTagline?: string;
   };
 }
 
@@ -59,9 +60,11 @@ export function PropertyDetailsAgentSection({ listing }: PropertyDetailsAgentSec
           <p className="text-size-xs fw-semibold uppercase tracking-[0.16em] text-charcoal/75">
             Listing agent
           </p>
-          <p className="text-size-sm fw-semibold text-charcoal">{DEFAULT_AGENT_NAME}</p>
+          <p className="text-size-sm fw-semibold text-charcoal">
+            {listing.agentName?.trim() || listing.brokerName}
+          </p>
           <p className="text-size-11 fw-medium text-charcoal/75">
-            {DEFAULT_AGENT_SPECIALTY}
+            {listing.agentTagline?.trim() || DEFAULT_AGENT_SPECIALTY}
           </p>
         </div>
       </div>

@@ -1,8 +1,17 @@
 export interface PropertyDetailsPriceCardProps {
   price: string;
+  /** When area and price allow it, e.g. "250 JOD"; else hidden or "—" */
+  pricePerM2?: string | null;
+  documentVerificationLabel?: string;
 }
 
-export function PropertyDetailsPriceCard({ price }: PropertyDetailsPriceCardProps) {
+export function PropertyDetailsPriceCard({
+  price,
+  pricePerM2,
+  documentVerificationLabel = "—",
+}: PropertyDetailsPriceCardProps) {
+  const m2 = pricePerM2 && pricePerM2.trim().length > 0 ? pricePerM2 : "—";
+
   return (
     <div className="mb-4 rounded-2xl border border-subtle bg-white/95 py-5 text-charcoal shadow-[0_8px_24px_rgba(15,23,42,0.08)] md:py-6 md:text-size-sm">
       <div className="border-l-2 border-primary pl-4 md:pl-5">
@@ -27,16 +36,25 @@ export function PropertyDetailsPriceCard({ price }: PropertyDetailsPriceCardProp
             Avg. per m2
           </p>
           <p className="mt-0.5 text-size-xs fw-semibold text-charcoal">
-            147 JD
+            {m2}
           </p>
         </div>
         <div className="rounded-lg bg-surface/70 py-2 text-center">
           <p className="text-size-2xs fw-semibold uppercase tracking-[0.12em] text-charcoal/70">
             Document verification
           </p>
-          <p className="mt-0.5 inline-flex items-center justify-center gap-1 text-size-xs fw-semibold text-emerald-700">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-600" />
-            Ready
+          <p
+            className={
+              documentVerificationLabel === "Ready" || documentVerificationLabel === "Verified"
+                ? "mt-0.5 inline-flex items-center justify-center gap-1 text-size-xs fw-semibold text-emerald-700"
+                : "mt-0.5 text-size-xs fw-semibold text-charcoal/80"
+            }
+          >
+            {(documentVerificationLabel === "Ready" ||
+              documentVerificationLabel === "Verified") && (
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-600" />
+            )}
+            {documentVerificationLabel}
           </p>
         </div>
       </div>

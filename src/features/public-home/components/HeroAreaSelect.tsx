@@ -79,9 +79,8 @@ export function HeroAreaSelect({
         onClose={onClose}
         align={isRtl ? "right" : "left"}
         anchorRef={triggerRef}
-        portaled={false}
       >
-        <div className="w-64 rounded-2xl border border-subtle bg-white p-2 text-size-sm shadow-xl ring-1 ring-black/5">
+        <div className="w-full rounded-2xl border border-subtle bg-white p-2 text-size-sm shadow-xl ring-1 ring-black/5">
           <div className="max-h-64 overflow-y-auto overflow-x-hidden py-1 [scrollbar-width:thin]">
             <button
               type="button"

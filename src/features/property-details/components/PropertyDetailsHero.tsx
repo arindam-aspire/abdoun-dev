@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { PropertyDetailsImageModal } from "./modals/PropertyDetailsImageModal";
+import { PROPERTY_DETAILS_GALLERY_FALLBACK } from "@/features/property-details/utils/galleryMapper";
 import type { DetailedProperty, HeroMediaItem } from "@/features/property-details/types";
 import { FavouriteButton } from "@/features/favourites/components/FavouriteButton";
 import { Badge } from "@/components/ui/badge";
@@ -20,13 +21,16 @@ export function PropertyDetailsHero({
   isRtl = false,
   customActions,
 }: PropertyDetailsHeroProps) {
-  const galleryImages = useMemo(
-    () =>
+  const galleryImages = useMemo(() => {
+    const raw =
       property.gallery && property.gallery.length > 0
         ? property.gallery
-        : [property.image],
-    [property.gallery, property.image],
-  );
+        : [property.image];
+    const valid = (raw ?? []).filter(
+      (u): u is string => typeof u === "string" && u.trim().length > 0,
+    );
+    return valid.length > 0 ? valid : [PROPERTY_DETAILS_GALLERY_FALLBACK];
+  }, [property.gallery, property.image]);
 
   const mediaItems: HeroMediaItem[] = useMemo(() => {
     const items: HeroMediaItem[] = [];

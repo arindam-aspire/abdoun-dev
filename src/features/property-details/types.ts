@@ -27,6 +27,18 @@ export interface DetailedProperty {
   gallery?: string[];
   /** Agent/broker name for contact modals */
   brokerName?: string;
+  /** When API returns agent; used on listing page sidebar */
+  agent?: {
+    name: string;
+    phone?: string | null;
+    email?: string | null;
+    whatsapp?: string | null;
+    photo?: string | null;
+    licenseNumber?: string | null;
+  };
+  /** Pre-formatted e.g. "250 JOD" for sidebar */
+  pricePerSqm?: string;
+  documentVerificationStatus?: "Ready" | "Pending" | string;
   latitude?: number;
   longitude?: number;
 }

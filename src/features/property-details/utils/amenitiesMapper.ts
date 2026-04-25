@@ -35,10 +35,23 @@ function toAmenityText(value: unknown, tBackend: BackendTranslateFn): string | n
   return null;
 }
 
+function humanizeAmenitySlug(slug: string): string {
+  return slug
+    .split("_")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
 function toAmenityEntries(value: unknown, tBackend: BackendTranslateFn): unknown[] {
   if (Array.isArray(value)) return value;
-  if (value && typeof value === "object") {
-    return Object.entries(value as Record<string, unknown>).flatMap(([key, raw]) => {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const rec = value as Record<string, unknown>;
+    if (Array.isArray(rec.amenities)) {
+      return rec.amenities;
+    }
+    return Object.entries(rec).flatMap(([key, raw]) => {
+      if (key === "amenities") return [];
       const val = toAmenityText(raw, tBackend);
       if (!val) return [key];
       return [`${key}: ${val}`];
@@ -51,11 +64,24 @@ export function mapAmenities(
   item: PropertyDetailsApiResponse,
   tBackend: BackendTranslateFn,
 ): string[] {
-  const all = [
-    ...toAmenityEntries(item.features, tBackend),
-    ...toAmenityEntries(item.more_features, tBackend),
-  ]
-    .map((entry) => toAmenityText(entry, tBackend))
+  const rawFeature = toAmenityEntries(item.features, tBackend);
+  const rawMore = toAmenityEntries(item.more_features, tBackend);
+  const amenitySlugs =
+    item.features && typeof item.features === "object" && !Array.isArray(item.features)
+      ? (item.features as { amenities?: string[] }).amenities
+      : undefined;
+
+  const all = [...rawFeature, ...rawMore]
+    .map((entry) => {
+      if (
+        typeof entry === "string" &&
+        Array.isArray(amenitySlugs) &&
+        amenitySlugs.includes(entry)
+      ) {
+        return humanizeAmenitySlug(entry);
+      }
+      return toAmenityText(entry, tBackend);
+    })
     .filter((text): text is string => Boolean(text));
 
   return Array.from(new Set(all));

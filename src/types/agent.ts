@@ -23,6 +23,17 @@ export interface AgentListing {
   status: ListingStatus;
   lastUpdated: string;
   price: number;
+  /**
+   * When `true`, row comes from `GET /agent-properties` (no mock delete/publish).
+   * View uses `id` as the property details identifier (e.g. `property_hash` string).
+   */
+  isFromApi?: boolean;
+  /** Raw status label from API (optional; preferred for badge when set). */
+  statusDisplayName?: string;
+  /** `property_listing_submissions.status` when the API enriches the row. */
+  submissionStatus?: string | null;
+  /** Catalog / `property_status` label (e.g. Verified) when `submissionStatus` is also shown. */
+  catalogStatusName?: string | null;
 }
 
 export type InquiryStatus = "new" | "contacted" | "closed";
