@@ -111,6 +111,10 @@ export async function validateInviteToken(
   }
 }
 
+/**
+ * `GET /agents` (e.g. `{base}/api/v1/agents?page=1&limit=10&sort_by=invited_at&order=desc`).
+ * Expects `StandardApiResponse` body with `agents[]` and `pagination.totalItems` / `totalPages`.
+ */
 export async function listAdminAgents(
   params: ListAdminAgentsParams = {},
 ): Promise<ListAdminAgentsResult> {

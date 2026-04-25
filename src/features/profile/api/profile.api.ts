@@ -1,10 +1,11 @@
 /**
- * Profile feature API module. Wraps user/profile endpoints with same contracts.
- * No API contract changes.
+ * Profile feature API module. Wraps user/profile and self-service profile update endpoints.
  */
+import { createHttpClients } from "@/lib/http";
 import {
   updateUser as updateUserService,
   getUserById,
+  type StandardApiResponse,
   type UpdateUserPayload,
   type UserManagementUser,
 } from "@/services/userService";
@@ -12,8 +13,58 @@ import { getCurrentUser, toSessionUserForProfile } from "@/features/auth/api/aut
 
 export type { UpdateUserPayload, UserManagementUser };
 
+const { authApi } = createHttpClients();
+
+const unwrap = <T,>(body: StandardApiResponse<T>): T => body.data;
+
+export type ProfileUpdateRequestPayload = {
+  full_name?: string;
+  email?: string;
+  phone_number?: string;
+};
+
+export type ProfileUpdateRequestData = {
+  message: string;
+  requires_verification: boolean;
+  verification_fields: string[];
+  dev_phone_otp: string | null;
+};
+
 /**
- * Update current user profile (PATCH /users/:id). Same payload and response as userService.
+ * PATCH /auth/me/profile/request — start profile change; OTP may be required for email/phone.
+ */
+export async function requestProfileUpdate(
+  payload: ProfileUpdateRequestPayload,
+): Promise<ProfileUpdateRequestData> {
+  const response = await authApi.patch<StandardApiResponse<ProfileUpdateRequestData>>(
+    "/auth/me/profile/request",
+    payload,
+  );
+  return unwrap(response.data);
+}
+
+export type ProfileUpdateVerifyPayload = {
+  email?: string;
+  email_otp?: string;
+  phone_number?: string;
+  phone_otp?: string;
+};
+
+/**
+ * POST /auth/me/profile/verify — complete profile change with OTP(s).
+ */
+export async function verifyProfileUpdate(
+  payload: ProfileUpdateVerifyPayload,
+): Promise<{ message: string }> {
+  const response = await authApi.post<StandardApiResponse<{ message: string }>>(
+    "/auth/me/profile/verify",
+    payload,
+  );
+  return unwrap(response.data);
+}
+
+/**
+ * Update another user (admin) — PATCH /users/:id.
  */
 export async function updateUser(
   userId: string,
@@ -22,9 +73,7 @@ export async function updateUser(
   return updateUserService(userId, payload);
 }
 
-/**
- * Fetch user by id (GET /users/:id).
- */
+/** Fetch user by id (GET /users/:id). */
 export async function getProfileUser(userId: string): Promise<UserManagementUser> {
   return getUserById(userId);
 }

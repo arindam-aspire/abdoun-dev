@@ -11,6 +11,7 @@ import {
   validatePhone,
   validateChangePassword,
 } from "@/features/profile/schemas/profileFormSchema";
+import { formatPhoneValidationIssue } from "@/lib/formatPhoneValidationIssue";
 
 export interface SignInSecurityTabProps {
   email: string;
@@ -36,6 +37,7 @@ export function SignInSecurityTab({
   className,
 }: SignInSecurityTabProps) {
   const t = useTranslations("profile");
+  const tPhone = useTranslations("phoneInput");
   const [showEmail, setShowEmail] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -97,12 +99,16 @@ export function SignInSecurityTab({
     if (!onPhoneUpdate) return;
     const phoneValidation = validatePhone(phoneValue);
     if (!phoneValidation.valid) {
-      setPhoneError(phoneValidation.error ?? null);
+      setPhoneError(
+        phoneValidation.code
+          ? formatPhoneValidationIssue(tPhone, phoneValidation.code)
+          : null,
+      );
       return;
     }
     setPhoneError(null);
     await onPhoneUpdate(phoneValue ?? "");
-  }, [onPhoneUpdate, phoneValue]);
+  }, [onPhoneUpdate, phoneValue, tPhone]);
 
   return (
     <div className={cn("space-y-6", className)} dir={isRtl ? "rtl" : "ltr"}>
@@ -133,12 +139,9 @@ export function SignInSecurityTab({
           {t("phoneNumber")}
         </div>
         <PhoneNumberInputField
-          value={phone}
+          value={phoneValue}
           onChange={(v) => setPhoneValue(v ?? "")}
           placeholder={t("phonePlaceholder")}
-          showFlag={true}
-          showCountryCode={true}
-          showDialCode={false}
         />
         <Button
           type="button"

@@ -149,9 +149,6 @@ export function AuthPopupSignupStep({
             id="signup-phone"
             label={t("phonePlaceholder")}
             type="phone"
-            showFlag={true}
-            showCountryCode={true}
-            showDialCode={false}
             placeholder={t("phonePlaceholder")}
             value={signup.fields.phone}
             onChange={signup.actions.setPhone}
@@ -183,7 +180,7 @@ export function AuthPopupSignupStep({
               </button>
             )}
           />
-          <PasswordPolicyHelper checks={signup.passwordChecks} />
+          <PasswordPolicyHelper checks={signup.passwordChecks} password={signup.fields.password} />
           <Button
             type="button"
             variant="accent"

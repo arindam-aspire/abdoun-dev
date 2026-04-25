@@ -13,6 +13,7 @@ export function selectCurrentUser(state: RootState): ProfileUser | null {
 }
 
 const selectAdminAgents = (state: RootState) => state.adminAgents.allItems;
+const selectAdminAgentsTotal = (state: RootState) => state.adminAgents.total;
 const selectPropertySearch = (state: RootState) => state.propertySearch;
 const selectFavourites = (state: RootState) => state.favourites.propertyIds;
 const selectSavedSearchesItems = (state: RootState) => state.savedSearches.items;
@@ -36,6 +37,7 @@ export function selectAgentDashboardCachedPerformance(
 export const selectSidebarCounts = createSelector(
   [
     selectAdminAgents,
+    selectAdminAgentsTotal,
     selectPropertySearch,
     selectFavourites,
     selectAgentDashboardSummary,
@@ -44,6 +46,7 @@ export const selectSidebarCounts = createSelector(
   ],
   (
     allItems,
+    adminAgentsTotal,
     propertySearch,
     favouriteIds,
     agentDashboardSummary,
@@ -68,6 +71,8 @@ export const selectSidebarCounts = createSelector(
 
     return {
       pendingUsers,
+      /** Directory total from `GET /agents` pagination (`adminAgents.total`). */
+      totalAgents: adminAgentsTotal,
       totalProperties,
       totalListings,
       totalSavedProperties,

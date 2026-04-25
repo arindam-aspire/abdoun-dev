@@ -7,10 +7,12 @@ import { DialogRoot } from "@/components/ui/dialog";
 import { ProfilePhoto } from "@/features/profile/components/ProfilePhoto";
 import { PersonalInformationTab } from "@/features/profile/components/PersonalInformationTab";
 import { SignInSecurityTab } from "@/features/profile/components/SignInSecurityTab";
+import { PhoneOtpModal } from "@/features/profile/components/modals/PhoneOtpModal";
 import { changePassword } from "@/features/auth/api/auth.api";
 import { useProfile } from "@/hooks/useProfile";
 import { cn } from "@/lib/cn";
 import { getApiErrorMessage } from "@/lib/http";
+import { requestPhoneOtp } from "@/lib/profileApi";
 
 export type ProfileTabId = "personal" | "security" | "privacy";
 
@@ -35,6 +37,30 @@ export function ProfileModal({
   const tCommon = useTranslations("common");
   const profileData = useProfile();
   const [activeTab, setActiveTab] = useState<ProfileTabId>("personal");
+  const [phoneOtpModalOpen, setPhoneOtpModalOpen] = useState(false);
+  const [pendingPhoneE164, setPendingPhoneE164] = useState("");
+  const [assumePhoneOtpSent, setAssumePhoneOtpSent] = useState(false);
+  const [pendingPhoneDevOtp, setPendingPhoneDevOtp] = useState<string | null>(null);
+
+  const closePhoneOtpModal = useCallback(() => {
+    setPhoneOtpModalOpen(false);
+    setAssumePhoneOtpSent(false);
+    setPendingPhoneE164("");
+    setPendingPhoneDevOtp(null);
+    void profileData?.refreshProfile();
+  }, [profileData]);
+
+  const handlePhoneVerifiedInModal = useCallback(async () => {
+    await profileData?.refreshProfile();
+  }, [profileData]);
+
+  const beginPhoneChangeWithOtp = useCallback(async (phone: string) => {
+    const res = await requestPhoneOtp(phone);
+    setPendingPhoneE164(phone);
+    setAssumePhoneOtpSent(true);
+    setPendingPhoneDevOtp(res.dev_phone_otp ?? null);
+    setPhoneOtpModalOpen(true);
+  }, []);
 
   const handlePhotoChange = useCallback(
     (dataUrl: string) => {
@@ -81,6 +107,7 @@ export function ProfileModal({
   const profile = profileData?.profile;
 
   return (
+    <>
     <DialogRoot
       open={open}
       onClose={onClose}
@@ -169,9 +196,7 @@ export function ProfileModal({
                 <SignInSecurityTab
                   email={profile.email}
                   phone={profile?.phone}
-                  onPhoneUpdate={async (phone) => {
-                    await handleProfileUpdate({ phone });
-                  }}
+                  onPhoneUpdate={beginPhoneChangeWithOtp}
                   lastSignInText="Today at 2:30 PM"
                   isRtl={isRtl}
                   onPasswordChange={handlePasswordChange}
@@ -183,5 +208,14 @@ export function ProfileModal({
         )}
       </div>
     </DialogRoot>
+    <PhoneOtpModal
+      open={phoneOtpModalOpen}
+      onClose={closePhoneOtpModal}
+      phone={pendingPhoneE164}
+      initialDevPhoneOtp={pendingPhoneDevOtp}
+      assumeOtpAlreadySent={assumePhoneOtpSent}
+      onVerified={handlePhoneVerifiedInModal}
+    />
+    </>
   );
 }

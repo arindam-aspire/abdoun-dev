@@ -5,4 +5,7 @@ export * from "./AuthPopupField";
 export * from "./AuthPopupSection";
 export * from "./OTPVerificationBlock";
 export * from "./PasswordPolicyHelper";
+export * from "./PasswordStrengthBar";
+export * from "./PolicyRuleItem";
+export * from "./passwordPolicyShared";
 export * from "./SocialAuthButtons";

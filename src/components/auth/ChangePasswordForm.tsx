@@ -14,6 +14,8 @@ type PasswordChecks = {
   symbol: boolean;
 };
 
+const CHANGE_PASSWORD_POLICY_REGION_ID = "change-password-new-policy";
+
 function validatePassword(password: string): PasswordChecks {
   return {
     minLength: password.length >= 8,
@@ -86,41 +88,47 @@ export function ChangePasswordForm({ onSubmit, initialLoading = false }: ChangeP
 
   return (
     <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-      <AuthPopupField
-        id="change-password-new"
-        type={showNewPassword ? "text" : "password"}
-        label="New Password"
-        placeholder="Enter new password"
-        value={newPassword}
-        error={newPasswordError}
-        onChange={(value) => {
-          setNewPassword(value);
-          if (touchedNew) {
-            setNewPasswordError(validateNewPasswordField(value));
-          }
-          if (touchedConfirm) {
-            setConfirmPasswordError(validateConfirmPasswordField(value, confirmPassword));
-          }
-        }}
-        onFocus={() => {
-          setTouchedNew(true);
-          setNewPasswordError(validateNewPasswordField(newPassword));
-        }}
-        rightAdornment={(
-          <button
-            type="button"
-            className="cursor-pointer text-zinc-500 hover:text-zinc-700"
-            onClick={() => setShowNewPassword((prev) => !prev)}
-            aria-label={showNewPassword ? "Hide password" : "Show password"}
-          >
-            {showNewPassword ? (
-              <EyeOff className="h-5 w-5" />
-            ) : (
-              <Eye className="h-5 w-5" />
-            )}
-          </button>
-        )}
-      />
+      <div className="space-y-2">
+        <AuthPopupField
+          id="change-password-new"
+          type={showNewPassword ? "text" : "password"}
+          label="New Password"
+          placeholder="Enter new password"
+          value={newPassword}
+          error={newPasswordError}
+          ariaDescribedBy={CHANGE_PASSWORD_POLICY_REGION_ID}
+          onChange={(value) => {
+            setNewPassword(value);
+            if (touchedNew) {
+              setNewPasswordError(validateNewPasswordField(value));
+            }
+            if (touchedConfirm) {
+              setConfirmPasswordError(validateConfirmPasswordField(value, confirmPassword));
+            }
+          }}
+          onFocus={() => {
+            setTouchedNew(true);
+            setNewPasswordError(validateNewPasswordField(newPassword));
+          }}
+          rightAdornment={(
+            <button
+              type="button"
+              className="cursor-pointer text-zinc-500 hover:text-zinc-700"
+              onClick={() => setShowNewPassword((prev) => !prev)}
+              aria-label={showNewPassword ? "Hide password" : "Show password"}
+            >
+              {showNewPassword ? (
+                <EyeOff className="h-5 w-5" />
+              ) : (
+                <Eye className="h-5 w-5" />
+              )}
+            </button>
+          )}
+        />
+        <div id={CHANGE_PASSWORD_POLICY_REGION_ID} role="region" aria-label="Password requirements">
+          <PasswordPolicyHelper checks={passwordChecks} password={newPassword} />
+        </div>
+      </div>
 
       <AuthPopupField
         id="change-password-confirm"
@@ -140,8 +148,6 @@ export function ChangePasswordForm({ onSubmit, initialLoading = false }: ChangeP
           setConfirmPasswordError(validateConfirmPasswordField(newPassword, confirmPassword));
         }}
       />
-
-      <PasswordPolicyHelper checks={passwordChecks} />
 
       {submitError ? (
         <p className="text-size-sm text-red-600" role="alert">

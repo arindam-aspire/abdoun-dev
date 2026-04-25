@@ -14,6 +14,25 @@ import {
 import { AGENT_STATUS } from "@/constants/agentStatus";
 import { normalizeAgentStatus } from "@/constants/agentStatus";
 
+/** Thunk argument: same as list API params, plus optional `force` to bypass session cache. */
+export type FetchAdminAgentsArg = ListAdminAgentsParams & { force?: boolean };
+
+function listParamsFromFetchArg(arg: FetchAdminAgentsArg | undefined): ListAdminAgentsParams {
+  if (!arg) return {};
+  const { force: _force, ...rest } = arg;
+  return rest;
+}
+
+/** Stable key for `GET /agents` query (must match `listAdminAgents` defaults). */
+export function adminAgentsListCacheKey(params: ListAdminAgentsParams): string {
+  const page = params.page ?? 1;
+  const limit = params.limit ?? 20;
+  const sort_by = params.sort_by ?? "invited_at";
+  const order = params.order ?? "desc";
+  const status = params.status ?? "";
+  return `${page}|${limit}|${sort_by}|${order}|${status}`;
+}
+
 type AdminAgentsState = {
   /** All agents we've seen so far across any page/filter (merged by id). */
   allItems: AdminAgent[];
@@ -28,6 +47,17 @@ type AdminAgentsState = {
   inviting: boolean;
   inviteError: string | null;
   inviteSuccessMessage: string | null;
+  /** Last successful `GET /agents` query key; used to skip duplicate fetches. */
+  lastFetchKey: string | null;
+  /** True after invite/create/delete until the next successful list fetch. */
+  agentsListStale: boolean;
+  /** Query key for the in-flight list request (dedupes parallel identical dispatches). */
+  listInFlightKey: string | null;
+};
+
+/** Minimal `getState()` shape for the agents list thunk (avoids importing `RootState`). */
+type AdminAgentsThunkState = {
+  adminAgents: AdminAgentsState;
 };
 
 const initialState: AdminAgentsState = {
@@ -41,19 +71,40 @@ const initialState: AdminAgentsState = {
   inviting: false,
   inviteError: null,
   inviteSuccessMessage: null,
+  lastFetchKey: null,
+  agentsListStale: false,
+  listInFlightKey: null,
 };
 
-export const fetchAdminAgents = createAsyncThunk(
+export const fetchAdminAgents = createAsyncThunk<
+  Awaited<ReturnType<typeof listAdminAgents>>,
+  FetchAdminAgentsArg | undefined,
+  { state: AdminAgentsThunkState }
+>(
   "adminAgents/fetchAdminAgents",
-  async (params: ListAdminAgentsParams | undefined, thunkApi) => {
+  async (params, thunkApi) => {
+    const listParams = listParamsFromFetchArg(params);
     try {
-      return await listAdminAgents(params ?? {});
+      return await listAdminAgents(listParams);
     } catch (error) {
       if (error instanceof Error && error.message) {
         return thunkApi.rejectWithValue(error.message);
       }
       return thunkApi.rejectWithValue("Failed to load agents.");
     }
+  },
+  {
+    condition: (arg, { getState }) => {
+      if (arg?.force) return true;
+      const listParams = listParamsFromFetchArg(arg);
+      const key = adminAgentsListCacheKey(listParams);
+      const { adminAgents: s } = getState();
+      if (s.loading && s.listInFlightKey === key) return false;
+      if (s.status === "succeeded" && s.lastFetchKey === key && !s.agentsListStale) {
+        return false;
+      }
+      return true;
+    },
   },
 );
 
@@ -248,10 +299,11 @@ const adminAgentsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchAdminAgents.pending, (state) => {
+      .addCase(fetchAdminAgents.pending, (state, action) => {
         state.loading = true;
         state.error = null;
         state.status = "loading";
+        state.listInFlightKey = adminAgentsListCacheKey(listParamsFromFetchArg(action.meta.arg));
       })
       .addCase(fetchAdminAgents.fulfilled, (state, action) => {
         state.loading = false;
@@ -261,6 +313,9 @@ const adminAgentsSlice = createSlice({
         state.total = action.payload.total;
         state.page = action.payload.page ?? 1;
         state.status = "succeeded";
+        state.agentsListStale = false;
+        state.lastFetchKey = adminAgentsListCacheKey(listParamsFromFetchArg(action.meta.arg));
+        state.listInFlightKey = null;
         // Merge into allItems, upserting by id
         const byId = new Map(state.allItems.map((a) => [a.id, a] as const));
         for (const agent of pageItems) {
@@ -269,7 +324,9 @@ const adminAgentsSlice = createSlice({
         state.allItems = Array.from(byId.values());
       })
       .addCase(fetchAdminAgents.rejected, (state, action) => {
+        if (action.meta.condition === true) return;
         state.loading = false;
+        state.listInFlightKey = null;
         state.currentItems = [];
         state.error =
           (typeof action.payload === "string" ? action.payload : null) ||
@@ -286,6 +343,7 @@ const adminAgentsSlice = createSlice({
         state.inviting = false;
         state.inviteError = null;
         state.inviteSuccessMessage = `Invitation sent to ${action.payload.email}`;
+        state.agentsListStale = true;
         const newAgent = inviteResponseToAgent(action.payload);
         state.total += 1;
         if (state.page === 1) {
@@ -324,12 +382,14 @@ const adminAgentsSlice = createSlice({
         apply(state.allItems);
       })
       .addCase(deleteAdminAgent.fulfilled, (state, action) => {
+        state.agentsListStale = true;
         const id = action.payload.agentId;
         state.currentItems = state.currentItems.filter((a) => a.id !== id);
         state.allItems = state.allItems.filter((a) => a.id !== id);
         if (state.total > 0) state.total -= 1;
       })
       .addCase(createAdminAgentManually.fulfilled, (state, action) => {
+        state.agentsListStale = true;
         // Use the original payload to build the new agent entry
         const arg = action.meta.arg as AdminAgent;
         const now = new Date().toISOString();

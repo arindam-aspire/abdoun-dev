@@ -134,9 +134,6 @@ export function AgentInviteForm({ email, onSubmit, error, success }: AgentInvite
         id="agent-invite-phone"
         label={t("invitePhone")}
         type="phone"
-        showFlag={true}
-        showCountryCode={true}
-        showDialCode={false}
         placeholder={t("invitePhone")}
         value={phone}
         onChange={(value) => {

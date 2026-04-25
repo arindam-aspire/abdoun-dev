@@ -80,7 +80,7 @@ export function AuthPopupForgotStep({
             onFocus={onFocusNewPassword}
             error={forgot.errors.newPassword}
           />
-          <PasswordPolicyHelper checks={forgot.passwordChecks} />
+          <PasswordPolicyHelper checks={forgot.passwordChecks} password={forgot.fields.newPassword} />
           <AuthPopupField
             id="reset-confirm-password"
             type="password"

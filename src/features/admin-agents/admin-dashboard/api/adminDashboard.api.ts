@@ -36,16 +36,42 @@ const toStringArray = (value: unknown): string[] => {
   return value.map((item) => (typeof item === "string" ? item : String(item ?? "")));
 };
 
+const toOptionalLabelString = (value: unknown): string => {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return "";
+};
+
+/**
+ * Maps `propertyPerformanceSeries` rows from `GET /admin/dashboard/summary`
+ * (camelCase or snake_case keys; label vs title; value vs views).
+ */
 const toPropertyPerformanceSeries = (value: unknown): PerformanceComparisonItem[] => {
   if (!Array.isArray(value)) {
     return [];
   }
   return value.map((row) => {
     const r = (row ?? {}) as Record<string, unknown>;
-    const label = typeof r.label === "string" ? r.label : "";
+    const labelRaw =
+      r.label ??
+      r.property_title ??
+      r.propertyTitle ??
+      r.title ??
+      r.name ??
+      r.property_name ??
+      r.propertyName;
+    const label = toOptionalLabelString(labelRaw).trim();
+    const valueRaw =
+      r.value ??
+      r.views ??
+      r.view_count ??
+      r.viewCount ??
+      r.total_views ??
+      r.totalViews ??
+      r.count;
     return {
-      label,
-      value: toFiniteNumber(r.value, 0),
+      label: label || toOptionalLabelString(r.id).trim() || "—",
+      value: toFiniteNumber(valueRaw, 0),
     };
   });
 };
@@ -132,6 +158,17 @@ function assertSuccessData<T extends Record<string, unknown>>(
   return body.data as T;
 }
 
+function pickPropertyPerformanceSeriesRaw(
+  payload: AdminDashboardSummaryApiData,
+): unknown {
+  const p = payload as Record<string, unknown>;
+  const camel = p.propertyPerformanceSeries;
+  const snake = p.property_performance_series;
+  if (Array.isArray(camel)) return camel;
+  if (Array.isArray(snake)) return snake;
+  return camel ?? snake;
+}
+
 const toAdminDashboardData = (payload: AdminDashboardSummaryApiData): AdminDashboardData => {
   const monthRaw = payload.month;
   const month =
@@ -156,7 +193,9 @@ const toAdminDashboardData = (payload: AdminDashboardSummaryApiData): AdminDashb
     leadSourceLabels: toStringArray(payload.leadSourceLabels),
     leadSourceValues: toNumberSeries(payload.leadSourceValues),
     monthLabels: toStringArray(payload.monthLabels),
-    propertyPerformanceSeries: toPropertyPerformanceSeries(payload.propertyPerformanceSeries),
+    propertyPerformanceSeries: toPropertyPerformanceSeries(
+      pickPropertyPerformanceSeriesRaw(payload),
+    ),
   };
 };
 

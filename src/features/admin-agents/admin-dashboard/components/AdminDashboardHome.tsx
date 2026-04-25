@@ -1,6 +1,7 @@
 "use client";
 
 import { useAdminDashboard } from "@/features/admin-agents/admin-dashboard/hooks/useAdminDashboard";
+import { useAdminAgentsTotalForDashboard } from "@/features/admin-agents/admin-dashboard/hooks/useAdminAgentsTotalForDashboard";
 import { AdminDashboardHomeSkeleton } from "@/features/admin-agents/admin-dashboard/components/AdminDashboardHomeSkeleton";
 import { DotLineChart } from "@/features/admin-agents/components/shared-charts/DotLineChart";
 import { InquiryTrendLineChart } from "@/features/admin-agents/components/shared-charts/InquiryTrendLineChart";
@@ -182,6 +183,7 @@ export function AdminDashboardHome() {
   const locale = useLocale() as AppLocale;
   const tDashboard = useTranslations("dashboard");
   const { data, loading, error } = useAdminDashboard();
+  const { valueLabel: totalAgentsLabel } = useAdminAgentsTotalForDashboard();
   const [toast, setToast] = useState<{ kind: ToastKind; message: string } | null>(null);
   const errorToastSentRef = useRef(false);
 
@@ -235,11 +237,26 @@ export function AdminDashboardHome() {
   const shortMonthParam = data.month.slice(2);
 
   const metricCards: Array<
-    { id: "users" | "closedDeals" | "pendingApprovals" | "listings" | "leads" } & Omit<
-      ComponentProps<typeof DashboardMetricCard>,
-      "className"
-    >
+    {
+      id: "totalAgents" | "users" | "closedDeals" | "pendingApprovals" | "listings" | "leads";
+    } & Omit<ComponentProps<typeof DashboardMetricCard>, "className">
   > = [
+    (() => {
+      const toneClass = kpiToneClass("info");
+      return {
+        id: "totalAgents",
+        label: tDashboard("totalAgentsKpi"),
+        value: totalAgentsLabel,
+        icon: UserPlus,
+        href: `/${locale}/agents`,
+        iconBgClassName: toneClass.iconWrap,
+        iconClassName: toneClass.icon,
+        valueClassName: toneClass.value,
+        deltaTrend: null,
+        subLine: tDashboard("totalAgentsKpiSub"),
+        subLineClassName: toneClass.delta,
+      };
+    })(),
     (() => {
       const toneClass = kpiToneClass("neutral");
       return {
@@ -331,7 +348,7 @@ export function AdminDashboardHome() {
       </div>
 
       {/* ── KPI Cards ── */}
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {metricCards.map(({ id, ...card }) => (
           <DashboardMetricCard key={id} {...card} className="transition hover:shadow-md" useLink={false} />
         ))}

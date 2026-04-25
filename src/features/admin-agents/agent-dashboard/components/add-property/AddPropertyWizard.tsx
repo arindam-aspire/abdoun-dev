@@ -1,12 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import { ArrowLeft, ArrowRight, Save } from "lucide-react";
 import type { AppLocale } from "@/i18n/routing";
-import { Button } from "@/components/ui";
+import { Button, LoadingButton } from "@/components/ui";
+import {
+  DialogRoot,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Toast } from "@/components/ui/toast";
+import { useTranslations } from "@/hooks/useTranslations";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { getApiErrorMessage } from "@/lib/http/apiError";
 import { store } from "@/store";
@@ -36,11 +43,16 @@ import {
   mergeServerPayloadAfterPatch,
   rehydrateAddPropertyWizard,
   resetAddPropertyWizard,
+  selectShouldPromptLeaveAddProperty,
   setSubmissionMeta,
 } from "./addPropertyWizardSlice";
 import { ADD_PROPERTY_STEP_ORDER } from "./addPropertyWizard.types";
 
 const STORAGE_KEY = "abdoun:add-property:submission-id";
+
+export type AddPropertyWizardNavigateHandle = {
+  requestNavigate: (href: string) => void;
+};
 
 function isUserEditableStatus(status: string | null | undefined): boolean {
   if (!status) return true;
@@ -52,12 +64,14 @@ function isTerminalSubmissionStatus(status: string | null | undefined): boolean 
   return status === "submitted" || status === "approved" || status === "rejected";
 }
 
-export function AddPropertyWizard() {
+export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
+  function AddPropertyWizard(_props, ref) {
   const locale = useLocale() as AppLocale;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
+  const t = useTranslations("agentDashboard");
 
   const activeStep = useAppSelector(selectAddPropertyActiveStep);
   const currentStepIndex = useAppSelector(selectAddPropertyCurrentStepIndex);
@@ -72,6 +86,11 @@ export function AddPropertyWizard() {
   const [initLoading, setInitLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ kind: "success" | "error"; message: string } | null>(null);
+  const [leaveModal, setLeaveModal] = useState<{ open: boolean; href: string | null }>({
+    open: false,
+    href: null,
+  });
+  const [leaveSaving, setLeaveSaving] = useState(false);
 
   const showToast = useCallback((kind: "success" | "error", message: string) => {
     setToast({ kind, message });
@@ -168,10 +187,6 @@ export function AddPropertyWizard() {
     };
   }, [dispatch, pathname, router, searchParams, showToast]);
 
-  const handleBack = () => {
-    router.push(`/${locale}/agent-dashboard/listings`);
-  };
-
   const patchForStep = useCallback(
     async (step: (typeof ADD_PROPERTY_STEP_ORDER)[number], action: "save" | "next" | "previous" | "save_draft") => {
       const id = store.getState().addPropertyWizard.submissionId;
@@ -206,6 +221,59 @@ export function AddPropertyWizard() {
     },
     [dispatch, showToast],
   );
+
+  const proceedNavigate = useCallback(
+    (href: string) => {
+      setLeaveModal({ open: false, href: null });
+      router.push(href);
+    },
+    [router],
+  );
+
+  const requestNavigate = useCallback(
+    (href: string) => {
+      if (!selectShouldPromptLeaveAddProperty(store.getState())) {
+        router.push(href);
+        return;
+      }
+      setLeaveModal({ open: true, href });
+    },
+    [router],
+  );
+
+  useImperativeHandle(ref, () => ({ requestNavigate }), [requestNavigate]);
+
+  const closeLeaveModal = useCallback(() => {
+    if (leaveSaving) return;
+    setLeaveModal({ open: false, href: null });
+  }, [leaveSaving]);
+
+  const leaveWithoutSaving = useCallback(() => {
+    const href = leaveModal.href;
+    if (!href) return;
+    proceedNavigate(href);
+  }, [leaveModal.href, proceedNavigate]);
+
+  const saveDraftAndLeave = useCallback(async () => {
+    const href = leaveModal.href;
+    if (!href) return;
+    if (!editable) {
+      proceedNavigate(href);
+      return;
+    }
+    setLeaveSaving(true);
+    const step = store.getState().addPropertyWizard.activeStep;
+    const ok = await patchForStep(step, "save_draft");
+    setLeaveSaving(false);
+    if (ok) {
+      showToast("success", t("leaveAddPropertyDraftSavedToast"));
+      proceedNavigate(href);
+    }
+  }, [editable, leaveModal.href, patchForStep, proceedNavigate, showToast, t]);
+
+  const handleBack = () => {
+    requestNavigate(`/${locale}/agent-dashboard/listings`);
+  };
 
   const handleDraft = async () => {
     if (!editable) {
@@ -359,9 +427,53 @@ export function AddPropertyWizard() {
           </div>
         </div>
       </div>
+
+      <DialogRoot
+        open={leaveModal.open}
+        onClose={closeLeaveModal}
+        className="relative max-w-lg"
+      >
+        <DialogTitle>{t("leaveAddPropertyTitle")}</DialogTitle>
+        <DialogDescription className="text-pretty text-sm text-charcoal/75">
+          {t("leaveAddPropertyDescription")}
+        </DialogDescription>
+        <DialogFooter className="mt-6 flex-row flex-nowrap gap-2 sm:gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={closeLeaveModal}
+            disabled={leaveSaving}
+            className="h-auto min-h-10 min-w-0 flex-1 justify-center px-2 py-2.5 text-center text-xs leading-snug sm:px-3 sm:text-sm"
+          >
+            {t("leaveAddPropertyCancel")}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-auto min-h-10 min-w-0 flex-1 justify-center border-rose-200 px-2 py-2.5 text-center text-xs leading-snug text-rose-800 hover:bg-rose-50 sm:px-3 sm:text-sm"
+            onClick={() => leaveWithoutSaving()}
+            disabled={leaveSaving}
+          >
+            {t("leaveAddPropertyDiscard")}
+          </Button>
+          <LoadingButton
+            type="button"
+            variant="accent"
+            className="h-auto min-h-10 min-w-0 flex-1 justify-center bg-[#294a66] px-2 py-2.5 text-center text-xs leading-snug text-white hover:bg-[#203d56] sm:px-3 sm:text-sm"
+            loading={leaveSaving}
+            onClick={() => void saveDraftAndLeave()}
+            disabled={leaveSaving || !editable}
+          >
+            {t("leaveAddPropertySaveDraft")}
+          </LoadingButton>
+        </DialogFooter>
+      </DialogRoot>
+
       {toast ? (
         <Toast kind={toast.kind} message={toast.message} onClose={() => setToast(null)} />
       ) : null}
     </div>
   );
-}
+});
+
+AddPropertyWizard.displayName = "AddPropertyWizard";

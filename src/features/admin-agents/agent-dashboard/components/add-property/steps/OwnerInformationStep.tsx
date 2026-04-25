@@ -316,9 +316,6 @@ export function OwnerInformationStep() {
                   )
                 }
                 placeholder="555-0123"
-                showFlag={true}
-                showCountryCode={true}
-                showDialCode={true}
                 fieldClassName="h-11 rounded-xl border-[#b8c8ea] bg-white text-slate-700 shadow-sm transition-colors hover:border-[#8fa6d8] focus-within:border-primary focus-within:ring-2 focus-within:ring-[rgba(26,59,92,0.12)] focus-within:ring-offset-0"
                 inputClassName="text-sm text-slate-700 placeholder:text-slate-500"
               />

@@ -8,9 +8,10 @@ import { cn } from "@/lib/cn";
 interface PhoneNumberInputProps {
   idPrefix: string;
   label: string;
-  countryCode: string;
+  /** ISO 3166-1 alpha-2 territory (e.g. `JO`). */
+  countryIso2: string;
+  onCountryIso2Change: (iso2: string) => void;
   localNumber: string;
-  onCountryCodeChange: (value: string) => void;
   onLocalNumberChange: (value: string) => void;
   placeholder?: string;
   error?: string;
@@ -27,9 +28,9 @@ interface PhoneNumberInputProps {
 export function PhoneNumberInput({
   idPrefix,
   label,
-  countryCode,
+  countryIso2,
+  onCountryIso2Change,
   localNumber,
-  onCountryCodeChange,
   onLocalNumberChange,
   placeholder,
   error,
@@ -50,16 +51,15 @@ export function PhoneNumberInput({
       <div className={cn("grid grid-cols-[9.5rem_1fr] gap-2", rowClassName)}>
         <PhoneCountryCodeSelect
           id={`${idPrefix}-country-code`}
-          value={countryCode}
-          onChange={onCountryCodeChange}
+          value={countryIso2}
+          onChange={onCountryIso2Change}
           onFocus={onFocus}
           buttonClassName={cn(
             "h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900 shadow-sm transition-colors",
-            "focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-2 focus:border-transparent",
+            "focus:outline-none focus:ring-0 focus:ring-offset-0 focus:border-zinc-400",
             "disabled:cursor-not-allowed disabled:opacity-50",
             selectClassName,
           )}
-          menuClassName="w-[18rem]"
           align={isRtl ? "right" : "left"}
         />
         <Input

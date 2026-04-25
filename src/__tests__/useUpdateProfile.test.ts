@@ -1,12 +1,29 @@
 import { renderHook, act } from "@testing-library/react";
 
+type MockRootState = {
+  auth: { userId: string };
+  profile: {
+    userId: string;
+    userDetails: {
+      id: string;
+      name: string;
+      email: string;
+      phone: string;
+      role: string;
+    };
+  };
+};
+
 const dispatchMock = jest.fn();
-const loginActionMock = jest.fn((payload) => ({ type: "auth/login", payload }));
-const setProfileExtraMock = jest.fn((payload) => ({ type: "profile/setExtra", payload }));
+const loginActionMock = jest.fn((payload: unknown) => ({ type: "auth/login", payload }));
+const setProfileExtraMock = jest.fn((payload: unknown) => ({
+  type: "profile/setExtra",
+  payload,
+}));
 
 jest.mock("@/hooks/storeHooks", () => ({
   useAppDispatch: () => dispatchMock,
-  useAppSelector: (selector) =>
+  useAppSelector: (selector: (state: MockRootState) => unknown) =>
     selector({
       auth: { userId: "u1" },
       profile: {
@@ -23,25 +40,34 @@ jest.mock("@/hooks/storeHooks", () => ({
 }));
 
 jest.mock("@/store/selectors", () => ({
-  selectCurrentUser: (state) => state.profile.userDetails,
+  selectCurrentUser: (state: MockRootState) => state.profile.userDetails,
 }));
 
 jest.mock("@/features/auth/authSlice", () => ({
-  login: (payload) => loginActionMock(payload),
+  login: (payload: unknown) => loginActionMock(payload),
 }));
 
 jest.mock("@/features/profile/profileSlice", () => ({
-  setProfileExtra: (payload) => setProfileExtraMock(payload),
+  setProfileExtra: (payload: unknown) => setProfileExtraMock(payload),
 }));
 
-const updateUserMock = jest.fn();
+const persistSessionMock = jest.fn();
+jest.mock("@/lib/auth/sessionManager", () => ({
+  persistSession: (...args: unknown[]) => persistSessionMock(...args),
+}));
+
+jest.mock("@/lib/auth/enrichSessionUser", () => ({
+  enrichWithPhoneParts: (u: unknown) => u,
+}));
+
+const requestProfileUpdateMock = jest.fn();
 const getCurrentUserMock = jest.fn();
 const toSessionUserForProfileMock = jest.fn();
 
 jest.mock("@/features/profile/api/profile.api", () => ({
-  updateUser: (...args) => updateUserMock(...args),
+  requestProfileUpdate: (...args: unknown[]) => requestProfileUpdateMock(...args),
   getCurrentUser: () => getCurrentUserMock(),
-  toSessionUserForProfile: (u) => toSessionUserForProfileMock(u),
+  toSessionUserForProfile: (u: unknown) => toSessionUserForProfileMock(u),
 }));
 
 import { useUpdateProfile } from "@/features/profile/hooks/useUpdateProfile";
@@ -51,12 +77,19 @@ describe("useUpdateProfile", () => {
     dispatchMock.mockClear();
     loginActionMock.mockClear();
     setProfileExtraMock.mockClear();
-    updateUserMock.mockReset();
+    requestProfileUpdateMock.mockReset();
     getCurrentUserMock.mockReset();
     toSessionUserForProfileMock.mockReset();
+    persistSessionMock.mockReset();
   });
 
-  it("updates via API when fullName/phone provided and dispatches login", async () => {
+  it("calls profile request API when fullName/phone provided and dispatches login", async () => {
+    requestProfileUpdateMock.mockResolvedValue({
+      message: "ok",
+      requires_verification: false,
+      verification_fields: [],
+      dev_phone_otp: null,
+    });
     getCurrentUserMock.mockResolvedValue({ id: "u1" });
     toSessionUserForProfileMock.mockReturnValue({
       id: "u1",
@@ -71,29 +104,84 @@ describe("useUpdateProfile", () => {
       await result.current.updateProfile({ fullName: "New", phone: "+2" });
     });
 
-    expect(updateUserMock).toHaveBeenCalledWith("u1", {
+    expect(requestProfileUpdateMock).toHaveBeenCalledWith({
       full_name: "New",
       phone_number: "+2",
     });
-    expect(loginActionMock).toHaveBeenCalled();
+    const sessionPayload = {
+      id: "u1",
+      name: "New",
+      email: "u@u",
+      role: "user",
+    };
+    expect(persistSessionMock).toHaveBeenCalledWith({ user: sessionPayload });
+    expect(loginActionMock).toHaveBeenCalledWith(sessionPayload);
   });
 
-  it("dispatches setProfileExtra for avatar/displayName/location without API call", async () => {
+  it("dispatches setProfileExtra for avatar/displayName without profile request API", async () => {
     const { result } = renderHook(() => useUpdateProfile());
 
     await act(async () => {
       await result.current.updateProfile({
         avatarUrl: "x",
         displayName: "D",
-        location: "L",
       });
     });
 
-    expect(updateUserMock).not.toHaveBeenCalled();
+    expect(requestProfileUpdateMock).not.toHaveBeenCalled();
     expect(setProfileExtraMock).toHaveBeenCalledWith({
       userId: "u1",
-      extra: { avatarUrl: "x", displayName: "D", location: "L" },
+      extra: { avatarUrl: "x", displayName: "D" },
+    });
+  });
+
+  it("throws when server requires verification for email/phone", async () => {
+    requestProfileUpdateMock.mockResolvedValue({
+      message: "Verify",
+      requires_verification: true,
+      verification_fields: ["phone_number"],
+      dev_phone_otp: "123456",
+    });
+
+    const { result } = renderHook(() => useUpdateProfile());
+
+    let thrown: unknown;
+    await act(async () => {
+      try {
+        await result.current.updateProfile({ phone: "+962791234567" });
+      } catch (e) {
+        thrown = e;
+      }
+    });
+
+    expect(thrown).toBeInstanceOf(Error);
+    expect(getCurrentUserMock).not.toHaveBeenCalled();
+  });
+
+  it("refreshProfile persists session and dispatches login from GET /auth/me", async () => {
+    getCurrentUserMock.mockResolvedValue({ id: "u1" });
+    toSessionUserForProfileMock.mockReturnValue({
+      id: "u1",
+      name: "Synced",
+      email: "u@u",
+      role: "user",
+    });
+
+    const { result } = renderHook(() => useUpdateProfile());
+
+    await act(async () => {
+      await result.current.refreshProfile();
+    });
+
+    expect(getCurrentUserMock).toHaveBeenCalled();
+    expect(persistSessionMock).toHaveBeenCalledWith({
+      user: { id: "u1", name: "Synced", email: "u@u", role: "user" },
+    });
+    expect(loginActionMock).toHaveBeenCalledWith({
+      id: "u1",
+      name: "Synced",
+      email: "u@u",
+      role: "user",
     });
   });
 });
-

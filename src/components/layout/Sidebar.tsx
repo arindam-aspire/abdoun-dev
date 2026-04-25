@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  getSidebarItemHref,
+  isSidebarHrefActive,
   sidebarConfig,
   sidebarUiConfig,
   type SidebarRole,
@@ -11,13 +13,15 @@ import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { useSidebar } from "@/hooks/useSidebar";
 import { useTranslations } from "@/hooks/useTranslations";
 import { performClientLogout } from "@/lib/auth/logoutClient";
+import { ADMIN_AGENTS_DASHBOARD_COUNT_PARAMS } from "@/features/admin-agents/admin-dashboard/hooks/useAdminAgentsTotalForDashboard";
+import { fetchAdminAgents } from "@/features/admin-agents/adminAgentsSlice";
 import { selectCurrentUser, selectSidebarCounts } from "@/store/selectors";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { isRtlLocale } from "@/i18n/routing";
 import { useLocale } from "next-intl";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export function Sidebar() {
   const { isOpen, isSidebarRole, isMobile, isCollapsed, toggleCollapsed, close } =
@@ -27,11 +31,16 @@ export function Sidebar() {
   const counts = useAppSelector(selectSidebarCounts);
   const locale = useLocale();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const tCommon = useTranslations("common");
   const isRTL = isRtlLocale(locale);
+  useEffect(() => {
+    if (user?.role !== "admin" || !user?.id) return;
+    void dispatch(fetchAdminAgents(ADMIN_AGENTS_DASHBOARD_COUNT_PARAMS));
+  }, [dispatch, user?.id, user?.role]);
 
   if (!isSidebarRole) return null;
   const role = user?.role as SidebarRole | undefined;
@@ -47,16 +56,21 @@ export function Sidebar() {
   const itemHrefMap = sections.flatMap((section) =>
     section.items.map((item) => ({
       id: item.id,
-      href: `/${locale}${item.path}`,
+      href: getSidebarItemHref(locale, item, role),
     })),
   );
-  const activeItemId =
+  const matchedByPrefix =
     itemHrefMap
-      .filter(
-        (item) =>
-          pathname === item.href || pathname.startsWith(`${item.href}/`),
-      )
+      .filter((item) => isSidebarHrefActive(pathname, searchParams, item.href))
       .sort((a, b) => b.href.length - a.href.length)[0]?.id ?? null;
+
+  /** Wizard lives under `/agent-dashboard/add-property`; highlight Listings, not Dashboard. */
+  const addPropertyHref = `/${locale}/agent-dashboard/add-property`;
+  const activeItemId =
+    matchedByPrefix === "agentDashboard" &&
+    (pathname === addPropertyHref || pathname.startsWith(`${addPropertyHref}/`))
+      ? "manageListings"
+      : matchedByPrefix;
   const handleSidebarSignOut = async () => {
     if (isSigningOut) return;
     setIsSigningOut(true);
@@ -157,7 +171,7 @@ export function Sidebar() {
                   )}
                 >
                   {section.items.map((item) => {
-                    const href = `/${locale}${item.path}`;
+                    const href = getSidebarItemHref(locale, item, role);
                     const isActive = activeItemId === item.id;
                     const count = item.countKey
                       ? (counts[item.countKey] ?? 0)

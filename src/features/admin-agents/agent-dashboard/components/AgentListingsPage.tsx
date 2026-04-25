@@ -6,7 +6,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import type { AppLocale } from "@/i18n/routing";
 import {
-  ArrowLeft,
   Building2,
   Eye,
   Pencil,
@@ -33,6 +32,7 @@ import { Button, Input, Label } from "@/components/ui";
 import { Dropdown } from "@/components/ui/dropdown";
 import { Pagination } from "@/components/ui/Pagination";
 import { Toast } from "@/components/ui/toast";
+import { AgentListingsPageSkeleton } from "@/features/admin-agents/agent-dashboard/components/AgentListingsPageSkeleton";
 
 function statusClass(status: string): string {
   if (status === "active") return "bg-emerald-100 text-emerald-800 border-emerald-200";
@@ -158,6 +158,7 @@ export function AgentListingsPage() {
   const [editPrice, setEditPrice] = useState("");
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadErrorToast, setLoadErrorToast] = useState<string | null>(null);
   const [draftSubmissions, setDraftSubmissions] = useState<AgentDraftSubmissionItem[]>([]);
   const [draftSubmissionsTotal, setDraftSubmissionsTotal] = useState(0);
   const [submittedToast, setSubmittedToast] = useState(false);
@@ -199,8 +200,12 @@ export function AgentListingsPage() {
         setDraftSubmissionsTotal(res.draft_submissions_total ?? 0);
       })
       .catch((e: unknown) => {
+        const message = getApiErrorMessage(e);
         setListings([]);
-        setLoadError(getApiErrorMessage(e));
+        setDraftSubmissions([]);
+        setDraftSubmissionsTotal(0);
+        setLoadError(message);
+        setLoadErrorToast(message);
       })
       .finally(() => {
         setLoading(false);
@@ -300,42 +305,19 @@ export function AgentListingsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <p className="text-charcoal/70">{t("loadingListings")}</p>
-      </div>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <div className="space-y-6">
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <p className="font-medium">{t("loadListingsError")}</p>
-          <p className="mt-1 text-amber-800/90">{loadError}</p>
-          <button
-            type="button"
-            onClick={() => load()}
-            className="mt-3 inline-flex items-center rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100/80"
-          >
-            {t("retryLoadListings")}
-          </button>
-        </div>
-        <div className="flex items-center gap-4">
-          <Link
-            href={`/${locale}/agent-dashboard`}
-            className="inline-flex items-center gap-2 text-sm font-medium text-charcoal/80 hover:text-charcoal"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {t("backToDashboard")}
-          </Link>
-        </div>
-      </div>
-    );
+    return <AgentListingsPageSkeleton />;
   }
 
   return (
     <div className="space-y-6">
+      {loadErrorToast ? (
+        <Toast
+          kind="error"
+          message={loadErrorToast}
+          duration={7000}
+          onClose={() => setLoadErrorToast(null)}
+        />
+      ) : null}
       {submittedToast ? (
         <Toast
           kind="success"
@@ -343,15 +325,6 @@ export function AgentListingsPage() {
           onClose={() => setSubmittedToast(false)}
         />
       ) : null}
-      <div className="flex items-center gap-4">
-        <Link
-          href={`/${locale}/agent-dashboard`}
-          className="inline-flex items-center gap-2 text-sm font-medium text-charcoal/80 hover:text-charcoal"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t("backToDashboard")}
-        </Link>
-      </div>
       <div className="flex items-center justify-between gap-4 px-1">
         <div>
           <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
@@ -396,7 +369,7 @@ export function AgentListingsPage() {
         </div>
       </div>
 
-      {draftSubmissions.length > 0 ? (
+      {!loadError && draftSubmissions.length > 0 ? (
         <section className="rounded-2xl border border-amber-200/80 bg-amber-50/50 p-4 md:p-5">
           <h2 className="text-size-sm fw-semibold text-charcoal">
             {t("draftSubmissionsHeading", { count: draftSubmissionsTotal || draftSubmissions.length })}
@@ -443,81 +416,97 @@ export function AgentListingsPage() {
               </tr>
             </thead>
             <tbody>
-              {paginatedListings.map((row) => (
-                <tr
-                  key={row.id}
-                  className="border-b border-subtle/70 text-sm last:border-b-0"
-                >
-                  <td className="px-4 py-3 font-medium text-charcoal">
-                    <span className="block">{row.title}</span>
-                    {row.catalogStatusName && row.submissionStatus ? (
-                      <span className="mt-0.5 block text-size-xs font-normal text-charcoal/55">
-                        {t("catalogStatusLine", { status: row.catalogStatusName })}
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-3 text-charcoal/80">
-                    {formatTypeWithSubType(row.type, row.subType)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-medium ${statusClassForListing(row)}`}
+              {loadError ? (
+                <tr className="border-b border-subtle/70 text-sm">
+                  <td colSpan={6} className="px-4 py-14 text-center">
+                    <p className="text-sm font-medium text-charcoal">{t("loadListingsError")}</p>
+                    <p className="mt-2 text-xs text-charcoal/60">{t("loadListingsErrorHint")}</p>
+                    <button
+                      type="button"
+                      onClick={() => void load()}
+                      className="mt-5 inline-flex items-center justify-center rounded-lg border border-subtle bg-white px-4 py-2 text-sm font-medium text-charcoal shadow-sm transition hover:bg-surface"
                     >
-                      {listingStatusBadgeText(row, t)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-charcoal/80">{formatDate(row.lastUpdated)}</td>
-                  <td className="px-4 py-3 text-charcoal">{formatPrice(row.price)}</td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Link
-                        href={`/${locale}/property-details/${row.id}`}
-                        className="inline-flex items-center gap-1 rounded-lg border border-subtle bg-surface px-2 py-1.5 text-xs font-medium text-charcoal hover:bg-primary/5"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        {t("view")}
-                      </Link>
-                      {!row.isFromApi &&
-                      row.status !== "active" &&
-                      row.status !== "pending_approval" &&
-                      row.status !== "approved" ? (
-                        <button
-                          type="button"
-                          onClick={() => openEdit(row)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-subtle bg-surface px-2 py-1.5 text-xs font-medium text-charcoal hover:bg-primary/5"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                          {t("edit")}
-                        </button>
-                      ) : null}
-                      {!row.isFromApi && row.status === "approved" ? (
-                        <button
-                          type="button"
-                          onClick={() => handlePublish(row.id)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
-                        >
-                          <Upload className="h-3.5 w-3.5" />
-                          {t("publish")}
-                        </button>
-                      ) : null}
-                      {!row.isFromApi && row.status !== "pending_approval" ? (
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(row.id)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          {t("delete")}
-                        </button>
-                      ) : null}
-                    </div>
+                      {t("retryLoadListings")}
+                    </button>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                paginatedListings.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="border-b border-subtle/70 text-sm last:border-b-0"
+                  >
+                    <td className="px-4 py-3 font-medium text-charcoal">
+                      <span className="block">{row.title}</span>
+                      {row.catalogStatusName && row.submissionStatus ? (
+                        <span className="mt-0.5 block text-size-xs font-normal text-charcoal/55">
+                          {t("catalogStatusLine", { status: row.catalogStatusName })}
+                        </span>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3 text-charcoal/80">
+                      {formatTypeWithSubType(row.type, row.subType)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-medium ${statusClassForListing(row)}`}
+                      >
+                        {listingStatusBadgeText(row, t)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-charcoal/80">{formatDate(row.lastUpdated)}</td>
+                    <td className="px-4 py-3 text-charcoal">{formatPrice(row.price)}</td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/${locale}/property-details/${row.id}`}
+                          className="inline-flex items-center gap-1 rounded-lg border border-subtle bg-surface px-2 py-1.5 text-xs font-medium text-charcoal hover:bg-primary/5"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          {t("view")}
+                        </Link>
+                        {!row.isFromApi &&
+                        row.status !== "active" &&
+                        row.status !== "pending_approval" &&
+                        row.status !== "approved" ? (
+                          <button
+                            type="button"
+                            onClick={() => openEdit(row)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-subtle bg-surface px-2 py-1.5 text-xs font-medium text-charcoal hover:bg-primary/5"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            {t("edit")}
+                          </button>
+                        ) : null}
+                        {!row.isFromApi && row.status === "approved" ? (
+                          <button
+                            type="button"
+                            onClick={() => handlePublish(row.id)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+                          >
+                            <Upload className="h-3.5 w-3.5" />
+                            {t("publish")}
+                          </button>
+                        ) : null}
+                        {!row.isFromApi && row.status !== "pending_approval" ? (
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(row.id)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            {t("delete")}
+                          </button>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-        {filteredListings.length === 0 ? (
+        {loadError ? null : filteredListings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Building2 className="h-10 w-10 text-charcoal/40" />
             <p className="mt-2 text-sm text-charcoal/70">{t("noListings")}</p>

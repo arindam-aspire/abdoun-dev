@@ -335,4 +335,17 @@ export const selectAddPropertyCurrentStepIndex = (state: RootState) =>
   ADD_PROPERTY_STEP_ORDER.indexOf(state.addPropertyWizard.activeStep);
 export const selectAddPropertyWizard = (state: RootState) => state.addPropertyWizard;
 
+function isUserEditableSubmissionStatus(status: string | null | undefined): boolean {
+  if (!status) return true;
+  return status === "draft" || status === "in_progress" || status === "changes_requested";
+}
+
+/** True when leaving the wizard should prompt: title + type entered, editable submission, and server id exists. */
+export function selectShouldPromptLeaveAddProperty(state: RootState): boolean {
+  const w = state.addPropertyWizard;
+  if (!w.submissionId) return false;
+  if (!isUserEditableSubmissionStatus(w.submissionStatus)) return false;
+  return w.propertyTitle.trim().length > 0 && w.propertyType.trim().length > 0;
+}
+
 export default addPropertyWizardSlice.reducer;

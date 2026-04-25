@@ -3,6 +3,7 @@
 import { forwardRef } from "react";
 import type { InputHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { inputNativeControlClassName } from "@/components/ui/input-classes";
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
@@ -11,25 +12,26 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type = "text", error, rightAdornment, ...rest }, ref) => {
+  (
+    { className, type = "text", error, rightAdornment, "aria-describedby": ariaDescribedByProp, ...rest },
+    ref,
+  ) => {
+    const errorDescId = error ? "input-error" : undefined;
+    const describedBy = [errorDescId, ariaDescribedByProp].filter(Boolean).join(" ") || undefined;
+
     return (
       <div className="w-full">
         <div className={cn(rightAdornment && "relative")}>
           <input
             type={type}
             ref={ref}
-            className={cn(
-              "flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-size-sm text-zinc-900 shadow-sm transition-colors",
-              "placeholder:text-zinc-400",
-              "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:border-transparent",
-              "disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-zinc-50",
-              "aria-invalid:border-red-500 aria-invalid:ring-red-500/20",
-              error && "border-red-500 ring-2 ring-red-500/20",
-              rightAdornment && "pe-10",
+            className={inputNativeControlClassName({
+              error,
+              rightAdornment: !!rightAdornment,
               className,
-            )}
+            })}
             aria-invalid={!!error}
-            aria-describedby={error ? "input-error" : undefined}
+            aria-describedby={describedBy}
             {...rest}
           />
           {rightAdornment ? (

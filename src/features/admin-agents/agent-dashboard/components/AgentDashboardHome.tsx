@@ -17,6 +17,7 @@ import {
   CircleAlert,
   Eye,
   Handshake,
+  Inbox,
   Mail,
   Plus,
   ShieldCheck,
@@ -87,6 +88,8 @@ export function AgentDashboardHome() {
   }
 
   const shortMonthParam = new Date().toISOString().slice(2, 7);
+
+  const meaningfulRecentActivity = data.recentActivity.filter((item) => item.text.trim().length > 0);
 
   const metricCards = [
     {
@@ -215,27 +218,53 @@ export function AgentDashboardHome() {
 
         <article className="rounded-xl border border-subtle bg-white p-4 shadow-sm md:p-5">
           <h2 className="text-sm font-semibold text-charcoal">{tAgent("recentActivity")}</h2>
-          <div className="mt-4 space-y-2">
-            {data.recentActivity.map((item, index) => (
+          <div className="mt-4">
+            {meaningfulRecentActivity.length === 0 ? (
               <div
-                key={`${item.text}-${item.time}-${index}`}
-                className="rounded-xl border border-subtle bg-surface px-3 py-2"
+                className="flex flex-col items-center rounded-xl border border-dashed border-subtle bg-surface/60 px-4 py-10 text-center"
+                role="status"
+                aria-live="polite"
               >
-                <div className="flex items-start gap-2">
-                  {item.tone === "success" ? (
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                  ) : item.tone === "warning" ? (
-                    <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-                  ) : (
-                    <Mail className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
-                  )}
-                  <div className="flex flex-1 items-center justify-between gap-2 min-w-0">
-                    <p className="text-sm text-charcoal">{item.text}</p>
-                    <span className="text-xs text-charcoal/65 shrink-0">{item.time}</span>
-                  </div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-charcoal/[0.06] text-charcoal/45 ring-1 ring-charcoal/[0.06]">
+                  <Inbox className="h-6 w-6" aria-hidden />
                 </div>
+                <p className="mt-3 text-sm font-medium text-charcoal">
+                  {tAgent("recentActivityEmptyTitle")}
+                </p>
+                <p className="mt-1.5 max-w-[min(100%,280px)] text-xs leading-relaxed text-charcoal/65">
+                  {tAgent("recentActivityEmptyDescription")}
+                </p>
+                <Link
+                  href={`/${locale}/agent-dashboard/inquiries`}
+                  className="mt-4 text-sm font-medium text-secondary underline-offset-4 transition hover:text-secondary/90 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-royal-blue)]/35 focus-visible:ring-offset-2 rounded-sm"
+                >
+                  {tAgent("recentActivityEmptyCta")}
+                </Link>
               </div>
-            ))}
+            ) : (
+              <div className="space-y-2">
+                {meaningfulRecentActivity.map((item, index) => (
+                  <div
+                    key={`${item.text}-${item.time}-${index}`}
+                    className="rounded-xl border border-subtle bg-surface px-3 py-2"
+                  >
+                    <div className="flex items-start gap-2">
+                      {item.tone === "success" ? (
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                      ) : item.tone === "warning" ? (
+                        <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                      ) : (
+                        <Mail className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
+                      )}
+                      <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                        <p className="text-sm text-charcoal">{item.text}</p>
+                        <span className="shrink-0 text-xs text-charcoal/65">{item.time}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </article>
       </section>

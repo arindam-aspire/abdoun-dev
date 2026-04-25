@@ -9,6 +9,8 @@ import { useUpdateProfile } from "@/features/profile/hooks/useUpdateProfile";
 export interface UseProfileResult {
   profile: ProfileData;
   saveProfile: (updates: Partial<ProfileData>) => Promise<void>;
+  /** Re-fetch GET /auth/me and sync session (e.g. after email/phone OTP verify). */
+  refreshProfile: () => Promise<void>;
 }
 
 const DEFAULT_LOCATION = "Dubai, UAE";
@@ -19,7 +21,7 @@ const DEFAULT_LOCATION = "Dubai, UAE";
  */
 export function useProfile(): UseProfileResult | null {
   const authUser = useAppSelector(selectCurrentUser);
-  const { updateProfile } = useUpdateProfile();
+  const { updateProfile, refreshProfile } = useUpdateProfile();
 
   const profile = useMemo((): ProfileData | null => {
     if (!authUser) return null;
@@ -34,5 +36,5 @@ export function useProfile(): UseProfileResult | null {
 
   if (!profile) return null;
 
-  return { profile, saveProfile: updateProfile };
+  return { profile, saveProfile: updateProfile, refreshProfile };
 }

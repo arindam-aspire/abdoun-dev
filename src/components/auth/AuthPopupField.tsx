@@ -15,12 +15,8 @@ interface AuthPopupFieldProps {
   onFocus?: () => void;
   rightAdornment?: ReactNode;
   error?: string;
-  /** When type="phone": show country flag (default: true) */
-  showFlag?: boolean;
-  /** When type="phone": show country code / dropdown arrow (default: false) */
-  showCountryCode?: boolean;
-  /** When type="phone": show dial code in input e.g. "+962" (default: true) */
-  showDialCode?: boolean;
+  /** Merged with error description id on the native input (text / email / password only). */
+  ariaDescribedBy?: string;
 }
 
 export function AuthPopupField({
@@ -33,9 +29,7 @@ export function AuthPopupField({
   onFocus,
   rightAdornment,
   error,
-  showFlag = true,
-  showCountryCode = false,
-  showDialCode = true,
+  ariaDescribedBy,
 }: AuthPopupFieldProps) {
   const isPhone = type === "phone";
 
@@ -52,11 +46,8 @@ export function AuthPopupField({
             onFocus={onFocus}
             placeholder={placeholder}
             error={error}
-            showFlag={showFlag}
-            showCountryCode={showCountryCode}
-            showDialCode={showDialCode}
             rightAdornment={rightAdornment}
-            className="[&>div:first-of-type]:h-12 [&>div:first-of-type]:rounded-[0.7rem] [&>div:first-of-type]:border [&>div:first-of-type]:border-[#b7c6ff] [&>div:first-of-type]:focus-within:border-[#6f8cff] [&>div:first-of-type]:focus-within:ring-2 [&>div:first-of-type]:focus-within:ring-[#6f8cff]/15 [&>div:first-of-type]:focus-within:ring-offset-0 [&>div:first-of-type]:shadow-none"
+            className="[&>div:first-of-type]:h-12 [&>div:first-of-type]:rounded-[0.7rem] [&>div:first-of-type]:border [&>div:first-of-type]:border-[#b7c6ff] [&>div:first-of-type]:focus-within:border-[#6f8cff] [&>div:first-of-type]:focus-within:ring-0 [&>div:first-of-type]:shadow-none"
           />
         ) : (
           <Input
@@ -69,6 +60,7 @@ export function AuthPopupField({
             error={error}
             className={authFieldInputClass}
             rightAdornment={rightAdornment}
+            aria-describedby={ariaDescribedBy}
           />
         )}
       </div>

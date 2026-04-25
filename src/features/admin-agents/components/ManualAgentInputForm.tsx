@@ -86,7 +86,6 @@ export function ManualAgentInputForm({
       />
       <PhoneNumberInputField
         value={phone}
-        showCountryCode={true}
         onChange={onPhoneChange}
         placeholder="Phone number"
         error={phoneError}

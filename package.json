@@ -26,16 +26,16 @@
     "react": "19.2.3",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "19.2.3",
-    "react-phone-number-input": "^3.4.16",
+    "react-hook-form": "^7.54.0",
     "react-redux": "^9.2.0",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10",
     "@testing-library/jest-dom": "^6",
     "@testing-library/react": "^16",
     "@types/jest": "^29",
-    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

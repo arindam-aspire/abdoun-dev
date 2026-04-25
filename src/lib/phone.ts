@@ -1,106 +1,195 @@
+import {
+  getCountries,
+  getCountryCallingCode,
+  parsePhoneNumberFromString,
+  type CountryCode,
+} from "libphonenumber-js";
+import { formatPhoneDisplay } from "@/lib/phoneDisplay";
+
+export const DEFAULT_COUNTRY_ISO2 = "JO";
+
+/** Default territory dial prefix (Jordan). Prefer `DEFAULT_COUNTRY_ISO2` in new code. */
 export const DEFAULT_COUNTRY_CODE = "+962";
 
-const COUNTRY_CODES = [
-  { country: "Jordan", iso2: "JO", value: "+962" },
-  { country: "United States", iso2: "US", value: "+1" },
-  { country: "UAE", iso2: "AE", value: "+971" },
-  { country: "Saudi Arabia", iso2: "SA", value: "+966" },
-  { country: "United Kingdom", iso2: "GB", value: "+44" },
-  { country: "France", iso2: "FR", value: "+33" },
-  { country: "Spain", iso2: "ES", value: "+34" },
-  { country: "Egypt", iso2: "EG", value: "+20" },
-  { country: "Kuwait", iso2: "KW", value: "+965" },
-  { country: "Bahrain", iso2: "BH", value: "+973" },
-  { country: "Oman", iso2: "OM", value: "+968" },
-  { country: "Qatar", iso2: "QA", value: "+974" },
-];
-
-function countryFlagFromIso2(iso2: string): string {
-  return iso2
-    .toUpperCase()
-    .split("")
-    .map((char) => String.fromCodePoint(127397 + char.charCodeAt(0)))
-    .join("");
+/** ISO 3166-1 alpha-2 → regional-indicator flag pair (U+1F1E6…). */
+export function countryFlagFromIso2(iso2: string): string {
+  const upper = iso2.toUpperCase();
+  if (!/^[A-Z]{2}$/.test(upper)) return "";
+  const base = 0x1f1e6;
+  return String.fromCodePoint(
+    base + (upper.charCodeAt(0) - 65),
+    base + (upper.charCodeAt(1) - 65),
+  );
 }
 
 export interface CountryCodeOption {
-  value: string;
-  country: string;
   iso2: string;
+  /** Localized label for the current UI locale */
+  country: string;
+  /** English region name — always search Latin queries (e.g. "Jordan" while UI shows Arabic). */
+  countryEn: string;
+  dial: string;
   flag: string;
-  selectedLabel: string;
-  dropdownLabel: string;
 }
-
-export const COUNTRY_CODE_OPTIONS = COUNTRY_CODES
-  .slice()
-  .sort((a, b) => a.country.localeCompare(b.country))
-  .map((option) => ({
-    country: option.country,
-    iso2: option.iso2,
-    flag: countryFlagFromIso2(option.iso2),
-    value: option.value,
-    selectedLabel: `${countryFlagFromIso2(option.iso2)} ${option.value}`,
-    dropdownLabel: `${countryFlagFromIso2(option.iso2)} ${option.country} (${option.value})`,
-  })) satisfies CountryCodeOption[];
 
 function digitsOnly(value: string): string {
   return value.replace(/\D/g, "");
 }
 
-function normalizeCountryCode(code: string): string {
-  const onlyDigits = digitsOnly(code);
-  return onlyDigits ? `+${onlyDigits}` : DEFAULT_COUNTRY_CODE;
+/**
+ * National digits for UI: digits only, with leading national trunk `0` removed (e.g. India
+ * `06294…` → `6294…`). Matches `PhoneNumberInputField` / NSN display elsewhere.
+ */
+export function formatLocalPhoneDigitsForDisplay(
+  _iso2: string,
+  nationalDigits: string,
+): string {
+  return digitsOnly(nationalDigits).replace(/^0+/, "");
 }
 
-export function normalizePhoneNumber(countryCode: string, localNumber: string): string {
-  const normalizedCode = normalizeCountryCode(countryCode);
-  const localDigits = digitsOnly(localNumber);
-  return `${normalizedCode}${localDigits}`;
+function isSupportedCountry(iso2: string): iso2 is CountryCode {
+  return /^[A-Z]{2}$/i.test(iso2) && getCountries().includes(iso2.toUpperCase() as CountryCode);
+}
+
+/**
+ * All supported territories with localized names (no network).
+ * Cached per locale string.
+ */
+const optionsByLocale = new Map<string, CountryCodeOption[]>();
+
+export function getCountryCodeOptions(locale = "en"): CountryCodeOption[] {
+  const key = locale || "en";
+  const hit = optionsByLocale.get(key);
+  if (hit) return hit;
+
+  let regionNames: Intl.DisplayNames;
+  try {
+    regionNames = new Intl.DisplayNames([key], { type: "region" });
+  } catch {
+    regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+  }
+
+  const namesEn = new Intl.DisplayNames(["en"], { type: "region" });
+
+  const list: CountryCodeOption[] = [];
+  for (const iso2 of getCountries()) {
+    try {
+      const cc = getCountryCallingCode(iso2);
+      const upper = iso2.toUpperCase();
+      let country: string;
+      try {
+        country = regionNames.of(upper) ?? upper;
+      } catch {
+        country = upper;
+      }
+      let countryEn: string;
+      try {
+        countryEn = namesEn.of(upper) ?? upper;
+      } catch {
+        countryEn = upper;
+      }
+      list.push({
+        iso2: upper,
+        country,
+        countryEn,
+        dial: `+${cc}`,
+        flag: countryFlagFromIso2(upper),
+      });
+    } catch {
+      // skip unsupported metadata edge cases
+    }
+  }
+
+  list.sort((a, b) => a.country.localeCompare(b.country, key, { sensitivity: "base" }));
+  optionsByLocale.set(key, list);
+  return list;
+}
+
+/** @deprecated Use `getCountryCodeOptions` — kept for any external imports of the old name */
+export const COUNTRY_CODE_OPTIONS = getCountryCodeOptions("en");
+
+export function normalizePhoneNumber(iso2: string, localNumber: string): string {
+  const territory: CountryCode = isSupportedCountry(iso2)
+    ? (iso2.toUpperCase() as CountryCode)
+    : (DEFAULT_COUNTRY_ISO2 as CountryCode);
+  const dial = getCountryCallingCode(territory);
+  return `+${dial}${digitsOnly(localNumber)}`;
+}
+
+/**
+ * Read-only profile line: territory flag key + national-style digits (no leading `+` calling code).
+ */
+export function getProfilePhoneReadonlyDisplay(phone: string | undefined | null): {
+  iso2: string;
+  nationalLine: string;
+} | null {
+  const trimmed = phone?.trim();
+  if (!trimmed) return null;
+  const parsed =
+    parsePhoneNumberFromString(trimmed) ??
+    parsePhoneNumberFromString(trimmed, DEFAULT_COUNTRY_ISO2 as CountryCode);
+  if (parsed?.country) {
+    /** NSN digits + spacing — avoids `formatNational()` trunk `0` (e.g. India `06294…` for `+91…`). */
+    const displayParts = formatPhoneDisplay(trimmed);
+    if (displayParts) {
+      return {
+        iso2: parsed.country,
+        nationalLine: displayParts.nationalNumberDisplay,
+      };
+    }
+    return {
+      iso2: parsed.country,
+      nationalLine: formatLocalPhoneDigitsForDisplay(
+        parsed.country,
+        parsed.nationalNumber ?? "",
+      ),
+    };
+  }
+  const { iso2, localNumber } = splitPhoneNumber(trimmed);
+  return {
+    iso2,
+    nationalLine:
+      formatLocalPhoneDigitsForDisplay(iso2, localNumber) || trimmed,
+  };
 }
 
 export function splitPhoneNumber(
   fullPhone: string,
-  fallbackCountryCode = DEFAULT_COUNTRY_CODE,
-): { countryCode: string; localNumber: string } {
+  fallbackIso2: string = DEFAULT_COUNTRY_ISO2,
+): { iso2: string; localNumber: string } {
   const trimmed = fullPhone.trim();
   if (!trimmed) {
-    return { countryCode: fallbackCountryCode, localNumber: "" };
+    return { iso2: fallbackIso2.toUpperCase(), localNumber: "" };
   }
 
-  const cleaned = trimmed.replace(/[^\d+]/g, "");
-  const sortedCodes = [...COUNTRY_CODE_OPTIONS]
-    .map((option) => option.value)
-    .sort((a, b) => b.length - a.length);
+  const fallback = (isSupportedCountry(fallbackIso2)
+    ? fallbackIso2.toUpperCase()
+    : DEFAULT_COUNTRY_ISO2) as CountryCode;
 
-  for (const code of sortedCodes) {
-    if (cleaned.startsWith(code)) {
-      return {
-        countryCode: code,
-        localNumber: digitsOnly(cleaned.slice(code.length)),
-      };
-    }
-  }
+  const parsed =
+    parsePhoneNumberFromString(trimmed, fallback) ?? parsePhoneNumberFromString(trimmed);
 
-  if (cleaned.startsWith("+")) {
-    const fallbackCode = normalizeCountryCode(fallbackCountryCode);
-    const fallbackDigits = digitsOnly(fallbackCode);
-    const allDigits = digitsOnly(cleaned);
-    if (allDigits.startsWith(fallbackDigits)) {
-      return {
-        countryCode: fallbackCode,
-        localNumber: allDigits.slice(fallbackDigits.length),
-      };
-    }
+  if (parsed?.country) {
     return {
-      countryCode: fallbackCode,
-      localNumber: allDigits,
+      iso2: parsed.country,
+      localNumber: digitsOnly(parsed.nationalNumber ?? ""),
+    };
+  }
+
+  // Do not dump everything after "+" into the national field — that repeats the calling code
+  // (e.g. "+962" → "962" in the local input) when parse fails during backspace/delete.
+  const allDigits = digitsOnly(trimmed.replace(/^\+/, ""));
+  const dialDigits = digitsOnly(getCountryCallingCode(fallback));
+  if (dialDigits && allDigits.startsWith(dialDigits)) {
+    return {
+      iso2: fallback,
+      localNumber: allDigits.slice(dialDigits.length),
     };
   }
 
   return {
-    countryCode: normalizeCountryCode(fallbackCountryCode),
-    localNumber: digitsOnly(cleaned),
+    iso2: fallback,
+    localNumber: allDigits,
   };
 }
 

@@ -29,6 +29,8 @@ function validatePasswordStrength(password: string): PasswordChecks {
 
 const MIN_LEN = 8;
 
+const SETTINGS_NEW_PASSWORD_POLICY_REGION_ID = "settings-pw-new-policy";
+
 export type SettingsPasswordFormProps = {
   onSubmit: (args: { currentPassword: string; newPassword: string }) => Promise<void>;
   /** When true (e.g. social-only account), form is not shown. */
@@ -58,6 +60,33 @@ export function SettingsPasswordForm({
     () => Object.values(validatePasswordStrength(next)).every(Boolean),
     [next],
   );
+
+  const hasNewTyping = next.length > 0;
+
+  const newPasswordInputClassName = useMemo(() => {
+    if (!hasNewTyping) return "pr-10";
+    if (!policyMet) {
+      return cn(
+        "pr-10 border-red-500 focus:border-red-500 focus:ring-red-500/25 dark:border-red-500 dark:focus:border-red-500",
+      );
+    }
+    return cn(
+      "pr-10 border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500/25 dark:border-emerald-600 dark:focus:border-emerald-500",
+    );
+  }, [hasNewTyping, policyMet]);
+
+  const confirmFeedback = useMemo(() => {
+    if (confirm.length === 0) return null;
+    return next === confirm ? ("match" as const) : ("mismatch" as const);
+  }, [confirm, next]);
+
+  const confirmInputClassName = useMemo(() => {
+    if (confirm.length === 0) return "";
+    if (confirmFeedback === "match") {
+      return "border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500/25 dark:border-emerald-600 dark:focus:border-emerald-500";
+    }
+    return "border-red-500 focus:border-red-500 focus:ring-red-500/25 dark:border-red-500 dark:focus:border-red-500";
+  }, [confirm.length, confirmFeedback]);
 
   const runSubmit = useCallback(
     async (e: FormEvent) => {
@@ -133,33 +162,41 @@ export function SettingsPasswordForm({
           </button>
         </div>
       </div>
-      <div>
-        <Label htmlFor="settings-pw-new" className="mb-1.5 block">
-          {tp("newPassword")}
-        </Label>
-        <div className="relative">
-          <Input
-            id="settings-pw-new"
-            type={showNew ? "text" : "password"}
-            value={next}
-            onChange={(e) => setNext(e.target.value)}
-            autoComplete="new-password"
-            className="pr-10"
-            aria-describedby="settings-pw-policy"
-          />
-          <button
-            type="button"
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-800"
-            onClick={() => setShowNew((s) => !s)}
-            aria-label={showNew ? "Hide" : "Show"}
-          >
-            {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
+
+      <div className="space-y-2">
+        <div>
+          <Label htmlFor="settings-pw-new" className="mb-1.5 block">
+            {tp("newPassword")}
+          </Label>
+          <div className="relative">
+            <Input
+              id="settings-pw-new"
+              type={showNew ? "text" : "password"}
+              value={next}
+              onChange={(e) => setNext(e.target.value)}
+              autoComplete="new-password"
+              className={newPasswordInputClassName}
+              aria-describedby={SETTINGS_NEW_PASSWORD_POLICY_REGION_ID}
+            />
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-800"
+              onClick={() => setShowNew((s) => !s)}
+              aria-label={showNew ? "Hide" : "Show"}
+            >
+              {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
-        <div id="settings-pw-policy" className="mt-2">
-          <PasswordPolicyHelper checks={checks} />
+        <div
+          id={SETTINGS_NEW_PASSWORD_POLICY_REGION_ID}
+          role="region"
+          aria-label={t("passwordRequirementsRegionLabel")}
+        >
+          <PasswordPolicyHelper checks={checks} password={next} />
         </div>
       </div>
+
       <div>
         <Label htmlFor="settings-pw-confirm" className="mb-1.5 block">
           {tp("confirmNewPassword")}
@@ -170,8 +207,27 @@ export function SettingsPasswordForm({
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           autoComplete="new-password"
+          className={confirmInputClassName}
+          aria-invalid={confirm.length > 0 && confirmFeedback === "mismatch"}
         />
+        {confirmFeedback ? (
+          <p
+            className={cn(
+              "mt-1.5 text-xs font-medium transition-colors duration-200",
+              confirmFeedback === "match"
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "text-red-600 dark:text-red-400",
+            )}
+            role="status"
+            aria-live="polite"
+          >
+            {confirmFeedback === "match"
+              ? t("passwordConfirmLiveMatch")
+              : t("passwordConfirmLiveMismatch")}
+          </p>
+        ) : null}
       </div>
+
       {formError ? (
         <p className="text-sm text-red-600" role="alert">
           {formError}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useSession } from "@/features/auth/hooks/useSession";
 import { cn } from "@/lib/cn";
 import { Construction } from "lucide-react";
@@ -11,12 +12,18 @@ export default function UnderDevelopmentPage() {
   const t = useTranslations("underDevelopment");
   const locale = useLocale() as AppLocale;
   const { role } = useSession();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const dashboardHref =
     role === "agent"
       ? `/${locale}/agent-dashboard`
       : role === "admin"
-      ? `/${locale}/admin-dashboard`
-      : null;
+        ? `/${locale}/admin-dashboard`
+        : null;
+  const showDashboardLink = mounted && !!dashboardHref;
 
   return (
     <main className="min-h-[calc(100vh-12rem)] px-4 py-8 md:px-6 md:py-12">
@@ -48,7 +55,7 @@ export default function UnderDevelopmentPage() {
                 {t("backHome")}
               </Link>
 
-              {dashboardHref ? (
+              {showDashboardLink && dashboardHref ? (
                 <Link
                   href={dashboardHref}
                   className={cn(

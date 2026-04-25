@@ -28,6 +28,49 @@ export type SidebarItem = {
   countKey?: string;
 };
 
+/** Admin: these sidebar links open under-development (not wired for admin yet). */
+export const SIDEBAR_ITEM_IDS_ADMIN_UNDER_DEVELOPMENT: ReadonlySet<string> = new Set([
+  "manageListings",
+  "favouriteProperties",
+  "savedSearches",
+  "leadsAndInquiries",
+  "reportsAndAnalytics",
+  "managePreferences",
+  "users",
+]);
+
+export function getSidebarItemHref(
+  locale: string,
+  item: Pick<SidebarItem, "id" | "path">,
+  role: SidebarRole | undefined,
+): string {
+  const base = `/${locale}${item.path}`;
+  if (role === "admin" && SIDEBAR_ITEM_IDS_ADMIN_UNDER_DEVELOPMENT.has(item.id)) {
+    return `/${locale}/under-development?nav=${encodeURIComponent(item.id)}`;
+  }
+  return base;
+}
+
+type SearchParamsLike = { get(name: string): string | null };
+
+export function isSidebarHrefActive(
+  pathname: string,
+  searchParams: SearchParamsLike,
+  itemHref: string,
+): boolean {
+  const qIndex = itemHref.indexOf("?");
+  if (qIndex === -1) {
+    return pathname === itemHref || pathname.startsWith(`${itemHref}/`);
+  }
+  const pathOnly = itemHref.slice(0, qIndex);
+  if (pathname !== pathOnly) return false;
+  const expected = new URLSearchParams(itemHref.slice(qIndex + 1));
+  for (const [key, value] of expected) {
+    if (searchParams.get(key) !== value) return false;
+  }
+  return true;
+}
+
 export type SidebarSection = {
   id: string;
   title: string;
@@ -134,9 +177,10 @@ export const sidebarConfig: SidebarSection[] = [
       {
         id: "agents",
         label: "Agents",
-        path: "/admin-agents",
+        path: "/agents",
         icon: ShieldCheck,
         roles: ["admin"],
+        countKey: "totalAgents",
       },
     ],
   },
@@ -148,7 +192,7 @@ export const sidebarConfig: SidebarSection[] = [
       {
         id: "managePreferences",
         label: "Manage Preferences",
-        path: "/manage-preferences",
+        path: "/agent-dashboard/manage-preferences",
         icon: Settings,
         roles: ["admin", "agent"],
       },

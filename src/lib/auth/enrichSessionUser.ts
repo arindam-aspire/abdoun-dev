@@ -1,7 +1,8 @@
 import { parsePhoneNumberFromString } from "libphonenumber-js";
+import { getNationalSignificantNumberDigits } from "@/lib/phoneDisplay";
 
 /**
- * Adds countryDialCode (+prefix) and phoneNumber (national format, no leading 0)
+ * Adds countryDialCode (+prefix) and phoneNumber (NSN digits, no trunk 0)
  * from user.phone. Use when syncing session/user to profile store.
  */
 export function enrichWithPhoneParts<
@@ -13,9 +14,7 @@ export function enrichWithPhoneParts<
     const parsed = parsePhoneNumberFromString(user.phone.trim());
     if (!parsed)
       return user as T & { countryDialCode?: string; phoneNumber?: string };
-    const national = parsed.formatNational();
-    const raw = national.startsWith("0") ? national.slice(1) : national;
-    const phoneNumber = raw.replace(/\s/g, "");
+    const phoneNumber = getNationalSignificantNumberDigits(parsed);
     return {
       ...user,
       countryDialCode: `+${parsed.countryCallingCode}`,

@@ -8,7 +8,7 @@ describe("profileFormSchema", () => {
     it("rejects empty", () => {
       expect(validatePhone("")).toEqual({
         valid: false,
-        error: "Phone number is required.",
+        code: "required",
       });
     });
 

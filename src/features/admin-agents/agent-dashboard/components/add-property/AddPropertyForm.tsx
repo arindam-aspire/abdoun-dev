@@ -1266,9 +1266,6 @@ export function AddPropertyForm() {
                     value={owner.phone || undefined}
                     onChange={(v) => updateOwner(owner.id, "phone", v ?? "")}
                     placeholder={t("ownerPhonePlaceholder")}
-                    showFlag={true}
-                    showCountryCode={true}
-                    showDialCode={true}
                   />
                 </PropertyFormField>
 

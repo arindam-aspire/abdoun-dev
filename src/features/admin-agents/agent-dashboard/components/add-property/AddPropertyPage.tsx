@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import {
+  ArrowLeft,
   Building2,
   Check,
   DollarSign,
@@ -11,10 +13,18 @@ import {
   UploadCloud,
   User,
 } from "lucide-react";
+import { useLocale } from "next-intl";
+import { usePathname } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { useTranslations } from "@/hooks/useTranslations";
+import type { AppLocale } from "@/i18n/routing";
+import { store } from "@/store";
 
-import { AddPropertyWizard } from "./AddPropertyWizard";
+import {
+  AddPropertyWizard,
+  type AddPropertyWizardNavigateHandle,
+} from "./AddPropertyWizard";
+import { selectShouldPromptLeaveAddProperty } from "./addPropertyWizardSlice";
 import {
   selectAddPropertyActiveStep,
   selectAddPropertyCurrentStepIndex,
@@ -81,10 +91,50 @@ const STEP_ITEMS = [
 ] as const;
 
 export function AddPropertyPage() {
+  const locale = useLocale() as AppLocale;
+  const pathname = usePathname();
   const t = useTranslations("agentDashboard");
   const dispatch = useAppDispatch();
+  const wizardNavRef = useRef<AddPropertyWizardNavigateHandle>(null);
   const activeStep = useAppSelector(selectAddPropertyActiveStep);
   const activeStepIndex = useAppSelector(selectAddPropertyCurrentStepIndex);
+
+  const listingsHref = `/${locale}/agent-dashboard/listings`;
+
+  useEffect(() => {
+    const onDocClickCapture = (e: MouseEvent) => {
+      const el = (e.target as HTMLElement | null)?.closest("a[href]");
+      if (!el || !(el instanceof HTMLAnchorElement)) return;
+      if (el.dataset.skipLeaveGuard === "true") return;
+      if (el.target === "_blank" || el.hasAttribute("download")) return;
+      let next: URL;
+      try {
+        next = new URL(el.href);
+      } catch {
+        return;
+      }
+      if (next.origin !== window.location.origin) return;
+      const nextPath = `${next.pathname}${next.search}`;
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      if (nextPath === currentPath) return;
+      if (!pathname.includes("/agent-dashboard/add-property")) return;
+      if (!selectShouldPromptLeaveAddProperty(store.getState())) return;
+      e.preventDefault();
+      e.stopPropagation();
+      wizardNavRef.current?.requestNavigate(nextPath);
+    };
+    document.addEventListener("click", onDocClickCapture, true);
+    return () => document.removeEventListener("click", onDocClickCapture, true);
+  }, [pathname]);
+
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!selectShouldPromptLeaveAddProperty(store.getState())) return;
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, []);
   const trackInsetPercent = 50 / STEP_ITEMS.length;
   const progressPercent =
     STEP_ITEMS.length > 1
@@ -136,6 +186,16 @@ export function AddPropertyPage() {
         <div className="min-w-0 flex-1">
           <div className="border-b border-subtle bg-white/90 backdrop-blur-sm p-4">
             <div className="mx-auto w-full">
+              <div className="mb-4">
+                <button
+                  type="button"
+                  onClick={() => wizardNavRef.current?.requestNavigate(listingsHref)}
+                  className="inline-flex items-center gap-2 text-sm font-medium text-charcoal/80 transition hover:text-charcoal"
+                >
+                  <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+                  {t("manageListingsTitle")}
+                </button>
+              </div>
               <div className="relative">
                 <div
                   className="absolute top-3.5 h-1 rounded-full bg-[#dde5ef]"
@@ -202,7 +262,7 @@ export function AddPropertyPage() {
           </div>
 
           <main className="mx-auto w-full p-4">
-              <AddPropertyWizard />
+            <AddPropertyWizard ref={wizardNavRef} />
           </main>
         </div>
       </div>

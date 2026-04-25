@@ -119,9 +119,6 @@ export function EmailAgentModal({
               value={phone || undefined}
               onChange={(v) => setPhone(v ?? "")}
               placeholder=""
-              showFlag={true}
-              showCountryCode={true}
-              showDialCode={true}
             />
           </div>
 
