@@ -52,6 +52,12 @@ export interface ProfileData {
   email: string;
   phone: string;
   location: string;
+  /**
+   * Presigned GET from GET /auth/me — the only value to use for avatar <Image src>.
+   * Do not use upload response or stored S3 URLs.
+   */
+  profilePictureUrl?: string | null;
+  /** Local data URL or legacy; not for display when profilePictureUrl is set from /me. */
   avatarUrl?: string;
   role: ProfileRole;
   displayName?: string;

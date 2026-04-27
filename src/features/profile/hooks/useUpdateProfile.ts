@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
+import { isAxiosError } from "axios";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { login } from "@/features/auth/authSlice";
 import { setProfileExtra } from "@/features/profile/profileSlice";
@@ -12,6 +13,11 @@ import {
   getCurrentUser,
   toSessionUserForProfile,
 } from "@/features/profile/api/profile.api";
+import {
+  dataUrlToProfileFile,
+  deleteProfilePicture,
+  uploadProfilePicture,
+} from "@/features/profile/api/profilePicture.api";
 import type { AuthUser } from "@/features/auth/authSlice";
 import type { ProfileData } from "@/types/auth";
 
@@ -43,11 +49,54 @@ export function useUpdateProfile(): {
         phone_number?: string;
         email?: string;
       } = {};
-      if (updates.fullName !== undefined) requestPayload.full_name = updates.fullName;
-      if (updates.phone !== undefined) requestPayload.phone_number = updates.phone;
-      if (updates.email !== undefined) requestPayload.email = updates.email;
+      if (updates.fullName !== undefined) {
+        const next = updates.fullName.trim();
+        if (next !== (authUser.name ?? "").trim()) {
+          requestPayload.full_name = next;
+        }
+      }
+      if (updates.phone !== undefined) {
+        const next = updates.phone.trim();
+        if (next !== (authUser.phone ?? "").trim()) {
+          requestPayload.phone_number = next;
+        }
+      }
+      if (updates.email !== undefined) {
+        const next = updates.email.trim();
+        if (next !== (authUser.email ?? "").trim()) {
+          requestPayload.email = next;
+        }
+      }
 
-      let sessionUser: AuthUser & { countryDialCode?: string; phoneNumber?: string } = authUser;
+      let sessionUser: AuthUser & {
+        countryDialCode?: string;
+        phoneNumber?: string;
+        profilePictureUrl?: string | null;
+      } = authUser;
+
+      // Photo first: avoids PATCH /profile/request (400) on "unchanged" name when only the image changed;
+      // also ensures the file reaches S3 before name/email flows that may require OTP.
+      if (updates.avatarUrl !== undefined) {
+        const raw = updates.avatarUrl;
+        if (raw === "") {
+          try {
+            await deleteProfilePicture();
+          } catch (e) {
+            if (!isAxiosError(e) || (e.response?.status !== 404 && e.response?.status !== 405)) {
+              throw e;
+            }
+          }
+        } else if (raw.startsWith("data:")) {
+          const file = await dataUrlToProfileFile(raw);
+          await uploadProfilePicture(file);
+        } else {
+          // Legacy or unknown string — still sync from /me
+        }
+        const updated = await getCurrentUser();
+        sessionUser = enrichWithPhoneParts(toSessionUserForProfile(updated));
+        persistSession({ user: sessionUser });
+        dispatch(login(sessionUser));
+      }
 
       if (Object.keys(requestPayload).length > 0) {
         const result = await requestProfileUpdate(requestPayload);
@@ -71,18 +120,11 @@ export function useUpdateProfile(): {
         dispatch(login(sessionUser));
       }
 
-      const profileOnly: Partial<{
-        avatarUrl: string;
-        displayName: string;
-      }> = {};
-      if (updates.avatarUrl !== undefined) profileOnly.avatarUrl = updates.avatarUrl;
-      if (updates.displayName !== undefined) profileOnly.displayName = updates.displayName;
-
-      if (Object.keys(profileOnly).length > 0) {
+      if (updates.displayName !== undefined) {
         dispatch(
           setProfileExtra({
             userId: authUser.id,
-            extra: profileOnly,
+            extra: { displayName: updates.displayName },
           }),
         );
       }

@@ -70,6 +70,15 @@ jest.mock("@/features/profile/api/profile.api", () => ({
   toSessionUserForProfile: (u: unknown) => toSessionUserForProfileMock(u),
 }));
 
+const uploadProfilePictureMock = jest.fn();
+const deleteProfilePictureMock = jest.fn();
+const dataUrlToProfileFileMock = jest.fn();
+jest.mock("@/features/profile/api/profilePicture.api", () => ({
+  uploadProfilePicture: (f: File) => uploadProfilePictureMock(f),
+  deleteProfilePicture: () => deleteProfilePictureMock(),
+  dataUrlToProfileFile: (u: string) => dataUrlToProfileFileMock(u),
+}));
+
 import { useUpdateProfile } from "@/features/profile/hooks/useUpdateProfile";
 
 describe("useUpdateProfile", () => {
@@ -81,6 +90,9 @@ describe("useUpdateProfile", () => {
     getCurrentUserMock.mockReset();
     toSessionUserForProfileMock.mockReset();
     persistSessionMock.mockReset();
+    uploadProfilePictureMock.mockReset();
+    deleteProfilePictureMock.mockReset();
+    dataUrlToProfileFileMock.mockReset();
   });
 
   it("calls profile request API when fullName/phone provided and dispatches login", async () => {
@@ -118,7 +130,15 @@ describe("useUpdateProfile", () => {
     expect(loginActionMock).toHaveBeenCalledWith(sessionPayload);
   });
 
-  it("dispatches setProfileExtra for avatar/displayName without profile request API", async () => {
+  it("refreshes from GET /auth/me for avatar and setProfileExtra only for displayName", async () => {
+    getCurrentUserMock.mockResolvedValue({ id: "u1" });
+    toSessionUserForProfileMock.mockReturnValue({
+      id: "u1",
+      name: "User",
+      email: "u@u",
+      role: "user",
+    });
+
     const { result } = renderHook(() => useUpdateProfile());
 
     await act(async () => {
@@ -129,9 +149,10 @@ describe("useUpdateProfile", () => {
     });
 
     expect(requestProfileUpdateMock).not.toHaveBeenCalled();
+    expect(getCurrentUserMock).toHaveBeenCalled();
     expect(setProfileExtraMock).toHaveBeenCalledWith({
       userId: "u1",
-      extra: { avatarUrl: "x", displayName: "D" },
+      extra: { displayName: "D" },
     });
   });
 

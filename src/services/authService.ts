@@ -32,6 +32,8 @@ export type AuthUser = {
   is_email_verified: boolean;
   is_phone_verified: boolean;
   requires_password_set?: boolean | null;
+  /** Presigned GET URL; short-lived — refresh via GET /auth/me. */
+  profile_picture_url?: string | null;
   roles?: Array<{
     id?: string;
     name: string;
@@ -45,11 +47,13 @@ export type SessionUser = {
   name: string;
   email: string;
   phone?: string;
-   isActive?: boolean | null;
-   isEmailVerified?: boolean | null;
-   isPhoneVerified?: boolean | null;
+  isActive?: boolean | null;
+  isEmailVerified?: boolean | null;
+  isPhoneVerified?: boolean | null;
   requiresPasswordSet?: boolean | null;
   role: SessionUserRole;
+  /** Presigned GET from GET /auth/me — not persisted in cookies. */
+  profilePictureUrl?: string | null;
 };
 
 export function toSessionUser(user: AuthUser): SessionUser {
@@ -72,6 +76,7 @@ export function toSessionUser(user: AuthUser): SessionUser {
     isPhoneVerified: user.is_phone_verified,
     requiresPasswordSet: user.requires_password_set ?? null,
     role,
+    profilePictureUrl: user.profile_picture_url ?? null,
   };
 }
 

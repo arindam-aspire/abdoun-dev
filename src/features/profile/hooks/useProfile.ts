@@ -29,7 +29,7 @@ export function useProfile(): UseProfileResult | null {
     return {
       ...base,
       location: authUser.location ?? base.location ?? DEFAULT_LOCATION,
-      avatarUrl: authUser.avatarUrl,
+      profilePictureUrl: authUser.profilePictureUrl ?? null,
       displayName: authUser.displayName,
     };
   }, [authUser]);

@@ -39,6 +39,11 @@ import type { ToastKind } from "@/components/ui/toast";
 const ACCEPT_IMAGE = "image/jpeg,image/png,image/gif,image/webp";
 const MAX_IMAGE_MB = 4;
 
+/** `next/image` is unreliable for long `data:` URLs; use a plain `<img>` for those. */
+function isDataOrBlobUrl(url: string): boolean {
+  return url.startsWith("data:") || url.startsWith("blob:");
+}
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Avatar initials: two words → first letter each; one word → first two graphemes (e.g. John → JO). */
@@ -71,7 +76,7 @@ function profileToFormDefaults(profile: ProfileData): ProfileFormValues {
     fullName: profile.fullName ?? "",
     email: profile.email ?? "",
     phone: profile.phone ?? "",
-    avatarUrl: profile.avatarUrl ?? "",
+    avatarUrl: "",
     avatarPreview: undefined,
   };
 }
@@ -159,7 +164,8 @@ function ProfileFormBody({
     },
   });
 
-  const { isDirty, isSubmitting, errors } = formState;
+  const { isDirty, isSubmitting, errors, dirtyFields } = formState;
+  const [avatarBust, setAvatarBust] = useState(() => Date.now());
 
   const getIdentityRequestExtras = useCallback((): ProfileRequestExtras | undefined => {
     const fn = (getValues("fullName") ?? "").trim();
@@ -180,8 +186,25 @@ function ProfileFormBody({
   }, [syncFromProfile, isDirty, editingField]);
 
   const avatarPreview = useWatch({ control, name: "avatarPreview" });
-  const avatarUrl = useWatch({ control, name: "avatarUrl" });
-  const displayAvatar = avatarPreview ?? avatarUrl;
+  const displayAvatar =
+    avatarPreview ?? profileData.profile.profilePictureUrl ?? null;
+
+  const avatarDisplayUrl = useMemo(() => {
+    if (!displayAvatar) return null;
+    if (displayAvatar.startsWith("data:") || displayAvatar.startsWith("blob:")) {
+      return displayAvatar;
+    }
+    return `${displayAvatar}${displayAvatar.includes("?") ? "&" : "?"}t=${avatarBust}`;
+  }, [displayAvatar, avatarBust]);
+
+  const handleAvatarError = useCallback(async () => {
+    try {
+      await profileData.refreshProfile();
+      setAvatarBust(Date.now());
+    } catch {
+      console.warn("Avatar refresh failed");
+    }
+  }, [profileData]);
 
   const fullNameWatch = useWatch({
     control,
@@ -351,7 +374,6 @@ function ProfileFormBody({
       reader.onload = () => {
         const dataUrl = reader.result as string;
         setValue("avatarPreview", dataUrl, { shouldDirty: true });
-        setValue("avatarUrl", dataUrl, { shouldDirty: true });
       };
       reader.readAsDataURL(file);
     },
@@ -420,18 +442,33 @@ function ProfileFormBody({
       setApiError(null);
       setSavingProfile(true);
       try {
-        await profileData.saveProfile({
-          fullName: data.fullName.trim(),
-          ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
-        });
+        const df = dirtyFields as Partial<Record<keyof ProfileFormValues, true>>;
+        const photoTouched = Boolean(df.avatarPreview) || Boolean(df.avatarUrl);
+
+        const patch: Partial<ProfileData> = {};
+        if (df.fullName) {
+          patch.fullName = data.fullName.trim();
+        }
+        if (data.avatarPreview) {
+          patch.avatarUrl = data.avatarPreview;
+        } else if (photoTouched) {
+          patch.avatarUrl = data.avatarUrl;
+        }
+
+        if (Object.keys(patch).length === 0) {
+          return;
+        }
+
+        await profileData.saveProfile(patch);
 
         reset({
           fullName: data.fullName,
           email: data.email,
           phone: data.phone,
-          avatarUrl: data.avatarUrl,
+          avatarUrl: "",
           avatarPreview: undefined,
         });
+        setAvatarBust(Date.now());
 
         onSaveSuccess?.();
         onClose?.();
@@ -442,7 +479,7 @@ function ProfileFormBody({
         setSavingProfile(false);
       }
     },
-    [onClose, onSaveError, onSaveSuccess, profileData, reset, t],
+    [dirtyFields, onClose, onSaveError, onSaveSuccess, profileData, reset, t],
   );
 
   return (
@@ -472,15 +509,26 @@ function ProfileFormBody({
               )}
               aria-hidden
             >
-              {displayAvatar ? (
-                <Image
-                  src={displayAvatar}
-                  alt=""
-                  width={112}
-                  height={112}
-                  className="h-full w-full object-cover"
-                  unoptimized
-                />
+              {avatarDisplayUrl ? (
+                isDataOrBlobUrl(avatarDisplayUrl) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={avatarDisplayUrl}
+                    alt="Profile"
+                    className="h-full w-full object-cover"
+                    onError={handleAvatarError}
+                  />
+                ) : (
+                  <Image
+                    src={avatarDisplayUrl}
+                    alt="Profile"
+                    width={112}
+                    height={112}
+                    className="h-full w-full object-cover"
+                    unoptimized
+                    onError={handleAvatarError}
+                  />
+                )
               ) : (
                 <span className="flex h-full w-full items-center justify-center text-3xl font-semibold text-zinc-600 dark:text-zinc-300">
                   {initials || "?"}
@@ -513,7 +561,7 @@ function ProfileFormBody({
           <p className="mt-3 text-center text-xs text-zinc-500 dark:text-zinc-400">
             {t("recommendedSize")}
           </p>
-          {displayAvatar ? (
+          {avatarDisplayUrl ? (
             <button
               type="button"
               onClick={handleRemovePhoto}

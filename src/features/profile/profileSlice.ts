@@ -12,7 +12,10 @@ export interface ProfileUser {
   phoneNumber?: string;
   role: "user" | "agent" | "admin";
   location?: string;
+  /** @deprecated Do not use for image src; use profilePictureUrl from GET /auth/me. */
   avatarUrl?: string;
+  /** Presigned GET from GET /auth/me — only source for displayed avatar. */
+  profilePictureUrl?: string | null;
   displayName?: string;
   marketingEmails?: boolean;
   analyticsCookies?: boolean;

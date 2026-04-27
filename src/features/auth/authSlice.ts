@@ -12,6 +12,8 @@ export interface AuthUser {
   isEmailVerified?: boolean | null;
   isPhoneVerified?: boolean | null;
   requiresPasswordSet?: boolean | null;
+  /** Presigned GET from GET /auth/me (Redux only; not stored in cookies). */
+  profilePictureUrl?: string | null;
 }
 
 export interface AuthState {

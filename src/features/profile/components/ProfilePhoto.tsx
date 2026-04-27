@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useState } from "react";
+import { useRef, useCallback, useState, useMemo } from "react";
 import Image from "next/image";
 import { Pencil } from "lucide-react";
 import { useTranslations } from "@/hooks/useTranslations";
@@ -19,14 +19,16 @@ function getInitials(fullName: string): string {
 }
 
 export interface ProfilePhotoProps {
-  /** Current avatar URL or data URL. */
-  avatarUrl?: string;
+  /** Presigned GET from GET /auth/me; not upload response, not private S3 object URL. */
+  profilePictureUrl?: string | null;
   /** Full name for initials fallback. */
   fullName?: string;
-  /** Called when user selects a new image (data URL). */
+  /** Called when user selects a new image (data URL) — local preview only. */
   onPhotoChange?: (dataUrl: string) => void;
-  /** Called when user removes the photo. */
+  /** Called when user removes the local preview / requests clear. */
   onPhotoRemove?: () => void;
+  /** Re-fetch GET /auth/me (e.g. on image error / expired presigned URL). */
+  onRefetchUser?: () => Promise<void>;
   /** Size variant. */
   size?: "sm" | "md" | "lg";
   /** Optional class for the wrapper. */
@@ -43,11 +45,16 @@ const sizeClasses = {
   lg: "h-36 w-36",
 };
 
+function isDataOrBlobUrl(url: string): boolean {
+  return url.startsWith("data:") || url.startsWith("blob:");
+}
+
 export function ProfilePhoto({
-  avatarUrl,
+  profilePictureUrl,
   fullName = "",
   onPhotoChange,
   onPhotoRemove,
+  onRefetchUser,
   size = "md",
   className,
   editable = true,
@@ -57,9 +64,24 @@ export function ProfilePhoto({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [bust, setBust] = useState(() => Date.now());
 
-  const displayUrl = previewUrl ?? avatarUrl;
+  const serverWithBust = useMemo(() => {
+    if (!profilePictureUrl?.trim()) return null;
+    return `${profilePictureUrl}${profilePictureUrl.includes("?") ? "&" : "?"}t=${bust}`;
+  }, [profilePictureUrl, bust]);
+
+  const displayUrl = previewUrl ?? serverWithBust;
   const initials = getInitials(fullName) || "?";
+
+  const handleAvatarError = useCallback(async () => {
+    try {
+      await onRefetchUser?.();
+    } catch {
+      console.warn("Avatar refresh failed");
+    }
+    setBust(Date.now());
+  }, [onRefetchUser]);
 
   const handleSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,14 +121,25 @@ export function ProfilePhoto({
           aria-hidden
         >
           {displayUrl ? (
-            <Image
-              src={displayUrl}
-              alt=""
-              width={size === "lg" ? 144 : size === "md" ? 112 : 80}
-              height={size === "lg" ? 144 : size === "md" ? 112 : 80}
-              className="h-full w-full object-cover"
-              unoptimized
-            />
+            isDataOrBlobUrl(displayUrl) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={displayUrl}
+                alt="Profile"
+                className="h-full w-full object-cover"
+                onError={handleAvatarError}
+              />
+            ) : (
+              <Image
+                src={displayUrl}
+                alt="Profile"
+                width={size === "lg" ? 144 : size === "md" ? 112 : 80}
+                height={size === "lg" ? 144 : size === "md" ? 112 : 80}
+                className="h-full w-full object-cover"
+                unoptimized
+                onError={handleAvatarError}
+              />
+            )
           ) : (
             <span className="flex h-full w-full items-center justify-center text-2xl font-semibold text-zinc-600 dark:text-zinc-300 md:text-3xl">
               {initials}
@@ -159,4 +192,3 @@ export function ProfilePhoto({
     </div>
   );
 }
-

@@ -62,15 +62,6 @@ export function ProfileModal({
     setPhoneOtpModalOpen(true);
   }, []);
 
-  const handlePhotoChange = useCallback(
-    (dataUrl: string) => {
-      if (profileData) {
-        void profileData.saveProfile({ avatarUrl: dataUrl });
-      }
-    },
-    [profileData],
-  );
-
   const handlePhotoRemove = useCallback(() => {
     if (profileData) {
       void profileData.saveProfile({ avatarUrl: "" });
@@ -143,10 +134,10 @@ export function ProfileModal({
             {/* Photo at top */}
             <div className="shrink-0 border-b border-zinc-200 bg-zinc-50/50 px-4 py-6 dark:border-zinc-700 dark:bg-zinc-800/30 md:px-4">
               <ProfilePhoto
-                avatarUrl={profile.avatarUrl}
+                profilePictureUrl={profile.profilePictureUrl}
                 fullName={profile.fullName}
-                onPhotoChange={handlePhotoChange}
                 onPhotoRemove={handlePhotoRemove}
+                onRefetchUser={profileData?.refreshProfile}
                 size="lg"
                 editable
                 isRtl={isRtl}

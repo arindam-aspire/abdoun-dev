@@ -56,7 +56,26 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
 
     const session = getCurrentSession();
     if (session?.user) {
-      dispatch(login(enrichWithPhoneParts(session.user)));
+      const tokens = session.tokens ?? getStoredTokens();
+      if (tokens) {
+        void (async () => {
+          try {
+            const me = await getCurrentUser();
+            if (me.requires_password_set) {
+              clearSession();
+              router.push(`/${locale}/force-change-password`);
+              return;
+            }
+            const sessionUser = toSessionUserForProfile(me);
+            persistSession({ user: sessionUser });
+            dispatch(login(sessionUser));
+          } catch {
+            dispatch(login(enrichWithPhoneParts(session.user)));
+          }
+        })();
+      } else {
+        dispatch(login(enrichWithPhoneParts(session.user)));
+      }
       return;
     }
 
