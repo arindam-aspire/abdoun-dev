@@ -13,7 +13,9 @@ import {
   updateListing,
 } from "@/services/agentDashboardMockService";
 import type { AgentListing, ListingStatus } from "@/types/agent";
+import { useAppDispatch } from "@/hooks/storeHooks";
 import { useTranslations } from "@/hooks/useTranslations";
+import { initializeNewPropertyWizard } from "@/features/admin-agents/agent-dashboard/components/add-property/addPropertyWizardSlice";
 import {
   DialogRoot,
   DialogTitle,
@@ -86,6 +88,7 @@ function isWithinDays(iso: string, days: number): boolean {
 }
 
 export function ListingsPage() {
+  const dispatch = useAppDispatch();
   const locale = useLocale() as AppLocale;
   const router = useRouter();
   const pathname = usePathname();
@@ -284,7 +287,10 @@ export function ListingsPage() {
                 />
               </div>
               <Link
-                href={`/${locale}/agent-dashboard/add-property?new=1`}
+                href={`/${locale}/agent-dashboard/add-property`}
+                onClick={() => {
+                  dispatch(initializeNewPropertyWizard());
+                }}
                 className="w-full md:w-auto shrink-0 whitespace-nowrap inline-flex items-center justify-center gap-2 rounded-xl border border-primary bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary/90"
               >
                 <Plus className="h-4 w-4" />

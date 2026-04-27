@@ -11,6 +11,7 @@ import {
   wizardFieldClassName,
 } from "../AddPropertyStepLayout";
 import {
+  selectAddPropertyIsEditable,
   selectAddPropertyWizard,
   setMaintenanceFee,
   setPrice,
@@ -19,6 +20,7 @@ import {
 
 export function PricingStep() {
   const dispatch = useAppDispatch();
+  const canEdit = useAppSelector(selectAddPropertyIsEditable);
   const { price, maintenanceFee, serviceFee } = useAppSelector(selectAddPropertyWizard);
 
   return (
@@ -26,6 +28,7 @@ export function PricingStep() {
       title="Pricing"
       description="Enter the primary price for this property record. This information will be used for official ledger entries and contract generation."
       required
+      readOnlyForm={!canEdit}
     >
       <div className="grid gap-5 md:grid-cols-2">
         <FormField>

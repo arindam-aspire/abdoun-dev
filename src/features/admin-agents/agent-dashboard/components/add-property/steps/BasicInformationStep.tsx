@@ -16,6 +16,7 @@ import {
   wizardTextareaClassName,
 } from "../AddPropertyStepLayout";
 import {
+  selectAddPropertyIsEditable,
   selectAddPropertyWizard,
   setCategory,
   setDescription,
@@ -138,6 +139,7 @@ function getPropertyTypeOptions(category: Category) {
 
 export function BasicInformationStep() {
   const dispatch = useAppDispatch();
+  const canEdit = useAppSelector(selectAddPropertyIsEditable);
   const { listingPurpose, category, propertyType, propertyTitle, description } =
     useAppSelector(selectAddPropertyWizard);
   const [openDropdown, setOpenDropdown] = useState<
@@ -150,6 +152,7 @@ export function BasicInformationStep() {
       title="Basic Information"
       description="Enter the primary legal basic information details for this property record. This information will be used for official ledger entries and contract generation."
       required
+      readOnlyForm={!canEdit}
     >
       <div className="grid gap-5 md:grid-cols-2">
         <FormField>

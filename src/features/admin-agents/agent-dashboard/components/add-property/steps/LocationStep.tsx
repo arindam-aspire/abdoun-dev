@@ -16,6 +16,7 @@ import {
   wizardTextareaClassName,
 } from "../AddPropertyStepLayout";
 import {
+  selectAddPropertyIsEditable,
   selectAddPropertyWizard,
   setAddress,
   setCity,
@@ -27,6 +28,7 @@ type LocationDropdownKey = "city" | "area" | null;
 export function LocationStep() {
   const locale = useLocale() as AppLocale;
   const dispatch = useAppDispatch();
+  const canEdit = useAppSelector(selectAddPropertyIsEditable);
   const { city, selectedAreas, address } = useAppSelector(selectAddPropertyWizard);
   const [openDropdown, setOpenDropdown] = useState<LocationDropdownKey>(null);
 
@@ -45,10 +47,12 @@ export function LocationStep() {
     <CardSection
       title="Location"
       description="Add the listing location details so the property is easy to identify, map, and review internally."
+      required
+      readOnlyForm={!canEdit}
     >
       <div className="grid gap-5 md:grid-cols-2">
         <FormField>
-          <FieldLabel htmlFor="location-city" label="City" />
+          <FieldLabel htmlFor="location-city" label="City" required />
           <div id="location-city">
             <HeroCitySelect
               label="City"
@@ -64,7 +68,7 @@ export function LocationStep() {
         </FormField>
 
         <FormField>
-          <FieldLabel htmlFor="location-area" label="Community / Area" />
+          <FieldLabel htmlFor="location-area" label="Community / Area" required />
           <div id="location-area">
             <HeroAreaSelect
               label="Area"

@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { FileText, UploadCloud, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { getApiErrorMessage } from "@/lib/http/apiError";
-import { uploadFileForSubmission } from "@/features/admin-agents/agent-dashboard/lib/submissionFileUpload";
+import { uploadPropertyFile } from "@/features/admin-agents/agent-dashboard/lib/submissionFileUpload";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { CardSection, FieldLabel, FormField, wizardFieldClassName } from "../AddPropertyStepLayout";
 import {
   addMediaImage,
   addMediaVideo,
   addPropertyListingDocument,
+  selectAddPropertyIsEditable,
   selectAddPropertyWizard,
   setMediaImages,
   setMediaVideos,
@@ -29,8 +30,10 @@ type PendingPreview = {
 
 export function MediaDocumentsStep() {
   const dispatch = useAppDispatch();
-  const { youtubeUrl, virtualTourUrl, submissionId, mediaImages, mediaVideos, propertyListingDocuments } =
+  const { youtubeUrl, virtualTourUrl, submissionId, draftClientId, mediaImages, mediaVideos, propertyListingDocuments } =
     useAppSelector(selectAddPropertyWizard);
+  const canEdit = useAppSelector(selectAddPropertyIsEditable);
+  const canUpload = canEdit && (Boolean(submissionId) || Boolean(draftClientId));
   const [pending, setPending] = useState<PendingPreview[]>([]);
   const [docUploading, setDocUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,8 +47,8 @@ export function MediaDocumentsStep() {
   }, [pending]);
 
   const uploadMediaBatch = async (files: File[]) => {
-    if (!submissionId) {
-      setError("Submission is not ready. Please wait and try again.");
+    if (!canEdit || !canUpload) {
+      if (!canUpload) setError("Upload is not available. Save a draft or try again.");
       return;
     }
     const nextPending: PendingPreview[] = files.map((file) => ({
@@ -60,7 +63,9 @@ export function MediaDocumentsStep() {
       for (const file of files) {
         const isVideo = file.type.startsWith("video/");
         const context = isVideo ? "property_media_video" : "property_media_image";
-        const row: MediaFileRef = await uploadFileForSubmission(submissionId, file, context);
+        const row: MediaFileRef = submissionId
+          ? await uploadPropertyFile({ submissionId, file, context })
+          : await uploadPropertyFile({ draftClientId, file, context });
         if (isVideo) {
           dispatch(addMediaVideo(row));
         } else {
@@ -98,10 +103,11 @@ export function MediaDocumentsStep() {
   };
 
   const addDocuments = async (files: FileList | null) => {
-    if (!files || !submissionId) {
-      if (!submissionId) setError("Submission is not ready. Please wait and try again.");
+    if (!canEdit || !canUpload) {
+      if (files && !canUpload) setError("Upload is not available. Save a draft or try again.");
       return;
     }
+    if (!files) return;
     const accepted = Array.from(files).filter((file) => {
       const type = file.type.toLowerCase();
       return (
@@ -116,7 +122,9 @@ export function MediaDocumentsStep() {
     setError(null);
     try {
       for (const file of accepted) {
-        const row = await uploadFileForSubmission(submissionId, file, "property_document");
+        const row = submissionId
+          ? await uploadPropertyFile({ submissionId, file, context: "property_document" })
+          : await uploadPropertyFile({ draftClientId, file, context: "property_document" });
         dispatch(addPropertyListingDocument(row));
       }
     } catch (e) {
@@ -135,6 +143,7 @@ export function MediaDocumentsStep() {
       title="Media & Documents"
       description="Enter the media details for this property record. This information will be used for official ledger entries and contract generation."
       required
+      readOnlyForm={!canEdit}
     >
       {error ? (
         <p className="mb-3 text-size-sm text-red-600" role="alert">
@@ -160,7 +169,7 @@ export function MediaDocumentsStep() {
               addMediaFiles(event.target.files);
               event.target.value = "";
             }}
-            disabled={!submissionId}
+            disabled={!canUpload}
           />
           <div className="mx-auto mb-5 flex h-10 w-10 items-center justify-center rounded-full border border-[#d8e1ee] bg-white text-[#3a5268]">
             <UploadCloud className="h-5 w-5" />
@@ -170,7 +179,7 @@ export function MediaDocumentsStep() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={!submissionId}
+            disabled={!canUpload}
             className="mt-5 inline-flex h-11 min-w-44 items-center justify-center rounded-xl border border-[#c8d3e2] bg-white px-6 text-base fw-medium text-[#2a4a67] shadow-sm transition-colors hover:bg-[#f7faff] disabled:opacity-50"
           >
             Browse File
@@ -282,7 +291,7 @@ export function MediaDocumentsStep() {
               void addDocuments(event.target.files);
               event.target.value = "";
             }}
-            disabled={docUploading || !submissionId}
+            disabled={docUploading || !canUpload}
           />
 
           <div
@@ -297,7 +306,7 @@ export function MediaDocumentsStep() {
               <button
                 type="button"
                 onClick={() => documentInputRef.current?.click()}
-                disabled={docUploading || !submissionId}
+                disabled={docUploading || !canUpload}
                 className="inline-flex h-9 items-center justify-center rounded-lg border border-[#c8d3e2] bg-white px-4 text-sm fw-medium text-[#2a4a67] hover:bg-[#f7faff] disabled:opacity-50"
               >
                 {docUploading ? "Uploading…" : "Upload Document"}

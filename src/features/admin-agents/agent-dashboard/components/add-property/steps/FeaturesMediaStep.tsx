@@ -4,10 +4,11 @@ import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { AMENITY_FEATURE_OPTIONS } from "@/features/admin-agents/agent-dashboard/lib/amenityFeatureOptions";
 
 import { CardSection } from "../AddPropertyStepLayout";
-import { selectAddPropertyWizard, toggleAmenityFeatureId } from "../addPropertyWizardSlice";
+import { selectAddPropertyIsEditable, selectAddPropertyWizard, toggleAmenityFeatureId } from "../addPropertyWizardSlice";
 
 export function FeaturesMediaStep() {
   const dispatch = useAppDispatch();
+  const canEdit = useAppSelector(selectAddPropertyIsEditable);
   const { amenityFeatureIds } = useAppSelector(selectAddPropertyWizard);
 
   const toggleFeature = (id: number) => {
@@ -19,6 +20,7 @@ export function FeaturesMediaStep() {
       title="Features & Amenities"
       description="Enter the primary features details for this property record. This information will be used for official ledger entries and contract generation."
       required
+      readOnlyForm={!canEdit}
     >
       <div className="flex flex-wrap gap-x-8 gap-y-4">
         {AMENITY_FEATURE_OPTIONS.map((feature) => (

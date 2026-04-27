@@ -1,9 +1,15 @@
 import type { ApiSubmissionStep, GetSubmissionResult } from "../api/propertySubmissions.api";
-import type { AddPropertyWizardState } from "../components/add-property/addPropertyWizardSlice";
+import type { AddPropertyWizardState, AddPropertyWorkflowStatus } from "../components/add-property/addPropertyWizardSlice";
 import { createEmptyAddPropertyWizardState } from "../components/add-property/addPropertyWizardSlice";
 import { createOwner, type AddPropertyStepId } from "../components/add-property/addPropertyWizard.types";
 import { applySubmissionPayloadToWizardState } from "./applySubmissionPayloadToWizard";
 
+function newResumeDraftClientId(): string {
+  if (typeof globalThis !== "undefined" && globalThis.crypto && "randomUUID" in globalThis.crypto) {
+    return globalThis.crypto.randomUUID();
+  }
+  return `draft-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
 const API_STEP_ORDER: ApiSubmissionStep[] = [
   "basic_information",
   "location",
@@ -49,6 +55,17 @@ export function wizardStateFromApiSubmission(sub: GetSubmissionResult): AddPrope
   base.propertyIdAfterSubmit = sub.property_id ?? null;
   base.adminReviewReason = sub.review_reason ?? null;
   base.activeStep = uiStepFromApiCurrentStep(sub.current_step);
+  base.draftClientId = newResumeDraftClientId();
+  base.isPersisted = true;
+  base.dirty = false;
+  base.listingWorkflowStatus = sub.status as AddPropertyWorkflowStatus;
+  base.serverStepCompletion = sub.step_completion
+    ? { ...sub.step_completion }
+    : null;
+  base.serverLastCompletedStep =
+    sub.last_completed_step != null && Number.isFinite(sub.last_completed_step)
+      ? sub.last_completed_step
+      : null;
 
   applySubmissionPayloadToWizardState(base, payload);
 

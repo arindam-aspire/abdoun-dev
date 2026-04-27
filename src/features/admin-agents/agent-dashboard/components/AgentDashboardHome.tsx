@@ -7,7 +7,8 @@ import { AgentDashboardHomeSkeleton } from "@/features/admin-agents/agent-dashbo
 import { ChartContainer } from "@/features/admin-agents/components/ChartContainer";
 import { InquiryTrendLineChart } from "@/features/admin-agents/components/shared-charts/InquiryTrendLineChart";
 import { PerformanceBarChart } from "@/features/admin-agents/components/shared-charts/PerformanceBarChart";
-import { useAppSelector } from "@/hooks/storeHooks";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import { initializeNewPropertyWizard } from "@/features/admin-agents/agent-dashboard/components/add-property/addPropertyWizardSlice";
 import { useTranslations } from "@/hooks/useTranslations";
 import type { AppLocale } from "@/i18n/routing";
 import { selectCurrentUser } from "@/store/selectors";
@@ -29,6 +30,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ToastKind } from "@/components/ui/toast";
 
 export function AgentDashboardHome() {
+  const dispatch = useAppDispatch();
   const locale = useLocale() as AppLocale;
   const t = useTranslations("dashboard");
   const tAgent = useTranslations("agentDashboard");
@@ -179,7 +181,10 @@ export function AgentDashboardHome() {
           </h2>
           <div className="mt-4 space-y-2">
             <Link
-              href={`/${locale}/agent-dashboard/add-property?new=1`}
+              href={`/${locale}/agent-dashboard/add-property`}
+              onClick={() => {
+                dispatch(initializeNewPropertyWizard());
+              }}
               className="flex w-full items-center justify-between rounded-xl border border-subtle bg-surface px-3 py-2 text-sm text-charcoal transition hover:bg-primary/5"
             >
               <span>{tAgent("addNewProperty")}</span>

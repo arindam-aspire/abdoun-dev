@@ -43,13 +43,24 @@ export function CardSection({
   title,
   description,
   required,
+  readOnlyForm,
   children,
 }: {
   title: string;
   description: string;
   required?: boolean;
+  /** When true, form controls are disabled (e.g. submitted / approved / rejected). */
+  readOnlyForm?: boolean;
   children: ReactNode;
 }) {
+  const body =
+    readOnlyForm === true ? (
+      <fieldset disabled className="min-w-0 border-0 p-0 m-0">
+        {children}
+      </fieldset>
+    ) : (
+      children
+    );
   return (
     <section className="rounded-[28px] border border-[#edf2f7] bg-white p-5 shadow-[0_18px_48px_rgba(15,23,42,0.06)] sm:p-7">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -63,7 +74,7 @@ export function CardSection({
           </span>
         ) : null}
       </div>
-      {children}
+      {body}
     </section>
   );
 }

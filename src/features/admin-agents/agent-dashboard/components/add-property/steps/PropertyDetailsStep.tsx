@@ -12,7 +12,7 @@ import {
   FormField,
   wizardFieldClassName,
 } from "../AddPropertyStepLayout";
-import { selectAddPropertyWizard, setPropertyDetailsField } from "../addPropertyWizardSlice";
+import { selectAddPropertyIsEditable, selectAddPropertyWizard, setPropertyDetailsField } from "../addPropertyWizardSlice";
 
 type DropdownOption = {
   value: string;
@@ -96,6 +96,7 @@ function WizardDropdownSelect({
 
 export function PropertyDetailsStep() {
   const dispatch = useAppDispatch();
+  const canEdit = useAppSelector(selectAddPropertyIsEditable);
   const { propertyDetails } = useAppSelector(selectAddPropertyWizard);
   const [openDropdown, setOpenDropdown] = useState<PropertyDetailsDropdownKey | null>(null);
 
@@ -103,6 +104,8 @@ export function PropertyDetailsStep() {
     <CardSection
       title="Property Details"
       description="Enter the primary legal property details for this property record. This information will be used for official ledger entries and contract generation."
+      required
+      readOnlyForm={!canEdit}
     >
       <div className="grid gap-5 md:grid-cols-2">
         <FormField>

@@ -1,28 +1,59 @@
 "use client";
 
-import { Check, FileText, Image as ImageIcon, Pencil } from "lucide-react";
-import { Button } from "@/components/ui";
+import { Check, FileText, Image as ImageIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { labelForAmenityFeatureId } from "@/features/admin-agents/agent-dashboard/lib/amenityFeatureOptions";
-import { selectAddPropertyWizard, setTermsAccepted } from "../addPropertyWizardSlice";
+import type { StepCompletionKey } from "@/features/admin-agents/agent-dashboard/lib/localStepCompletion";
+import {
+  selectAddPropertyIsEditable,
+  selectAddPropertyStepCompletionMap,
+  selectAddPropertyWizard,
+  setTermsAccepted,
+} from "../addPropertyWizardSlice";
 import { REVIEW_TERMS } from "../reviewTerms";
 
 const REVIEW_TITLE = "Review & Submit";
-const EDIT_BUTTON_TEXT = "Edit Information";
 const AMENITIES_TITLE = "Features & Amenities";
 const MEDIA_DOCUMENTS_TITLE = "Media & Documents";
 const TERMS_TITLE = "Terms & Conditions";
 const PHOTOS_TITLE = "Photos / Images";
 const DOCS_TITLE = "Verification Documents";
-const BACK_BUTTON_TEXT = "Go Back";
-const SUBMIT_BUTTON_TEXT = "Submit Listing";
 const TERMS_AGREEMENT_LABEL =
   "I have read the points above and agree to all of them.";
 
+function SectionHeader({
+  title,
+  complete,
+}: {
+  title: string;
+  complete: boolean;
+}) {
+  return (
+    <h3 className="flex items-center gap-2 text-size-sm fw-semibold text-[#2f4e68]">
+      {complete ? (
+        <Check className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
+      ) : (
+        <span
+          className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-[#cbd5e1] bg-white text-[10px] font-semibold text-[#94a3b8]"
+          aria-hidden
+        >
+          ·
+        </span>
+      )}
+      {title}
+    </h3>
+  );
+}
+
 export function ReviewSubmitStep() {
   const dispatch = useAppDispatch();
+  const canEdit = useAppSelector(selectAddPropertyIsEditable);
   const wizard = useAppSelector(selectAddPropertyWizard);
+  const completion = useAppSelector(selectAddPropertyStepCompletionMap);
+
+  const c = (key: StepCompletionKey) => Boolean(completion[key] ?? false);
+
   const firstOwner = wizard.owners[0];
   const safeValue = (value: string | undefined) => (value && value.trim() ? value : "-");
   const allOwnerDocNames = wizard.owners.flatMap(
@@ -31,9 +62,10 @@ export function ReviewSubmitStep() {
   const imageCount = wizard.mediaImages.length;
   const videoCount = wizard.mediaVideos.length;
   const propertyDocCount = wizard.propertyListingDocuments.length;
-  const sections = [
+  const sections: { title: string; key: StepCompletionKey; columns: { label: string; value: string }[][] }[] = [
     {
       title: "Basic Information",
+      key: "basic_information",
       columns: [
         [
           { label: "Listing Purpose", value: wizard.listingPurpose === "rent" ? "For Rent" : "For Sale" },
@@ -48,6 +80,7 @@ export function ReviewSubmitStep() {
     },
     {
       title: "Location",
+      key: "location",
       columns: [
         [
           { label: "City", value: safeValue(wizard.city) },
@@ -60,6 +93,7 @@ export function ReviewSubmitStep() {
     },
     {
       title: "Owner Information",
+      key: "owner_information",
       columns: [
         [
           { label: "Owner Name", value: safeValue(firstOwner?.fullName) },
@@ -78,6 +112,7 @@ export function ReviewSubmitStep() {
     },
     {
       title: "Property Details",
+      key: "property_details",
       columns: [
         [
           { label: "Bedrooms", value: safeValue(wizard.propertyDetails.bedrooms) },
@@ -101,6 +136,7 @@ export function ReviewSubmitStep() {
     },
     {
       title: "Pricing",
+      key: "pricing",
       columns: [
         [
           { label: "Price", value: safeValue(wizard.price) },
@@ -114,26 +150,22 @@ export function ReviewSubmitStep() {
   return (
     <section className="rounded-[28px] border border-[#edf2f7] bg-white p-5 shadow-[0_18px_48px_rgba(15,23,42,0.06)] sm:p-7">
       <div className="space-y-6">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-size-2xl fw-semibold text-[#24415c]">{REVIEW_TITLE}</h2>
-          <Button type="button" variant="outline" className="h-8 rounded-lg border-[#3c607e] px-3 text-xs text-[#2f4e68]">
-            <Pencil className="h-3.5 w-3.5" />
-            {EDIT_BUTTON_TEXT}
-          </Button>
+          <span className="inline-flex items-center rounded-full bg-[#ffe24a] px-4 py-1.5 text-size-xs fw-semibold text-[#24415c]">
+            Required
+          </span>
         </div>
 
         {sections.map((section, sectionIndex) => (
           <section key={`${section.title}-${sectionIndex}`} className="rounded-xl border border-[#edf2f7] bg-[#fbfcfe] p-4">
-            <h3 className="flex items-center gap-2 text-size-sm fw-semibold text-[#2f4e68]">
-              <Check className="h-4 w-4 text-[#2f4e68]" />
-              {section.title}
-            </h3>
+            <SectionHeader title={section.title} complete={c(section.key)} />
             <div
               className="mt-3 grid gap-4"
               style={{ gridTemplateColumns: `repeat(${section.columns.length}, minmax(0, 1fr))` }}
             >
-              {section.columns.map((column, index) => (
-                <div key={`${sectionIndex}-${index}`} className="space-y-2">
+              {section.columns.map((column, colIndex) => (
+                <div key={`${sectionIndex}-${colIndex}`} className="space-y-2">
                   {column.map((row) => (
                     <div key={`${row.label}-${row.value}`}>
                       <p className="text-[11px] fw-semibold uppercase tracking-[0.08em] text-[#7d8ca0]">{row.label}</p>
@@ -147,10 +179,7 @@ export function ReviewSubmitStep() {
         ))}
 
         <section className="rounded-xl border border-[#edf2f7] bg-[#fbfcfe] p-4">
-          <h3 className="flex items-center gap-2 text-size-sm fw-semibold text-[#2f4e68]">
-            <Check className="h-4 w-4 text-[#2f4e68]" />
-            {AMENITIES_TITLE}
-          </h3>
+          <SectionHeader title={AMENITIES_TITLE} complete={c("amenities")} />
           <div className="mt-3 grid gap-2 md:grid-cols-3">
             {wizard.amenityFeatureIds.length === 0 ? (
               <div className="rounded-lg bg-white px-3 py-2 text-size-sm text-[#2b3c50] shadow-sm">-</div>
@@ -168,10 +197,7 @@ export function ReviewSubmitStep() {
         </section>
 
         <section className="rounded-xl border border-[#edf2f7] bg-[#fbfcfe] p-4">
-          <h3 className="flex items-center gap-2 text-size-sm fw-semibold text-[#2f4e68]">
-            <Check className="h-4 w-4 text-[#2f4e68]" />
-            {MEDIA_DOCUMENTS_TITLE}
-          </h3>
+          <SectionHeader title={MEDIA_DOCUMENTS_TITLE} complete={c("media_documents")} />
           <div className="mt-2 grid gap-2 text-xs text-[#7d8ca0] md:grid-cols-2">
             <p>YouTube URL: {safeValue(wizard.youtubeUrl)}</p>
             <p>Virtual Tour URL: {safeValue(wizard.virtualTourUrl)}</p>
@@ -253,10 +279,7 @@ export function ReviewSubmitStep() {
         </section>
 
         <section className="rounded-xl border border-[#edf2f7] bg-[#fbfcfe] p-4">
-          <h3 className="flex items-center gap-2 text-size-sm fw-semibold text-[#2f4e68]">
-            <Check className="h-4 w-4 text-[#2f4e68]" />
-            {TERMS_TITLE}
-          </h3>
+          <SectionHeader title={TERMS_TITLE} complete={c("review_submit")} />
           <ul className="mt-3 list-disc space-y-2 pl-5 text-size-sm text-[#2b3c50]">
             {REVIEW_TERMS.map((term) => (
               <li key={term} className="leading-snug">
@@ -273,7 +296,8 @@ export function ReviewSubmitStep() {
                 id="review-terms-single"
                 checked={Boolean(wizard.termsAccepted)}
                 onChange={(event) => dispatch(setTermsAccepted(event.target.checked))}
-                className="mt-0.5 shrink-0 border-[#b8c8ea] text-[#24415c] focus:ring-[#24415c]"
+                disabled={!canEdit}
+                className="mt-0.5 shrink-0 border-[#b8c8ea] text-[#24415c] focus:ring-[#24415c] disabled:opacity-60"
               />
               <span className="text-size-sm font-medium leading-snug text-[#2b3c50]">
                 {TERMS_AGREEMENT_LABEL}

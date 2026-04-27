@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
   ArrowLeft,
   Building2,
@@ -24,10 +24,16 @@ import {
   AddPropertyWizard,
   type AddPropertyWizardNavigateHandle,
 } from "./AddPropertyWizard";
-import { selectShouldPromptLeaveAddProperty } from "./addPropertyWizardSlice";
+import { canNavigateToStepIndex } from "@/features/admin-agents/agent-dashboard/lib/addPropertyStepValidation";
+import { UI_STEP_ID_TO_COMPLETION_KEY } from "@/features/admin-agents/agent-dashboard/lib/localStepCompletion";
+import { Toast } from "@/components/ui/toast";
 import {
   selectAddPropertyActiveStep,
   selectAddPropertyCurrentStepIndex,
+  selectAddPropertyLastCompletedStepDisplay,
+  selectAddPropertyStepCompletionMap,
+  selectAddPropertyWizard,
+  selectShouldPromptLeaveAddProperty,
   setActiveStep,
 } from "./addPropertyWizardSlice";
 
@@ -98,6 +104,23 @@ export function AddPropertyPage() {
   const wizardNavRef = useRef<AddPropertyWizardNavigateHandle>(null);
   const activeStep = useAppSelector(selectAddPropertyActiveStep);
   const activeStepIndex = useAppSelector(selectAddPropertyCurrentStepIndex);
+  const stepCompletionMap = useAppSelector(selectAddPropertyStepCompletionMap);
+  const lastCompletedDisplay = useAppSelector(selectAddPropertyLastCompletedStepDisplay);
+  const wizard = useAppSelector(selectAddPropertyWizard);
+  const [navToast, setNavToast] = useState<{ message: string } | null>(null);
+
+  const trySetActiveStep = useCallback(
+    (stepId: (typeof STEP_ITEMS)[number]["id"], targetIndex: number) => {
+      if (!canNavigateToStepIndex(targetIndex, activeStepIndex, wizard)) {
+        setNavToast({
+          message: "Please complete the previous steps before jumping ahead.",
+        });
+        return;
+      }
+      dispatch(setActiveStep(stepId));
+    },
+    [activeStepIndex, dispatch, wizard],
+  );
 
   const listingsHref = `/${locale}/agent-dashboard/listings`;
 
@@ -136,9 +159,9 @@ export function AddPropertyPage() {
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, []);
   const trackInsetPercent = 50 / STEP_ITEMS.length;
-  const progressPercent =
-    STEP_ITEMS.length > 1
-      ? (activeStepIndex / (STEP_ITEMS.length - 1)) * (100 - trackInsetPercent * 2)
+  const progressFromCompletion =
+    STEP_ITEMS.length > 0
+      ? (lastCompletedDisplay / STEP_ITEMS.length) * (100 - trackInsetPercent * 2)
       : 0;
 
   return (
@@ -156,15 +179,18 @@ export function AddPropertyPage() {
             </div>
 
             <nav className="space-y-1.5">
-              {STEP_ITEMS.map((item) => {
-                const Icon = item.icon;
+              {STEP_ITEMS.map((item, navIndex) => {
                 const isActive = item.id === activeStep;
+                const navKey = UI_STEP_ID_TO_COMPLETION_KEY[item.id];
+                const stepDone = Boolean(stepCompletionMap[navKey] ?? false);
 
                 return (
                   <button
                     type="button"
                     key={item.id}
-                    onClick={() => dispatch(setActiveStep(item.id))}
+                    onClick={() => {
+                      trySetActiveStep(item.id, navIndex);
+                    }}
                     className={[
                       "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-size-sm transition-colors",
                       isActive
@@ -172,7 +198,18 @@ export function AddPropertyPage() {
                         : "text-charcoal/65 hover:bg-[#f6f8fb] hover:text-charcoal",
                     ].join(" ")}
                   >
-                    <Icon className="h-4 w-4 shrink-0" />
+                    {stepDone ? (
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#2f4e68] text-white">
+                        <Check className="h-2.5 w-2.5" />
+                      </span>
+                    ) : (
+                      <span
+                        className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-[#dbe4ef] bg-[#e8eef6] text-size-[10px] fw-semibold text-[#64748b]"
+                        aria-hidden
+                      >
+                        {navIndex + 1}
+                      </span>
+                    )}
                     <span className="fw-medium">
                       {item.labelKey ? t(item.labelKey) : item.fallback}
                     </span>
@@ -208,7 +245,7 @@ export function AddPropertyPage() {
                   className="absolute top-3.5 h-1 rounded-full bg-[#2f4e68] transition-all duration-300"
                   style={{
                     left: `${trackInsetPercent}%`,
-                    width: `${progressPercent}%`,
+                    width: `${progressFromCompletion}%`,
                   }}
                 />
 
@@ -218,13 +255,18 @@ export function AddPropertyPage() {
                 >
                   {STEP_ITEMS.map((item, index) => {
                     const isActive = item.id === activeStep;
-                    const isComplete = index < activeStepIndex;
+                    const apiKey = UI_STEP_ID_TO_COMPLETION_KEY[item.id];
+                    const isComplete = Boolean(
+                      stepCompletionMap[apiKey] ?? false,
+                    );
 
                     return (
                       <button
                         type="button"
                         key={item.id}
-                        onClick={() => dispatch(setActiveStep(item.id))}
+                        onClick={() => {
+                          trySetActiveStep(item.id, index);
+                        }}
                         className="group relative flex min-w-0 flex-col items-center gap-3 text-center"
                       >
                         <div
@@ -266,6 +308,14 @@ export function AddPropertyPage() {
           </main>
         </div>
       </div>
+      {navToast ? (
+        <Toast
+          kind="error"
+          message={navToast.message}
+          duration={5000}
+          onClose={() => setNavToast(null)}
+        />
+      ) : null}
     </div>
   );
 }

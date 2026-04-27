@@ -4,6 +4,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } fro
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import { ArrowLeft, ArrowRight, Save } from "lucide-react";
+import { isAxiosError } from "axios";
 import type { AppLocale } from "@/i18n/routing";
 import { Button, LoadingButton } from "@/components/ui";
 import {
@@ -18,12 +19,15 @@ import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { getApiErrorMessage } from "@/lib/http/apiError";
 import { store } from "@/store";
 import {
-  createPropertySubmission,
+  createAndSubmitPropertySubmission,
+  createPropertySubmissionDraft,
   getPropertySubmission,
-  patchPropertySubmission,
-  submitPropertySubmission,
+  patchPropertySubmissionFullDraft,
+  submitExistingPropertySubmission,
 } from "../../api/propertySubmissions.api";
-import { buildStepData, uiStepToApiStep } from "../../lib/buildSubmissionStepData";
+import { getValidationErrorBeforeLeavingStep } from "../../lib/addPropertyStepValidation";
+import { buildFullReduxPayload, getCurrentStepIndex1Based } from "../../lib/buildSubmissionStepData";
+import { hasAnyLocalStepComplete } from "../../lib/localStepCompletion";
 import { wizardStateFromApiSubmission } from "../../lib/hydrateWizardFromSubmission";
 
 import { BasicInformationStep } from "./steps/BasicInformationStep";
@@ -38,30 +42,33 @@ import {
   goToNextStep,
   goToPreviousStep,
   selectAddPropertyActiveStep,
+  selectAddPropertyCurrentStepComplete,
   selectAddPropertyCurrentStepIndex,
+  selectAddPropertyIsEditable,
   selectAddPropertyWizard,
   mergeServerPayloadAfterPatch,
   rehydrateAddPropertyWizard,
   resetAddPropertyWizard,
   selectShouldPromptLeaveAddProperty,
+  setStepProgressFromServer,
   setSubmissionMeta,
+  initializeNewPropertyWizard,
 } from "./addPropertyWizardSlice";
 import { ADD_PROPERTY_STEP_ORDER } from "./addPropertyWizard.types";
-
-const STORAGE_KEY = "abdoun:add-property:submission-id";
 
 export type AddPropertyWizardNavigateHandle = {
   requestNavigate: (href: string) => void;
 };
 
-function isUserEditableStatus(status: string | null | undefined): boolean {
-  if (!status) return true;
-  return status === "draft" || status === "in_progress" || status === "changes_requested";
-}
-
-function isTerminalSubmissionStatus(status: string | null | undefined): boolean {
-  if (!status) return false;
-  return status === "submitted" || status === "approved" || status === "rejected";
+function messageForSubmitError(e: unknown): string {
+  if (isAxiosError(e) && e.response) {
+    const s = e.response.status;
+    if (s === 401) return "Session expired. Please sign in again.";
+    if (s === 403) return "You do not have access to this action.";
+    if (s === 404) return "Listing draft was not found.";
+    if (s === 409) return "This listing is locked and cannot be updated.";
+  }
+  return getApiErrorMessage(e);
 }
 
 export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
@@ -76,12 +83,11 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
   const activeStep = useAppSelector(selectAddPropertyActiveStep);
   const currentStepIndex = useAppSelector(selectAddPropertyCurrentStepIndex);
   const wizardState = useAppSelector(selectAddPropertyWizard);
+  const canEdit = useAppSelector(selectAddPropertyIsEditable);
+  const currentStepComplete = useAppSelector(selectAddPropertyCurrentStepComplete);
 
   const isReviewStep = currentStepIndex === ADD_PROPERTY_STEP_ORDER.length - 1;
   const allTermsAccepted = Boolean(wizardState.termsAccepted);
-  const submissionId = wizardState.submissionId;
-  const submissionStatus = wizardState.submissionStatus;
-  const editable = isUserEditableStatus(submissionStatus);
 
   const [initLoading, setInitLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -91,6 +97,10 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
     href: null,
   });
   const [leaveSaving, setLeaveSaving] = useState(false);
+  const [emptyDraftDialog, setEmptyDraftDialog] = useState<{
+    open: boolean;
+    context: { kind: "inline" } | { kind: "leave"; href: string } | null;
+  }>({ open: false, context: null });
 
   const showToast = useCallback((kind: "success" | "error", message: string) => {
     setToast({ kind, message });
@@ -99,86 +109,38 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
   useEffect(() => {
     let cancelled = false;
 
-    async function startFreshDraft() {
-      sessionStorage.removeItem(STORAGE_KEY);
-      const created = await createPropertySubmission();
-      if (cancelled) return;
-      dispatch(resetAddPropertyWizard());
-      dispatch(
-        setSubmissionMeta({
-          submissionId: created.submission_id,
-          submissionStatus: created.status,
-          propertyIdAfterSubmit: null,
-          adminReviewReason: null,
-        }),
-      );
-      sessionStorage.setItem(STORAGE_KEY, created.submission_id);
-    }
-
     async function bootstrap() {
-      setInitLoading(true);
-      if (typeof window === "undefined") {
+      const wantNew = searchParams.get("new") === "1";
+      const explicitId = searchParams.get("submission")?.trim() || null;
+
+      if (wantNew) {
+        dispatch(initializeNewPropertyWizard());
+        if (!cancelled) {
+          showToast("success", "New draft started.");
+          router.replace(pathname, { scroll: false });
+        }
         setInitLoading(false);
         return;
       }
 
-      const wantNew = searchParams.get("new") === "1";
-      const explicitId = searchParams.get("submission")?.trim() || null;
-      const fromSession = sessionStorage.getItem(STORAGE_KEY);
-
-      try {
-        if (wantNew) {
-          await startFreshDraft();
-          if (!cancelled) {
-            showToast("success", "New draft started.");
-            router.replace(pathname, { scroll: false });
-          }
-          return;
-        }
-
-        if (explicitId) {
+      if (explicitId) {
+        setInitLoading(true);
+        try {
           const sub = await getPropertySubmission(explicitId);
           if (cancelled) return;
           dispatch(rehydrateAddPropertyWizard(wizardStateFromApiSubmission(sub)));
-          sessionStorage.setItem(STORAGE_KEY, sub.submission_id);
-          return;
-        }
-
-        if (fromSession) {
-          try {
-            const sub = await getPropertySubmission(fromSession);
-            if (cancelled) return;
-            if (isTerminalSubmissionStatus(sub.status) && !explicitId) {
-              await startFreshDraft();
-              if (!cancelled) {
-                showToast("success", "Previous listing was already submitted. Started a new draft.");
-              }
-              return;
-            }
-            dispatch(rehydrateAddPropertyWizard(wizardStateFromApiSubmission(sub)));
-            sessionStorage.setItem(STORAGE_KEY, sub.submission_id);
-            return;
-          } catch {
-            if (cancelled) return;
-            sessionStorage.removeItem(STORAGE_KEY);
-            await startFreshDraft();
-            if (!cancelled) {
-              showToast("success", "Started a new draft listing.");
-            }
-            return;
+        } catch (e) {
+          if (!cancelled) {
+            showToast("error", messageForSubmitError(e));
+            dispatch(initializeNewPropertyWizard());
           }
+        } finally {
+          if (!cancelled) setInitLoading(false);
         }
-
-        await startFreshDraft();
-      } catch (e) {
-        if (!cancelled) {
-          showToast("error", getApiErrorMessage(e));
-        }
-      } finally {
-        if (!cancelled) {
-          setInitLoading(false);
-        }
+        return;
       }
+
+      if (!cancelled) setInitLoading(false);
     }
 
     void bootstrap();
@@ -187,40 +149,70 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
     };
   }, [dispatch, pathname, router, searchParams, showToast]);
 
-  const patchForStep = useCallback(
-    async (step: (typeof ADD_PROPERTY_STEP_ORDER)[number], action: "save" | "next" | "previous" | "save_draft") => {
-      const id = store.getState().addPropertyWizard.submissionId;
+  const saveDraftToServer = useCallback(async (): Promise<boolean> => {
+    const s = store.getState().addPropertyWizard;
+    const id = s.submissionId;
+    const payload = buildFullReduxPayload(s);
+    const currentStep = getCurrentStepIndex1Based(s);
+    try {
       if (!id) {
-        showToast("error", "No submission. Please wait for initialization.");
-        return false;
-      }
-      const currentWizard = store.getState().addPropertyWizard;
-      const data = buildStepData(step, currentWizard);
-      const apiStep = uiStepToApiStep(step);
-      try {
-        const result = await patchPropertySubmission(id, {
-          step: apiStep,
-          action,
-          data,
-        });
+        const result = await createPropertySubmissionDraft(payload, currentStep);
         dispatch(
           setSubmissionMeta({
+            submissionId: result.submission_id,
             submissionStatus: result.status,
-            propertyIdAfterSubmit: result.property_id ?? null,
-            adminReviewReason: result.review_reason ?? null,
+            isPersisted: true,
           }),
         );
         if (result.payload != null && typeof result.payload === "object") {
           dispatch(mergeServerPayloadAfterPatch(result.payload as Record<string, unknown>));
         }
+        if (result.step_completion !== undefined || result.last_completed_step !== undefined) {
+          dispatch(
+            setStepProgressFromServer({
+              ...(result.step_completion !== undefined
+                ? { step_completion: result.step_completion }
+                : {}),
+              ...(result.last_completed_step !== undefined
+                ? { last_completed_step: result.last_completed_step }
+                : {}),
+            }),
+          );
+        }
         return true;
-      } catch (e) {
-        showToast("error", getApiErrorMessage(e));
-        return false;
       }
-    },
-    [dispatch, showToast],
-  );
+      const result = await patchPropertySubmissionFullDraft(id, {
+        payload,
+        current_step: currentStep,
+      });
+      dispatch(
+        setSubmissionMeta({
+          submissionStatus: result.status,
+          propertyIdAfterSubmit: result.property_id ?? null,
+          adminReviewReason: result.review_reason ?? null,
+        }),
+      );
+      if (result.payload != null && typeof result.payload === "object") {
+        dispatch(mergeServerPayloadAfterPatch(result.payload as Record<string, unknown>));
+      }
+      if (result.step_completion !== undefined || result.last_completed_step !== undefined) {
+        dispatch(
+          setStepProgressFromServer({
+            ...(result.step_completion !== undefined
+              ? { step_completion: result.step_completion }
+              : {}),
+            ...(result.last_completed_step !== undefined
+              ? { last_completed_step: result.last_completed_step }
+              : {}),
+          }),
+        );
+      }
+      return true;
+    } catch (e) {
+      showToast("error", messageForSubmitError(e));
+      return false;
+    }
+  }, [dispatch, showToast]);
 
   const proceedNavigate = useCallback(
     (href: string) => {
@@ -251,111 +243,183 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
   const leaveWithoutSaving = useCallback(() => {
     const href = leaveModal.href;
     if (!href) return;
+    dispatch(resetAddPropertyWizard());
     proceedNavigate(href);
-  }, [leaveModal.href, proceedNavigate]);
+  }, [dispatch, leaveModal.href, proceedNavigate]);
 
   const saveDraftAndLeave = useCallback(async () => {
     const href = leaveModal.href;
     if (!href) return;
-    if (!editable) {
+    if (!canEdit) {
       proceedNavigate(href);
       return;
     }
+    const s = store.getState().addPropertyWizard;
+    if (!hasAnyLocalStepComplete(s)) {
+      setLeaveModal({ open: false, href: null });
+      setEmptyDraftDialog({ open: true, context: { kind: "leave", href } });
+      return;
+    }
     setLeaveSaving(true);
-    const step = store.getState().addPropertyWizard.activeStep;
-    const ok = await patchForStep(step, "save_draft");
+    const ok = await saveDraftToServer();
     setLeaveSaving(false);
     if (ok) {
       showToast("success", t("leaveAddPropertyDraftSavedToast"));
       proceedNavigate(href);
     }
-  }, [editable, leaveModal.href, patchForStep, proceedNavigate, showToast, t]);
+  }, [canEdit, leaveModal.href, saveDraftToServer, proceedNavigate, showToast, t]);
 
   const handleBack = () => {
     requestNavigate(`/${locale}/agent-dashboard/listings`);
   };
 
+  const confirmEmptyDraftSave = useCallback(async () => {
+    const ctx = emptyDraftDialog.context;
+    setEmptyDraftDialog({ open: false, context: null });
+    if (!ctx) return;
+    if (ctx.kind === "inline") {
+      setSaving(true);
+      const ok = await saveDraftToServer();
+      setSaving(false);
+      if (ok) {
+        showToast("success", t("draftSavedOnServer"));
+      }
+      return;
+    }
+    setLeaveSaving(true);
+    const ok = await saveDraftToServer();
+    setLeaveSaving(false);
+    if (ok) {
+      showToast("success", t("leaveAddPropertyDraftSavedToast"));
+      proceedNavigate(ctx.href);
+    }
+  }, [emptyDraftDialog.context, proceedNavigate, saveDraftToServer, showToast, t]);
+
+  const closeEmptyDraftDialog = useCallback(() => {
+    if (saving || leaveSaving) return;
+    const ctx = emptyDraftDialog.context;
+    setEmptyDraftDialog({ open: false, context: null });
+    if (ctx?.kind === "leave") {
+      setLeaveModal({ open: true, href: ctx.href });
+    }
+  }, [emptyDraftDialog.context, leaveSaving, saving]);
+
   const handleDraft = async () => {
-    if (!editable) {
+    if (!canEdit) {
       showToast("error", "This submission can no longer be edited.");
       return;
     }
-    if (!submissionId) return;
+    const s = store.getState().addPropertyWizard;
+    if (!hasAnyLocalStepComplete(s)) {
+      setEmptyDraftDialog({ open: true, context: { kind: "inline" } });
+      return;
+    }
     setSaving(true);
-    const ok = await patchForStep(activeStep, "save_draft");
+    const ok = await saveDraftToServer();
     setSaving(false);
     if (ok) {
-      showToast("success", "Draft saved on the server.");
+      showToast("success", t("draftSavedOnServer"));
     }
   };
 
   const handleNext = async () => {
-    if (!editable) {
-      showToast("error", "This submission is locked. You cannot make changes right now.");
-      return;
-    }
-    if (!submissionId) {
-      showToast("error", "Still connecting to the server. Try again in a moment.");
-      return;
-    }
     if (currentStepIndex < ADD_PROPERTY_STEP_ORDER.length - 1) {
-      setSaving(true);
-      const ok = await patchForStep(activeStep, "next");
-      if (ok) {
+      if (!initLoading) {
+        const s = store.getState().addPropertyWizard;
+        const err = getValidationErrorBeforeLeavingStep(s.activeStep, s);
+        if (err) {
+          showToast("error", err);
+          return;
+        }
         dispatch(goToNextStep());
       }
-      setSaving(false);
       return;
     }
 
+    if (!canEdit) {
+      return;
+    }
     if (!allTermsAccepted) {
       return;
     }
     setSaving(true);
-    const reviewOk = await patchForStep("review-submit", "save");
-    if (!reviewOk) {
-      setSaving(false);
-      return;
-    }
     try {
-      const submitId = store.getState().addPropertyWizard.submissionId;
-      if (!submitId) {
-        setSaving(false);
+      const s = store.getState().addPropertyWizard;
+      const fullPayload = buildFullReduxPayload(s);
+      const subId = s.submissionId;
+
+      if (!subId) {
+        const result = await createAndSubmitPropertySubmission(fullPayload);
+        dispatch(
+          setSubmissionMeta({
+            submissionId: result.submission_id ?? null,
+            submissionStatus: result.status ?? "submitted",
+            propertyIdAfterSubmit: result.property_id,
+            isPersisted: true,
+          }),
+        );
+        dispatch(resetAddPropertyWizard());
+        showToast("success", t("listingSubmittedRedirect") ?? "Listing submitted.");
+        router.push(`/${locale}/agent-dashboard/listings?submitted=1`);
         return;
       }
-      const result = await submitPropertySubmission(submitId);
+
+      if (s.dirty) {
+        const step = getCurrentStepIndex1Based(s);
+        const patchResult = await patchPropertySubmissionFullDraft(subId, {
+          payload: fullPayload,
+          current_step: step,
+        });
+        dispatch(
+          setSubmissionMeta({
+            submissionStatus: patchResult.status,
+            propertyIdAfterSubmit: patchResult.property_id ?? null,
+            adminReviewReason: patchResult.review_reason ?? null,
+          }),
+        );
+        if (patchResult.payload != null && typeof patchResult.payload === "object") {
+          dispatch(mergeServerPayloadAfterPatch(patchResult.payload as Record<string, unknown>));
+        }
+        if (
+          patchResult.step_completion !== undefined ||
+          patchResult.last_completed_step !== undefined
+        ) {
+          dispatch(
+            setStepProgressFromServer({
+              ...(patchResult.step_completion !== undefined
+                ? { step_completion: patchResult.step_completion }
+                : {}),
+              ...(patchResult.last_completed_step !== undefined
+                ? { last_completed_step: patchResult.last_completed_step }
+                : {}),
+            }),
+          );
+        }
+      }
+
+      const result = await submitExistingPropertySubmission(subId);
       dispatch(
         setSubmissionMeta({
           submissionStatus: "submitted",
           propertyIdAfterSubmit: result.property_id,
         }),
       );
-      if (typeof window !== "undefined") {
-        sessionStorage.removeItem(STORAGE_KEY);
-      }
-      setSaving(false);
+      dispatch(resetAddPropertyWizard());
+      showToast("success", t("listingSubmittedRedirect"));
       router.push(`/${locale}/agent-dashboard/listings?submitted=1`);
     } catch (e) {
+      showToast("error", messageForSubmitError(e));
+    } finally {
       setSaving(false);
-      showToast("error", getApiErrorMessage(e));
     }
   };
 
-  const handleStepBack = async () => {
+  const handleStepBack = () => {
     if (currentStepIndex === 0) {
       handleBack();
       return;
     }
-    if (!editable || !submissionId) {
-      dispatch(goToPreviousStep());
-      return;
-    }
-    setSaving(true);
-    const ok = await patchForStep(activeStep, "previous");
-    if (ok) {
-      dispatch(goToPreviousStep());
-    }
-    setSaving(false);
+    dispatch(goToPreviousStep());
   };
 
   if (initLoading) {
@@ -407,7 +471,7 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
                 void handleDraft();
               }}
               className="rounded-xl"
-              disabled={saving || !editable}
+              disabled={saving || !canEdit}
             >
               <Save className="h-4 w-4" />
               Save as Draft
@@ -418,15 +482,57 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
               onClick={() => {
                 void handleNext();
               }}
-              disabled={(isReviewStep && !allTermsAccepted) || saving || !editable}
+              disabled={
+                saving ||
+                (isReviewStep && (!canEdit || !allTermsAccepted)) ||
+                (!isReviewStep && !currentStepComplete)
+              }
               className="min-w-32 rounded-xl bg-[#294a66] text-white hover:bg-[#203d56]"
             >
-              {saving ? "…" : isReviewStep ? "Submit" : "Next"}
+              {saving
+                ? "…"
+                : isReviewStep
+                  ? canEdit
+                    ? "Submit"
+                    : "Submitted"
+                  : "Next"}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </div>
+
+      <DialogRoot
+        open={emptyDraftDialog.open}
+        onClose={closeEmptyDraftDialog}
+        className="relative max-w-lg"
+      >
+        <DialogTitle>{t("emptyDraftSaveTitle")}</DialogTitle>
+        <DialogDescription className="text-pretty text-sm text-charcoal/75">
+          {t("emptyDraftSaveDescription")}
+        </DialogDescription>
+        <DialogFooter className="mt-6 flex flex-row flex-wrap gap-2 sm:flex-nowrap sm:gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={closeEmptyDraftDialog}
+            disabled={saving || leaveSaving}
+            className="min-w-0 flex-1"
+          >
+            {t("emptyDraftSaveCancel")}
+          </Button>
+          <LoadingButton
+            type="button"
+            variant="accent"
+            className="min-w-0 flex-1 bg-[#294a66] text-white hover:bg-[#203d56]"
+            onClick={() => void confirmEmptyDraftSave()}
+            disabled={saving || leaveSaving}
+            loading={saving || leaveSaving}
+          >
+            {t("emptyDraftSaveConfirm")}
+          </LoadingButton>
+        </DialogFooter>
+      </DialogRoot>
 
       <DialogRoot
         open={leaveModal.open}
@@ -462,7 +568,7 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
             className="h-auto min-h-10 min-w-0 flex-1 justify-center bg-[#294a66] px-2 py-2.5 text-center text-xs leading-snug text-white hover:bg-[#203d56] sm:px-3 sm:text-sm"
             loading={leaveSaving}
             onClick={() => void saveDraftAndLeave()}
-            disabled={leaveSaving || !editable}
+            disabled={leaveSaving || !canEdit}
           >
             {t("leaveAddPropertySaveDraft")}
           </LoadingButton>

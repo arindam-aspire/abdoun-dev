@@ -1,5 +1,8 @@
 import type { AddPropertyWizardState } from "../components/add-property/addPropertyWizardSlice";
-import type { AddPropertyStepId } from "../components/add-property/addPropertyWizard.types";
+import {
+  ADD_PROPERTY_STEP_ORDER,
+  type AddPropertyStepId,
+} from "../components/add-property/addPropertyWizard.types";
 import { getCategoryId, getCityAndAreaIds, getTypeId } from "./submissionReferenceIds";
 import type { ApiSubmissionStep } from "../api/propertySubmissions.api";
 
@@ -143,5 +146,29 @@ export function getReviewFlagsFromState(state: AddPropertyWizardState): {
     privacy_accepted: agreed,
     public_display_authorized: agreed,
     fees_acknowledged: agreed,
+  };
+}
+
+/** 1-based index for `current_step` in API payloads. */
+export function getCurrentStepIndex1Based(state: AddPropertyWizardState): number {
+  const i = ADD_PROPERTY_STEP_ORDER.indexOf(state.activeStep);
+  return i >= 0 ? i + 1 : 1;
+}
+
+/**
+ * Full nested payload for POST /property-submissions, /submit, or PATCH — matches backend sections.
+ */
+export function buildFullReduxPayload(
+  state: AddPropertyWizardState,
+): Record<string, unknown> {
+  return {
+    basic_information: buildStepData("basic-information", state),
+    location: buildStepData("location", state),
+    owner_information: buildStepData("owner-information", state),
+    property_details: buildStepData("property-details", state),
+    pricing: buildStepData("pricing", state),
+    amenities: buildStepData("features-amenities", state),
+    media_documents: buildStepData("media-documents", state),
+    review_submit: buildStepData("review-submit", state),
   };
 }

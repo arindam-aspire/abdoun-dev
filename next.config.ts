@@ -29,6 +29,13 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
+      /** Abdoun asset bucket (drafts, property media, presigned URLs) */
+      {
+        protocol: "https",
+        hostname: "abdoun-dev-assets-usw2.s3.amazonaws.com",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
 };

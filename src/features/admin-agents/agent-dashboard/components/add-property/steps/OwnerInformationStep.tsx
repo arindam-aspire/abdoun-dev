@@ -29,11 +29,12 @@ import {
   wizardTextareaClassName,
 } from "../AddPropertyStepLayout";
 import { getApiErrorMessage } from "@/lib/http/apiError";
-import { uploadFileForSubmission } from "@/features/admin-agents/agent-dashboard/lib/submissionFileUpload";
+import { uploadPropertyFile } from "@/features/admin-agents/agent-dashboard/lib/submissionFileUpload";
 
 import {
   addOwner,
   removeOwner,
+  selectAddPropertyIsEditable,
   selectAddPropertyWizard,
   setOwnerDocumentsForOwner,
   updateOwner,
@@ -114,25 +115,31 @@ function WizardDropdownSelect({
 function OwnerDocumentsUpload({
   ownerId,
   submissionId,
+  draftClientId,
+  canEdit,
   documents,
 }: {
   ownerId: number;
   submissionId: string | null;
+  draftClientId: string;
+  canEdit: boolean;
   documents: OwnerDocumentRef[];
 }) {
   const dispatch = useAppDispatch();
   const [uploading, setUploading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
+  const canUpload = canEdit && (Boolean(submissionId) || Boolean(draftClientId));
 
   const setDocs = (next: OwnerDocumentRef[]) => {
     dispatch(setOwnerDocumentsForOwner({ ownerId, documents: next }));
   };
 
   const addDocuments = async (files: FileList | null) => {
-    if (!files || !submissionId) {
-      if (!submissionId) {
-        setLocalError("Submission is not ready. Please wait and try again.");
+    if (!canEdit) return;
+    if (!files || !canUpload) {
+      if (!canUpload) {
+        setLocalError("Upload is not available. Save a draft or try again.");
       }
       return;
     }
@@ -150,7 +157,9 @@ function OwnerDocumentsUpload({
     try {
       const next = [...documents];
       for (const file of accepted) {
-        const row = await uploadFileForSubmission(submissionId, file, "owner_document");
+        const row = submissionId
+          ? await uploadPropertyFile({ submissionId, file, context: "owner_document" })
+          : await uploadPropertyFile({ draftClientId, file, context: "owner_document" });
         next.push(row);
       }
       setDocs(next);
@@ -189,7 +198,7 @@ function OwnerDocumentsUpload({
           void addDocuments(event.target.files);
           event.target.value = "";
         }}
-        disabled={uploading || !submissionId}
+        disabled={uploading || !canUpload}
       />
 
       <div
@@ -204,7 +213,7 @@ function OwnerDocumentsUpload({
           <button
             type="button"
             onClick={() => documentInputRef.current?.click()}
-            disabled={uploading || !submissionId}
+            disabled={uploading || !canUpload}
             className="inline-flex h-9 items-center justify-center rounded-lg border border-[#c8d3e2] bg-white px-4 text-sm fw-medium text-[#2a4a67] hover:bg-[#f7faff] disabled:opacity-50"
           >
             {uploading ? "Uploading…" : "Upload Document"}
@@ -252,7 +261,10 @@ function OwnerDocumentsUpload({
 
 export function OwnerInformationStep() {
   const dispatch = useAppDispatch();
-  const { owners, submissionId, ownerDocuments } = useAppSelector(selectAddPropertyWizard);
+  const { owners, submissionId, draftClientId, ownerDocuments } = useAppSelector(
+    selectAddPropertyWizard,
+  );
+  const canEdit = useAppSelector(selectAddPropertyIsEditable);
   const [openNationalityOwnerId, setOpenNationalityOwnerId] = useState<number | null>(null);
   const nationalityOptions: DropdownOption[] = [
     { value: "Jordanian", label: "Jordanian" },
@@ -270,6 +282,7 @@ export function OwnerInformationStep() {
           title={`Owner Information${owners.length > 1 ? ` #${index + 1}` : ""}`}
           description="Enter the primary legal owner's details for this property record. This information will be used for official ledger entries and contract generation."
           required
+          readOnlyForm={!canEdit}
         >
           <div className="grid gap-5 md:grid-cols-2">
             <FormField>
@@ -425,6 +438,8 @@ export function OwnerInformationStep() {
             key={owner.id}
             ownerId={owner.id}
             submissionId={submissionId}
+            draftClientId={draftClientId}
+            canEdit={canEdit}
             documents={ownerDocuments[owner.id] ?? []}
           />
 
@@ -449,7 +464,8 @@ export function OwnerInformationStep() {
         <button
           type="button"
           onClick={() => dispatch(addOwner())}
-          className="flex min-h-28 w-full flex-col items-center justify-center gap-3 rounded-[16px] border border-dashed border-[#d7deea] bg-[#f8fafc] text-[#24415c] shadow-[0_12px_30px_rgba(15,23,42,0.04)] transition-colors hover:border-[#24415c]"
+          disabled={!canEdit}
+          className="flex min-h-28 w-full flex-col items-center justify-center gap-3 rounded-[16px] border border-dashed border-[#d7deea] bg-[#f8fafc] text-[#24415c] shadow-[0_12px_30px_rgba(15,23,42,0.04)] transition-colors hover:border-[#24415c] disabled:pointer-events-none disabled:opacity-50"
         >
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f1f5f9]">
             <Plus className="h-5 w-5" />
