@@ -15,6 +15,7 @@ import { useTranslations } from "@/hooks/useTranslations";
 import { performClientLogout } from "@/lib/auth/logoutClient";
 import { ADMIN_AGENTS_DASHBOARD_COUNT_PARAMS } from "@/features/admin-agents/admin-dashboard/hooks/useAdminAgentsTotalForDashboard";
 import { fetchAdminAgents } from "@/features/admin-agents/adminAgentsSlice";
+import { fetchAdminUsersSidebarTotal } from "@/features/admin-users/adminUsersSlice";
 import { selectCurrentUser, selectSidebarCounts } from "@/store/selectors";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { isRtlLocale } from "@/i18n/routing";
@@ -40,6 +41,7 @@ export function Sidebar() {
   useEffect(() => {
     if (user?.role !== "admin" || !user?.id) return;
     void dispatch(fetchAdminAgents(ADMIN_AGENTS_DASHBOARD_COUNT_PARAMS));
+    void dispatch(fetchAdminUsersSidebarTotal());
   }, [dispatch, user?.id, user?.role]);
 
   if (!isSidebarRole) return null;
@@ -173,9 +175,12 @@ export function Sidebar() {
                   {section.items.map((item) => {
                     const href = getSidebarItemHref(locale, item, role);
                     const isActive = activeItemId === item.id;
-                    const count = item.countKey
-                      ? (counts[item.countKey] ?? 0)
-                      : null;
+                    const rawCount = item.countKey ? counts[item.countKey] : undefined;
+                    /** `-1` means “no badge” (e.g. users total not provided by API yet). */
+                    const count =
+                      item.countKey && rawCount !== undefined && rawCount >= 0
+                        ? rawCount
+                        : null;
                     const Icon = item.icon;
 
                     return (

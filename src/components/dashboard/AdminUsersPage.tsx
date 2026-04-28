@@ -1,22 +1,33 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input, LoadingScreen } from "@/components/ui";
-import { Pagination } from "@/components/ui/Pagination";
-import { Users } from "lucide-react";
+import { AdminUserActionsMenu } from "@/components/dashboard/AdminUserActionsMenu";
+import { CountryFlagImg } from "@/components/ui/phone-country-code-select";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CustomTable,
+  IconButton,
+  Input,
+  Skeleton,
+  sortRowsByConfig,
+  Toast,
+  type CustomTableColumn,
+  type SortConfig,
+} from "@/components/ui";
+import {
+  DEFAULT_PAGINATION_PAGE_SIZE,
+  PAGINATION_PAGE_SIZES,
+} from "@/components/ui/Pagination";
+import { fetchAdminUsers } from "@/features/admin-users/adminUsersSlice";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import { getProfilePhoneReadonlyDisplay } from "@/lib/phone";
+import type { UserManagementUser } from "@/services/userService";
+import { Users, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-
-type AdminUserRow = {
-  id: string;
-  fullName: string;
-  email: string;
-  phone?: string | null;
-  role: "user" | "agent" | "admin";
-  joinDate: string;
-  createdAt: string;
-  status: "active" | "inactive";
-};
+import type * as React from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 function formatDateTime(value: string): string {
   const date = new Date(value);
@@ -24,575 +35,270 @@ function formatDateTime(value: string): string {
   return date.toLocaleString();
 }
 
-function formatPhoneForList(phone: string | null | undefined): string {
-  if (!phone) return "N/A";
+function UserPhoneTableCell({
+  phone,
+}: {
+  phone: string | null | undefined;
+}): React.ReactNode {
+  if (!phone?.trim()) return "—";
   const trimmed = phone.trim();
-  if (!trimmed) return "N/A";
-  return trimmed;
+  const withoutPlus = trimmed.startsWith("+") ? trimmed.slice(1) : trimmed;
+  if (withoutPlus.startsWith("0")) return "—";
+  const parts = getProfilePhoneReadonlyDisplay(trimmed);
+  if (!parts) return trimmed;
+  return (
+    <span className="inline-flex min-w-0 max-w-full items-center gap-2 tabular-nums">
+      <CountryFlagImg
+        iso2={parts.iso2}
+        className="h-4 w-5 shrink-0"
+        title={parts.iso2}
+      />
+      <span className="min-w-0 truncate">{parts.nationalLine}</span>
+    </span>
+  );
 }
 
-function rolePillClass(role: AdminUserRow["role"]): string {
-  if (role === "admin") return "bg-purple-100 text-purple-800";
-  if (role === "agent") return "bg-sky-100 text-sky-800";
-  return "bg-zinc-100 text-zinc-800";
+function statusPillClass(isActive: boolean): string {
+  return isActive ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800";
 }
 
-function statusPillClass(status: AdminUserRow["status"]): string {
-  if (status === "active") return "bg-emerald-100 text-emerald-800";
-  return "bg-rose-100 text-rose-800";
-}
+const TABLE_SKELETON_ROWS = 6;
 
-const MOCK_USERS: AdminUserRow[] = [
-  {
-    id: "user-001",
-    fullName: "Ali Hasan",
-    email: "ali.hasan@gmail.com",
-    phone: "+962 779001001",
-    role: "user",
-    status: "active",
-    joinDate: "2025-01-12T09:15:00.000Z",
-    createdAt: "2025-01-12T09:15:00.000Z",
-  },
-  {
-    id: "user-002",
-    fullName: "Sara Khalid",
-    email: "sara.khalid@hotmail.com",
-    phone: "+962 779001002",
-    role: "user",
-    status: "active",
-    joinDate: "2025-01-25T11:20:00.000Z",
-    createdAt: "2025-01-25T11:20:00.000Z",
-  },
-  {
-    id: "user-003",
-    fullName: "Omar Nasser",
-    email: "omar.nasser@yahoo.com",
-    phone: "+962 779001003",
-    role: "user",
-    status: "inactive",
-    joinDate: "2025-02-03T14:05:00.000Z",
-    createdAt: "2025-02-03T14:05:00.000Z",
-  },
-  {
-    id: "user-004",
-    fullName: "Laila Ahmad",
-    email: "laila.ahmad@gmail.com",
-    phone: "+962 779001004",
-    role: "user",
-    status: "active",
-    joinDate: "2025-02-18T08:40:00.000Z",
-    createdAt: "2025-02-18T08:40:00.000Z",
-  },
-  {
-    id: "user-005",
-    fullName: "Hassan Youssef",
-    email: "hassan.youssef@outlook.com",
-    phone: "+962 779001005",
-    role: "user",
-    status: "active",
-    joinDate: "2025-03-02T10:10:00.000Z",
-    createdAt: "2025-03-02T10:10:00.000Z",
-  },
-  {
-    id: "user-006",
-    fullName: "Maya Rami",
-    email: "maya.rami@gmail.com",
-    phone: "+962 779001006",
-    role: "user",
-    status: "inactive",
-    joinDate: "2025-03-15T16:25:00.000Z",
-    createdAt: "2025-03-15T16:25:00.000Z",
-  },
-  {
-    id: "user-007",
-    fullName: "Yazan Hani",
-    email: "yazan.hani@hotmail.com",
-    phone: "+962 779001007",
-    role: "user",
-    status: "active",
-    joinDate: "2025-03-28T13:45:00.000Z",
-    createdAt: "2025-03-28T13:45:00.000Z",
-  },
-  {
-    id: "user-008",
-    fullName: "Rana Fares",
-    email: "rana.fares@yahoo.com",
-    phone: "+962 779001008",
-    role: "user",
-    status: "active",
-    joinDate: "2025-04-06T09:00:00.000Z",
-    createdAt: "2025-04-06T09:00:00.000Z",
-  },
-  {
-    id: "user-009",
-    fullName: "Khaled Jaber",
-    email: "khaled.jaber@gmail.com",
-    phone: "+962 779001009",
-    role: "user",
-    status: "inactive",
-    joinDate: "2025-04-14T17:30:00.000Z",
-    createdAt: "2025-04-14T17:30:00.000Z",
-  },
-  {
-    id: "user-010",
-    fullName: "Nour Saad",
-    email: "nour.saad@outlook.com",
-    phone: "+962 779001010",
-    role: "user",
-    status: "active",
-    joinDate: "2025-04-27T12:10:00.000Z",
-    createdAt: "2025-04-27T12:10:00.000Z",
-  },
-  {
-    id: "user-011",
-    fullName: "Tariq Salem",
-    email: "tariq.salem@gmail.com",
-    phone: "+962 779001011",
-    role: "user",
-    status: "active",
-    joinDate: "2025-05-03T08:35:00.000Z",
-    createdAt: "2025-05-03T08:35:00.000Z",
-  },
-  {
-    id: "user-012",
-    fullName: "Hiba Qasem",
-    email: "hiba.qasem@hotmail.com",
-    phone: "+962 779001012",
-    role: "user",
-    status: "inactive",
-    joinDate: "2025-05-11T15:05:00.000Z",
-    createdAt: "2025-05-11T15:05:00.000Z",
-  },
-  {
-    id: "user-013",
-    fullName: "Samir Rashed",
-    email: "samir.rashed@yahoo.com",
-    phone: "+962 779001013",
-    role: "user",
-    status: "active",
-    joinDate: "2025-05-21T10:50:00.000Z",
-    createdAt: "2025-05-21T10:50:00.000Z",
-  },
-  {
-    id: "user-014",
-    fullName: "Dina Odeh",
-    email: "dina.odeh@gmail.com",
-    phone: "+962 779001014",
-    role: "user",
-    status: "active",
-    joinDate: "2025-06-02T09:25:00.000Z",
-    createdAt: "2025-06-02T09:25:00.000Z",
-  },
-  {
-    id: "user-015",
-    fullName: "Mahmoud Issa",
-    email: "mahmoud.issa@outlook.com",
-    phone: "+962 779001015",
-    role: "user",
-    status: "inactive",
-    joinDate: "2025-06-10T18:15:00.000Z",
-    createdAt: "2025-06-10T18:15:00.000Z",
-  },
-  {
-    id: "user-016",
-    fullName: "Rania Ziad",
-    email: "rania.ziad@gmail.com",
-    phone: "+962 779001016",
-    role: "user",
-    status: "active",
-    joinDate: "2025-06-19T11:40:00.000Z",
-    createdAt: "2025-06-19T11:40:00.000Z",
-  },
-  {
-    id: "user-017",
-    fullName: "Fadi Imad",
-    email: "fadi.imad@hotmail.com",
-    phone: "+962 779001017",
-    role: "user",
-    status: "active",
-    joinDate: "2025-07-01T08:05:00.000Z",
-    createdAt: "2025-07-01T08:05:00.000Z",
-  },
-  {
-    id: "user-018",
-    fullName: "Leen Tariq",
-    email: "leen.tariq@yahoo.com",
-    phone: "+962 779001018",
-    role: "user",
-    status: "inactive",
-    joinDate: "2025-07-09T16:55:00.000Z",
-    createdAt: "2025-07-09T16:55:00.000Z",
-  },
-  {
-    id: "user-019",
-    fullName: "Ahmad Zaki",
-    email: "ahmad.zaki@gmail.com",
-    phone: "+962 779001019",
-    role: "user",
-    status: "active",
-    joinDate: "2025-07-18T13:20:00.000Z",
-    createdAt: "2025-07-18T13:20:00.000Z",
-  },
-  {
-    id: "user-020",
-    fullName: "Noor Ibrahim",
-    email: "noor.ibrahim@outlook.com",
-    phone: "+962 779001020",
-    role: "user",
-    status: "active",
-    joinDate: "2025-07-29T09:50:00.000Z",
-    createdAt: "2025-07-29T09:50:00.000Z",
-  },
-  {
-    id: "user-021",
-    fullName: "Ziad Kamal",
-    email: "ziad.kamal@gmail.com",
-    phone: "+962 779001021",
-    role: "user",
-    status: "inactive",
-    joinDate: "2025-08-04T10:30:00.000Z",
-    createdAt: "2025-08-04T10:30:00.000Z",
-  },
-  {
-    id: "user-022",
-    fullName: "Haneen Adel",
-    email: "haneen.adel@hotmail.com",
-    phone: "+962 779001022",
-    role: "user",
-    status: "active",
-    joinDate: "2025-08-13T15:45:00.000Z",
-    createdAt: "2025-08-13T15:45:00.000Z",
-  },
-  {
-    id: "user-023",
-    fullName: "Rashed Sami",
-    email: "rashed.sami@yahoo.com",
-    phone: "+962 779001023",
-    role: "user",
-    status: "active",
-    joinDate: "2025-08-22T12:05:00.000Z",
-    createdAt: "2025-08-22T12:05:00.000Z",
-  },
-  {
-    id: "user-024",
-    fullName: "Mona Adel",
-    email: "mona.adel@gmail.com",
-    phone: "+962 779001024",
-    role: "user",
-    status: "inactive",
-    joinDate: "2025-09-01T09:10:00.000Z",
-    createdAt: "2025-09-01T09:10:00.000Z",
-  },
-  {
-    id: "user-025",
-    fullName: "Yousef Karim",
-    email: "yousef.karim@outlook.com",
-    phone: "+962 779001025",
-    role: "user",
-    status: "active",
-    joinDate: "2025-09-09T14:35:00.000Z",
-    createdAt: "2025-09-09T14:35:00.000Z",
-  },
-  {
-    id: "user-026",
-    fullName: "Jana Sultan",
-    email: "jana.sultan@gmail.com",
-    phone: "+962 779001026",
-    role: "user",
-    status: "active",
-    joinDate: "2025-09-19T18:00:00.000Z",
-    createdAt: "2025-09-19T18:00:00.000Z",
-  },
-  {
-    id: "user-027",
-    fullName: "Bilal Fadi",
-    email: "bilal.fadi@hotmail.com",
-    phone: "+962 779001027",
-    role: "user",
-    status: "inactive",
-    joinDate: "2025-10-03T08:45:00.000Z",
-    createdAt: "2025-10-03T08:45:00.000Z",
-  },
-  {
-    id: "user-028",
-    fullName: "Nadia Hisham",
-    email: "nadia.hisham@yahoo.com",
-    phone: "+962 779001028",
-    role: "user",
-    status: "active",
-    joinDate: "2026-03-05T11:55:00.000Z",
-    createdAt: "2026-03-05T11:55:00.000Z",
-  },
-  {
-    id: "user-029",
-    fullName: "Karim Basel",
-    email: "karim.basel@gmail.com",
-    phone: "+962 779001029",
-    role: "user",
-    status: "active",
-    joinDate: "2026-03-14T13:05:00.000Z",
-    createdAt: "2026-03-14T13:05:00.000Z",
-  },
-  {
-    id: "user-030",
-    fullName: "Salma Majed",
-    email: "salma.majed@outlook.com",
-    phone: "+962 779001030",
-    role: "user",
-    status: "inactive",
-    joinDate: "2026-03-22T17:20:00.000Z",
-    createdAt: "2026-03-22T17:20:00.000Z",
-  },
-  {
-    id: "user-031",
-    fullName: "Amjad Hariri",
-    email: "amjad.hariri@gmail.com",
-    phone: "+962 779001031",
-    role: "user",
-    status: "active",
-    joinDate: "2026-03-01T09:10:00.000Z",
-    createdAt: "2026-03-01T09:10:00.000Z",
-  },
-  {
-    id: "user-032",
-    fullName: "Ruba Naim",
-    email: "ruba.naim@hotmail.com",
-    phone: "+962 779001032",
-    role: "user",
-    status: "active",
-    joinDate: "2026-03-03T11:25:00.000Z",
-    createdAt: "2026-03-03T11:25:00.000Z",
-  },
-  {
-    id: "user-033",
-    fullName: "Karam Suleiman",
-    email: "karam.suleiman@yahoo.com",
-    phone: "+962 779001033",
-    role: "user",
-    status: "inactive",
-    joinDate: "2026-03-06T14:40:00.000Z",
-    createdAt: "2026-03-06T14:40:00.000Z",
-  },
-  {
-    id: "user-034",
-    fullName: "Huda Mansour",
-    email: "huda.mansour@gmail.com",
-    phone: "+962 779001034",
-    role: "user",
-    status: "active",
-    joinDate: "2026-03-08T10:05:00.000Z",
-    createdAt: "2026-03-08T10:05:00.000Z",
-  },
-  {
-    id: "user-035",
-    fullName: "Othman Barakat",
-    email: "othman.barakat@outlook.com",
-    phone: "+962 779001035",
-    role: "user",
-    status: "active",
-    joinDate: "2026-03-10T16:15:00.000Z",
-    createdAt: "2026-03-10T16:15:00.000Z",
-  },
-  {
-    id: "user-036",
-    fullName: "Lina Shammout",
-    email: "lina.shammout@gmail.com",
-    phone: "+962 779001036",
-    role: "user",
-    status: "inactive",
-    joinDate: "2026-03-12T09:45:00.000Z",
-    createdAt: "2026-03-12T09:45:00.000Z",
-  },
-  {
-    id: "user-037",
-    fullName: "Nasser Tamimi",
-    email: "nasser.tamimi@hotmail.com",
-    phone: "+962 779001037",
-    role: "user",
-    status: "active",
-    joinDate: "2026-03-15T13:30:00.000Z",
-    createdAt: "2026-03-15T13:30:00.000Z",
-  },
-  {
-    id: "user-038",
-    fullName: "Farah Odeh",
-    email: "farah.odeh@yahoo.com",
-    phone: "+962 779001038",
-    role: "user",
-    status: "active",
-    joinDate: "2026-03-17T08:20:00.000Z",
-    createdAt: "2026-03-17T08:20:00.000Z",
-  },
-  {
-    id: "user-039",
-    fullName: "Sami Dabbas",
-    email: "sami.dabbas@gmail.com",
-    phone: "+962 779001039",
-    role: "user",
-    status: "inactive",
-    joinDate: "2026-03-19T18:05:00.000Z",
-    createdAt: "2026-03-19T18:05:00.000Z",
-  },
-  {
-    id: "user-040",
-    fullName: "Iman Khalaf",
-    email: "iman.khalaf@outlook.com",
-    phone: "+962 779001040",
-    role: "user",
-    status: "active",
-    joinDate: "2026-03-21T12:50:00.000Z",
-    createdAt: "2026-03-21T12:50:00.000Z",
-  },
-  {
-    id: "user-041",
-    fullName: "Murad Qaisi",
-    email: "murad.qaisi@gmail.com",
-    phone: "+962 779001041",
-    role: "user",
-    status: "active",
-    joinDate: "2026-03-23T09:35:00.000Z",
-    createdAt: "2026-03-23T09:35:00.000Z",
-  },
-  {
-    id: "user-042",
-    fullName: "Hala Nazzal",
-    email: "hala.nazzal@hotmail.com",
-    phone: "+962 779001042",
-    role: "user",
-    status: "inactive",
-    joinDate: "2026-03-25T15:10:00.000Z",
-    createdAt: "2026-03-25T15:10:00.000Z",
-  },
-  {
-    id: "user-043",
-    fullName: "Rami Saadeh",
-    email: "rami.saadeh@yahoo.com",
-    phone: "+962 779001043",
-    role: "user",
-    status: "active",
-    joinDate: "2026-03-26T11:55:00.000Z",
-    createdAt: "2026-03-26T11:55:00.000Z",
-  },
-  {
-    id: "user-044",
-    fullName: "Dalia Khoury",
-    email: "dalia.khoury@gmail.com",
-    phone: "+962 779001044",
-    role: "user",
-    status: "active",
-    joinDate: "2026-03-28T10:40:00.000Z",
-    createdAt: "2026-03-28T10:40:00.000Z",
-  },
-  {
-    id: "user-045",
-    fullName: "Zein Safadi",
-    email: "zein.safadi@outlook.com",
-    phone: "+962 779001045",
-    role: "user",
-    status: "inactive",
-    joinDate: "2026-03-30T17:25:00.000Z",
-    createdAt: "2026-03-30T17:25:00.000Z",
-  },
-];
+function AdminUsersTableSkeleton() {
+  return (
+    <tbody>
+      {Array.from({ length: TABLE_SKELETON_ROWS }, (_, i) => (
+        <tr key={i} className="border-b border-subtle/70 last:border-b-0">
+          <td className="px-4 py-3">
+            <Skeleton className="h-4 w-36 max-w-full" />
+          </td>
+          <td className="px-4 py-3">
+            <Skeleton className="h-4 w-40 max-w-full" />
+          </td>
+          <td className="px-4 py-3">
+            <Skeleton className="h-4 w-24 max-w-full" />
+          </td>
+          <td className="px-4 py-3">
+            <Skeleton className="h-6 w-20 max-w-full rounded-full" />
+          </td>
+          <td className="px-4 py-3">
+            <Skeleton className="h-4 w-28 max-w-full" />
+          </td>
+          <td className="px-4 py-3 text-right">
+            <Skeleton className="ml-auto h-8 w-8 max-w-full rounded-md" />
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  );
+}
 
 export function AdminUsersPage() {
+  const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
-  const PAGE_SIZE = 10;
+  const rows = useAppSelector((s) => s.adminUsers.items);
+  const loading = useAppSelector((s) => s.adminUsers.loading);
+  const error = useAppSelector((s) => s.adminUsers.error);
+  const hasNextPage = useAppSelector((s) => s.adminUsers.hasNextPage);
+
   const PAGE_PARAM = "page";
-  const MONTH_PARAM = "month";
-  const STATUS_PARAM = "status";
+  const PAGE_SIZE_PARAM = "pageSize";
 
-  const [loading, setLoading] = useState(true);
+  /** Search and status are local only — not written to the URL. */
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"" | "active" | "inactive">("");
+  const [toast, setToast] = useState<{
+    kind: "info" | "error" | "success";
+    message: string;
+  } | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>([
+    { id: "createdAt", direction: "desc" },
+  ]);
 
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 250);
-    return () => clearTimeout(t);
-  }, []);
+  const pageSize = useMemo(() => {
+    const raw = searchParams.get(PAGE_SIZE_PARAM);
+    const n = Number.parseInt(raw ?? String(DEFAULT_PAGINATION_PAGE_SIZE), 10);
+    return PAGINATION_PAGE_SIZES.includes(n as (typeof PAGINATION_PAGE_SIZES)[number])
+      ? n
+      : DEFAULT_PAGINATION_PAGE_SIZE;
+  }, [searchParams]);
 
   const currentPage = useMemo(() => {
     const page = searchParams.get(PAGE_PARAM);
-    const n = parseInt(page ?? "1", 10);
+    const n = Number.parseInt(page ?? "1", 10);
     return Number.isFinite(n) && n >= 1 ? n : 1;
   }, [searchParams]);
 
-  const filtered = useMemo(() => {
-    const monthParam = searchParams.get(MONTH_PARAM);
-    const statusParam = searchParams.get(STATUS_PARAM);
+  const statusFilterForApi = useMemo(() => {
+    if (statusFilter === "active") return true;
+    if (statusFilter === "inactive") return false;
+    return undefined;
+  }, [statusFilter]);
 
-    let base = MOCK_USERS;
-
-    if (monthParam) {
-      base = base.filter((u) => u.joinDate.startsWith(monthParam));
-    }
-
-    if (statusParam === "active" || statusParam === "inactive") {
-      base = base.filter((u) => u.status === statusParam);
-    }
-
-    const q = query.trim().toLowerCase();
-    if (!q) return base;
-
-    return base.filter((u) => {
-      return (
-        u.fullName.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        (u.phone ?? "").toLowerCase().includes(q)
-      );
-    });
-  }, [query, searchParams]);
-
-  const totalItems = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
-  const safePage = Math.min(currentPage, totalPages);
-  const start = (safePage - 1) * PAGE_SIZE;
-  const currentItems = filtered.slice(start, start + PAGE_SIZE);
-
-  const onQueryChange = (value: string) => {
-    setQuery(value);
+  /** One-time: read legacy `?q=` / `?status=` into state, then remove them from the URL. */
+  useLayoutEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set(PAGE_PARAM, "1");
+    const legacyQ = params.get("q");
+    const legacyStatus = params.get("status");
+    if (legacyQ) setQuery(legacyQ);
+    if (legacyStatus === "active" || legacyStatus === "inactive") {
+      setStatusFilter(legacyStatus);
+    }
+    if (!params.has("q") && !params.has("status")) return;
+    params.delete("q");
+    params.delete("status");
     const next = params.toString();
-    router.push(next ? `${pathname}?${next}` : pathname, { scroll: false });
+    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate legacy `q`/`status` once on mount
+  }, []);
+
+  const resetToFirstPageIfNeeded = () => {
+    if (currentPage <= 1) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("q");
+    params.delete("status");
+    params.delete(PAGE_PARAM);
+    const next = params.toString();
+    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
   };
 
-  const onMonthChange = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) {
-      params.set(MONTH_PARAM, value);
-    } else {
-      params.delete(MONTH_PARAM);
+  useEffect(() => {
+    void dispatch(
+      fetchAdminUsers({
+        page: currentPage,
+        pageSize,
+        search: query.trim() || undefined,
+        is_active: statusFilterForApi,
+      }),
+    );
+  }, [dispatch, currentPage, pageSize, query, statusFilterForApi]);
+
+  const totalPages = Math.max(1, hasNextPage ? currentPage + 1 : currentPage);
+  const safePage = Math.min(currentPage, totalPages);
+  const exactTotal =
+    !hasNextPage && !loading && !error
+      ? (currentPage - 1) * pageSize + rows.length
+      : undefined;
+
+  useEffect(() => {
+    if (loading || error) return;
+    if (currentPage > 1 && rows.length === 0) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set(PAGE_PARAM, "1");
+      const next = params.toString();
+      router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
     }
-    params.set(PAGE_PARAM, "1");
-    const next = params.toString();
-    router.push(next ? `${pathname}?${next}` : pathname, { scroll: false });
+  }, [loading, error, currentPage, rows.length, router, pathname, searchParams]);
+
+  const onSearchChange = (value: string) => {
+    setQuery(value);
+    resetToFirstPageIfNeeded();
   };
 
   const onStatusChange = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value === "active" || value === "inactive") {
-      params.set(STATUS_PARAM, value);
-    } else {
-      params.delete(STATUS_PARAM);
-    }
-    params.set(PAGE_PARAM, "1");
-    const next = params.toString();
-    router.push(next ? `${pathname}?${next}` : pathname, { scroll: false });
+    setStatusFilter(value === "active" || value === "inactive" ? value : "");
+    resetToFirstPageIfNeeded();
   };
 
-  const selectedMonth = searchParams.get(MONTH_PARAM) ?? "";
-  const selectedStatus = searchParams.get(STATUS_PARAM) ?? "";
+  const tableRows = useMemo(
+    () =>
+      sortRowsByConfig(Array.isArray(rows) ? rows : [], sortConfig, (row, columnId) => {
+        switch (columnId) {
+          case "fullName":
+            return row.full_name ?? "";
+          case "email":
+            return row.email ?? "";
+          case "phone":
+            return row.phone_number ?? "";
+          case "status":
+            return row.is_active ? 1 : 0;
+          case "createdAt":
+            return row.created_at ? Date.parse(row.created_at) : 0;
+          default:
+            return "";
+        }
+      }),
+    [rows, sortConfig],
+  );
+
+  const userColumns: CustomTableColumn<UserManagementUser>[] = useMemo(
+    () => [
+      {
+        id: "fullName",
+        header: "Name",
+        sortable: true,
+        getSortValue: (row) => row.full_name ?? "",
+        cellClassName: "fw-medium text-charcoal",
+        render: (u) => u.full_name?.trim() || "—",
+      },
+      {
+        id: "email",
+        header: "Email",
+        sortable: true,
+        getSortValue: (row) => row.email ?? "",
+        cellClassName: "text-charcoal/80",
+        render: (u) => u.email ?? "—",
+      },
+      {
+        id: "phone",
+        header: "Phone",
+        sortable: true,
+        getSortValue: (row) => row.phone_number ?? "",
+        cellClassName: "text-charcoal/80",
+        render: (u) => <UserPhoneTableCell phone={u.phone_number} />,
+      },
+      {
+        id: "status",
+        header: "Status",
+        sortable: true,
+        getSortValue: (row) => (row.is_active ? "active" : "inactive"),
+        render: (u) => (
+          <span
+            className={`inline-flex rounded-full px-2 py-1 text-size-11 fw-medium capitalize ${statusPillClass(u.is_active)}`}
+          >
+            {u.is_active ? "active" : "inactive"}
+          </span>
+        ),
+      },
+      {
+        id: "createdAt",
+        header: "Created at",
+        sortable: true,
+        getSortValue: (row) => row.created_at ?? "",
+        cellClassName: "text-charcoal/80",
+        render: (u) => (u.created_at ? formatDateTime(u.created_at) : "—"),
+      },
+      {
+        id: "actions",
+        header: <span className="block text-right">Actions</span>,
+        headerClassName: "text-right",
+        cellClassName: "text-right",
+        render: (u) => (
+          <AdminUserActionsMenu user={u} onToast={(t) => setToast(t)} />
+        ),
+      },
+    ],
+    [],
+  );
+
+  const emptyListMessage = useMemo(() => {
+    if (query.trim()) {
+      return "No users match your search. Try a different name, email, or phone.";
+    }
+    if (statusFilter === "active" || statusFilter === "inactive") {
+      return "No users with this status. Clear the status filter to see everyone.";
+    }
+    return "No users to show.";
+  }, [query, statusFilter]);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 px-1 md:flex-row md:items-start md:justify-between">
         <div>
-          <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
-            Users
-          </h1>
+          <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">Users</h1>
           <p className="mt-1 text-size-sm text-charcoal/70">
             Review and manage platform users.
           </p>
@@ -610,36 +316,32 @@ export function AdminUsersPage() {
               <div className="w-full md:w-64 lg:w-80">
                 <Input
                   value={query}
-                  onChange={(event) => onQueryChange(event.target.value)}
+                  onChange={(event) => onSearchChange(event.target.value)}
                   placeholder="Search by name, email, phone"
-                  className="h-10 w-full rounded-xl"
+                  className="h-10 w-full rounded-lg"
+                  rightAdornment={
+                    query.trim() ? (
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Clear search"
+                        className="text-charcoal/55 hover:bg-charcoal/10 hover:text-charcoal"
+                        onClick={() => onSearchChange("")}
+                      >
+                        <X />
+                      </IconButton>
+                    ) : undefined
+                  }
                 />
               </div>
               <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center">
                 <select
-                  value={selectedMonth}
-                  onChange={(event) => onMonthChange(event.target.value)}
-                  className="h-10 rounded-xl border-subtle bg-surface px-3 text-size-xs text-charcoal shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                >
-                  <option value="">All months</option>
-                  <option value="2025-01">Jan 2025</option>
-                  <option value="2025-02">Feb 2025</option>
-                  <option value="2025-03">Mar 2025</option>
-                  <option value="2025-04">Apr 2025</option>
-                  <option value="2025-05">May 2025</option>
-                  <option value="2025-06">Jun 2025</option>
-                  <option value="2025-07">Jul 2025</option>
-                  <option value="2025-08">Aug 2025</option>
-                  <option value="2025-09">Sep 2025</option>
-                  <option value="2025-10">Oct 2025</option>
-                  <option value="2026-03">Mar 2026</option>
-                </select>
-                <select
-                  value={selectedStatus}
+                  value={statusFilter}
                   onChange={(event) => onStatusChange(event.target.value)}
-                  className="h-10 rounded-xl border-subtle bg-surface px-3 text-size-xs text-charcoal shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  className="h-10 rounded-lg border-subtle bg-surface px-3 text-size-xs text-charcoal shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                 >
-                  <option value="">All statuses</option>
+                  <option value="">All</option>
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
@@ -648,114 +350,57 @@ export function AdminUsersPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <LoadingScreen
-              title="Loading users"
-              description="Please wait while we load your users."
-            />
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[820px] text-left">
-                  <thead>
-                    <tr className="border-b border-subtle text-size-xs text-charcoal/70">
-                      <th className="px-2 py-2 fw-medium">Name</th>
-                      <th className="px-2 py-2 fw-medium">Email</th>
-                      <th className="px-2 py-2 fw-medium">Phone</th>
-                      <th className="px-2 py-2 fw-medium">Role</th>
-                      <th className="px-2 py-2 fw-medium">Status</th>
-                      <th className="px-2 py-2 fw-medium">Created at</th>
-                      <th className="px-2 py-2 fw-medium text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentItems.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={7}
-                          className="px-2 py-10 text-center text-size-sm text-charcoal/70"
-                        >
-                          No users found.
-                        </td>
-                      </tr>
-                    ) : (
-                      currentItems.map((u) => (
-                        <tr
-                          key={u.id}
-                          className="border-b border-subtle/70 text-size-sm last:border-0"
-                        >
-                          <td className="px-2 py-3 fw-semibold text-charcoal">
-                            {u.fullName}
-                          </td>
-                          <td className="px-2 py-3 text-charcoal/80">{u.email}</td>
-                          <td className="px-2 py-3 text-charcoal/80">
-                            {formatPhoneForList(u.phone)}
-                          </td>
-                          <td className="px-2 py-3">
-                            <span
-                              className={`inline-flex rounded-full px-2 py-1 text-size-11 fw-medium capitalize ${rolePillClass(u.role)}`}
-                            >
-                              {u.role}
-                            </span>
-                          </td>
-                          <td className="px-2 py-3">
-                            <span
-                              className={`inline-flex rounded-full px-2 py-1 text-size-11 fw-medium capitalize ${statusPillClass(u.status)}`}
-                            >
-                              {u.status}
-                            </span>
-                          </td>
-                          <td className="px-2 py-3 text-charcoal/70">
-                            {formatDateTime(u.createdAt)}
-                          </td>
-                          <td className="px-2 py-3 text-right">
-                            <div className="inline-flex items-center gap-1">
-                              <button
-                                type="button"
-                                className="rounded-full border border-charcoal/20 bg-surface px-3 py-1 text-size-11 fw-medium text-charcoal shadow-xs hover:bg-primary/5"
-                              >
-                                View
-                              </button>
-                              <button
-                                type="button"
-                                className="rounded-full border border-secondary/40 bg-secondary px-3 py-1 text-size-11 fw-medium text-white shadow-xs hover:bg-secondary/90"
-                              >
-                                Edit
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {totalPages > 1 && (
-                <div className="mt-6 border-t border-subtle pt-4">
-                  <Pagination
-                    currentPage={safePage}
-                    totalPages={totalPages}
-                    totalItems={totalItems}
-                    pageSize={PAGE_SIZE}
-                    pageParam={PAGE_PARAM}
-                    translations={{
-                      previous: "Previous",
-                      next: "Next",
-                      page: "Page",
-                      of: "of",
-                      showing: "Showing",
-                      to: "to",
-                      results: "users",
-                    }}
-                  />
-                </div>
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
+            <div className="text-sm text-charcoal/70">
+              {loading ? (
+                <Skeleton className="inline-block h-4 w-44" aria-label="Loading list metadata" />
+              ) : error ? (
+                <span className="text-charcoal/50">Could not load totals for this list.</span>
+              ) : (
+                <>
+                  Page {safePage} of {totalPages}
+                  {exactTotal != null ? ` · Total ${exactTotal}` : hasNextPage ? " · More pages available" : null}
+                </>
               )}
-            </>
-          )}
+            </div>
+          </div>
+
+          <CustomTable<UserManagementUser>
+            columns={userColumns}
+            data={tableRows}
+            getRowId={(row) => row.id}
+            sortConfig={sortConfig}
+            onSort={setSortConfig}
+            multiSortWithShift
+            loading={loading}
+            skeleton={<AdminUsersTableSkeleton />}
+            error={error}
+            errorTitle="Something went wrong while loading users."
+            emptyMessage={emptyListMessage}
+            minTableWidth="900px"
+            pagination={{
+              showWhen: !loading && !error && totalPages > 1 && tableRows.length > 0,
+              currentPage: safePage,
+              totalPages,
+              totalItems: exactTotal,
+              pageSize,
+              pageParam: PAGE_PARAM,
+              pageSizeParam: PAGE_SIZE_PARAM,
+              translations: {
+                previous: "Previous",
+                next: "Next",
+                page: "Page",
+                of: "of",
+                showing: "Showing",
+                to: "to",
+                results: "users",
+              },
+            }}
+          />
         </CardContent>
       </Card>
+
+      {toast ? <Toast kind={toast.kind} message={toast.message} onClose={() => setToast(null)} /> : null}
     </div>
   );
 }
-

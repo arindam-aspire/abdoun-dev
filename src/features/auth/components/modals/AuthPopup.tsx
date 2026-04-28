@@ -351,7 +351,17 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
       const sessionUser = toSessionUserForProfile(me);
       persistSessionAndLogin(sessionUser);
       onClose();
-      router.push(`/${locale}`);
+
+      if (sessionUser.role === "admin") {
+        setToast({ kind: "success", message: "Logged in as admin." });
+        router.push(`/${locale}/admin-dashboard`);
+      } else if (sessionUser.role === "agent") {
+        setToast({ kind: "success", message: "Logged in as agent." });
+        router.push(`/${locale}/agent-dashboard`);
+      } else {
+        setToast({ kind: "success", message: "Logged in successfully." });
+        router.push(`/${locale}`);
+      }
     } catch (error) {
       const errMsg = getApiErrorMessage(error);
       setOtcOtpError(errMsg);

@@ -37,10 +37,20 @@ export type UserManagementUser = {
 };
 
 export type ListUsersParams = {
-  limit?: number;
-  offset?: number;
+  page?: number;
+  pageSize?: number;
+  /** e.g. `register_user` — scope returned rows on `GET /users`. */
+  userType?: string;
   role_name?: string;
   search?: string;
+  /** Filter by active flag when the backend supports it on `GET /users`. */
+  is_active?: boolean;
+};
+
+export type ListUsersResult = {
+  items: UserManagementUser[];
+  /** Row count across all pages when the API sends it; otherwise `null`. */
+  total: number | null;
 };
 
 export type UpdateUserPayload = {
@@ -63,14 +73,108 @@ const { authApi } = createHttpClients();
 
 const unwrap = <T,>(response: StandardApiResponse<T>): T => response.data;
 
-export async function listUsers(
-  params: ListUsersParams = {},
-): Promise<UserManagementUser[]> {
-  const response = await authApi.get<StandardApiResponse<UserManagementUser[]>>(
-    "/users",
-    { params },
+function isStandardEnvelope(v: unknown): v is StandardApiResponse<unknown> {
+  return (
+    v != null &&
+    typeof v === "object" &&
+    "data" in v &&
+    "success" in v &&
+    typeof (v as StandardApiResponse<unknown>).success === "boolean"
   );
-  return unwrap(response.data);
+}
+
+const USER_LIST_ARRAY_KEYS = [
+  "data",
+  "users",
+  "items",
+  "records",
+  "list",
+  "rows",
+  "results",
+  "content",
+] as const;
+
+const USER_LIST_TOTAL_KEYS = [
+  "total",
+  "total_count",
+  "count",
+  "totalItems",
+  "total_records",
+  "totalCount",
+] as const;
+
+function readTotalFromRecord(o: Record<string, unknown>): number | null {
+  for (const key of USER_LIST_TOTAL_KEYS) {
+    const totalRaw = o[key];
+    if (typeof totalRaw === "number" && Number.isFinite(totalRaw)) {
+      return totalRaw;
+    }
+    if (typeof totalRaw === "string") {
+      const n = Number(totalRaw);
+      if (Number.isFinite(n)) return n;
+    }
+  }
+  return null;
+}
+
+/**
+ * `GET /users` may return a bare array or a paginated envelope (`users`, `items`, nested `data`, …).
+ */
+function parseUserListPayload(payload: unknown): ListUsersResult {
+  if (payload == null) return { items: [], total: null };
+  if (Array.isArray(payload)) {
+    return { items: payload as UserManagementUser[], total: null };
+  }
+
+  if (typeof payload === "object") {
+    const o = payload as Record<string, unknown>;
+    const totalRoot = readTotalFromRecord(o);
+    for (const key of USER_LIST_ARRAY_KEYS) {
+      const v = o[key];
+      if (Array.isArray(v)) {
+        const t = readTotalFromRecord(o);
+        return {
+          items: v as UserManagementUser[],
+          total: t != null ? Math.max(t, v.length) : null,
+        };
+      }
+    }
+    const nested = o.data;
+    if (nested != null && typeof nested === "object" && !Array.isArray(nested)) {
+      const inner = nested as Record<string, unknown>;
+      const innerTotal = readTotalFromRecord(inner) ?? totalRoot;
+      for (const key of USER_LIST_ARRAY_KEYS) {
+        const v = inner[key];
+        if (Array.isArray(v)) {
+          const t = innerTotal ?? readTotalFromRecord(inner);
+          return {
+            items: v as UserManagementUser[],
+            total: t != null ? Math.max(t, v.length) : null,
+          };
+        }
+      }
+    }
+    return { items: [], total: totalRoot };
+  }
+  return { items: [], total: null };
+}
+
+export async function listUsers(params: ListUsersParams = {}): Promise<ListUsersResult> {
+  const response = await authApi.get<unknown>("/users", { params });
+  const body = response.data as unknown;
+  let totalFromEnvelope: number | null = null;
+  if (isStandardEnvelope(body) && typeof body === "object" && body !== null) {
+    totalFromEnvelope = readTotalFromRecord(body as Record<string, unknown>);
+  }
+  const inner = isStandardEnvelope(body) ? unwrap(body) : body;
+  const parsed = parseUserListPayload(inner);
+  if (parsed.total == null && totalFromEnvelope != null) {
+    return {
+      items: parsed.items,
+      total: Math.max(totalFromEnvelope, parsed.items.length),
+    };
+  }
+  return parsed;
 }
 
 export async function listRoles(): Promise<UserManagementRole[]> {

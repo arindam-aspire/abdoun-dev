@@ -430,6 +430,13 @@
     "welcomeAdmin": "Bienvenido a la consola de administrador",
     "mockNotice": "Todos los datos mostrados aqui son ficticios para la interfaz.",
     "loadAdminSummaryError": "No se pudo cargar el panel de administracion. Inténtelo de nuevo.",
+    "loadAdminLeaderboardError": "No se pudo cargar los mejores agentes. Inténtelo de nuevo.",
+    "topAgentsTitle": "Mejores agentes este mes",
+    "topAgentsDeals": "Operaciones",
+    "topAgentsResponse": "Respuesta",
+    "topAgentsEmpty": "Aun no hay clasificacion de agentes para este periodo.",
+    "topAgentsLoadError": "No se pudo cargar el ranking. Actualice o intente mas tarde.",
+    "topAgentsPeriod": "{from} – {to}",
     "totalAgentsKpi": "Agentes en total",
     "totalAgentsKpiSub": "Todos los estados · directorio"
   },

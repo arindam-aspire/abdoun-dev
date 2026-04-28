@@ -223,7 +223,7 @@ export function PropertyCardNew({
   return (
     <article
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-xl border border-[#e7ebf1] bg-white transition duration-300 hover:-translate-y-1",
+        "group relative flex h-full flex-col overflow-hidden rounded-xl border border-[#e7ebf1] bg-white transition duration-300",
         isRtl ? "text-right" : "text-left",
         cardClassName,
       )}
@@ -237,7 +237,7 @@ export function PropertyCardNew({
             fill
             sizes={imageSizes}
             className={cn(
-              "object-cover transition-[transform,opacity,filter] duration-500 group-hover:scale-[1.03]",
+              "object-cover transition-[transform,opacity,filter] duration-500",
               isImageTransitioning ? "opacity-85 blur-[1px]" : "opacity-100 blur-0",
             )}
           />

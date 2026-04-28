@@ -1,22 +1,26 @@
 "use client";
 
 import { AdminAgentActionsMenu } from "@/features/admin-agents/components/AdminAgentActionsMenu";
+import { AdminAgentsStatsSection } from "@/features/admin-agents/components/AdminAgentsStatsSection";
 import { ManualAgentInputForm } from "@/features/admin-agents/components/ManualAgentInputForm";
 import {
   Button,
   ConfirmDialog,
+  CustomTable,
   Dropdown,
   Input,
-  LoadingScreen,
-  Spinner,
+  Skeleton,
+  sortRowsByConfig,
   Toast,
 } from "@/components/ui";
+import { CountryFlagImg } from "@/components/ui/phone-country-code-select";
+import type { CustomTableColumn, SortConfig } from "@/components/ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DEFAULT_PAGINATION_PAGE_SIZE,
   PAGINATION_PAGE_SIZES,
-  Pagination,
 } from "@/components/ui/Pagination";
+import type { AdminAgent } from "@/services/adminAgentApiService";
 import {
   AGENT_STATUS,
   AGENT_STATUS_FILTER_OPTIONS,
@@ -28,13 +32,15 @@ import {
   clearInviteFeedback,
   createAdminAgentManually,
   fetchAdminAgents,
+  fetchAdminAgentsSummary,
   inviteAdminAgentByEmail,
 } from "@/features/admin-agents/adminAgentsSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import type { AppLocale } from "@/i18n/routing";
 import { getApiErrorMessage } from "@/lib/http";
+import { getProfilePhoneReadonlyDisplay } from "@/lib/phone";
 import { selectCurrentUser } from "@/store/selectors";
-import { Check, Copy, Mail, RefreshCw, UserCheck, UserPlus2, Users } from "lucide-react";
+import { Check, Copy, Mail, UserPlus2, Users } from "lucide-react";
 import { isValidPhoneNumber } from "libphonenumber-js";
 import { useLocale } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -47,12 +53,81 @@ function formatDateTime(value: string): string {
   return date.toLocaleString();
 }
 
-function formatPhoneForList(phone: string | null | undefined): string {
+/** Match API casing: treat status as active when lowercased value is `active`. */
+function isAgentActiveForActivityColumn(status: string | undefined): boolean {
+  return (status ?? "").trim().toLowerCase() === "active";
+}
+
+function getAgentActivityDateValue(agent: AdminAgent): string | undefined {
+  if (isAgentActiveForActivityColumn(agent.status)) {
+    const r = agent.reviewedAt != null ? String(agent.reviewedAt).trim() : "";
+    return r || undefined;
+  }
+  const i = agent.invitedAt?.trim() ?? "";
+  return i || undefined;
+}
+
+function formatAgentActivityDateCell(agent: AdminAgent): string {
+  const raw = getAgentActivityDateValue(agent);
+  return raw ? formatDateTime(raw) : "—";
+}
+
+function AdminAgentPhoneTableCell({
+  phone,
+}: {
+  phone: string | null | undefined;
+}): React.ReactNode {
   if (!phone) return "N/A";
   const trimmed = phone.trim();
   if (!trimmed) return "N/A";
   const withoutPlus = trimmed.startsWith("+") ? trimmed.slice(1) : trimmed;
-  return withoutPlus.startsWith("0") ? "N/A" : trimmed;
+  if (withoutPlus.startsWith("0")) return "N/A";
+  const parts = getProfilePhoneReadonlyDisplay(trimmed);
+  if (!parts) return "N/A";
+  return (
+    <span className="inline-flex min-w-0 max-w-full items-center gap-2 tabular-nums">
+      <CountryFlagImg
+        iso2={parts.iso2}
+        className="h-4 w-5 shrink-0"
+        title={parts.iso2}
+      />
+      <span className="min-w-0 truncate">{parts.nationalLine}</span>
+    </span>
+  );
+}
+
+const TABLE_SKELETON_ROWS = 6;
+
+function AdminAgentsTableSkeleton() {
+  return (
+    <tbody>
+      {Array.from({ length: TABLE_SKELETON_ROWS }, (_, i) => (
+        <tr key={i} className="border-b border-subtle/70 last:border-b-0">
+          <td className="px-4 py-3">
+            <Skeleton className="h-4 w-36 max-w-full" />
+          </td>
+          <td className="px-4 py-3">
+            <Skeleton className="h-4 w-40 max-w-full" />
+          </td>
+          <td className="px-4 py-3">
+            <Skeleton className="h-4 w-24 max-w-full" />
+          </td>
+          <td className="px-4 py-3">
+            <Skeleton className="h-4 w-20 max-w-full" />
+          </td>
+          <td className="px-4 py-3">
+            <Skeleton className="h-6 w-20 max-w-full rounded-full" />
+          </td>
+          <td className="px-4 py-3">
+            <Skeleton className="h-4 w-28 max-w-full" />
+          </td>
+          <td className="px-4 py-3 text-right">
+            <Skeleton className="ml-auto h-8 w-8 max-w-full rounded-md" />
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  );
 }
 
 export function AdminAgentsPage() {
@@ -63,7 +138,6 @@ export function AdminAgentsPage() {
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector(selectCurrentUser);
   const {
-    allItems,
     currentItems,
     total,
     loading,
@@ -71,6 +145,9 @@ export function AdminAgentsPage() {
     inviting,
     inviteError,
     inviteSuccessMessage,
+    summary,
+    summaryStatus,
+    summaryError,
   } = useAppSelector((state) => state.adminAgents);
   const [email, setEmail] = useState("");
   const [manualFullName, setManualFullName] = useState("");
@@ -90,6 +167,9 @@ export function AdminAgentsPage() {
     kind: "info" | "error" | "success";
     message: string;
   } | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>([
+    { id: "activityDate", direction: "desc" },
+  ]);
 
   const PAGE_PARAM = "page";
   const PAGE_SIZE_PARAM = "pageSize";
@@ -120,6 +200,10 @@ export function AdminAgentsPage() {
   };
 
   useEffect(() => {
+    void dispatch(fetchAdminAgentsSummary());
+  }, [dispatch]);
+
+  useEffect(() => {
     const pageParam = searchParams.get(PAGE_PARAM);
     const pageNumber = Number.parseInt(pageParam ?? "1", 10);
     const page = Number.isFinite(pageNumber) && pageNumber >= 1 ? pageNumber : 1;
@@ -142,7 +226,12 @@ export function AdminAgentsPage() {
   }, [dispatch]);
 
   useEffect(() => {
-    if (error && !loading) setToast({ kind: "error", message: error });
+    if (error && !loading) {
+      setToast({
+        kind: "error",
+        message: `Could not load the agent list. ${error}`,
+      });
+    }
   }, [error, loading]);
 
   useEffect(() => {
@@ -153,32 +242,28 @@ export function AdminAgentsPage() {
     if (inviteSuccessMessage) setToast({ kind: "success", message: inviteSuccessMessage });
   }, [inviteSuccessMessage]);
 
-  const invitedCount = useMemo(
-    () => allItems.filter((agent) => agent.status === AGENT_STATUS.INVITED).length,
-    [allItems],
-  );
-  const activeCount = useMemo(
-    () => allItems.filter((agent) => agent.status === AGENT_STATUS.ACTIVE).length,
-    [allItems],
-  );
-  const pendingReviewCount = useMemo(
-    () => allItems.filter((agent) => agent.status === AGENT_STATUS.PENDING_REVIEW).length,
-    [allItems],
-  );
-  const declinedCount = useMemo(
-    () => allItems.filter((agent) => agent.status === AGENT_STATUS.DECLINED).length,
-    [allItems],
-  );
-  const totalFromBuckets = activeCount + invitedCount + pendingReviewCount + declinedCount;
+  useEffect(() => {
+    if (summaryError && summaryStatus === "failed") {
+      setToast({
+        kind: "error",
+        message: `Could not load directory stats. ${summaryError}`,
+      });
+    }
+  }, [summaryError, summaryStatus]);
 
-  const filteredItems = useMemo(() => {
-    const sorted = [...currentItems].sort((a, b) => {
-      const atA = new Date(a.invitedAt ?? 0).getTime();
-      const atB = new Date(b.invitedAt ?? 0).getTime();
-      return atB - atA;
-    });
+  const totalFromBuckets = summary?.totalAgents ?? 0;
+  const activeCount = summary?.activeAgents ?? 0;
+  const invitedCount = summary?.pendingInvites ?? 0;
+  const pendingReviewCount = summary?.pendingReview ?? 0;
+  const declinedCount = summary?.declined ?? 0;
+  const summaryStatsLoading = summaryStatus === "loading" && !summary;
+
+  /** Server page slice + search/status filters; sorting applied separately (client, current page). */
+  const filteredRowCandidates = useMemo(() => {
     const statusFiltered =
-      statusFilter === "all" ? sorted : sorted.filter((a) => a.status === statusFilter);
+      statusFilter === "all"
+        ? [...currentItems]
+        : currentItems.filter((a) => a.status === statusFilter);
 
     const q = query.trim().toLowerCase();
     if (!q) return statusFiltered;
@@ -197,6 +282,31 @@ export function AdminAgentsPage() {
       return haystack.includes(q);
     });
   }, [currentItems, query, statusFilter]);
+
+  const tableRows = useMemo(
+    () =>
+      sortRowsByConfig(filteredRowCandidates, sortConfig, (row, columnId) => {
+        switch (columnId) {
+          case "fullName":
+            return row.fullName ?? "";
+          case "email":
+            return row.email ?? "";
+          case "phone":
+            return row.phone ?? "";
+          case "city":
+            return row.city ?? "";
+          case "status":
+            return row.status ?? "";
+          case "activityDate": {
+            const raw = getAgentActivityDateValue(row);
+            return raw ? Date.parse(raw) : 0;
+          }
+          default:
+            return "";
+        }
+      }),
+    [filteredRowCandidates, sortConfig],
+  );
 
   useEffect(() => {
     setQuery(searchParams.get("q") ?? "");
@@ -221,6 +331,19 @@ export function AdminAgentsPage() {
   const totalItems = total;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safePage = Math.min(currentPage, totalPages);
+
+  const emptyListMessage = useMemo(() => {
+    if (query.trim()) {
+      return "No agents match your search. Try a different name, email, or keyword.";
+    }
+    if (statusFilter !== "all") {
+      return "No agents with this status. Set status to All or try another filter.";
+    }
+    if (totalItems === 0) {
+      return "You do not have any agents yet. Use Onboard agent to invite or add your first teammate.";
+    }
+    return "No agents to show on this page. Try another page or clear your search.";
+  }, [query, statusFilter, totalItems]);
 
   const doInvite = async (normalizedEmail: string) => {
     const result = await dispatch(inviteAdminAgentByEmail(normalizedEmail));
@@ -367,6 +490,79 @@ export function AdminAgentsPage() {
 
   const adminId = currentUser?.id ?? null;
 
+  const agentTableColumns: CustomTableColumn<AdminAgent>[] = useMemo(
+    () => [
+      {
+        id: "fullName",
+        header: "Agent",
+        sortable: true,
+        getSortValue: (row) => row.fullName ?? "",
+        cellClassName: "fw-medium text-charcoal",
+        render: (agent) => agent.fullName ?? "—",
+      },
+      {
+        id: "email",
+        header: "Email",
+        sortable: true,
+        getSortValue: (row) => row.email ?? "",
+        cellClassName: "text-charcoal/80",
+        render: (agent) => agent.email ?? "—",
+      },
+      {
+        id: "phone",
+        header: "Phone",
+        sortable: true,
+        getSortValue: (row) => row.phone ?? "",
+        cellClassName: "text-charcoal/80",
+        render: (agent) => <AdminAgentPhoneTableCell phone={agent.phone} />,
+      },
+      {
+        id: "city",
+        header: "City",
+        sortable: true,
+        getSortValue: (row) => row.city ?? "",
+        cellClassName: "text-charcoal/80",
+        render: (agent) => agent.city ?? "—",
+      },
+      {
+        id: "status",
+        header: "Status",
+        sortable: true,
+        getSortValue: (row) => row.status ?? "",
+        render: (agent) => (
+          <span
+            className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-medium ${getAgentStatusClass(
+              agent.status ?? AGENT_STATUS.INVITED,
+            )}`}
+          >
+            {getAgentStatusLabel(agent.status ?? AGENT_STATUS.INVITED)}
+          </span>
+        ),
+      },
+      {
+        id: "activityDate",
+        header: "Activity Date",
+        sortable: true,
+        getSortValue: (row) => {
+          const raw = getAgentActivityDateValue(row);
+          return raw ? Date.parse(raw) : 0;
+        },
+        cellClassName: "text-charcoal/80",
+        render: (agent) => formatAgentActivityDateCell(agent),
+      },
+      {
+        id: "actions",
+        header: <span className="block text-right">Actions</span>,
+        headerClassName: "text-right",
+        cellClassName: "text-right",
+        render: (agent) => (
+          <AdminAgentActionsMenu agent={agent} adminId={adminId} onToast={(t) => setToast(t)} />
+        ),
+      },
+    ],
+    [adminId],
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 px-1 md:flex-row md:items-start md:justify-between">
@@ -375,10 +571,6 @@ export function AdminAgentsPage() {
           <p className="mt-1 text-size-sm text-charcoal/70">Manage your team and invite new agents by email.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button type="button" variant="outline" onClick={() => router.push(`/${locale}/admin-dashboard`)}>
-            <RefreshCw className="h-4 w-4" />
-            Back to dashboard
-          </Button>
           <Button type="button" variant="primary" onClick={() => setIsOnboardModalOpen(true)}>
             <UserPlus2 className="h-4 w-4" />
             Onboard agent
@@ -386,61 +578,15 @@ export function AdminAgentsPage() {
         </div>
       </div>
 
-      <section className="grid gap-4 sm:grid-cols-2 md:grid-cols-5">
-        <Card className="rounded-2xl border-subtle">
-          <CardContent>
-            <p className="text-size-xs text-charcoal/70">Total agents</p>
-            <p className="mt-2 text-size-2xl fw-semibold text-charcoal">{totalFromBuckets}</p>
-          </CardContent>
-        </Card>
-        <Card
-          className="rounded-2xl border-subtle cursor-pointer"
-          role="button"
-          tabIndex={0}
-          onClick={() => applyStatusFilter(AGENT_STATUS.ACTIVE)}
-        >
-          <CardContent>
-            <div className="flex items-center gap-1.5">
-              <UserCheck className="h-3.5 w-3.5 text-emerald-600" />
-              <p className="text-size-xs text-charcoal/70">Active agents</p>
-            </div>
-            <p className="mt-2 text-size-2xl fw-semibold text-emerald-700">{activeCount}</p>
-          </CardContent>
-        </Card>
-        <Card
-          className="rounded-2xl border-subtle cursor-pointer"
-          role="button"
-          tabIndex={0}
-          onClick={() => applyStatusFilter(AGENT_STATUS.INVITED)}
-        >
-          <CardContent>
-            <p className="text-size-xs text-charcoal/70">Pending invites</p>
-            <p className="mt-2 text-size-2xl fw-semibold text-amber-700">{invitedCount}</p>
-          </CardContent>
-        </Card>
-        <Card
-          className="rounded-2xl border-subtle cursor-pointer"
-          role="button"
-          tabIndex={0}
-          onClick={() => applyStatusFilter(AGENT_STATUS.PENDING_REVIEW)}
-        >
-          <CardContent>
-            <p className="text-size-xs text-charcoal/70">Pending review</p>
-            <p className="mt-2 text-size-2xl fw-semibold text-amber-700">{pendingReviewCount}</p>
-          </CardContent>
-        </Card>
-        <Card
-          className="rounded-2xl border-subtle cursor-pointer"
-          role="button"
-          tabIndex={0}
-          onClick={() => applyStatusFilter(AGENT_STATUS.DECLINED)}
-        >
-          <CardContent>
-            <p className="text-size-xs text-charcoal/70">Declined</p>
-            <p className="mt-2 text-size-2xl fw-semibold text-rose-700">{declinedCount}</p>
-          </CardContent>
-        </Card>
-      </section>
+      <AdminAgentsStatsSection
+        totalFromBuckets={totalFromBuckets}
+        activeCount={activeCount}
+        invitedCount={invitedCount}
+        pendingReviewCount={pendingReviewCount}
+        declinedCount={declinedCount}
+        isLoading={summaryStatsLoading}
+        onStatusFilter={applyStatusFilter}
+      />
 
       <ConfirmDialog
         open={isOnboardModalOpen}
@@ -552,7 +698,7 @@ export function AdminAgentsPage() {
         </div>
       </ConfirmDialog>
 
-      <Card className="rounded-2xl border-subtle">
+      <Card className="rounded-xl border-subtle">
         <CardHeader className="flex flex-col gap-3 space-y-0 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-secondary" />
@@ -567,7 +713,7 @@ export function AdminAgentsPage() {
                   value={query}
                   onChange={(event) => updateQueryParam(event.target.value)}
                   placeholder="Search agents..."
-                  className="h-10 w-full rounded-xl"
+                  className="h-10 w-full rounded-lg"
                 />
               </div>
               <div className="flex w-full items-center gap-2 md:w-auto">
@@ -591,97 +737,52 @@ export function AdminAgentsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-2">
-              <Dropdown
-                label="Status"
-                value={statusFilter}
-                onChange={(value) => setStatusFilter(value as AgentStatusFilterValue)}
-                options={[...AGENT_STATUS_FILTER_OPTIONS]}
-              />
-              <Button type="button" variant="outline" onClick={() => applyStatusFilter(statusFilter)}>
-                Apply
-              </Button>
-            </div>
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
             <div className="text-sm text-charcoal/70">
-              Page {safePage} of {totalPages} · Total {totalItems}
+              {loading ? (
+                <Skeleton className="inline-block h-4 w-44" aria-label="Loading list metadata" />
+              ) : error ? (
+                <span className="text-charcoal/50">Could not load totals for this list.</span>
+              ) : (
+                <>
+                  Page {safePage} of {totalPages} · Total {totalItems}
+                </>
+              )}
             </div>
           </div>
 
-          {loading ? (
-            <div className="relative flex items-center justify-center my-6">
-              <Spinner size="lg" className="relative text-primary animate-spin" />
-            </div>
-          ) : error ? (
-            <div className="text-sm text-rose-700">{error}</div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[900px] text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-subtle bg-surface text-xs text-charcoal/65">
-                      <th className="px-4 py-3 font-medium">Agent</th>
-                      <th className="px-4 py-3 font-medium">Email</th>
-                      <th className="px-4 py-3 font-medium">Phone</th>
-                      <th className="px-4 py-3 font-medium">City</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 font-medium">Invited</th>
-                      <th className="px-4 py-3 font-medium text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredItems.map((agent) => (
-                      <tr key={agent.id} className="border-b border-subtle/70 last:border-b-0">
-                        <td className="px-4 py-3 fw-medium text-charcoal">{agent.fullName ?? "—"}</td>
-                        <td className="px-4 py-3 text-charcoal/80">{agent.email ?? "—"}</td>
-                        <td className="px-4 py-3 text-charcoal/80">{formatPhoneForList(agent.phone)}</td>
-                        <td className="px-4 py-3 text-charcoal/80">{agent.city ?? "—"}</td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-medium ${getAgentStatusClass(
-                              agent.status ?? AGENT_STATUS.INVITED,
-                            )}`}
-                          >
-                            {getAgentStatusLabel(agent.status ?? AGENT_STATUS.INVITED)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-charcoal/80">{agent.invitedAt ? formatDateTime(agent.invitedAt) : "—"}</td>
-                        <td className="px-4 py-3 text-right">
-                          <AdminAgentActionsMenu
-                            agent={agent}
-                            adminId={adminId}
-                            onToast={(t) => setToast(t)}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {totalPages > 1 && (
-                <div className="mt-6 border-t border-subtle pt-4">
-                  <Pagination
-                    currentPage={safePage}
-                    totalPages={totalPages}
-                    totalItems={totalItems}
-                    pageSize={pageSize}
-                    pageParam={PAGE_PARAM}
-                    pageSizeParam={PAGE_SIZE_PARAM}
-                    translations={{
-                      previous: "Previous",
-                      next: "Next",
-                      page: "Page",
-                      of: "of",
-                      showing: "Showing",
-                      to: "to",
-                      results: "agents",
-                    }}
-                  />
-                </div>
-              )}
-            </>
-          )}
+          <CustomTable<AdminAgent>
+            columns={agentTableColumns}
+            data={tableRows}
+            getRowId={(row) => String(row.id ?? row.email ?? "")}
+            sortConfig={sortConfig}
+            onSort={setSortConfig}
+            multiSortWithShift
+            loading={loading}
+            skeleton={<AdminAgentsTableSkeleton />}
+            error={error}
+            errorTitle="Something went wrong while loading agents."
+            emptyMessage={emptyListMessage}
+            minTableWidth="900px"
+            pagination={{
+              showWhen: !loading && !error && totalPages > 1 && tableRows.length > 0,
+              currentPage: safePage,
+              totalPages,
+              totalItems,
+              pageSize,
+              pageParam: PAGE_PARAM,
+              pageSizeParam: PAGE_SIZE_PARAM,
+              translations: {
+                previous: "Previous",
+                next: "Next",
+                page: "Page",
+                of: "of",
+                showing: "Showing",
+                to: "to",
+                results: "agents",
+              },
+            }}
+          />
         </CardContent>
       </Card>
 

@@ -606,6 +606,13 @@
     "welcomeAdmin": "Welcome to the admin console",
     "mockNotice": "All data shown here is mock data for UI and flows only.",
     "loadAdminSummaryError": "Unable to load admin dashboard. Please try again.",
+    "loadAdminLeaderboardError": "Unable to load top agents. Please try again.",
+    "topAgentsTitle": "Top agents this month",
+    "topAgentsDeals": "Deals",
+    "topAgentsResponse": "Response",
+    "topAgentsEmpty": "No agent rankings for this period yet.",
+    "topAgentsLoadError": "Could not load the leaderboard. Refresh the page or try again later.",
+    "topAgentsPeriod": "{from} – {to}",
     "totalAgentsKpi": "Total agents",
     "totalAgentsKpiSub": "All statuses · directory"
   },

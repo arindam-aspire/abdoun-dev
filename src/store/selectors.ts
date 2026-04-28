@@ -1,7 +1,6 @@
 import type { RootState } from "@/store";
 import type { ProfileUser } from "@/features/profile/profileSlice";
 import type { AgentDashboardData, PerformanceComparisonItem } from "@/types/agent";
-import { AGENT_STATUS } from "@/constants/agentStatus";
 import { createSelector } from "@reduxjs/toolkit";
 
 /** Current logged-in user from profile slice (single source of truth for user data in store). */
@@ -12,13 +11,41 @@ export function selectCurrentUser(state: RootState): ProfileUser | null {
   return details.id ? details : null;
 }
 
-const selectAdminAgents = (state: RootState) => state.adminAgents.allItems;
 const selectAdminAgentsTotal = (state: RootState) => state.adminAgents.total;
+const selectAdminUsersSidebarBadge = (state: RootState): number => {
+  const { sidebarTotal, sidebarTotalStatus, sidebarCountsAuthUserId } =
+    state.adminUsers;
+  const uid = state.auth.userId;
+  if (
+    sidebarTotalStatus === "succeeded" &&
+    sidebarTotal !== null &&
+    uid != null &&
+    sidebarCountsAuthUserId === uid
+  ) {
+    return sidebarTotal;
+  }
+  /** Hide sidebar badge until a definite total is known (see Sidebar count display). */
+  return -1;
+};
 const selectPropertySearch = (state: RootState) => state.propertySearch;
 const selectFavourites = (state: RootState) => state.favourites.propertyIds;
 const selectSavedSearchesItems = (state: RootState) => state.savedSearches.items;
 const selectAgentDashboardSummary = (state: RootState) =>
   state.agentDashboardSummary;
+
+const selectAdminManageListingsSidebarBadge = (state: RootState): number => {
+  const s = state.agentDashboardSummary;
+  const uid = state.auth.userId;
+  if (
+    s.adminManageListingsTotalStatus === "succeeded" &&
+    s.adminManageListingsTotal !== null &&
+    uid != null &&
+    s.adminListingsCountsAuthUserId === uid
+  ) {
+    return s.adminManageListingsTotal;
+  }
+  return -1;
+};
 
 /** Full dashboard summary from `GET /agents/dashboard/summary` after first fetch (session cache). */
 export function selectAgentDashboardCachedData(
@@ -36,50 +63,66 @@ export function selectAgentDashboardCachedPerformance(
 
 export const selectSidebarCounts = createSelector(
   [
-    selectAdminAgents,
     selectAdminAgentsTotal,
     selectPropertySearch,
     selectFavourites,
     selectAgentDashboardSummary,
     selectCurrentUser,
     selectSavedSearchesItems,
+    selectAdminUsersSidebarBadge,
+    selectAdminManageListingsSidebarBadge,
   ],
   (
-    allItems,
     adminAgentsTotal,
     propertySearch,
     favouriteIds,
     agentDashboardSummary,
     user,
     savedSearchItems,
+    adminUsersSidebarTotal,
+    adminManageListingsTotal,
   ): Record<string, number> => {
-    const pendingUsers = allItems.filter(
-      (agent) => agent.status === AGENT_STATUS.PENDING_REVIEW,
-    ).length;
     const totalProperties = propertySearch.total;
     const isAgent = user?.role === "agent";
+    const isAdmin = user?.role === "admin";
+    const agentSummaryCountsValid =
+      isAgent &&
+      !!user?.id &&
+      agentDashboardSummary.dashboardCacheAuthUserId === user.id;
     // Agents: sidebar "Manage Listings" + leads counts come only from the agent dashboard
     // bundle in Redux (`agentDashboardSummary` / `setAgentDashboardCache`), not from search.
+    // Admins: `GET /agent-properties` total via `fetchAdminManageListingsSidebarTotal` (-1 hides badge).
     const totalListings = isAgent
-      ? agentDashboardSummary.totalProperties
-      : agentDashboardSummary.totalProperties > 0
+      ? agentSummaryCountsValid
         ? agentDashboardSummary.totalProperties
-        : propertySearch.items.length;
+        : -1
+      : isAdmin
+        ? adminManageListingsTotal
+        : agentDashboardSummary.totalProperties > 0
+          ? agentDashboardSummary.totalProperties
+          : propertySearch.items.length;
     const totalSavedProperties = favouriteIds.length;
     const totalFavouriteProperties = favouriteIds.length;
     const totalSavedSearches = savedSearchItems.length;
 
     return {
-      pendingUsers,
-      /** Directory total from `GET /agents` pagination (`adminAgents.total`). */
-      totalAgents: adminAgentsTotal,
+      /** `GET /users` total (`register_user`) for admin sidebar; `-1` hides the badge until known. */
+      totalUsers: isAdmin ? adminUsersSidebarTotal : -1,
+      /** Directory total from `GET /agents` pagination (`adminAgents.total`); admin-only. */
+      totalAgents: isAdmin ? adminAgentsTotal : -1,
       totalProperties,
       totalListings,
       totalSavedProperties,
       totalFavouriteProperties,
       totalSavedSearches,
-      leadsThisMonth: agentDashboardSummary.leadsThisMonth,
-      inquiryVolumeLast7Days: agentDashboardSummary.inquiryVolumeLast7Days,
+      leadsThisMonth:
+        isAgent && agentSummaryCountsValid
+          ? agentDashboardSummary.leadsThisMonth
+          : -1,
+      inquiryVolumeLast7Days:
+        isAgent && agentSummaryCountsValid
+          ? agentDashboardSummary.inquiryVolumeLast7Days
+          : -1,
     };
   },
 );

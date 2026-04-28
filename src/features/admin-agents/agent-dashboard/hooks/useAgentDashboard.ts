@@ -22,6 +22,10 @@ export function useAgentDashboard(): UseAgentDashboardState {
   const dispatch = useAppDispatch();
   const cachedDashboard = useAppSelector(selectAgentDashboardCachedData);
   const cachedPerformance = useAppSelector(selectAgentDashboardCachedPerformance);
+  const authUserId = useAppSelector((s) => s.auth.userId);
+  const dashboardCacheAuthUserId = useAppSelector(
+    (s) => s.agentDashboardSummary.dashboardCacheAuthUserId,
+  );
 
   const [data, setData] = useState<AgentDashboardData | null>(cachedDashboard);
   const [performanceData, setPerformanceData] = useState<PerformanceComparisonItem[]>(
@@ -31,7 +35,12 @@ export function useAgentDashboard(): UseAgentDashboardState {
   const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
-    if (cachedDashboard) {
+    const cacheMatchesSession =
+      cachedDashboard &&
+      authUserId &&
+      dashboardCacheAuthUserId === authUserId;
+
+    if (cacheMatchesSession) {
       setData(cachedDashboard);
       setPerformanceData(cachedPerformance ?? []);
       setLoading(false);
@@ -53,12 +62,15 @@ export function useAgentDashboard(): UseAgentDashboardState {
         if (cancelled) return;
         setData(dashboard);
         setPerformanceData(performance);
-        dispatch(
-          setAgentDashboardCache({
-            dashboard,
-            performance,
-          }),
-        );
+        if (authUserId) {
+          dispatch(
+            setAgentDashboardCache({
+              dashboard,
+              performance,
+              authUserId,
+            }),
+          );
+        }
       } catch (e) {
         if (cancelled) return;
         setError(e);
@@ -73,7 +85,13 @@ export function useAgentDashboard(): UseAgentDashboardState {
     return () => {
       cancelled = true;
     };
-  }, [cachedDashboard, dispatch]);
+  }, [
+    authUserId,
+    cachedDashboard,
+    cachedPerformance,
+    dashboardCacheAuthUserId,
+    dispatch,
+  ]);
 
   return { data, performanceData, loading, error };
 }

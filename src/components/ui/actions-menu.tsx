@@ -14,6 +14,11 @@ export type ActionsMenuItem = {
   className?: string;
   /** Classes applied only when item is focused/hovered (e.g. background). */
   hoverClassName?: string;
+  /**
+   * When `disabled` is true, merged with base disabled styles (e.g. `!cursor-not-allowed`).
+   * If omitted, disabled items use `cursor-default`.
+   */
+  disabledCursorClassName?: string;
 };
 
 export type ActionsMenuProps = {
@@ -105,8 +110,10 @@ export function ActionsMenu({ trigger, items, align = "auto" }: ActionsMenuProps
                   <button
                     type="button"
                     className={cn(
-                      "block w-full px-3 py-2 text-left text-size-xs cursor-pointer capitalize",
-                      disabled ? "cursor-default text-zinc-400" : "text-zinc-700",
+                      "block w-full px-3 py-2 text-left text-size-xs capitalize",
+                      disabled
+                        ? cn("text-zinc-400", item.disabledCursorClassName ?? "cursor-default")
+                        : "cursor-pointer text-zinc-700",
                       focus &&
                         !disabled &&
                         (item.hoverClassName ?? "bg-zinc-50 text-zinc-900"),

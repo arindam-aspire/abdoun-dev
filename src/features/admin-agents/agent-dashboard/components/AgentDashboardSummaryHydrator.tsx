@@ -6,21 +6,32 @@ import {
   fetchAgentDashboardData,
   fetchAgentPerformanceComparison,
 } from "@/features/admin-agents/agent-dashboard/api/agentDashboard.api";
-import { setAgentDashboardCache } from "@/features/admin-agents/agent-dashboard/agentDashboardSummarySlice";
+import {
+  fetchAdminManageListingsSidebarTotal,
+  setAgentDashboardCache,
+} from "@/features/admin-agents/agent-dashboard/agentDashboardSummarySlice";
 import { selectAgentDashboardCachedData, selectCurrentUser } from "@/store/selectors";
 
 /**
- * Fetches agent dashboard summary into Redux when an agent is logged in so sidebar
- * badge counts (listings, leads) match the dashboard without visiting it first.
+ * Fetches dashboard summary for agents and listing-directory total for admins so sidebar
+ * badge counts match without visiting those pages first.
  */
 export function AgentDashboardSummaryHydrator() {
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectCurrentUser);
   const cached = useAppSelector(selectAgentDashboardCachedData);
+  const dashboardCacheAuthUserId = useAppSelector(
+    (s) => s.agentDashboardSummary.dashboardCacheAuthUserId,
+  );
 
   useEffect(() => {
+    if (user?.role === "admin") {
+      void dispatch(fetchAdminManageListingsSidebarTotal());
+      return;
+    }
+
     if (user?.role !== "agent") return;
-    if (cached) return;
+    if (cached && user.id && dashboardCacheAuthUserId === user.id) return;
 
     let cancelled = false;
     void (async () => {
@@ -30,7 +41,13 @@ export function AgentDashboardSummaryHydrator() {
           fetchAgentPerformanceComparison(),
         ]);
         if (cancelled) return;
-        dispatch(setAgentDashboardCache({ dashboard, performance }));
+        dispatch(
+          setAgentDashboardCache({
+            dashboard,
+            performance,
+            authUserId: user.id,
+          }),
+        );
       } catch {
         // Counts stay 0 until a successful fetch (e.g. from dashboard page).
       }
@@ -38,7 +55,7 @@ export function AgentDashboardSummaryHydrator() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, user?.role, cached, dispatch]);
+  }, [user?.id, user?.role, cached, dashboardCacheAuthUserId, dispatch]);
 
   return null;
 }

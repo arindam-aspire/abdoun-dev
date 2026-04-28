@@ -430,6 +430,13 @@
     "welcomeAdmin": "Bienvenue sur la console admin",
     "mockNotice": "Toutes les donnees affichees ici sont fictives pour la demo UI.",
     "loadAdminSummaryError": "Impossible de charger le tableau de bord administrateur. Reessayez.",
+    "loadAdminLeaderboardError": "Impossible de charger le classement des agents. Reessayez.",
+    "topAgentsTitle": "Meilleurs agents du mois",
+    "topAgentsDeals": "Transactions",
+    "topAgentsResponse": "Reponse",
+    "topAgentsEmpty": "Pas encore de classement pour cette periode.",
+    "topAgentsLoadError": "Chargement du classement impossible. Reessayez plus tard.",
+    "topAgentsPeriod": "{from} – {to}",
     "totalAgentsKpi": "Agents au total",
     "totalAgentsKpiSub": "Tous les statuts · annuaire"
   },

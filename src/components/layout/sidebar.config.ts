@@ -23,6 +23,8 @@ export type SidebarItem = {
   id: string;
   label: string;
   path: string;
+  /** When set, the admin sidebar uses this path instead of `path` (agent URLs). */
+  adminPath?: string;
   icon: LucideIcon;
   roles: SidebarRole[];
   countKey?: string;
@@ -30,21 +32,21 @@ export type SidebarItem = {
 
 /** Admin: these sidebar links open under-development (not wired for admin yet). */
 export const SIDEBAR_ITEM_IDS_ADMIN_UNDER_DEVELOPMENT: ReadonlySet<string> = new Set([
-  "manageListings",
-  "favouriteProperties",
-  "savedSearches",
   "leadsAndInquiries",
   "reportsAndAnalytics",
   "managePreferences",
-  "users",
 ]);
 
 export function getSidebarItemHref(
   locale: string,
-  item: Pick<SidebarItem, "id" | "path">,
+  item: Pick<SidebarItem, "id" | "path" | "adminPath">,
   role: SidebarRole | undefined,
 ): string {
-  const base = `/${locale}${item.path}`;
+  const path =
+    role === "admin" && item.adminPath != null && item.adminPath.length > 0
+      ? item.adminPath
+      : item.path;
+  const base = `/${locale}${path}`;
   if (role === "admin" && SIDEBAR_ITEM_IDS_ADMIN_UNDER_DEVELOPMENT.has(item.id)) {
     return `/${locale}/under-development?nav=${encodeURIComponent(item.id)}`;
   }
@@ -124,6 +126,7 @@ export const sidebarConfig: SidebarSection[] = [
        id: "manageListings",
        label: "Manage Listings",
        path: "/agent-dashboard/listings",
+       adminPath: "/admin-dashboard/listings",
        icon: List,
        roles: ["admin", "agent"],
        countKey: "totalListings",
@@ -132,6 +135,7 @@ export const sidebarConfig: SidebarSection[] = [
         id: "favouriteProperties",
         label: "Favourite Properties",
         path: "/agent-favourite-properties",
+        adminPath: "/admin-dashboard/favourite-properties",
         icon: HeartIcon,
         roles: ["admin", "agent"],
         countKey: "totalFavouriteProperties",
@@ -140,6 +144,7 @@ export const sidebarConfig: SidebarSection[] = [
         id: "savedSearches",
         label: "Saved Searches",
         path: "/agent-saved-searches",
+        adminPath: "/admin-dashboard/saved-searches",
         icon: Bookmark,
         roles: ["admin", "agent"],
         countKey: "totalSavedSearches",
@@ -169,10 +174,10 @@ export const sidebarConfig: SidebarSection[] = [
       {
         id: "users",
         label: "Users",
-        path: "/admin-users",
+        path: "/users",
         icon: Users,
         roles: ["admin"],
-        countKey: "pendingUsers",
+        countKey: "totalUsers",
       },
       {
         id: "agents",

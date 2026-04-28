@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { Provider } from "react-redux";
 import type { AgentDashboardData, PerformanceComparisonItem } from "@/types/agent";
 import agentDashboardSummaryReducer from "@/features/admin-agents/agent-dashboard/agentDashboardSummarySlice";
+import authReducer from "@/features/auth/authSlice";
 import { useAgentDashboard } from "@/features/admin-agents/agent-dashboard/hooks/useAgentDashboard";
 
 const fetchAgentDashboardDataMock = jest.fn<Promise<AgentDashboardData>, []>();
@@ -18,20 +19,25 @@ jest.mock("@/features/admin-agents/agent-dashboard/api/agentDashboard.api", () =
   fetchAgentPerformanceComparison: () => fetchAgentPerformanceComparisonMock(),
 }));
 
-function createHookStore(preloadedSummary?: Partial<ReturnType<typeof summaryInitial>>) {
+function createHookStore(
+  preloadedSummary?: Partial<ReturnType<typeof summaryInitial>>,
+  authUserId: string | null = "session-user-1",
+) {
   const summaryDefault = summaryInitial();
   return configureStore({
     reducer: {
       agentDashboardSummary: agentDashboardSummaryReducer,
+      auth: authReducer,
     },
-    preloadedState: preloadedSummary
-      ? {
-          agentDashboardSummary: {
+    preloadedState: {
+      auth: { userId: authUserId },
+      agentDashboardSummary: preloadedSummary
+        ? {
             ...summaryDefault,
             ...preloadedSummary,
-          },
-        }
-      : undefined,
+          }
+        : summaryDefault,
+    },
   });
 }
 
@@ -42,6 +48,10 @@ function summaryInitial() {
     inquiryVolumeLast7Days: 0,
     dashboardData: null as AgentDashboardData | null,
     performanceComparison: [] as PerformanceComparisonItem[],
+    dashboardCacheAuthUserId: null as string | null,
+    adminManageListingsTotal: null as number | null,
+    adminManageListingsTotalStatus: "idle" as const,
+    adminListingsCountsAuthUserId: null as string | null,
   };
 }
 
@@ -108,6 +118,7 @@ describe("useAgentDashboard", () => {
       inquiryVolumeLast7Days: dashboard.inquiryVolumeLast7Days,
       dashboardData: dashboard,
       performanceComparison: perf,
+      dashboardCacheAuthUserId: "session-user-1",
     });
     const wrapper = createReduxWrapper(store);
 

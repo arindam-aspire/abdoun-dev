@@ -35,12 +35,13 @@ type ActionKey =
   | "grant-admin"
   | "delete";
 
+/** Set to `true` when grant-admin should run again. While `false`, the row stays visible but is disabled. */
+const ENABLE_GRANT_ADMIN_ACCESS = false;
+
 export function AdminAgentActionsMenu({ agent, adminId, onToast }: AdminAgentActionsMenuProps) {
   const dispatch = useAppDispatch();
   const [pendingAction, setPendingAction] = useState<ActionKey | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
-
-  const canGrantAdminAccess = Boolean(adminId);
 
   const run = useCallback(
     async (key: string, fn: () => Promise<unknown>, successMessage: string) => {
@@ -75,6 +76,7 @@ export function AdminAgentActionsMenu({ agent, adminId, onToast }: AdminAgentAct
       destructive?: boolean;
       className?: string;
       hoverClassName?: string;
+      disabledCursorClassName?: string;
     }> = [];
 
     if (agent.status === AGENT_STATUS.INVITED) {
@@ -133,14 +135,17 @@ export function AdminAgentActionsMenu({ agent, adminId, onToast }: AdminAgentAct
     }
 
     if (agent.status === AGENT_STATUS.ACTIVE) {
+      const grantDisabled =
+        !ENABLE_GRANT_ADMIN_ACCESS || busyKey !== null || !adminId;
       list.push({
         key: "grant-admin",
         label: "Grant admin access",
-        disabled: busyKey !== null || !canGrantAdminAccess,
-        className: "text-purple-700",
+        disabled: grantDisabled,
+        disabledCursorClassName: grantDisabled ? "!cursor-not-allowed" : undefined,
+        className: grantDisabled ? "text-zinc-400" : "text-purple-700",
         hoverClassName: "bg-purple-50",
         onSelect: () => {
-          if (!adminId) return;
+          if (grantDisabled) return;
           setPendingAction("grant-admin");
         },
       });
@@ -155,7 +160,7 @@ export function AdminAgentActionsMenu({ agent, adminId, onToast }: AdminAgentAct
     });
 
     return list;
-  }, [agent.email, agent.id, agent.status, adminId, busyKey, canGrantAdminAccess]);
+  }, [agent.email, agent.id, agent.status, adminId, busyKey]);
 
   const confirmCopy: Record<
     ActionKey,
@@ -272,6 +277,10 @@ export function AdminAgentActionsMenu({ agent, adminId, onToast }: AdminAgentAct
         break;
       }
       case "grant-admin": {
+        if (!ENABLE_GRANT_ADMIN_ACCESS) {
+          resetPending();
+          return;
+        }
         if (!adminId) {
           resetPending();
           return;

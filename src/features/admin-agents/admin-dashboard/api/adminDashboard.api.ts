@@ -324,3 +324,77 @@ export async function fetchAdminUserGrowthTrends(months = 12): Promise<AdminUser
     throw new Error(getApiErrorMessage(error));
   }
 }
+
+/* —— Agent leaderboard (admin home) —— */
+
+export type AgentLeaderboardRow = {
+  name: string;
+  closedDeals: number;
+  responseRate: string;
+  area: string | null;
+};
+
+export type AdminLeaderboardData = {
+  periodStart: string;
+  periodEnd: string;
+  agents: AgentLeaderboardRow[];
+};
+
+type LeaderboardApiAgent = {
+  name?: unknown;
+  closedDeals?: unknown;
+  responseRate?: unknown;
+  area?: unknown;
+};
+
+function toLeaderboardRow(row: unknown): AgentLeaderboardRow {
+  const r = (row ?? {}) as LeaderboardApiAgent;
+  const areaRaw = r.area;
+  return {
+    name: typeof r.name === "string" ? r.name : String(r.name ?? ""),
+    closedDeals: toFiniteNumber(r.closedDeals, 0),
+    responseRate:
+      typeof r.responseRate === "string"
+        ? r.responseRate
+        : String(r.responseRate ?? ""),
+    area:
+      areaRaw === null || areaRaw === undefined
+        ? null
+        : typeof areaRaw === "string"
+          ? areaRaw
+          : String(areaRaw),
+  };
+}
+
+/**
+ * `GET /agents/leaderboard` — top agents for the current period (admin dashboard).
+ */
+export async function fetchAdminAgentLeaderboard(): Promise<AdminLeaderboardData> {
+  try {
+    const response = await authApi.get<
+      StandardApiResponse<{
+        periodStart?: unknown;
+        periodEnd?: unknown;
+        agents?: unknown;
+      }>
+    >("/agents/leaderboard");
+    const body = response.data;
+    if (!body?.success) {
+      throw new Error(resolveFailureMessage(body));
+    }
+    const raw = body.data;
+    if (!raw || typeof raw !== "object") {
+      throw new Error("Invalid leaderboard response.");
+    }
+    const o = raw as Record<string, unknown>;
+    const periodStart = typeof o.periodStart === "string" ? o.periodStart : "";
+    const periodEnd = typeof o.periodEnd === "string" ? o.periodEnd : "";
+    const rawAgents = o.agents;
+    const agents: AgentLeaderboardRow[] = Array.isArray(rawAgents)
+      ? rawAgents.map((item) => toLeaderboardRow(item))
+      : [];
+    return { periodStart, periodEnd, agents };
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error));
+  }
+}

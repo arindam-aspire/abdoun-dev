@@ -90,6 +90,21 @@ export type { TabsProps, TabItem } from "./tabs";
 export { Link } from "./link";
 export type { LinkProps } from "./link";
 
+// Data table (generic; no data fetching in component)
+export {
+  CustomTable,
+  getNextSortConfig,
+  sortRowsByConfig,
+} from "./CustomTable";
+export type {
+  CustomTableColumn,
+  CustomTableProps,
+  CustomTablePagination,
+  SortConfig,
+  SortDirection,
+  SortRule,
+} from "./CustomTable";
+
 // Media
 export { Avatar } from "./avatar";
 export type { AvatarProps } from "./avatar";

@@ -3,13 +3,19 @@
 import { useAdminDashboard } from "@/features/admin-agents/admin-dashboard/hooks/useAdminDashboard";
 import { useAdminAgentsTotalForDashboard } from "@/features/admin-agents/admin-dashboard/hooks/useAdminAgentsTotalForDashboard";
 import { AdminDashboardHomeSkeleton } from "@/features/admin-agents/admin-dashboard/components/AdminDashboardHomeSkeleton";
+import {
+  loadAdminLeaderboard,
+  selectAdminLeaderboard,
+} from "@/features/admin-agents/admin-dashboard/adminDashboardSummarySlice";
 import { DotLineChart } from "@/features/admin-agents/components/shared-charts/DotLineChart";
 import { InquiryTrendLineChart } from "@/features/admin-agents/components/shared-charts/InquiryTrendLineChart";
 import { SparkBarsChart } from "@/features/admin-agents/components/shared-charts/SparkBarsChart";
 import type { AppLocale } from "@/i18n/routing";
 import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard";
 import { Toast } from "@/components/ui";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ToastKind } from "@/components/ui/toast";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { useTranslations } from "@/hooks/useTranslations";
 import {
   BarChart3,
@@ -66,13 +72,6 @@ type ActivityItem = {
   tone: "neutral" | "success" | "warning";
 };
 
-type TopAgent = {
-  name: string;
-  closedDeals: number;
-  responseRate: string;
-  area: string;
-};
-
 /* ------------------------------------------------------------------ */
 /*  Static mock data (non-KPI sections)                                */
 /* ------------------------------------------------------------------ */
@@ -96,22 +95,6 @@ const RECENT_ACTIVITY: ActivityItem[] = [
     text: "Weekly report exported by Admin User.",
     time: "35 min ago",
     tone: "neutral",
-  },
-];
-
-const TOP_AGENTS: TopAgent[] = [
-  { name: "Leen Khoury", closedDeals: 24, responseRate: "97%", area: "Abdoun" },
-  {
-    name: "Omar Shdeifat",
-    closedDeals: 19,
-    responseRate: "94%",
-    area: "Dabouq",
-  },
-  {
-    name: "Dana Abu-Taleb",
-    closedDeals: 17,
-    responseRate: "95%",
-    area: "Khalda",
   },
 ];
 
@@ -184,8 +167,11 @@ export function AdminDashboardHome() {
   const tDashboard = useTranslations("dashboard");
   const { data, loading, error } = useAdminDashboard();
   const { valueLabel: totalAgentsLabel } = useAdminAgentsTotalForDashboard();
+  const dispatch = useAppDispatch();
+  const leaderboard = useAppSelector(selectAdminLeaderboard);
   const [toast, setToast] = useState<{ kind: ToastKind; message: string } | null>(null);
   const errorToastSentRef = useRef(false);
+  const leaderboardErrorToastRef = useRef(false);
 
   useEffect(() => {
     if (loading) {
@@ -204,6 +190,32 @@ export function AdminDashboardHome() {
       message: error.message || tDashboard("loadAdminSummaryError"),
     });
   }, [loading, error, tDashboard]);
+
+  useEffect(() => {
+    if (loading || error || !data) {
+      return;
+    }
+    void dispatch(loadAdminLeaderboard());
+  }, [dispatch, loading, error, data]);
+
+  useEffect(() => {
+    const status = leaderboard.status;
+    if (status === "loading" || status === "idle") {
+      leaderboardErrorToastRef.current = false;
+      return;
+    }
+    if (status !== "failed") {
+      return;
+    }
+    if (leaderboardErrorToastRef.current) {
+      return;
+    }
+    leaderboardErrorToastRef.current = true;
+    setToast({
+      kind: "error",
+      message: leaderboard.error || tDashboard("loadAdminLeaderboardError"),
+    });
+  }, [leaderboard.status, leaderboard.error, tDashboard]);
 
   if (loading) {
     return <AdminDashboardHomeSkeleton />;
@@ -235,6 +247,26 @@ export function AdminDashboardHome() {
 
   const monthParam = data.month;
   const shortMonthParam = data.month.slice(2);
+
+  const showLeaderboardSkeleton =
+    leaderboard.status === "loading" || leaderboard.status === "idle";
+  const leaderboardRows = leaderboard.data?.agents ?? [];
+  const periodStart = leaderboard.data?.periodStart;
+  const periodEnd = leaderboard.data?.periodEnd;
+  const periodLabel =
+    periodStart && periodEnd
+      ? tDashboard("topAgentsPeriod", {
+          from: new Date(periodStart).toLocaleDateString(locale, {
+            month: "short",
+            day: "numeric",
+          }),
+          to: new Date(periodEnd).toLocaleDateString(locale, {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          }),
+        })
+      : null;
 
   const metricCards: Array<
     {
@@ -407,7 +439,7 @@ export function AdminDashboardHome() {
  
       {/* ── Quick actions + Recent activity ── */}
       <section className="grid gap-4 lg:grid-cols-2">
-        <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
+        <article className="rounded-xl border border-subtle bg-white p-4 shadow-sm md:p-5">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-charcoal">
             <ShieldCheck className="h-4 w-4 text-secondary" />
             Quick actions
@@ -444,7 +476,7 @@ export function AdminDashboardHome() {
           </div>
         </article>
 
-        <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
+        <article className="rounded-xl border border-subtle bg-white p-4 shadow-sm md:p-5">
           <h2 className="text-sm font-semibold text-charcoal">
             Recent activity
           </h2>
@@ -478,33 +510,82 @@ export function AdminDashboardHome() {
           </div>
         </article>
       </section>
-           {/* ── Top agents ── */}
+      {/* ── Top agents ── */}
       <section className="grid gap-4">
-        <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">
-          <h2 className="text-sm font-semibold text-charcoal">Top agents this month</h2>
+        <article className="rounded-xl border border-subtle bg-white p-4 shadow-sm md:p-5">
+          <h2 className="text-sm font-semibold text-charcoal">
+            {tDashboard("topAgentsTitle")}
+          </h2>
+          {periodLabel && leaderboard.status === "succeeded" ? (
+            <p className="mt-1 text-xs text-charcoal/60">{periodLabel}</p>
+          ) : null}
           <div className="mt-4 grid gap-3 md:grid-cols-3">
-            {TOP_AGENTS.map((agent) => (
-              <div key={agent.name} className="rounded-xl border border-subtle bg-surface p-3">
-                <p className="text-sm font-semibold text-charcoal">{agent.name}</p>
-                <p className="mt-1 flex items-center gap-1 text-xs text-charcoal/70">
-                  <MapPin className="h-3.5 w-3.5" />
-                  {agent.area}
-                </p>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-lg bg-white p-2">
-                    <p className="text-charcoal/65">Deals</p>
-                    <p className="mt-1 text-sm font-semibold text-secondary">{agent.closedDeals}</p>
+            {showLeaderboardSkeleton
+              ? [0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="rounded-xl border border-subtle bg-surface p-3"
+                    aria-hidden
+                  >
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="mt-2 h-3 w-1/2" />
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <Skeleton className="h-14 w-full rounded-lg" />
+                      <Skeleton className="h-14 w-full rounded-lg" />
+                    </div>
                   </div>
-                  <div className="rounded-lg bg-white p-2">
-                    <p className="text-charcoal/65">Response</p>
-                    <p className="mt-1 text-sm font-semibold text-emerald-700">{agent.responseRate}</p>
+                ))
+              : null}
+            {!showLeaderboardSkeleton && leaderboard.status === "failed" ? (
+              <p
+                className="col-span-full text-sm text-red-700"
+                role="alert"
+                aria-live="assertive"
+              >
+                {tDashboard("topAgentsLoadError")}
+              </p>
+            ) : null}
+            {!showLeaderboardSkeleton && leaderboard.status === "succeeded" && leaderboardRows.length === 0 ? (
+              <p className="col-span-full text-sm text-charcoal/70">
+                {tDashboard("topAgentsEmpty")}
+              </p>
+            ) : null}
+            {!showLeaderboardSkeleton && leaderboard.status === "succeeded" && leaderboardRows.length > 0
+              ? leaderboardRows.map((agent, index) => (
+                  <div
+                    key={`${agent.name}-${String(index)}`}
+                    className="rounded-xl border border-subtle bg-surface p-3"
+                  >
+                    <p className="text-sm font-semibold text-charcoal">{agent.name}</p>
+                    <p className="mt-1 flex items-center gap-1 text-xs text-charcoal/70">
+                      <MapPin className="h-3.5 w-3.5 shrink-0" />
+                      {agent.area ?? "—"}
+                    </p>
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                      <div className="rounded-lg bg-white p-2">
+                        <p className="text-charcoal/65">{tDashboard("topAgentsDeals")}</p>
+                        <p className="mt-1 text-sm font-semibold text-secondary">{agent.closedDeals}</p>
+                      </div>
+                      <div className="rounded-lg bg-white p-2">
+                        <p className="text-charcoal/65">{tDashboard("topAgentsResponse")}</p>
+                        <p className="mt-1 text-sm font-semibold text-emerald-700">{agent.responseRate}</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                ))
+              : null}
           </div>
         </article>
       </section>
+
+      {toast ? (
+        <Toast
+          kind={toast.kind}
+          message={toast.message}
+          duration={6000}
+          onClose={() => setToast(null)}
+        />
+      ) : null}
     </div>
   );
 }

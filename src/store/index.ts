@@ -10,6 +10,7 @@ import favouritesReducer from "@/features/favourites/favouritesSlice";
 import compareReducer from "@/features/compare/compareSlice";
 import savedSearchesReducer from "@/features/saved-searches/savedSearchesSlice";
 import adminAgentsReducer from "@/features/admin-agents/adminAgentsSlice";
+import adminUsersReducer from "@/features/admin-users/adminUsersSlice";
 import propertySearchReducer from "@/features/property-search/propertySearchSlice";
 import propertyDetailsReducer from "@/features/property-details/propertyDetailsSlice";
 import exclusivePropertiesReducer from "@/features/exclusive-properties/exclusivePropertiesSlice";
@@ -44,6 +45,7 @@ export const store = configureStore({
     compare: compareReducer,
     savedSearches: savedSearchesReducer,
     adminAgents: adminAgentsReducer,
+    adminUsers: adminUsersReducer,
     propertySearch: propertySearchReducer,
     propertyDetails: propertyDetailsReducer,
     exclusiveProperties: exclusivePropertiesReducer,

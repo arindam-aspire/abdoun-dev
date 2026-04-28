@@ -15,6 +15,8 @@ export interface AdminAgent {
   city?: string;
   status?: AdminAgentStatus;
   invitedAt?: string;
+  /** Set when the agent is approved (directory “activity” for active agents). */
+  reviewedAt?: string | null;
   invitedBy?: string;
 }
 
@@ -64,6 +66,48 @@ export type ListAdminAgentsResult = {
   limit: number;
   page: number;
   totalPages: number;
+};
+
+export type AdminAgentsSummaryLatestInvite = {
+  isUsed: boolean;
+  revokedAt: string | null;
+  expiresAt: string;
+  invitedAt: string;
+  createdAt: string;
+};
+
+export type AdminAgentsSummaryLastAgentMetadata = {
+  email: string;
+  userCreatedAt: string;
+  cognitoSub: string | null;
+  serviceArea: string;
+  statusReason: string | null;
+  declineReason: string | null;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  formSubmittedAt: string | null;
+  passwordSetAt: string | null;
+  approvedAt: string | null;
+  approvedBy: string | null;
+};
+
+export type AdminAgentsSummaryLastAgent = {
+  agentId: string;
+  agentName: string;
+  profileStatus: string;
+  userIsActive: boolean;
+  assignments: unknown[];
+  latestInvite: AdminAgentsSummaryLatestInvite | null;
+  metadata: AdminAgentsSummaryLastAgentMetadata;
+};
+
+export type AdminAgentsSummaryData = {
+  totalAgents: number;
+  activeAgents: number;
+  pendingInvites: number;
+  pendingReview: number;
+  declined: number;
+  lastFiveAgents: AdminAgentsSummaryLastAgent[];
 };
 
 const { authApi } = createHttpClients();
@@ -165,6 +209,10 @@ export async function listAdminAgents(
     const invitedBy =
       (anyItem.invitedBy as string | undefined)?.trim() ?? "N/A";
 
+    const reviewedRaw = (anyItem.reviewedAt ?? anyItem.reviewed_at) as string | null | undefined;
+    const reviewedAt =
+      typeof reviewedRaw === "string" && reviewedRaw.trim() ? reviewedRaw : null;
+
     return {
       id: String(anyItem.id ?? ""),
       fullName,
@@ -173,6 +221,7 @@ export async function listAdminAgents(
       city,
       status,
       invitedAt,
+      reviewedAt,
       invitedBy,
     };
   });
@@ -191,6 +240,16 @@ export async function listAdminAgents(
     page: pageFromApi,
     totalPages: totalPagesFromApi,
   };
+}
+
+/**
+ * `GET /agents/summary` — global counts and latest agents for the admin directory.
+ */
+export async function getAdminAgentsSummary(): Promise<AdminAgentsSummaryData> {
+  const response = await authApi.get<StandardApiResponse<AdminAgentsSummaryData>>(
+    "/agents/summary",
+  );
+  return unwrap(response.data);
 }
 
 export async function approveAgent(agentId: string): Promise<boolean> {

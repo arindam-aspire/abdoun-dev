@@ -430,6 +430,13 @@
     "welcomeAdmin": "مرحباً بك في لوحة التحكم الإدارية",
     "mockNotice": "جميع البيانات المعروضة هنا تجريبية لأغراض الواجهة فقط.",
     "loadAdminSummaryError": "تعذر تحميل لوحة التحكم الإدارية. يرجى المحاولة مرة أخرى.",
+    "loadAdminLeaderboardError": "تعذر تحميل أفضل الوكلاء. يرجى المحاولة مرة أخرى.",
+    "topAgentsTitle": "أفضل الوكلاء هذا الشهر",
+    "topAgentsDeals": "الصفقات",
+    "topAgentsResponse": "معدل الرد",
+    "topAgentsEmpty": "لا ترتيب للوكلاء لهذه الفترة بعد.",
+    "topAgentsLoadError": "تعذر تحميل لوحة الترتيب. حدّث الصفحة أو أعد المحاولة لاحقاً.",
+    "topAgentsPeriod": "{from} – {to}",
     "totalAgentsKpi": "إجمالي الوكلاء",
     "totalAgentsKpiSub": "جميع الحالات · الدليل"
   },

@@ -2,12 +2,13 @@ import createMiddleware from "next-intl/middleware";
 import { NextResponse, type NextRequest } from "next/server";
 import { routing } from "@/i18n/routing";
 import { AUTH_ROLE_COOKIE_NAME } from "@/lib/auth/sessionCookies";
+import { getAdminRedirectPathForLegacyAgentPortal } from "@/lib/routing/adminAgentPortalPaths";
 
 const intlMiddleware = createMiddleware(routing);
 
 const localePattern = routing.locales.join("|");
 const agentRoutePattern = new RegExp(
-  `^/(${localePattern})/(agent(?:/.*)?|agent-dashboard(?:/.*)?|agent-properties(?:/.*)?)$`,
+  `^/(${localePattern})/(agent(?:/.*)?|agent-dashboard(?:/.*)?|agent-properties(?:/.*)?|agent-favourite-properties(?:/.*)?|agent-saved-searches(?:/.*)?)$`,
 );
 const adminRoutePattern = new RegExp(
   `^/(${localePattern})/(admin(?:/.*)?|users(?:/.*)?|agents(?:/.*)?|properties(?:/.*)?|listings(?:/.*)?|leads(?:/.*)?|deals(?:/.*)?|admin-dashboard(?:/.*)?)$`,
@@ -43,6 +44,13 @@ export default function middleware(request: NextRequest) {
   }
 
   if (role === "admin" && isAgentRoute) {
+    const canonical = getAdminRedirectPathForLegacyAgentPortal(pathname, locale);
+    if (canonical != null) {
+      const url = request.nextUrl.clone();
+      url.pathname = canonical;
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/admin-dashboard`;
     url.search = "";

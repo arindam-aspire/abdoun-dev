@@ -133,7 +133,7 @@ export function SearchResultListCard({
   return (
     <article
       className={cn(
-        "group flex overflow-hidden rounded-xl border border-[#e7ebf1] bg-white transition duration-300 hover:-translate-y-1",
+        "group flex overflow-hidden rounded-xl border border-[#e7ebf1] bg-white transition duration-300",
         "min-h-0 flex-col md:flex-row",
       )}
       dir={isRtl ? "rtl" : "ltr"}
@@ -160,7 +160,7 @@ export function SearchResultListCard({
               alt={listing.title}
               fill
               sizes="(max-width: 767px) 100vw, 320px"
-              className="object-cover transition-[transform,opacity,filter] duration-500 group-hover:scale-[1.03]"
+              className="object-cover transition-[transform,opacity,filter] duration-500"
             />
           )}
         </div>

@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import {
+  getAdminAgentsSummary,
   inviteAdminAgent,
   listAdminAgents,
   approveAgent,
@@ -8,6 +9,7 @@ import {
   grantAdminAccess,
   type ListAdminAgentsParams,
   type AdminAgent,
+  type AdminAgentsSummaryData,
   type InviteAgentResponse,
   agentOnboardingManually,
 } from "@/services/adminAgentApiService";
@@ -53,6 +55,10 @@ type AdminAgentsState = {
   agentsListStale: boolean;
   /** Query key for the in-flight list request (dedupes parallel identical dispatches). */
   listInFlightKey: string | null;
+  /** Directory-wide counts from `GET /agents/summary` (independent of list pagination). */
+  summary: AdminAgentsSummaryData | null;
+  summaryStatus: "idle" | "loading" | "succeeded" | "failed";
+  summaryError: string | null;
 };
 
 /** Minimal `getState()` shape for the agents list thunk (avoids importing `RootState`). */
@@ -74,6 +80,9 @@ const initialState: AdminAgentsState = {
   lastFetchKey: null,
   agentsListStale: false,
   listInFlightKey: null,
+  summary: null,
+  summaryStatus: "idle",
+  summaryError: null,
 };
 
 export const fetchAdminAgents = createAsyncThunk<
@@ -108,6 +117,24 @@ export const fetchAdminAgents = createAsyncThunk<
   },
 );
 
+export const fetchAdminAgentsSummary = createAsyncThunk<AdminAgentsSummaryData, void>(
+  "adminAgents/fetchAdminAgentsSummary",
+  async (_, thunkApi) => {
+    try {
+      return await getAdminAgentsSummary();
+    } catch (error) {
+      if (error instanceof Error && error.message) {
+        return thunkApi.rejectWithValue(error.message);
+      }
+      return thunkApi.rejectWithValue("Failed to load agent summary.");
+    }
+  },
+);
+
+function dispatchSummaryRefresh(thunkApi: { dispatch: (action: unknown) => void }) {
+  void thunkApi.dispatch(fetchAdminAgentsSummary());
+}
+
 /** Map invite API response to AdminAgent for storing in the list. */
 function inviteResponseToAgent(res: InviteAgentResponse): AdminAgent {
   return {
@@ -128,6 +155,7 @@ export const inviteAdminAgentByEmail = createAsyncThunk(
   async (email: string, thunkApi) => {
     try {
       const data = await inviteAdminAgent(email);
+      dispatchSummaryRefresh(thunkApi);
       return data;
     } catch (error) {
       const anyError = error as unknown as {
@@ -154,6 +182,7 @@ export const approveAdminAgent = createAsyncThunk(
   async (agentId: string, thunkApi) => {
     try {
       await approveAgent(agentId);
+      dispatchSummaryRefresh(thunkApi);
       return { agentId };
     } catch (error) {
       const anyError = error as unknown as {
@@ -180,6 +209,7 @@ export const declineAdminAgent = createAsyncThunk(
   async (agentId: string, thunkApi) => {
     try {
       await declineAgent(agentId);
+      dispatchSummaryRefresh(thunkApi);
       return { agentId };
     } catch (error) {
       const anyError = error as unknown as {
@@ -206,6 +236,7 @@ export const deleteAdminAgent = createAsyncThunk(
   async (agentId: string, thunkApi) => {
     try {
       await deleteAgent(agentId);
+      dispatchSummaryRefresh(thunkApi);
       return { agentId };
     } catch (error) {
       const anyError = error as unknown as {
@@ -264,6 +295,7 @@ export const createAdminAgentManually = createAsyncThunk(
   async (agent: AdminAgent, thunkApi) => {
     try {
       await agentOnboardingManually(agent);
+      dispatchSummaryRefresh(thunkApi);
       return agent;
     } catch (error) {
       const anyError = error as unknown as {
@@ -299,6 +331,22 @@ const adminAgentsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchAdminAgentsSummary.pending, (state) => {
+        state.summaryStatus = "loading";
+        state.summaryError = null;
+      })
+      .addCase(fetchAdminAgentsSummary.fulfilled, (state, action) => {
+        state.summary = action.payload;
+        state.summaryStatus = "succeeded";
+        state.summaryError = null;
+      })
+      .addCase(fetchAdminAgentsSummary.rejected, (state, action) => {
+        state.summaryStatus = "failed";
+        state.summaryError =
+          (typeof action.payload === "string" ? action.payload : null) ||
+          action.error.message ||
+          "Failed to load agent summary.";
+      })
       .addCase(fetchAdminAgents.pending, (state, action) => {
         state.loading = true;
         state.error = null;
@@ -365,6 +413,9 @@ const adminAgentsSlice = createSlice({
           const agent = list.find((a) => a.id === id);
           if (agent) {
             agent.status = AGENT_STATUS.ACTIVE;
+            if (agent.reviewedAt == null || !String(agent.reviewedAt).trim()) {
+              agent.reviewedAt = new Date().toISOString();
+            }
           }
         };
         apply(state.currentItems);
@@ -393,14 +444,16 @@ const adminAgentsSlice = createSlice({
         // Use the original payload to build the new agent entry
         const arg = action.meta.arg as AdminAgent;
         const now = new Date().toISOString();
+        const st = normalizeAgentStatus(arg.status ?? AGENT_STATUS.ACTIVE);
         const newAgent: AdminAgent = {
           id: arg.id ?? `manual_${Date.now()}`,
           fullName: arg.fullName,
           email: arg.email,
           phone: arg.phone,
           city: arg.city,
-          status: normalizeAgentStatus(arg.status ?? AGENT_STATUS.ACTIVE),
+          status: st,
           invitedAt: arg.invitedAt ?? now,
+          reviewedAt: st === AGENT_STATUS.ACTIVE ? (arg.reviewedAt ?? now) : null,
           invitedBy: arg.invitedBy ?? "Manual onboarding",
         };
 

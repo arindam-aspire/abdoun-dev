@@ -7,6 +7,7 @@ import { clearFavourites } from "@/features/favourites/favouritesSlice";
 import { clearSavedSearches } from "@/features/saved-searches/savedSearchesSlice";
 import { clearCompare } from "@/features/compare/compareSlice";
 import { resetAdminAgents } from "@/features/admin-agents/adminAgentsSlice";
+import { resetAdminUsers } from "@/features/admin-users/adminUsersSlice";
 import { clearAgentDashboardSummary } from "@/features/admin-agents/agent-dashboard/agentDashboardSummarySlice";
 import { clearAdminDashboardSummary } from "@/features/admin-agents/admin-dashboard/adminDashboardSummarySlice";
 import { clearAdminUserGrowthTrends } from "@/features/admin-agents/admin-dashboard/adminUserGrowthTrendsSlice";
@@ -48,6 +49,7 @@ export async function performClientLogout(
   dispatch(clearSavedSearches());
   dispatch(clearCompare());
   dispatch(resetAdminAgents());
+  dispatch(resetAdminUsers());
   dispatch(clearAgentDashboardSummary());
   dispatch(clearAdminDashboardSummary());
   dispatch(clearAdminUserGrowthTrends());
@@ -73,6 +75,7 @@ export function forceLocalLogout(
   dispatch(clearSavedSearches());
   dispatch(clearCompare());
   dispatch(resetAdminAgents());
+  dispatch(resetAdminUsers());
   dispatch(clearAgentDashboardSummary());
   dispatch(clearAdminDashboardSummary());
   dispatch(clearAdminUserGrowthTrends());
