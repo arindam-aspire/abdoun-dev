@@ -42,11 +42,7 @@ export function AdminViewRatePage() {
     ? (pageSizeRaw as PaginationPageSize)
     : DEFAULT_PAGINATION_PAGE_SIZE;
 
-  const periodParam = searchParams.get("period");
-  const periodFilter: PeriodFilter =
-    periodParam && PERIOD_FILTERS.includes(periodParam as PeriodFilter)
-      ? (periodParam as PeriodFilter)
-      : "all";
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
 
   const requestedPage = Math.max(1, Number.parseInt(pageQuery, 10) || 1);
 
@@ -56,6 +52,21 @@ export function AdminViewRatePage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ kind: ToastKind; message: string } | null>(null);
   const errorToastSentRef = useRef(false);
+
+  /** One-time: hydrate legacy `?period=` into state, then remove it from the URL. */
+  useEffect(() => {
+    const raw = searchParams.get("period");
+    if (!raw) return;
+    const normalized = raw.trim().toLowerCase();
+    if (PERIOD_FILTERS.includes(normalized as PeriodFilter)) {
+      setPeriodFilter(normalized as PeriodFilter);
+    }
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("period");
+    const next = params.toString();
+    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate legacy `period` once on mount
+  }, []);
 
   useEffect(() => {
     if (loading) {
@@ -105,6 +116,15 @@ export function AdminViewRatePage() {
     };
   }, [requestedPage, pageSize, periodFilter]);
 
+  // If there is no data, drop the period filter (keep UI simple).
+  useEffect(() => {
+    if (loading || loadError) return;
+    if (totalCount !== 0) return;
+    if (periodFilter !== "all") {
+      setPeriodFilter("all");
+    }
+  }, [loadError, loading, periodFilter, totalCount]);
+
   const tSearch = useTranslations("searchResult");
 
   const updateQueryParams = useCallback(
@@ -114,6 +134,8 @@ export function AdminViewRatePage() {
         if (!value || value === "all") params.delete(key);
         else params.set(key, value);
       });
+      // Never persist the period filter in the URL.
+      params.delete("period");
       if (!Object.prototype.hasOwnProperty.call(updates, "page")) params.delete("page");
       const query = params.toString();
       router.push(query ? `${pathname}?${query}` : pathname);
@@ -199,21 +221,27 @@ export function AdminViewRatePage() {
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 px-1">
-        <div className="flex items-center gap-2 text-xs font-medium text-charcoal/80">
-          <Filter className="h-4 w-4" />
-          {t("filter")}
-        </div>
         <div className="hidden h-4 w-px bg-subtle sm:block" />
-        <div className="flex flex-1 flex-col sm:flex-row items-center gap-2">
-          <Dropdown
-            buttonId="admin-viewrate-period-filter"
-            label={t("filterPeriodLabel")}
-            value={periodFilter}
-            onChange={(val) => updateQueryParams({ period: val })}
-            options={periodOptions}
-            align="left"
-          />
-        </div>
+        {!loading && !loadError && totalCount === 0 ? null : (
+          <div className="flex flex-1 flex-col sm:flex-row sm:justify-end items-center gap-2">
+            <Dropdown
+              buttonId="admin-viewrate-period-filter"
+              label={t("filterPeriodLabel")}
+              value={periodFilter}
+              onChange={(val) => {
+                const normalized = String(val ?? "").trim().toLowerCase();
+                const next: PeriodFilter = PERIOD_FILTERS.includes(normalized as PeriodFilter)
+                  ? (normalized as PeriodFilter)
+                  : "all";
+                setPeriodFilter(next);
+                // Reset to page 1 without storing period in URL.
+                updateQueryParams({ page: "1" });
+              }}
+              options={periodOptions}
+              align="right"
+            />
+          </div>
+        )}
       </div>
 
       <article className="rounded-2xl border border-subtle bg-white p-4 shadow-sm md:p-5">

@@ -1,5 +1,10 @@
-import { DealsPage } from "@/components/deal/DealsPage";
+import { redirect } from "next/navigation";
 
-export default function AgentDealsRoute() {
-  return <DealsPage />;
+export default async function AgentDealsRoute({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  redirect(`/${locale}/under-development`);
 }

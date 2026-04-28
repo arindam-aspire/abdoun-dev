@@ -70,6 +70,11 @@ export interface AgentDashboardData {
   propertyViewsChangePercent: number | null;
   inquiryTrendLast30Days: number[];
   recentActivity: { text: string; time: string; tone: "neutral" | "success" | "warning" | "info" }[];
+  /**
+   * Property performance rows for the dashboard chart.
+   * Provided by `GET /agents/dashboard/summary` as `propertyPerformance` (backend key).
+   */
+  propertyPerformance?: PerformanceComparisonItem[];
 }
 
 export interface InquiryTrendDay {

@@ -1,11 +1,7 @@
-import { useEffect, useState } from "react";
 import type { AgentDashboardData, PerformanceComparisonItem } from "@/types/agent";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
-import {
-  fetchAgentDashboardData,
-  fetchAgentPerformanceComparison,
-} from "@/features/admin-agents/agent-dashboard/api/agentDashboard.api";
-import { setAgentDashboardCache } from "@/features/admin-agents/agent-dashboard/agentDashboardSummarySlice";
+import { useEffect } from "react";
+import { fetchAgentDashboardSummary } from "@/features/admin-agents/agent-dashboard/agentDashboardSummarySlice";
 import {
   selectAgentDashboardCachedData,
   selectAgentDashboardCachedPerformance,
@@ -26,13 +22,8 @@ export function useAgentDashboard(): UseAgentDashboardState {
   const dashboardCacheAuthUserId = useAppSelector(
     (s) => s.agentDashboardSummary.dashboardCacheAuthUserId,
   );
-
-  const [data, setData] = useState<AgentDashboardData | null>(cachedDashboard);
-  const [performanceData, setPerformanceData] = useState<PerformanceComparisonItem[]>(
-    cachedPerformance ?? [],
-  );
-  const [loading, setLoading] = useState(() => cachedDashboard == null);
-  const [error, setError] = useState<unknown>(null);
+  const dashboardStatus = useAppSelector((s) => s.agentDashboardSummary.dashboardStatus);
+  const dashboardError = useAppSelector((s) => s.agentDashboardSummary.dashboardError);
 
   useEffect(() => {
     const cacheMatchesSession =
@@ -40,58 +31,20 @@ export function useAgentDashboard(): UseAgentDashboardState {
       authUserId &&
       dashboardCacheAuthUserId === authUserId;
 
-    if (cacheMatchesSession) {
-      setData(cachedDashboard);
-      setPerformanceData(cachedPerformance ?? []);
-      setLoading(false);
-      setError(null);
-      return;
-    }
+    if (cacheMatchesSession) return;
+    if (!authUserId) return;
+    void dispatch(fetchAgentDashboardSummary());
+  }, [authUserId, cachedDashboard, dashboardCacheAuthUserId, dispatch]);
 
-    let cancelled = false;
+  const cacheMatchesSession =
+    !!cachedDashboard && !!authUserId && dashboardCacheAuthUserId === authUserId;
+  const loading = !cacheMatchesSession && (dashboardStatus === "loading" || dashboardStatus === "idle");
+  const error = dashboardStatus === "failed" ? dashboardError ?? "Failed to load dashboard." : null;
 
-    async function run() {
-      setLoading(true);
-      setError(null);
-      try {
-        const [dashboard, performance] = await Promise.all([
-          fetchAgentDashboardData(),
-          fetchAgentPerformanceComparison(),
-        ]);
-
-        if (cancelled) return;
-        setData(dashboard);
-        setPerformanceData(performance);
-        if (authUserId) {
-          dispatch(
-            setAgentDashboardCache({
-              dashboard,
-              performance,
-              authUserId,
-            }),
-          );
-        }
-      } catch (e) {
-        if (cancelled) return;
-        setError(e);
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    authUserId,
-    cachedDashboard,
-    cachedPerformance,
-    dashboardCacheAuthUserId,
-    dispatch,
-  ]);
-
-  return { data, performanceData, loading, error };
+  return {
+    data: cacheMatchesSession ? cachedDashboard : cachedDashboard ?? null,
+    performanceData: cacheMatchesSession ? cachedPerformance ?? [] : cachedPerformance ?? [],
+    loading,
+    error,
+  };
 }

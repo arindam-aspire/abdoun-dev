@@ -8,6 +8,7 @@ import {
   ConfirmDialog,
   CustomTable,
   Dropdown,
+  IconButton,
   Input,
   Skeleton,
   sortRowsByConfig,
@@ -26,6 +27,7 @@ import {
   AGENT_STATUS_FILTER_OPTIONS,
   getAgentStatusClass,
   getAgentStatusLabel,
+  normalizeAgentStatus,
   type AgentStatusFilterValue,
 } from "@/constants/agentStatus";
 import {
@@ -40,12 +42,12 @@ import type { AppLocale } from "@/i18n/routing";
 import { getApiErrorMessage } from "@/lib/http";
 import { getProfilePhoneReadonlyDisplay } from "@/lib/phone";
 import { selectCurrentUser } from "@/store/selectors";
-import { Check, Copy, Mail, UserPlus2, Users } from "lucide-react";
+import { Check, Copy, Mail, UserPlus2, Users, X } from "lucide-react";
 import { isValidPhoneNumber } from "libphonenumber-js";
 import { useLocale } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type * as React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 function formatDateTime(value: string): string {
   const date = new Date(value);
@@ -156,13 +158,18 @@ export function AdminAgentsPage() {
   const [manualServiceArea, setManualServiceArea] = useState<string[]>([]);
   const [manualOnboarding, setManualOnboarding] = useState(false);
   const [isOnboardModalOpen, setIsOnboardModalOpen] = useState(false);
-  const [onboardStep, setOnboardStep] = useState<"choice" | "email" | "manual">("choice");
+  const [onboardStep, setOnboardStep] = useState<"choice" | "email" | "manual">(
+    "choice",
+  );
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [generatedInviteLink, setGeneratedInviteLink] = useState("");
   const [copied, setCopied] = useState(false);
   const [statusFilter, setStatusFilter] =
     useState<AgentStatusFilterValue>("all");
-  const [query, setQuery] = useState<string>(searchParams.get("q") ?? "");
+  /** Search is local-only — not written to the URL (matches AdminUsersPage). */
+  const [query, setQuery] = useState<string>("");
+  /** Period is local-only — sent to API but not written to the URL (matches AdminUsersPage). */
+  const [periodFilter, setPeriodFilter] = useState<"" | "weekly" | "monthly" | "yearly">("");
   const [toast, setToast] = useState<{
     kind: "info" | "error" | "success";
     message: string;
@@ -173,25 +180,51 @@ export function AdminAgentsPage() {
 
   const PAGE_PARAM = "page";
   const PAGE_SIZE_PARAM = "pageSize";
+  const STATUS_PARAM = "status";
+
+  const resetToFirstPageIfNeeded = useCallback(() => {
+    const raw = searchParams.get(PAGE_PARAM);
+    const n = Number.parseInt(raw ?? "1", 10);
+    const current = Number.isFinite(n) && n >= 1 ? n : 1;
+    if (current <= 1) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(PAGE_PARAM);
+    const next = params.toString();
+    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+  }, [pathname, router, searchParams]);
+
+  const onPeriodChange = (value: string) => {
+    const next =
+      value === "weekly" || value === "monthly" || value === "yearly" ? value : "";
+    setPeriodFilter(next);
+    resetToFirstPageIfNeeded();
+  };
 
   const pageSize = useMemo(() => {
     const raw = searchParams.get(PAGE_SIZE_PARAM);
     const n = Number.parseInt(raw ?? String(DEFAULT_PAGINATION_PAGE_SIZE), 10);
-    return PAGINATION_PAGE_SIZES.includes(n as (typeof PAGINATION_PAGE_SIZES)[number])
+    return PAGINATION_PAGE_SIZES.includes(
+      n as (typeof PAGINATION_PAGE_SIZES)[number],
+    )
       ? n
       : DEFAULT_PAGINATION_PAGE_SIZE;
   }, [searchParams]);
-  const [fullNameIdentifierTouched, setFullNameIdentifierTouched] = useState(false);
+  const [fullNameIdentifierTouched, setFullNameIdentifierTouched] =
+    useState(false);
   const [emailIdentifierTouched, setEmailIdentifierTouched] = useState(false);
   const [phoneIdentifierTouched, setPhoneIdentifierTouched] = useState(false);
-  const [serviceAreaIdentifierTouched, setServiceAreaIdentifierTouched] = useState(false);
+  const [serviceAreaIdentifierTouched, setServiceAreaIdentifierTouched] =
+    useState(false);
   const [fullNameError, setFullNameError] = useState<string | undefined>();
   const [emailError, setEmailError] = useState<string | undefined>();
   const [phoneError, setPhoneError] = useState<string | undefined>();
-  const [serviceAreaError, setServiceAreaError] = useState<string | undefined>();
+  const [serviceAreaError, setServiceAreaError] = useState<
+    string | undefined
+  >();
 
   const applyStatusFilter = (next: AgentStatusFilterValue) => {
-    const target = next === statusFilter ? ("all" as AgentStatusFilterValue) : next;
+    const target =
+      next === statusFilter ? ("all" as AgentStatusFilterValue) : next;
     setStatusFilter(target);
     const params = new URLSearchParams(searchParams.toString());
     params.set(PAGE_PARAM, "1");
@@ -203,21 +236,46 @@ export function AdminAgentsPage() {
     void dispatch(fetchAdminAgentsSummary());
   }, [dispatch]);
 
+  /** One-time: hydrate `?status=` into local filter, then remove from URL. */
+  useLayoutEffect(() => {
+    const raw = searchParams.get(STATUS_PARAM);
+    if (!raw) return;
+
+    const normalized =
+      raw.trim().toLowerCase() === "all"
+        ? ("all" as const)
+        : (normalizeAgentStatus(raw) as AgentStatusFilterValue);
+
+    setStatusFilter(normalized);
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(STATUS_PARAM);
+    params.delete(PAGE_PARAM);
+    const next = params.toString();
+    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate `status` once on mount
+  }, []);
+
   useEffect(() => {
     const pageParam = searchParams.get(PAGE_PARAM);
     const pageNumber = Number.parseInt(pageParam ?? "1", 10);
-    const page = Number.isFinite(pageNumber) && pageNumber >= 1 ? pageNumber : 1;
+    const page =
+      Number.isFinite(pageNumber) && pageNumber >= 1 ? pageNumber : 1;
     const isAllStatus = statusFilter === "all";
+    const search = query.trim() || undefined;
+    const period = periodFilter || undefined;
     void dispatch(
       fetchAdminAgents({
         page,
-        limit: pageSize,
+        pageSize,
         sort_by: "invited_at",
         order: "desc",
         status: isAllStatus ? undefined : statusFilter,
+        search,
+        period,
       }),
     );
-  }, [dispatch, pageSize, searchParams, statusFilter]);
+  }, [dispatch, pageSize, searchParams, statusFilter, query, periodFilter]);
 
   useEffect(() => {
     return () => {
@@ -239,7 +297,8 @@ export function AdminAgentsPage() {
   }, [inviteError]);
 
   useEffect(() => {
-    if (inviteSuccessMessage) setToast({ kind: "success", message: inviteSuccessMessage });
+    if (inviteSuccessMessage)
+      setToast({ kind: "success", message: inviteSuccessMessage });
   }, [inviteSuccessMessage]);
 
   useEffect(() => {
@@ -258,30 +317,15 @@ export function AdminAgentsPage() {
   const declinedCount = summary?.declined ?? 0;
   const summaryStatsLoading = summaryStatus === "loading" && !summary;
 
-  /** Server page slice + search/status filters; sorting applied separately (client, current page). */
+  /** Server page slice + optional local status filter; sorting applied separately (client, current page). */
   const filteredRowCandidates = useMemo(() => {
     const statusFiltered =
       statusFilter === "all"
         ? [...currentItems]
         : currentItems.filter((a) => a.status === statusFilter);
 
-    const q = query.trim().toLowerCase();
-    if (!q) return statusFiltered;
-    return statusFiltered.filter((agent) => {
-      const haystack = [
-        agent.fullName,
-        agent.email,
-        agent.phone,
-        agent.city,
-        agent.invitedBy,
-        agent.status,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(q);
-    });
-  }, [currentItems, query, statusFilter]);
+    return statusFiltered;
+  }, [currentItems, statusFilter]);
 
   const tableRows = useMemo(
     () =>
@@ -308,18 +352,9 @@ export function AdminAgentsPage() {
     [filteredRowCandidates, sortConfig],
   );
 
-  useEffect(() => {
-    setQuery(searchParams.get("q") ?? "");
-  }, [searchParams]);
-
-  const updateQueryParam = (value: string) => {
+  const onSearchChange = (value: string) => {
     setQuery(value);
-    const params = new URLSearchParams(searchParams.toString());
-    if (!value.trim()) params.delete("q");
-    else params.set("q", value);
-    params.set(PAGE_PARAM, "1");
-    const next = params.toString();
-    router.push(next ? `${pathname}?${next}` : pathname, { scroll: false });
+    resetToFirstPageIfNeeded();
   };
 
   const currentPage = useMemo(() => {
@@ -383,13 +418,17 @@ export function AdminAgentsPage() {
   const getEmailError = (value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return "Email Id is required";
-    return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) ? "Please enter valid Email Id" : undefined;
+    return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)
+      ? "Please enter valid Email Id"
+      : undefined;
   };
 
   const getPhoneError = (value: string | undefined) => {
     const trimmed = value?.trim() ?? "";
     if (!trimmed) return "Phone Number is required";
-    return !isValidPhoneNumber(trimmed) ? "Please enter valid Phone Number" : undefined;
+    return !isValidPhoneNumber(trimmed)
+      ? "Please enter valid Phone Number"
+      : undefined;
   };
 
   const getServiceAreaError = (value: string[]) => {
@@ -447,7 +486,9 @@ export function AdminAgentsPage() {
     setServiceAreaError(getServiceAreaError(manualServiceArea));
   };
 
-  const onManualOnboard = async (event: React.SyntheticEvent<HTMLFormElement>) => {
+  const onManualOnboard = async (
+    event: React.SyntheticEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
     setFullNameIdentifierTouched(true);
     setEmailIdentifierTouched(true);
@@ -556,7 +597,11 @@ export function AdminAgentsPage() {
         headerClassName: "text-right",
         cellClassName: "text-right",
         render: (agent) => (
-          <AdminAgentActionsMenu agent={agent} adminId={adminId} onToast={(t) => setToast(t)} />
+          <AdminAgentActionsMenu
+            agent={agent}
+            adminId={adminId}
+            onToast={(t) => setToast(t)}
+          />
         ),
       },
     ],
@@ -567,11 +612,19 @@ export function AdminAgentsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 px-1 md:flex-row md:items-start md:justify-between">
         <div>
-          <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">Agents</h1>
-          <p className="mt-1 text-size-sm text-charcoal/70">Manage your team and invite new agents by email.</p>
+          <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
+            Agents
+          </h1>
+          <p className="mt-1 text-size-sm text-charcoal/70">
+            Manage your team and invite new agents by email.
+          </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button type="button" variant="primary" onClick={() => setIsOnboardModalOpen(true)}>
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => setIsOnboardModalOpen(true)}
+          >
             <UserPlus2 className="h-4 w-4" />
             Onboard agent
           </Button>
@@ -610,7 +663,9 @@ export function AdminAgentsPage() {
               >
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-secondary" />
-                  <p className="text-sm fw-semibold text-charcoal">Invite by email</p>
+                  <p className="text-sm fw-semibold text-charcoal">
+                    Invite by email
+                  </p>
                 </div>
                 <p className="mt-1 text-xs text-charcoal/70">
                   Send an invitation link to the agent’s email.
@@ -623,7 +678,9 @@ export function AdminAgentsPage() {
               >
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-secondary" />
-                  <p className="text-sm fw-semibold text-charcoal">Manual onboarding</p>
+                  <p className="text-sm fw-semibold text-charcoal">
+                    Manual onboarding
+                  </p>
                 </div>
                 <p className="mt-1 text-xs text-charcoal/70">
                   Create an agent account directly by entering details.
@@ -679,7 +736,8 @@ export function AdminAgentsPage() {
               onSubmit={onManualOnboard}
               onFullNameChange={(val) => {
                 setManualFullName(val);
-                if (fullNameIdentifierTouched) setFullNameError(getFullNameError(val));
+                if (fullNameIdentifierTouched)
+                  setFullNameError(getFullNameError(val));
               }}
               onEmailChange={(val) => {
                 setManualEmail(val);
@@ -691,7 +749,8 @@ export function AdminAgentsPage() {
               }}
               onServiceAreaChange={(val) => {
                 setManualServiceArea(val);
-                if (serviceAreaIdentifierTouched) setServiceAreaError(getServiceAreaError(val));
+                if (serviceAreaIdentifierTouched)
+                  setServiceAreaError(getServiceAreaError(val));
               }}
             />
           ) : null}
@@ -711,16 +770,30 @@ export function AdminAgentsPage() {
               <div className="w-full md:w-64 lg:w-80">
                 <Input
                   value={query}
-                  onChange={(event) => updateQueryParam(event.target.value)}
+                  onChange={(event) => onSearchChange(event.target.value)}
                   placeholder="Search agents..."
                   className="h-10 w-full rounded-lg"
+                  rightAdornment={
+                    query.trim() ? (
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Clear search"
+                        className="text-charcoal/55 hover:bg-charcoal/10 hover:text-charcoal"
+                        onClick={() => onSearchChange("")}
+                      >
+                        <X />
+                      </IconButton>
+                    ) : undefined
+                  }
                 />
               </div>
               <div className="flex w-full items-center gap-2 md:w-auto">
-                <span className="text-size-xs text-charcoal/70">Status</span>
                 <Dropdown
                   buttonId="agent-status-filter"
                   label="All"
+                  buttonClassName="h-10 rounded-lg border-subtle px-3 text-size-xs text-charcoal shadow-sm focus-visible:ring-primary/40 justify-between"
                   value={statusFilter}
                   onChange={(value) => {
                     const next = value as AgentStatusFilterValue;
@@ -733,24 +806,27 @@ export function AdminAgentsPage() {
                   }))}
                 />
               </div>
+              <div className="flex w-full items-center gap-2 md:w-auto">
+                <Dropdown
+                  buttonId="admin-agents-period-filter"
+                  label="All"
+                  value={periodFilter}
+                  onChange={(val) => onPeriodChange(val)}
+                  align="right"
+                  menuClassName="w-44"
+                  buttonClassName="h-10 rounded-lg border-subtle bg-surface px-3 text-size-xs text-charcoal shadow-sm focus-visible:ring-primary/40 justify-between"
+                  options={[
+                    { value: "", label: "All" },
+                    { value: "weekly", label: "Weekly" },
+                    { value: "monthly", label: "Monthly" },
+                    { value: "yearly", label: "Yearly" },
+                  ]}
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
-            <div className="text-sm text-charcoal/70">
-              {loading ? (
-                <Skeleton className="inline-block h-4 w-44" aria-label="Loading list metadata" />
-              ) : error ? (
-                <span className="text-charcoal/50">Could not load totals for this list.</span>
-              ) : (
-                <>
-                  Page {safePage} of {totalPages} · Total {totalItems}
-                </>
-              )}
-            </div>
-          </div>
-
           <CustomTable<AdminAgent>
             columns={agentTableColumns}
             data={tableRows}
@@ -765,7 +841,8 @@ export function AdminAgentsPage() {
             emptyMessage={emptyListMessage}
             minTableWidth="900px"
             pagination={{
-              showWhen: !loading && !error && totalPages > 1 && tableRows.length > 0,
+              showWhen:
+                !loading && !error && totalPages > 1 && tableRows.length > 0,
               currentPage: safePage,
               totalPages,
               totalItems,
@@ -795,10 +872,17 @@ export function AdminAgentsPage() {
         onConfirm={async () => {}}
       >
         <div className="mt-4 rounded-lg border border-subtle bg-surface px-3 py-2">
-          <p className="break-all text-size-sm text-charcoal">{generatedInviteLink}</p>
+          <p className="break-all text-size-sm text-charcoal">
+            {generatedInviteLink}
+          </p>
         </div>
         <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-          <Button type="button" variant="outline" size="md" onClick={() => setIsInviteModalOpen(false)}>
+          <Button
+            type="button"
+            variant="outline"
+            size="md"
+            onClick={() => setIsInviteModalOpen(false)}
+          >
             Close
           </Button>
           <a
@@ -810,15 +894,29 @@ export function AdminAgentsPage() {
             <Mail className="h-4 w-4" />
             Send via email
           </a>
-          <Button type="button" variant="outline" size="md" onClick={() => void onCopyLink()}>
-            {copied ? <Check className="h-4 w-4 text-emerald-700" /> : <Copy className="h-4 w-4" />}
+          <Button
+            type="button"
+            variant="outline"
+            size="md"
+            onClick={() => void onCopyLink()}
+          >
+            {copied ? (
+              <Check className="h-4 w-4 text-emerald-700" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
             {copied ? "Copied" : "Copy link"}
           </Button>
         </div>
       </ConfirmDialog>
 
-      {toast ? <Toast kind={toast.kind} message={toast.message} onClose={() => setToast(null)} /> : null}
+      {toast ? (
+        <Toast
+          kind={toast.kind}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      ) : null}
     </div>
   );
 }
-

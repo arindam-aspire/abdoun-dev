@@ -9,14 +9,9 @@ import authReducer from "@/features/auth/authSlice";
 import { useAgentDashboard } from "@/features/admin-agents/agent-dashboard/hooks/useAgentDashboard";
 
 const fetchAgentDashboardDataMock = jest.fn<Promise<AgentDashboardData>, []>();
-const fetchAgentPerformanceComparisonMock = jest.fn<
-  Promise<PerformanceComparisonItem[]>,
-  []
->();
 
 jest.mock("@/features/admin-agents/agent-dashboard/api/agentDashboard.api", () => ({
   fetchAgentDashboardData: () => fetchAgentDashboardDataMock(),
-  fetchAgentPerformanceComparison: () => fetchAgentPerformanceComparisonMock(),
 }));
 
 function createHookStore(
@@ -85,15 +80,13 @@ function createReduxWrapper(store: ReturnType<typeof createHookStore>) {
 describe("useAgentDashboard", () => {
   beforeEach(() => {
     fetchAgentDashboardDataMock.mockReset();
-    fetchAgentPerformanceComparisonMock.mockReset();
   });
 
   it("returns data once loaded", async () => {
     const dashboard = createDashboardFixture();
     const perf: PerformanceComparisonItem[] = [{ label: "A", value: 1 }];
 
-    fetchAgentDashboardDataMock.mockResolvedValueOnce(dashboard);
-    fetchAgentPerformanceComparisonMock.mockResolvedValueOnce(perf);
+    fetchAgentDashboardDataMock.mockResolvedValueOnce({ ...dashboard, propertyPerformance: perf });
 
     const store = createHookStore();
     const wrapper = createReduxWrapper(store);
@@ -125,7 +118,6 @@ describe("useAgentDashboard", () => {
     const { result } = renderHook(() => useAgentDashboard(), { wrapper });
 
     expect(fetchAgentDashboardDataMock).not.toHaveBeenCalled();
-    expect(fetchAgentPerformanceComparisonMock).not.toHaveBeenCalled();
     expect(result.current.loading).toBe(false);
     expect(result.current.data).toEqual(dashboard);
     expect(result.current.performanceData).toEqual(perf);
@@ -133,7 +125,6 @@ describe("useAgentDashboard", () => {
 
   it("sets error when loading fails", async () => {
     fetchAgentDashboardDataMock.mockRejectedValueOnce(new Error("boom"));
-    fetchAgentPerformanceComparisonMock.mockResolvedValueOnce([]);
 
     const store = createHookStore();
     const wrapper = createReduxWrapper(store);

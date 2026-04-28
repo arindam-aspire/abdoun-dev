@@ -1,8 +1,5 @@
 import { createHttpClients, getApiErrorMessage } from "@/lib/http";
-import type {
-  AdminDashboardData,
-  PerformanceComparisonItem,
-} from "@/services/adminDashboardMockService";
+import type { AdminDashboardData, PerformanceComparisonItem } from "@/types/adminDashboard";
 import type { StandardApiResponse } from "@/services/userService";
 
 const { authApi } = createHttpClients();
@@ -42,9 +39,34 @@ const toOptionalLabelString = (value: unknown): string => {
   return "";
 };
 
+type AdminDashboardActivityTone = "neutral" | "success" | "warning";
+
+type AdminDashboardApiActivity = {
+  text?: unknown;
+  time?: unknown;
+  tone?: unknown;
+};
+
+function toActivityTone(tone: unknown): AdminDashboardActivityTone {
+  if (tone === "success" || tone === "warning" || tone === "neutral") return tone;
+  return "neutral";
+}
+
+function toRecentActivity(activity: unknown): AdminDashboardData["recentActivity"] {
+  if (!Array.isArray(activity)) return [];
+  return activity.map((item) => {
+    const row = (item ?? {}) as AdminDashboardApiActivity;
+    return {
+      text: typeof row.text === "string" ? row.text : String(row.text ?? ""),
+      time: typeof row.time === "string" ? row.time : String(row.time ?? ""),
+      tone: toActivityTone(row.tone),
+    };
+  });
+}
+
 /**
- * Maps `propertyPerformanceSeries` rows from `GET /admin/dashboard/summary`
- * (camelCase or snake_case keys; label vs title; value vs views).
+ * Maps `propertyPerformance` rows from `GET /admin/dashboard/summary`
+ * (supports older key variants; label vs title; value vs views).
  */
 const toPropertyPerformanceSeries = (value: unknown): PerformanceComparisonItem[] => {
   if (!Array.isArray(value)) {
@@ -76,7 +98,7 @@ const toPropertyPerformanceSeries = (value: unknown): PerformanceComparisonItem[
   });
 };
 
-/** Normalizes `data` from `GET /admin/dashboard/property-performance` (array or common wrapper keys). */
+/** Normalizes `data` from `GET /admin/property-performance` (array or common wrapper keys). */
 function parsePropertyPerformanceApiData(data: unknown): PerformanceComparisonItem[] {
   if (Array.isArray(data)) {
     return toPropertyPerformanceSeries(data);
@@ -162,11 +184,14 @@ function pickPropertyPerformanceSeriesRaw(
   payload: AdminDashboardSummaryApiData,
 ): unknown {
   const p = payload as Record<string, unknown>;
+  // New backend key (preferred if present).
+  const direct = p.propertyPerformance;
+  if (Array.isArray(direct)) return direct;
   const camel = p.propertyPerformanceSeries;
   const snake = p.property_performance_series;
   if (Array.isArray(camel)) return camel;
   if (Array.isArray(snake)) return snake;
-  return camel ?? snake;
+  return direct ?? camel ?? snake;
 }
 
 const toAdminDashboardData = (payload: AdminDashboardSummaryApiData): AdminDashboardData => {
@@ -174,11 +199,23 @@ const toAdminDashboardData = (payload: AdminDashboardSummaryApiData): AdminDashb
   const month =
     typeof monthRaw === "string" && /^\d{4}-\d{2}$/.test(monthRaw) ? monthRaw : currentLocalMonth();
 
+  const usersThisMonthRaw =
+    payload.usersThisMonth ??
+    payload.registerUsersThisMonth ??
+    payload.register_users_this_month ??
+    payload.register_users_this_month_count;
+
+  const usersMoMDeltaRaw =
+    payload.usersMoMDelta ??
+    payload.registerUsersMoMDelta ??
+    payload.register_users_mom_delta ??
+    payload.register_users_m_o_m_delta;
+
   return {
     month,
-    usersThisMonth: toFiniteNumber(payload.usersThisMonth),
-    usersMoMDelta: toFiniteNumber(payload.usersMoMDelta),
-    agentsThisMonth: toFiniteNumber(payload.agentsThisMonth),
+    usersThisMonth: toFiniteNumber(usersThisMonthRaw),
+    usersMoMDelta: toFiniteNumber(usersMoMDeltaRaw),
+    agentsThisMonth: toFiniteNumber(payload.agentsThisMonth ?? payload.totalAgentCount),
     agentsMoMDelta: toFiniteNumber(payload.agentsMoMDelta),
     pendingApprovals: toFiniteNumber(payload.pendingApprovals),
     pendingApprovalsToday: toFiniteNumber(payload.pendingApprovalsToday),
@@ -193,15 +230,14 @@ const toAdminDashboardData = (payload: AdminDashboardSummaryApiData): AdminDashb
     leadSourceLabels: toStringArray(payload.leadSourceLabels),
     leadSourceValues: toNumberSeries(payload.leadSourceValues),
     monthLabels: toStringArray(payload.monthLabels),
-    propertyPerformanceSeries: toPropertyPerformanceSeries(
-      pickPropertyPerformanceSeriesRaw(payload),
-    ),
+    propertyPerformance: toPropertyPerformanceSeries(pickPropertyPerformanceSeriesRaw(payload)),
+    recentActivity: toRecentActivity((payload as Record<string, unknown>).recentActivity),
   };
 };
 
 /**
  * Property performance list — call **only** from `AdminViewRatePage` (admin `/admin-dashboard/view-rate` route).
- * `GET /admin/dashboard/property-performance?page=&pageSize=&limit=`
+ * `GET /admin/property-performance?page=&pageSize=&limit=`
  * (`limit` = `all` | `weekly` | `monthly` | `yearly`).
  */
 export async function fetchAdminPropertyPerformance(
@@ -212,12 +248,12 @@ export async function fetchAdminPropertyPerformance(
   const period = params.period ?? "all";
   try {
     const response = await authApi.get<StandardApiResponse<unknown>>(
-      "/admin/dashboard/property-performance",
+      "/admin/property-performance",
       {
         params: {
           page,
           pageSize,
-          limit: period,
+          period: period,
         },
       },
     );

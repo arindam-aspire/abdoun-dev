@@ -5,7 +5,7 @@ import {
   type AdminLeaderboardData,
 } from "@/features/admin-agents/admin-dashboard/api/adminDashboard.api";
 import { getApiErrorMessage } from "@/lib/http";
-import type { AdminDashboardData } from "@/services/adminDashboardMockService";
+import type { AdminDashboardData } from "@/types/adminDashboard";
 
 export type AdminDashboardSummaryStatus = "idle" | "loading" | "succeeded" | "failed";
 export type AdminLeaderboardStatus = "idle" | "loading" | "succeeded" | "failed";

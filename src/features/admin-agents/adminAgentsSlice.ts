@@ -19,6 +19,59 @@ import { normalizeAgentStatus } from "@/constants/agentStatus";
 /** Thunk argument: same as list API params, plus optional `force` to bypass session cache. */
 export type FetchAdminAgentsArg = ListAdminAgentsParams & { force?: boolean };
 
+function toPositiveInt(value: unknown): number | undefined {
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return undefined;
+    const n = Math.floor(value);
+    return n >= 1 ? n : undefined;
+  }
+  if (typeof value === "string") {
+    const n = Number.parseInt(value, 10);
+    return Number.isFinite(n) && n >= 1 ? n : undefined;
+  }
+  return undefined;
+}
+
+function normalizeSortBy(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  if (trimmed === "invitedAt") return "invited_at";
+  if (trimmed === "reviewedAt") return "reviewed_at";
+  if (trimmed === "invited_at" || trimmed === "reviewed_at" || trimmed === "created_at") {
+    return trimmed;
+  }
+  return undefined;
+}
+
+function normalizeSortOrder(raw: unknown): "asc" | "desc" | undefined {
+  if (typeof raw !== "string") return undefined;
+  const v = raw.trim().toLowerCase();
+  return v === "asc" || v === "desc" ? v : undefined;
+}
+
+function normalizePeriod(raw: unknown): ListAdminAgentsParams["period"] | undefined {
+  if (typeof raw !== "string") return undefined;
+  const v = raw.trim().toLowerCase();
+  return v === "weekly" || v === "monthly" || v === "yearly"
+    ? (v as ListAdminAgentsParams["period"])
+    : undefined;
+}
+
+function normalizeListParamsForCache(
+  params: ListAdminAgentsParams,
+): Required<Pick<ListAdminAgentsParams, "page" | "limit" | "sort_by" | "order">> &
+  Pick<ListAdminAgentsParams, "status" | "search" | "period"> {
+  const page = toPositiveInt(params.page) ?? 1;
+  const limit = toPositiveInt(params.limit ?? params.pageSize) ?? 20;
+  const sort_by = normalizeSortBy(params.sort_by ?? params.sortBy) ?? "invited_at";
+  const order = normalizeSortOrder(params.order ?? params.sortOrder) ?? "desc";
+  const status = params.status?.trim() ? params.status.trim() : "";
+  const search = params.search?.trim() ?? "";
+  const period = normalizePeriod(params.period);
+  return { page, limit, sort_by, order, status, search, period };
+}
+
 function listParamsFromFetchArg(arg: FetchAdminAgentsArg | undefined): ListAdminAgentsParams {
   if (!arg) return {};
   const { force: _force, ...rest } = arg;
@@ -27,12 +80,9 @@ function listParamsFromFetchArg(arg: FetchAdminAgentsArg | undefined): ListAdmin
 
 /** Stable key for `GET /agents` query (must match `listAdminAgents` defaults). */
 export function adminAgentsListCacheKey(params: ListAdminAgentsParams): string {
-  const page = params.page ?? 1;
-  const limit = params.limit ?? 20;
-  const sort_by = params.sort_by ?? "invited_at";
-  const order = params.order ?? "desc";
-  const status = params.status ?? "";
-  return `${page}|${limit}|${sort_by}|${order}|${status}`;
+  const { page, limit, sort_by, order, status, search, period } =
+    normalizeListParamsForCache(params);
+  return `${page}|${limit}|${sort_by}|${order}|${status}|${search}|${period ?? ""}`;
 }
 
 type AdminAgentsState = {

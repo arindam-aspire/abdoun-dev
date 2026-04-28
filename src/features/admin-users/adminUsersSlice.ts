@@ -31,6 +31,7 @@ export function normalizeAdminUsersListParams(
     search: rest.search?.trim() ? rest.search.trim() : undefined,
     is_active: rest.is_active,
     role_name: rest.role_name,
+    period: rest.period,
   };
 }
 
@@ -43,6 +44,7 @@ export function adminUsersListCacheKey(params: ListUsersParams): string {
     params.search ?? "",
     params.is_active === true ? "1" : params.is_active === false ? "0" : "",
     params.role_name ?? "",
+    params.period ?? "",
   ].join("|");
 }
 

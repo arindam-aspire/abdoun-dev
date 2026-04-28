@@ -55,15 +55,6 @@ export function AgentTrendsPage() {
 
     return (
       <div className="space-y-6">
-        <div className="flex flex-wrap items-center gap-4">
-          <Link
-            href={`/${locale}/agent-dashboard`}
-            className="inline-flex items-center gap-2 text-sm font-medium text-charcoal/80 hover:text-charcoal"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {t("backToDashboard")}
-          </Link>
-        </div>
         <div className="px-1">
           <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
             {t("detailedTrendsTitle")}
@@ -104,7 +95,7 @@ export function AgentTrendsPage() {
           href={`/${locale}/agent-dashboard`}
           className="inline-flex items-center gap-2 text-sm font-medium text-charcoal/80 hover:text-charcoal"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" aria-hidden />
           {t("backToDashboard")}
         </Link>
       </div>

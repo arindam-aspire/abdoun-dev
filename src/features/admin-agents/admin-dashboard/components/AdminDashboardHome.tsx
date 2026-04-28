@@ -48,70 +48,86 @@ type KpiCard = {
   tone: "neutral" | "info" | "warning" | "success";
 };
 
-type QueueItemStatus = "pending" | "review" | "approved";
-
-type QueueItem = {
-  ref: string;
-  title: string;
-  submittedBy: string;
-  city: string;
-  submittedAt: string;
-  status: QueueItemStatus;
-};
-
-type LeadSource = {
-  source: string;
-  leads: number;
-  conversionRate: string;
-  share: number;
-};
-
 type ActivityItem = {
   text: string;
   time: string;
   tone: "neutral" | "success" | "warning";
 };
 
-/* ------------------------------------------------------------------ */
-/*  Static mock data (non-KPI sections)                                */
-/* ------------------------------------------------------------------ */
-const RECENT_ACTIVITY: ActivityItem[] = [
-  {
-    text: "Agent profile approved for Sami Haddad.",
-    time: "2 min ago",
-    tone: "success",
-  },
-  {
-    text: "Property PROP-4832 flagged for missing floor plan.",
-    time: "9 min ago",
-    tone: "warning",
-  },
-  {
-    text: "New enterprise lead assigned to Sales Team A.",
-    time: "18 min ago",
-    tone: "neutral",
-  },
-  {
-    text: "Weekly report exported by Admin User.",
-    time: "35 min ago",
-    tone: "neutral",
-  },
-];
+function includesAny(haystack: string, needles: string[]): boolean {
+  return needles.some((n) => haystack.includes(n));
+}
+
+/**
+ * Admin dashboard “Recent activity” allowlist:
+ * - Agent approved / rejected
+ * - Property approved / rejected
+ * - Property flagged
+ * - User/Agent blocked or activated
+ * - Lead assigned
+ * - Reports exported
+ *
+ * Backend currently provides only `text/time/tone`, so we filter by keywords in `text`.
+ */
+function isAllowedAdminRecentActivity(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return false;
+
+  const isAgentEvent =
+    includesAny(t, ["agent", "agents", "profile"]) &&
+    includesAny(t, ["approved", "rejected", "declined", "accepted"]);
+
+  const isPropertyApprovalEvent =
+    includesAny(t, ["property", "listing", "properties", "listings", "prop-"]) &&
+    includesAny(t, ["approved", "rejected", "declined", "accepted"]);
+
+  const isPropertyFlagged =
+    includesAny(t, ["property", "listing", "prop-"]) &&
+    includesAny(t, ["flagged", "flag", "reported"]);
+
+  const isUserOrAgentStatusChange =
+    includesAny(t, ["user", "agent", "account"]) &&
+    includesAny(t, ["blocked", "unblocked", "activated", "deactivated", "disabled", "enabled"]);
+
+  const isLeadAssigned =
+    includesAny(t, ["lead", "inquiry"]) &&
+    includesAny(t, ["assigned", "routed", "allocated"]);
+
+  const isReportExported =
+    includesAny(t, ["report", "export"]) &&
+    includesAny(t, ["exported", "downloaded", "generated"]);
+
+  return (
+    isAgentEvent ||
+    isPropertyApprovalEvent ||
+    isPropertyFlagged ||
+    isUserOrAgentStatusChange ||
+    isLeadAssigned ||
+    isReportExported
+  );
+}
+
+function normalizeAdminRecentActivity(value: unknown): ActivityItem[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((row) => {
+      const r = (row ?? {}) as Record<string, unknown>;
+      const text = typeof r.text === "string" ? r.text : String(r.text ?? "");
+      const time = typeof r.time === "string" ? r.time : String(r.time ?? "");
+      const toneRaw = r.tone;
+      const tone: ActivityItem["tone"] =
+        toneRaw === "success" || toneRaw === "warning" || toneRaw === "neutral"
+          ? toneRaw
+          : "neutral";
+      return { text, time, tone };
+    })
+    .filter((item) => item.text.trim().length > 0)
+    .filter((item) => isAllowedAdminRecentActivity(item.text));
+}
 
 /* ------------------------------------------------------------------ */
 /*  Style helpers                                                      */
 /* ------------------------------------------------------------------ */
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function statusPillClass(status: QueueItemStatus): string {
-  if (status === "approved") {
-    return "bg-emerald-100 text-emerald-800 border-emerald-200";
-  }
-  if (status === "review") {
-    return "bg-sky-100 text-sky-800 border-sky-200";
-  }
-  return "bg-amber-100 text-amber-800 border-amber-200";
-}
 
 function kpiToneClass(tone: KpiCard["tone"]): {
   iconWrap: string;
@@ -150,12 +166,6 @@ function kpiToneClass(tone: KpiCard["tone"]): {
     value: "text-[var(--color-charcoal)]",
     delta: "text-[var(--color-charcoal)]/70",
   };
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function formatDelta(value: number, suffix = ""): string {
-  const sign = value >= 0 ? "+" : "";
-  return `${sign}${value}${suffix} vs last month`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -247,6 +257,7 @@ export function AdminDashboardHome() {
 
   const monthParam = data.month;
   const shortMonthParam = data.month.slice(2);
+  const recentActivity = normalizeAdminRecentActivity(data.recentActivity);
 
   const showLeaderboardSkeleton =
     leaderboard.status === "loading" || leaderboard.status === "idle";
@@ -296,7 +307,7 @@ export function AdminDashboardHome() {
         label: "Users this Month",
         value: data.usersThisMonth.toLocaleString(),
         icon: Users,
-        href: `/${locale}/users?month=${encodeURIComponent(monthParam)}`,
+        href: `/${locale}/users?period=monthly`,
         iconBgClassName: toneClass.iconWrap,
         iconClassName: toneClass.icon,
         valueClassName: toneClass.value,
@@ -314,7 +325,8 @@ export function AdminDashboardHome() {
         label: "Deal Closed this Month",
         value: data.closedDealsThisMonth.toLocaleString(),
         icon: CheckCircle2,
-        href: `/${locale}/deals?month=${encodeURIComponent(shortMonthParam)}`,
+        // href: `/${locale}/deals?month=${encodeURIComponent(shortMonthParam)}`,
+        href: `/${locale}/under-development?nav=deals`,
         iconBgClassName: toneClass.iconWrap,
         iconClassName: toneClass.icon,
         valueClassName: toneClass.value,
@@ -359,7 +371,8 @@ export function AdminDashboardHome() {
         label: "Leads this Month",
         value: data.leadsThisMonth.toLocaleString(),
         icon: BarChart3,
-        href: `/${locale}/leads?month=${encodeURIComponent(shortMonthParam)}`,
+        // href: `/${locale}/leads?month=${encodeURIComponent(shortMonthParam)}`,
+        href: `/${locale}/under-development?nav=leads`,
         iconBgClassName: toneClass.iconWrap,
         iconClassName: toneClass.icon,
         valueClassName: toneClass.value,
@@ -382,7 +395,7 @@ export function AdminDashboardHome() {
       {/* ── KPI Cards ── */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {metricCards.map(({ id, ...card }) => (
-          <DashboardMetricCard key={id} {...card} className="transition hover:shadow-md" useLink={false} />
+          <DashboardMetricCard key={id} {...card} className="transition hover:shadow-md" />
         ))}
       </section>
 
@@ -428,7 +441,7 @@ export function AdminDashboardHome() {
           className="block transition hover:opacity-95"
         >
           <PerformanceBarChart
-            data={data.propertyPerformanceSeries}
+            data={data.propertyPerformance}
             title="Property Performance"
             viewDetailsLabel="View details"
             xAxisTitle="Views"
@@ -446,7 +459,7 @@ export function AdminDashboardHome() {
           </h2>
           <div className="mt-4 space-y-2">
             <Link
-              href={`/${locale}/agents`}
+              href={`/${locale}/agents?status=pending_review`}
               className="flex w-full items-center justify-between rounded-xl border border-subtle bg-surface px-3 py-2 text-sm text-charcoal transition hover:bg-primary/5"
             >
               <span>Review agents</span>
@@ -467,7 +480,8 @@ export function AdminDashboardHome() {
               <Building2 className="h-4 w-4" />
             </button>
             <Link
-              href={`/${locale}/leads`}
+              // href={`/${locale}/leads`}
+              href={`/${locale}/under-development?nav=leads`}
               className="flex w-full items-center justify-between rounded-xl border border-subtle bg-surface px-3 py-2 text-sm text-charcoal transition hover:bg-primary/5"
             >
               <span>View leads</span>
@@ -481,7 +495,17 @@ export function AdminDashboardHome() {
             Recent activity
           </h2>
           <div className="mt-4 space-y-2">
-            {RECENT_ACTIVITY.map((item) => (
+            {recentActivity.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-subtle bg-surface px-3 py-8 text-center">
+                <p className="text-sm font-medium text-charcoal">
+                  {tDashboard("adminRecentActivityEmptyTitle")}
+                </p>
+                <p className="mt-1 text-xs text-charcoal/70">
+                  {tDashboard("adminRecentActivityEmptyDescription")}
+                </p>
+              </div>
+            ) : null}
+            {recentActivity.map((item) => (
               <div
                 key={`${item.text}-${item.time}`}
                 className="rounded-xl border border-subtle bg-surface px-3 py-2"
@@ -501,12 +525,6 @@ export function AdminDashboardHome() {
                 </div>
               </div>
             ))}
-            <div className="rounded-xl border border-dashed border-subtle bg-white px-3 py-2">
-              <p className="flex items-center gap-2 text-xs text-charcoal/70">
-                <PhoneCall className="h-3.5 w-3.5 shrink-0" />
-                Support line queue currently: 6 active tickets.
-              </p>
-            </div>
           </div>
         </article>
       </section>

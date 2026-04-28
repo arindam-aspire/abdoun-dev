@@ -431,6 +431,8 @@
     "mockNotice": "جميع البيانات المعروضة هنا تجريبية لأغراض الواجهة فقط.",
     "loadAdminSummaryError": "تعذر تحميل لوحة التحكم الإدارية. يرجى المحاولة مرة أخرى.",
     "loadAdminLeaderboardError": "تعذر تحميل أفضل الوكلاء. يرجى المحاولة مرة أخرى.",
+    "adminRecentActivityEmptyTitle": "لا يوجد نشاط حديث",
+    "adminRecentActivityEmptyDescription": "ستظهر هنا الموافقات والإعلانات وباقي أحداث الإدارة عند حدوثها.",
     "topAgentsTitle": "أفضل الوكلاء هذا الشهر",
     "topAgentsDeals": "الصفقات",
     "topAgentsResponse": "معدل الرد",

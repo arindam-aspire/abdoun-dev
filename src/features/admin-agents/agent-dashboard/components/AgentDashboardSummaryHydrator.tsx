@@ -3,12 +3,8 @@
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import {
-  fetchAgentDashboardData,
-  fetchAgentPerformanceComparison,
-} from "@/features/admin-agents/agent-dashboard/api/agentDashboard.api";
-import {
   fetchAdminManageListingsSidebarTotal,
-  setAgentDashboardCache,
+  fetchAgentDashboardSummary,
 } from "@/features/admin-agents/agent-dashboard/agentDashboardSummarySlice";
 import { selectAgentDashboardCachedData, selectCurrentUser } from "@/store/selectors";
 
@@ -32,29 +28,7 @@ export function AgentDashboardSummaryHydrator() {
 
     if (user?.role !== "agent") return;
     if (cached && user.id && dashboardCacheAuthUserId === user.id) return;
-
-    let cancelled = false;
-    void (async () => {
-      try {
-        const [dashboard, performance] = await Promise.all([
-          fetchAgentDashboardData(),
-          fetchAgentPerformanceComparison(),
-        ]);
-        if (cancelled) return;
-        dispatch(
-          setAgentDashboardCache({
-            dashboard,
-            performance,
-            authUserId: user.id,
-          }),
-        );
-      } catch {
-        // Counts stay 0 until a successful fetch (e.g. from dashboard page).
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    void dispatch(fetchAgentDashboardSummary());
   }, [user?.id, user?.role, cached, dashboardCacheAuthUserId, dispatch]);
 
   return null;

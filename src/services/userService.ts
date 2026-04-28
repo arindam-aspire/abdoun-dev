@@ -45,6 +45,8 @@ export type ListUsersParams = {
   search?: string;
   /** Filter by active flag when the backend supports it on `GET /users`. */
   is_active?: boolean;
+  /** Optional period/aggregation window when the backend supports it (e.g. weekly/monthly/yearly). */
+  period?: "weekly" | "monthly" | "yearly";
 };
 
 export type ListUsersResult = {
@@ -160,7 +162,47 @@ function parseUserListPayload(payload: unknown): ListUsersResult {
 }
 
 export async function listUsers(params: ListUsersParams = {}): Promise<ListUsersResult> {
-  const response = await authApi.get<unknown>("/users", { params });
+  const page =
+    typeof params.page === "number" && Number.isFinite(params.page) && params.page >= 1
+      ? Math.floor(params.page)
+      : 1;
+  const pageSize =
+    typeof params.pageSize === "number" &&
+    Number.isFinite(params.pageSize) &&
+    params.pageSize >= 1
+      ? Math.floor(params.pageSize)
+      : 10;
+  const userType =
+    typeof params.userType === "string" && params.userType.trim()
+      ? params.userType.trim()
+      : undefined;
+  const role_name =
+    typeof params.role_name === "string" && params.role_name.trim()
+      ? params.role_name.trim()
+      : undefined;
+  const search =
+    typeof params.search === "string" && params.search.trim()
+      ? params.search.trim()
+      : undefined;
+  const is_active =
+    typeof params.is_active === "boolean" ? params.is_active : undefined;
+
+  const period =
+    params.period === "weekly" || params.period === "monthly" || params.period === "yearly"
+      ? params.period
+      : undefined;
+
+  const response = await authApi.get<unknown>("/users", {
+    params: {
+      page,
+      pageSize,
+      ...(userType ? { userType } : {}),
+      ...(role_name ? { role_name } : {}),
+      ...(search ? { search } : {}),
+      ...(is_active !== undefined ? { is_active } : {}),
+      ...(period ? { period } : {}),
+    },
+  });
   const body = response.data as unknown;
   let totalFromEnvelope: number | null = null;
   if (isStandardEnvelope(body) && typeof body === "object" && body !== null) {

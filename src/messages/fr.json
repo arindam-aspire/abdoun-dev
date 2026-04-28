@@ -431,6 +431,8 @@
     "mockNotice": "Toutes les donnees affichees ici sont fictives pour la demo UI.",
     "loadAdminSummaryError": "Impossible de charger le tableau de bord administrateur. Reessayez.",
     "loadAdminLeaderboardError": "Impossible de charger le classement des agents. Reessayez.",
+    "adminRecentActivityEmptyTitle": "Aucune activité récente",
+    "adminRecentActivityEmptyDescription": "Les approbations, les annonces et autres événements admin apparaîtront ici lorsqu’ils se produiront.",
     "topAgentsTitle": "Meilleurs agents du mois",
     "topAgentsDeals": "Transactions",
     "topAgentsResponse": "Reponse",

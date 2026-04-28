@@ -1,8 +1,9 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { renderHook, waitFor } from "@testing-library/react";
+import * as React from "react";
 import type { ReactNode } from "react";
 import { Provider } from "react-redux";
-import type { AdminDashboardData } from "@/services/adminDashboardMockService";
+import type { AdminDashboardData } from "@/types/adminDashboard";
 import { useAdminDashboard } from "@/features/admin-agents/admin-dashboard/hooks/useAdminDashboard";
 import adminDashboardSummaryReducer from "@/features/admin-agents/admin-dashboard/adminDashboardSummarySlice";
 
@@ -22,7 +23,8 @@ function createTestStore() {
 
 function wrapperFor(store: ReturnType<typeof createTestStore>) {
   return function Wrapper({ children }: { children: ReactNode }) {
-    return <Provider store={store}>{children}</Provider>;
+    // JSX is not parsed in `.ts` files; use createElement instead.
+    return React.createElement(Provider, { store, children });
   };
 }
 
@@ -51,7 +53,7 @@ describe("useAdminDashboard", () => {
       leadSourceLabels: ["A"],
       leadSourceValues: [1],
       monthLabels: Array.from({ length: 12 }, () => "Jan"),
-      propertyPerformanceSeries: [{ label: "Test", value: 1 }],
+      propertyPerformance: [{ label: "Test", value: 1 }],
     };
 
     fetchAdminDashboardDataMock.mockResolvedValueOnce(dashboard);

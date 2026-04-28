@@ -55,10 +55,81 @@ export type ValidateInviteTokenResponse = {
 export type ListAdminAgentsParams = {
   page?: number;
   limit?: number;
+  /** Alias for `limit` used by some routes (`pageSize`). */
+  pageSize?: number;
   sort_by?: string;
+  /** Alias for `sort_by` used by some routes (`sortBy`). */
+  sortBy?: string;
   order?: "asc" | "desc";
+  /** Alias for `order` used by some routes (`sortOrder`). */
+  sortOrder?: "asc" | "desc" | "ASC" | "DESC" | string;
   status?: string;
+  /** Free-text search across agent name/email/phone/city (backend dependent). */
+  search?: string;
+  /** Optional time window filter when backend supports it. */
+  period?: "weekly" | "monthly" | "yearly";
 };
+
+function toPositiveInt(value: unknown): number | undefined {
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return undefined;
+    const n = Math.floor(value);
+    return n >= 1 ? n : undefined;
+  }
+  if (typeof value === "string") {
+    const n = Number.parseInt(value, 10);
+    return Number.isFinite(n) && n >= 1 ? n : undefined;
+  }
+  return undefined;
+}
+
+function normalizeSortBy(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  // Accept both API conventions and normalize to backend snake_case.
+  if (trimmed === "invitedAt") return "invited_at";
+  if (trimmed === "reviewedAt") return "reviewed_at";
+  // Keep known backend values as-is.
+  if (trimmed === "invited_at" || trimmed === "reviewed_at" || trimmed === "created_at") {
+    return trimmed;
+  }
+  // Unknown sort fields are ignored to avoid breaking the list endpoint.
+  return undefined;
+}
+
+function normalizeSortOrder(raw: unknown): "asc" | "desc" | undefined {
+  if (typeof raw !== "string") return undefined;
+  const v = raw.trim().toLowerCase();
+  if (v === "asc" || v === "desc") return v;
+  return undefined;
+}
+
+function normalizePeriod(raw: unknown): ListAdminAgentsParams["period"] | undefined {
+  if (typeof raw !== "string") return undefined;
+  const v = raw.trim().toLowerCase();
+  return v === "weekly" || v === "monthly" || v === "yearly"
+    ? (v as ListAdminAgentsParams["period"])
+    : undefined;
+}
+
+function normalizeListAdminAgentsParams(
+  params: ListAdminAgentsParams | undefined,
+): Required<Pick<ListAdminAgentsParams, "page" | "limit" | "sort_by" | "order">> &
+  Pick<ListAdminAgentsParams, "status" | "search" | "period"> {
+  const raw = params ?? {};
+
+  const page = toPositiveInt(raw.page) ?? 1;
+  const limit = toPositiveInt(raw.limit ?? raw.pageSize) ?? 20;
+  const sort_by = normalizeSortBy(raw.sort_by ?? raw.sortBy) ?? "invited_at";
+  const order = normalizeSortOrder(raw.order ?? raw.sortOrder) ?? "desc";
+  const status = typeof raw.status === "string" && raw.status.trim() ? raw.status.trim() : undefined;
+  const search =
+    typeof raw.search === "string" && raw.search.trim() ? raw.search.trim() : undefined;
+  const period = normalizePeriod(raw.period);
+
+  return { page, limit, sort_by, order, status, search, period };
+}
 
 export type ListAdminAgentsResult = {
   items: AdminAgent[];
@@ -156,27 +227,26 @@ export async function validateInviteToken(
 }
 
 /**
- * `GET /agents` (e.g. `{base}/api/v1/agents?page=1&limit=10&sort_by=invited_at&order=desc`).
+ * `GET /agents` (e.g. `{base}/api/v1/agents?page=1&pageSize=10&sort_by=invited_at&order=desc`).
  * Expects `StandardApiResponse` body with `agents[]` and `pagination.totalItems` / `totalPages`.
  */
 export async function listAdminAgents(
   params: ListAdminAgentsParams = {},
 ): Promise<ListAdminAgentsResult> {
-  const page = params.page ?? 1;
-  const limit = params.limit ?? 20;
-  const sort_by = params.sort_by ?? "invited_at";
-  const order = params.order ?? "desc";
-  const status = params.status;
+  const { page, limit, sort_by, order, status, search, period } =
+    normalizeListAdminAgentsParams(params);
 
   const response = await authApi.get<
     StandardApiResponse<PaginatedAgentsApiPayload>
   >("/agents", {
     params: {
       page,
-      limit,
+      pageSize: limit,
       sort_by,
       order,
       ...(status ? { status } : {}),
+      ...(search ? { search } : {}),
+      ...(period ? { period } : {}),
     },
   });
 

@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
   CustomTable,
+  Dropdown,
   IconButton,
   Input,
   Skeleton,
@@ -59,7 +60,9 @@ function UserPhoneTableCell({
 }
 
 function statusPillClass(isActive: boolean): string {
-  return isActive ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800";
+  return isActive
+    ? "bg-emerald-100 text-emerald-800"
+    : "bg-rose-100 text-rose-800";
 }
 
 const TABLE_SKELETON_ROWS = 6;
@@ -103,13 +106,18 @@ export function AdminUsersPage() {
   const loading = useAppSelector((s) => s.adminUsers.loading);
   const error = useAppSelector((s) => s.adminUsers.error);
   const hasNextPage = useAppSelector((s) => s.adminUsers.hasNextPage);
+  const listTotal = useAppSelector((s) => s.adminUsers.listTotal);
 
   const PAGE_PARAM = "page";
   const PAGE_SIZE_PARAM = "pageSize";
 
   /** Search and status are local only — not written to the URL. */
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"" | "active" | "inactive">("");
+  const [statusFilter, setStatusFilter] = useState<"" | "active" | "inactive">(
+    "",
+  );
+  /** Period is local-only — sent to API but not written to the URL. */
+  const [periodFilter, setPeriodFilter] = useState<"" | "weekly" | "monthly" | "yearly">("");
   const [toast, setToast] = useState<{
     kind: "info" | "error" | "success";
     message: string;
@@ -121,7 +129,9 @@ export function AdminUsersPage() {
   const pageSize = useMemo(() => {
     const raw = searchParams.get(PAGE_SIZE_PARAM);
     const n = Number.parseInt(raw ?? String(DEFAULT_PAGINATION_PAGE_SIZE), 10);
-    return PAGINATION_PAGE_SIZES.includes(n as (typeof PAGINATION_PAGE_SIZES)[number])
+    return PAGINATION_PAGE_SIZES.includes(
+      n as (typeof PAGINATION_PAGE_SIZES)[number],
+    )
       ? n
       : DEFAULT_PAGINATION_PAGE_SIZE;
   }, [searchParams]);
@@ -138,18 +148,31 @@ export function AdminUsersPage() {
     return undefined;
   }, [statusFilter]);
 
-  /** One-time: read legacy `?q=` / `?status=` into state, then remove them from the URL. */
+  /** One-time: read legacy params into state, then remove them from the URL. */
   useLayoutEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
     const legacyQ = params.get("q");
     const legacyStatus = params.get("status");
+    const legacyPeriod = params.get("period") ?? params.get("limit");
     if (legacyQ) setQuery(legacyQ);
     if (legacyStatus === "active" || legacyStatus === "inactive") {
       setStatusFilter(legacyStatus);
     }
-    if (!params.has("q") && !params.has("status")) return;
+    if (legacyPeriod === "weekly" || legacyPeriod === "monthly" || legacyPeriod === "yearly") {
+      setPeriodFilter(legacyPeriod);
+    }
+    if (
+      !params.has("q") &&
+      !params.has("status") &&
+      !params.has("limit") &&
+      !params.has("period")
+    ) {
+      return;
+    }
     params.delete("q");
     params.delete("status");
+    params.delete("limit");
+    params.delete("period");
     const next = params.toString();
     router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate legacy `q`/`status` once on mount
@@ -172,16 +195,36 @@ export function AdminUsersPage() {
         pageSize,
         search: query.trim() || undefined,
         is_active: statusFilterForApi,
+        period: periodFilter
+          ? (periodFilter as "weekly" | "monthly" | "yearly")
+          : undefined,
       }),
     );
-  }, [dispatch, currentPage, pageSize, query, statusFilterForApi]);
+  }, [dispatch, currentPage, pageSize, query, statusFilterForApi, periodFilter]);
 
-  const totalPages = Math.max(1, hasNextPage ? currentPage + 1 : currentPage);
+  const totalItems = useMemo(() => {
+    if (listTotal != null && Number.isFinite(listTotal)) return listTotal;
+    if (!hasNextPage && !loading && !error)
+      return (currentPage - 1) * pageSize + rows.length;
+    return undefined;
+  }, [
+    listTotal,
+    hasNextPage,
+    loading,
+    error,
+    currentPage,
+    pageSize,
+    rows.length,
+  ]);
+
+  const totalPages = useMemo(() => {
+    if (typeof totalItems === "number" && Number.isFinite(totalItems)) {
+      return Math.max(1, Math.ceil(totalItems / pageSize));
+    }
+    return Math.max(1, hasNextPage ? currentPage + 1 : currentPage);
+  }, [totalItems, pageSize, hasNextPage, currentPage]);
+
   const safePage = Math.min(currentPage, totalPages);
-  const exactTotal =
-    !hasNextPage && !loading && !error
-      ? (currentPage - 1) * pageSize + rows.length
-      : undefined;
 
   useEffect(() => {
     if (loading || error) return;
@@ -189,9 +232,19 @@ export function AdminUsersPage() {
       const params = new URLSearchParams(searchParams.toString());
       params.set(PAGE_PARAM, "1");
       const next = params.toString();
-      router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+      router.replace(next ? `${pathname}?${next}` : pathname, {
+        scroll: false,
+      });
     }
-  }, [loading, error, currentPage, rows.length, router, pathname, searchParams]);
+  }, [
+    loading,
+    error,
+    currentPage,
+    rows.length,
+    router,
+    pathname,
+    searchParams,
+  ]);
 
   const onSearchChange = (value: string) => {
     setQuery(value);
@@ -203,24 +256,34 @@ export function AdminUsersPage() {
     resetToFirstPageIfNeeded();
   };
 
+  const onPeriodChange = (value: string) => {
+    const next =
+      value === "weekly" || value === "monthly" || value === "yearly" ? value : "";
+    setPeriodFilter(next);
+  };
+
   const tableRows = useMemo(
     () =>
-      sortRowsByConfig(Array.isArray(rows) ? rows : [], sortConfig, (row, columnId) => {
-        switch (columnId) {
-          case "fullName":
-            return row.full_name ?? "";
-          case "email":
-            return row.email ?? "";
-          case "phone":
-            return row.phone_number ?? "";
-          case "status":
-            return row.is_active ? 1 : 0;
-          case "createdAt":
-            return row.created_at ? Date.parse(row.created_at) : 0;
-          default:
-            return "";
-        }
-      }),
+      sortRowsByConfig(
+        Array.isArray(rows) ? rows : [],
+        sortConfig,
+        (row, columnId) => {
+          switch (columnId) {
+            case "fullName":
+              return row.full_name ?? "";
+            case "email":
+              return row.email ?? "";
+            case "phone":
+              return row.phone_number ?? "";
+            case "status":
+              return row.is_active ? 1 : 0;
+            case "createdAt":
+              return row.created_at ? Date.parse(row.created_at) : 0;
+            default:
+              return "";
+          }
+        },
+      ),
     [rows, sortConfig],
   );
 
@@ -298,7 +361,9 @@ export function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 px-1 md:flex-row md:items-start md:justify-between">
         <div>
-          <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">Users</h1>
+          <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
+            Users
+          </h1>
           <p className="mt-1 text-size-sm text-charcoal/70">
             Review and manage platform users.
           </p>
@@ -309,7 +374,9 @@ export function AdminUsersPage() {
         <CardHeader className="flex flex-col gap-3 space-y-0 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-secondary" />
-            <CardTitle className="text-size-sm text-charcoal">User list</CardTitle>
+            <CardTitle className="text-size-sm text-charcoal">
+              User list
+            </CardTitle>
           </div>
           <div className="flex w-full justify-end md:w-auto">
             <div className="flex w-full flex-col gap-2 md:flex-row md:items-center md:justify-end">
@@ -336,35 +403,42 @@ export function AdminUsersPage() {
                 />
               </div>
               <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center">
-                <select
+                <Dropdown
+                  buttonId="admin-users-status-filter"
+                  label="All"
                   value={statusFilter}
-                  onChange={(event) => onStatusChange(event.target.value)}
-                  className="h-10 rounded-lg border-subtle bg-surface px-3 text-size-xs text-charcoal shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                >
-                  <option value="">All</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
+                  onChange={(val) => onStatusChange(val)}
+                  align="right"
+                  menuClassName="w-44"
+                  buttonClassName="h-10 rounded-lg border-subtle bg-surface px-3 text-size-xs text-charcoal shadow-sm focus-visible:ring-primary/40 justify-between"
+                  options={[
+                    { value: "", label: "All" },
+                    { value: "active", label: "Active" },
+                    { value: "inactive", label: "Inactive" },
+                  ]}
+                />
+              </div>
+              <div className="flex w-full items-center gap-2 md:w-auto">
+                <Dropdown
+                  buttonId="admin-users-period-filter"
+                  label="All"
+                  value={periodFilter}
+                  onChange={(val) => onPeriodChange(val)}
+                  align="right"
+                  menuClassName="w-44"
+                  buttonClassName="h-10 rounded-lg border-subtle bg-surface px-3 text-size-xs text-charcoal shadow-sm focus-visible:ring-primary/40 justify-between"
+                  options={[
+                    { value: "", label: "All" },
+                    { value: "weekly", label: "Weekly" },
+                    { value: "monthly", label: "Monthly" },
+                    { value: "yearly", label: "Yearly" },
+                  ]}
+                />
               </div>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
-            <div className="text-sm text-charcoal/70">
-              {loading ? (
-                <Skeleton className="inline-block h-4 w-44" aria-label="Loading list metadata" />
-              ) : error ? (
-                <span className="text-charcoal/50">Could not load totals for this list.</span>
-              ) : (
-                <>
-                  Page {safePage} of {totalPages}
-                  {exactTotal != null ? ` · Total ${exactTotal}` : hasNextPage ? " · More pages available" : null}
-                </>
-              )}
-            </div>
-          </div>
-
           <CustomTable<UserManagementUser>
             columns={userColumns}
             data={tableRows}
@@ -379,10 +453,11 @@ export function AdminUsersPage() {
             emptyMessage={emptyListMessage}
             minTableWidth="900px"
             pagination={{
-              showWhen: !loading && !error && totalPages > 1 && tableRows.length > 0,
+              showWhen:
+                !loading && !error && totalPages > 1 && tableRows.length > 0,
               currentPage: safePage,
               totalPages,
-              totalItems: exactTotal,
+              totalItems,
               pageSize,
               pageParam: PAGE_PARAM,
               pageSizeParam: PAGE_SIZE_PARAM,
@@ -400,7 +475,13 @@ export function AdminUsersPage() {
         </CardContent>
       </Card>
 
-      {toast ? <Toast kind={toast.kind} message={toast.message} onClose={() => setToast(null)} /> : null}
+      {toast ? (
+        <Toast
+          kind={toast.kind}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      ) : null}
     </div>
   );
 }

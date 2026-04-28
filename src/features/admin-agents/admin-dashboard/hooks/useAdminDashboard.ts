@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { AdminDashboardData } from "@/services/adminDashboardMockService";
+import type { AdminDashboardData } from "@/types/adminDashboard";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import {
   loadAdminDashboardSummary,

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-export default async function AgentLeadsRoute({
+export default async function AgentInquiriesRoute({
   params,
 }: {
   params: Promise<{ locale: string }>;
@@ -8,3 +8,4 @@ export default async function AgentLeadsRoute({
   const { locale } = await params;
   redirect(`/${locale}/under-development`);
 }
+

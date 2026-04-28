@@ -29,6 +29,52 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { ToastKind } from "@/components/ui/toast";
 
+function includesAny(haystack: string, needles: string[]): boolean {
+  return needles.some((n) => haystack.includes(n));
+}
+
+/**
+ * Agent dashboard “Recent activity” allowlist:
+ * - Property created / updated
+ * - Approval / rejection
+ * - Lead assigned
+ * - Report exported
+ * - Profile approved
+ *
+ * Backend currently provides only `text/time/tone`, so we filter by keywords in `text`.
+ */
+function isAllowedAgentRecentActivity(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return false;
+
+  const isPropertyCreatedOrUpdated =
+    includesAny(t, ["property", "listing", "prop-"]) &&
+    includesAny(t, ["created", "updated", "edited", "published", "submitted"]);
+
+  const isApprovalOrRejection =
+    includesAny(t, ["approved", "rejected", "declined", "accepted"]);
+
+  const isLeadAssigned =
+    includesAny(t, ["lead", "inquiry"]) &&
+    includesAny(t, ["assigned", "routed", "allocated"]);
+
+  const isReportExported =
+    includesAny(t, ["report", "export"]) &&
+    includesAny(t, ["exported", "downloaded", "generated"]);
+
+  const isProfileApproved =
+    includesAny(t, ["profile", "account"]) &&
+    includesAny(t, ["approved", "verified", "activated"]);
+
+  return (
+    isPropertyCreatedOrUpdated ||
+    isApprovalOrRejection ||
+    isLeadAssigned ||
+    isReportExported ||
+    isProfileApproved
+  );
+}
+
 export function AgentDashboardHome() {
   const dispatch = useAppDispatch();
   const locale = useLocale() as AppLocale;
@@ -91,7 +137,9 @@ export function AgentDashboardHome() {
 
   const shortMonthParam = new Date().toISOString().slice(2, 7);
 
-  const meaningfulRecentActivity = data.recentActivity.filter((item) => item.text.trim().length > 0);
+  const meaningfulRecentActivity = data.recentActivity
+    .filter((item) => item.text.trim().length > 0)
+    .filter((item) => isAllowedAgentRecentActivity(item.text));
 
   const metricCards = [
     {
@@ -239,12 +287,6 @@ export function AgentDashboardHome() {
                 <p className="mt-1.5 max-w-[min(100%,280px)] text-xs leading-relaxed text-charcoal/65">
                   {tAgent("recentActivityEmptyDescription")}
                 </p>
-                <Link
-                  href={`/${locale}/agent-dashboard/inquiries`}
-                  className="mt-4 text-sm font-medium text-secondary underline-offset-4 transition hover:text-secondary/90 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-royal-blue)]/35 focus-visible:ring-offset-2 rounded-sm"
-                >
-                  {tAgent("recentActivityEmptyCta")}
-                </Link>
               </div>
             ) : (
               <div className="space-y-2">

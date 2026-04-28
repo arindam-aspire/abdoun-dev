@@ -62,6 +62,10 @@ export function isSidebarHrefActive(
 ): boolean {
   const qIndex = itemHref.indexOf("?");
   if (qIndex === -1) {
+    // Dashboard routes should only be active on exact match (not on sub-pages).
+    if (itemHref.endsWith("/agent-dashboard") || itemHref.endsWith("/admin-dashboard")) {
+      return pathname === itemHref;
+    }
     return pathname === itemHref || pathname.startsWith(`${itemHref}/`);
   }
   const pathOnly = itemHref.slice(0, qIndex);

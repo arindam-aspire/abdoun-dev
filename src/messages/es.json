@@ -431,6 +431,8 @@
     "mockNotice": "Todos los datos mostrados aqui son ficticios para la interfaz.",
     "loadAdminSummaryError": "No se pudo cargar el panel de administracion. Inténtelo de nuevo.",
     "loadAdminLeaderboardError": "No se pudo cargar los mejores agentes. Inténtelo de nuevo.",
+    "adminRecentActivityEmptyTitle": "Sin actividad reciente",
+    "adminRecentActivityEmptyDescription": "Las aprobaciones, los anuncios y otros eventos de administración aparecerán aquí cuando sucedan.",
     "topAgentsTitle": "Mejores agentes este mes",
     "topAgentsDeals": "Operaciones",
     "topAgentsResponse": "Respuesta",

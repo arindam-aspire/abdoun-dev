@@ -607,6 +607,8 @@
     "mockNotice": "All data shown here is mock data for UI and flows only.",
     "loadAdminSummaryError": "Unable to load admin dashboard. Please try again.",
     "loadAdminLeaderboardError": "Unable to load top agents. Please try again.",
+    "adminRecentActivityEmptyTitle": "No recent activity",
+    "adminRecentActivityEmptyDescription": "Approvals, listings, and other admin events will appear here when they happen.",
     "topAgentsTitle": "Top agents this month",
     "topAgentsDeals": "Deals",
     "topAgentsResponse": "Response",
