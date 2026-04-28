@@ -28,13 +28,17 @@ export type AddPropertyWorkflowStatus =
   | "submitted"
   | "changes_requested"
   | "approved"
+  | "verified"
   | "rejected";
+
+export type AddPropertyWizardMode = "agent" | "admin";
 
 function touch(state: { dirty: boolean }) {
   state.dirty = true;
 }
 
 export interface AddPropertyWizardState {
+  wizardMode: AddPropertyWizardMode;
   activeStep: AddPropertyStepId;
   /** UUID for presigned uploads before a backend row exists */
   draftClientId: string;
@@ -102,6 +106,7 @@ export interface AddPropertyWizardState {
 }
 
 const initialState: AddPropertyWizardState = {
+  wizardMode: "agent",
   activeStep: "basic-information",
   listingPurpose: "sale",
   category: "residential",
@@ -180,6 +185,9 @@ const addPropertyWizardSlice = createSlice({
   name: "addPropertyWizard",
   initialState: buildFreshInitialState(),
   reducers: {
+    setWizardMode(state, action: PayloadAction<AddPropertyWizardMode>) {
+      state.wizardMode = action.payload;
+    },
     setActiveStep(state, action: PayloadAction<AddPropertyStepId>) {
       touch(state);
       state.activeStep = action.payload;
@@ -409,6 +417,7 @@ const addPropertyWizardSlice = createSlice({
 });
 
 export const {
+  setWizardMode,
   setActiveStep,
   setListingPurpose,
   setCategory,
@@ -454,6 +463,7 @@ export const selectAddPropertyActiveStep = (state: RootState) => state.addProper
 export const selectAddPropertyCurrentStepIndex = (state: RootState) =>
   ADD_PROPERTY_STEP_ORDER.indexOf(state.addPropertyWizard.activeStep);
 export const selectAddPropertyWizard = (state: RootState) => state.addPropertyWizard;
+export const selectAddPropertyWizardMode = (state: RootState) => state.addPropertyWizard.wizardMode;
 
 /**
  * Ticks and step progress in the add-property UI: always from {@link computeLocalStepCompletion}
@@ -481,22 +491,31 @@ export function selectAddPropertyCurrentStepComplete(state: RootState): boolean 
 
 function isUserEditableSubmissionStatus(status: string | null | undefined): boolean {
   if (!status) return true;
-  return status === "draft" || status === "in_progress" || status === "changes_requested";
+  return (
+    status === "draft" ||
+    status === "in_progress" ||
+    status === "changes_requested" ||
+    status === "rejected"
+  );
 }
 
+/** Pending admin or approved/live — agent cannot change listing (rejected is editable for resubmission). */
 export function isLockedListingStatus(status: string | null | undefined): boolean {
   if (!status) return false;
-  return status === "submitted" || status === "approved" || status === "rejected";
+  const s = status.trim().toLowerCase();
+  return s === "submitted" || s === "approved" || s === "verified";
 }
 
-/** False when review listing is read-only (submitted / approved / rejected). */
+/** False when listing is read-only: submitted (pending approval) or approved (some APIs use `verified`). */
 export function selectAddPropertyIsEditable(state: RootState): boolean {
   return !isLockedListingStatus(state.addPropertyWizard.submissionStatus);
 }
 
 /**
- * True when navigating away should show the leave modal (unsaved or in-progress work).
- * Local flow: any dirty state. Persisted: prior rule with editable status.
+ * True when navigating away should show the leave modal.
+ * Only when there are **unsaved changes** (`dirty`) since last load or successful save
+ * (see `mergeServerPayloadAfterPatch`, which clears `dirty`). Do not use heuristics like
+ * “has title” — that incorrectly prompted after save_draft with no further edits.
  */
 export function selectShouldPromptLeaveAddProperty(state: RootState): boolean {
   const w = state.addPropertyWizard;
@@ -505,10 +524,7 @@ export function selectShouldPromptLeaveAddProperty(state: RootState): boolean {
     return w.dirty;
   }
   if (!isUserEditableSubmissionStatus(w.submissionStatus)) return false;
-  return (
-    w.dirty ||
-    (w.propertyTitle.trim().length > 0 && w.propertyType.trim().length > 0)
-  );
+  return w.dirty;
 }
 
 export default addPropertyWizardSlice.reducer;

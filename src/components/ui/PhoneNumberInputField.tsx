@@ -47,6 +47,8 @@ export interface PhoneNumberInputFieldProps {
   placeholder?: string;
   disabled?: boolean;
   rightAdornment?: ReactNode;
+  /** Show dial code in country selector trigger (default: "full"). */
+  countryButtonLabel?: "full" | "flag-only";
 }
 
 export function PhoneNumberInputField({
@@ -61,6 +63,7 @@ export function PhoneNumberInputField({
   placeholder,
   disabled = false,
   rightAdornment,
+  countryButtonLabel = "full",
 }: PhoneNumberInputFieldProps) {
   const tPhone = useTranslations("phoneInput");
   const defaultPlaceholder = tPhone("placeholder");
@@ -141,7 +144,7 @@ export function PhoneNumberInputField({
             }}
             onFocus={onFocus}
             disabled={disabled}
-            buttonLabel="flag-only"
+            buttonLabel={countryButtonLabel}
             buttonClassName={cn(
               "h-auto min-h-0 w-auto shrink-0 rounded-sm border-0 bg-transparent px-0 py-0 text-zinc-900 shadow-none",
               "focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none",

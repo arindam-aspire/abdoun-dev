@@ -25,6 +25,10 @@ import {
   patchPropertySubmissionFullDraft,
   submitExistingPropertySubmission,
 } from "../../api/propertySubmissions.api";
+import {
+  createAndSubmitAdminPropertySubmission,
+  submitExistingAdminPropertySubmission,
+} from "@/features/admin-agents/admin-dashboard/api/adminPropertySubmissions.api";
 import { getValidationErrorBeforeLeavingStep } from "../../lib/addPropertyStepValidation";
 import { buildFullReduxPayload, getCurrentStepIndex1Based } from "../../lib/buildSubmissionStepData";
 import { hasAnyLocalStepComplete } from "../../lib/localStepCompletion";
@@ -45,6 +49,7 @@ import {
   selectAddPropertyCurrentStepComplete,
   selectAddPropertyCurrentStepIndex,
   selectAddPropertyIsEditable,
+  selectAddPropertyWizardMode,
   selectAddPropertyWizard,
   mergeServerPayloadAfterPatch,
   rehydrateAddPropertyWizard,
@@ -53,6 +58,7 @@ import {
   setStepProgressFromServer,
   setSubmissionMeta,
   initializeNewPropertyWizard,
+  setWizardMode,
 } from "./addPropertyWizardSlice";
 import { ADD_PROPERTY_STEP_ORDER } from "./addPropertyWizard.types";
 
@@ -83,11 +89,15 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
   const activeStep = useAppSelector(selectAddPropertyActiveStep);
   const currentStepIndex = useAppSelector(selectAddPropertyCurrentStepIndex);
   const wizardState = useAppSelector(selectAddPropertyWizard);
+  const wizardMode = useAppSelector(selectAddPropertyWizardMode);
   const canEdit = useAppSelector(selectAddPropertyIsEditable);
   const currentStepComplete = useAppSelector(selectAddPropertyCurrentStepComplete);
 
   const isReviewStep = currentStepIndex === ADD_PROPERTY_STEP_ORDER.length - 1;
   const allTermsAccepted = Boolean(wizardState.termsAccepted);
+  const isRejectedResubmit =
+    isReviewStep && canEdit && wizardState.submissionStatus === "rejected";
+  const isAdmin = wizardMode === "admin";
 
   const [initLoading, setInitLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -126,9 +136,18 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
       if (explicitId) {
         setInitLoading(true);
         try {
-          const sub = await getPropertySubmission(explicitId);
-          if (cancelled) return;
-          dispatch(rehydrateAddPropertyWizard(wizardStateFromApiSubmission(sub)));
+          if (isAdmin) {
+            // Admin drafts are stored per-user in the standard submissions table.
+            const sub = await getPropertySubmission(explicitId);
+            if (cancelled) return;
+            dispatch(rehydrateAddPropertyWizard(wizardStateFromApiSubmission(sub)));
+          } else {
+            const sub = await getPropertySubmission(explicitId);
+            if (cancelled) return;
+            dispatch(rehydrateAddPropertyWizard(wizardStateFromApiSubmission(sub)));
+          }
+          // `rehydrateAddPropertyWizard` replaces the whole slice; re-assert mode.
+          dispatch(setWizardMode(isAdmin ? "admin" : "agent"));
         } catch (e) {
           if (!cancelled) {
             showToast("error", messageForSubmitError(e));
@@ -147,7 +166,7 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
     return () => {
       cancelled = true;
     };
-  }, [dispatch, pathname, router, searchParams, showToast]);
+  }, [dispatch, isAdmin, pathname, router, searchParams, showToast]);
 
   const saveDraftToServer = useCallback(async (): Promise<boolean> => {
     const s = store.getState().addPropertyWizard;
@@ -155,6 +174,64 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
     const payload = buildFullReduxPayload(s);
     const currentStep = getCurrentStepIndex1Based(s);
     try {
+      if (isAdmin) {
+        // Admin drafts are created/updated via the standard user endpoints.
+        // Submit is admin-specific (auto-verified), but draft storage is shared.
+        if (!id) {
+          const result = await createPropertySubmissionDraft(payload, currentStep);
+          dispatch(
+            setSubmissionMeta({
+              submissionId: result.submission_id,
+              submissionStatus: result.status,
+              isPersisted: true,
+            }),
+          );
+          if (result.payload != null && typeof result.payload === "object") {
+            dispatch(mergeServerPayloadAfterPatch(result.payload as Record<string, unknown>));
+          }
+          if (result.step_completion !== undefined || result.last_completed_step !== undefined) {
+            dispatch(
+              setStepProgressFromServer({
+                ...(result.step_completion !== undefined
+                  ? { step_completion: result.step_completion }
+                  : {}),
+                ...(result.last_completed_step !== undefined
+                  ? { last_completed_step: result.last_completed_step }
+                  : {}),
+              }),
+            );
+          }
+          return true;
+        }
+
+        const result = await patchPropertySubmissionFullDraft(id, {
+          payload,
+          current_step: currentStep,
+        });
+        dispatch(
+          setSubmissionMeta({
+            submissionStatus: result.status,
+            propertyIdAfterSubmit: result.property_id ?? null,
+            adminReviewReason: result.review_reason ?? null,
+          }),
+        );
+        if (result.payload != null && typeof result.payload === "object") {
+          dispatch(mergeServerPayloadAfterPatch(result.payload as Record<string, unknown>));
+        }
+        if (result.step_completion !== undefined || result.last_completed_step !== undefined) {
+          dispatch(
+            setStepProgressFromServer({
+              ...(result.step_completion !== undefined
+                ? { step_completion: result.step_completion }
+                : {}),
+              ...(result.last_completed_step !== undefined
+                ? { last_completed_step: result.last_completed_step }
+                : {}),
+            }),
+          );
+        }
+        return true;
+      }
       if (!id) {
         const result = await createPropertySubmissionDraft(payload, currentStep);
         dispatch(
@@ -212,7 +289,7 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
       showToast("error", messageForSubmitError(e));
       return false;
     }
-  }, [dispatch, showToast]);
+  }, [dispatch, isAdmin, showToast]);
 
   const proceedNavigate = useCallback(
     (href: string) => {
@@ -270,7 +347,7 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
   }, [canEdit, leaveModal.href, saveDraftToServer, proceedNavigate, showToast, t]);
 
   const handleBack = () => {
-    requestNavigate(`/${locale}/agent-dashboard/listings`);
+    requestNavigate(isAdmin ? `/${locale}/admin-dashboard/listings` : `/${locale}/agent-dashboard/listings`);
   };
 
   const confirmEmptyDraftSave = useCallback(async () => {
@@ -318,7 +395,7 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
     const ok = await saveDraftToServer();
     setSaving(false);
     if (ok) {
-      showToast("success", t("draftSavedOnServer"));
+      showToast("success", "Draft saved successfully");
     }
   };
 
@@ -348,6 +425,49 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
       const fullPayload = buildFullReduxPayload(s);
       const subId = s.submissionId;
 
+      if (isAdmin) {
+        if (!subId) {
+          await createAndSubmitAdminPropertySubmission(fullPayload);
+          dispatch(resetAddPropertyWizard());
+          showToast("success", "Property created and verified successfully");
+          router.push(`/${locale}/admin-dashboard/listings`);
+          return;
+        }
+
+        if (s.dirty) {
+          const step = getCurrentStepIndex1Based(s);
+          const patchResult = await patchPropertySubmissionFullDraft(subId, {
+            payload: fullPayload,
+            current_step: step,
+          });
+          dispatch(
+            setSubmissionMeta({
+              submissionStatus: patchResult.status,
+              propertyIdAfterSubmit: patchResult.property_id ?? null,
+              adminReviewReason: patchResult.review_reason ?? null,
+            }),
+          );
+          if (patchResult.payload != null && typeof patchResult.payload === "object") {
+            dispatch(mergeServerPayloadAfterPatch(patchResult.payload as Record<string, unknown>));
+          }
+        }
+
+        try {
+          await submitExistingAdminPropertySubmission(subId);
+        } catch (e) {
+          // Back-compat: older BE deployments only had POST `/admin/property-submissions/submit`.
+          if (isAxiosError(e) && e.response?.status === 404) {
+            await createAndSubmitAdminPropertySubmission(fullPayload);
+          } else {
+            throw e;
+          }
+        }
+        dispatch(resetAddPropertyWizard());
+        showToast("success", "Property created and verified successfully");
+        router.push(`/${locale}/admin-dashboard/listings`);
+        return;
+      }
+
       if (!subId) {
         const result = await createAndSubmitPropertySubmission(fullPayload);
         dispatch(
@@ -363,6 +483,8 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
         router.push(`/${locale}/agent-dashboard/listings?submitted=1`);
         return;
       }
+
+      const wasResubmitFromRejected = s.submissionStatus === "rejected";
 
       if (s.dirty) {
         const step = getCurrentStepIndex1Based(s);
@@ -405,8 +527,13 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
         }),
       );
       dispatch(resetAddPropertyWizard());
-      showToast("success", t("listingSubmittedRedirect"));
-      router.push(`/${locale}/agent-dashboard/listings?submitted=1`);
+      if (wasResubmitFromRejected) {
+        showToast("success", t("propertyResubmittedForApproval"));
+        router.push(`/${locale}/agent-dashboard/listings?resubmitted=1`);
+      } else {
+        showToast("success", t("listingSubmittedRedirect"));
+        router.push(`/${locale}/agent-dashboard/listings?submitted=1`);
+      }
     } catch (e) {
       showToast("error", messageForSubmitError(e));
     } finally {
@@ -493,7 +620,11 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
                 ? "…"
                 : isReviewStep
                   ? canEdit
-                    ? "Submit"
+                    ? isAdmin
+                      ? "Create & Verify Property"
+                      : isRejectedResubmit
+                        ? t("buttonResubmit")
+                        : t("buttonSubmit")
                     : "Submitted"
                   : "Next"}
               <ArrowRight className="h-4 w-4" />

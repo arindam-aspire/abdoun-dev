@@ -112,6 +112,10 @@ export function PropertyDetailsAgentSection({ listing }: PropertyDetailsAgentSec
         open={emailModalOpen}
         onClose={() => setEmailModalOpen(false)}
         listing={{ id: listing.id, title: listing.title }}
+        recipient={{
+          name: listing.agentName?.trim() || listing.brokerName,
+          email: null,
+        }}
         initialValues={
           signedInUser
             ? {

@@ -1,5 +1,5 @@
-import { AgentListingsPage } from "@/features/admin-agents/agent-dashboard/components/AgentListingsPage";
+import { AdminPropertySubmissionsPage } from "@/features/admin-agents/admin-dashboard/components/property-submissions/AdminPropertySubmissionsPage";
 
 export default function AdminListingsRoute() {
-  return <AgentListingsPage />;
+  return <AdminPropertySubmissionsPage />;
 }

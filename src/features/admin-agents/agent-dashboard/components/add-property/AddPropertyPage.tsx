@@ -26,6 +26,7 @@ import {
 } from "./AddPropertyWizard";
 import { canNavigateToStepIndex } from "@/features/admin-agents/agent-dashboard/lib/addPropertyStepValidation";
 import { UI_STEP_ID_TO_COMPLETION_KEY } from "@/features/admin-agents/agent-dashboard/lib/localStepCompletion";
+import { Alert, AlertDescription } from "@/components/ui";
 import { Toast } from "@/components/ui/toast";
 import {
   selectAddPropertyActiveStep,
@@ -35,6 +36,8 @@ import {
   selectAddPropertyWizard,
   selectShouldPromptLeaveAddProperty,
   setActiveStep,
+  setWizardMode,
+  type AddPropertyWizardMode,
 } from "./addPropertyWizardSlice";
 
 const STEP_ITEMS = [
@@ -96,7 +99,9 @@ const STEP_ITEMS = [
   },
 ] as const;
 
-export function AddPropertyPage() {
+type Props = { mode?: AddPropertyWizardMode };
+
+export function AddPropertyPage({ mode = "agent" }: Props) {
   const locale = useLocale() as AppLocale;
   const pathname = usePathname();
   const t = useTranslations("agentDashboard");
@@ -108,6 +113,10 @@ export function AddPropertyPage() {
   const lastCompletedDisplay = useAppSelector(selectAddPropertyLastCompletedStepDisplay);
   const wizard = useAppSelector(selectAddPropertyWizard);
   const [navToast, setNavToast] = useState<{ message: string } | null>(null);
+
+  useEffect(() => {
+    dispatch(setWizardMode(mode));
+  }, [dispatch, mode]);
 
   const trySetActiveStep = useCallback(
     (stepId: (typeof STEP_ITEMS)[number]["id"], targetIndex: number) => {
@@ -122,7 +131,8 @@ export function AddPropertyPage() {
     [activeStepIndex, dispatch, wizard],
   );
 
-  const listingsHref = `/${locale}/agent-dashboard/listings`;
+  const listingsHref =
+    mode === "admin" ? `/${locale}/admin-dashboard/listings` : `/${locale}/agent-dashboard/listings`;
 
   useEffect(() => {
     const onDocClickCapture = (e: MouseEvent) => {
@@ -140,7 +150,11 @@ export function AddPropertyPage() {
       const nextPath = `${next.pathname}${next.search}`;
       const currentPath = `${window.location.pathname}${window.location.search}`;
       if (nextPath === currentPath) return;
-      if (!pathname.includes("/agent-dashboard/add-property")) return;
+      if (mode === "admin") {
+        if (!pathname.includes("/admin-dashboard/add-property")) return;
+      } else {
+        if (!pathname.includes("/agent-dashboard/add-property")) return;
+      }
       if (!selectShouldPromptLeaveAddProperty(store.getState())) return;
       e.preventDefault();
       e.stopPropagation();
@@ -148,7 +162,7 @@ export function AddPropertyPage() {
     };
     document.addEventListener("click", onDocClickCapture, true);
     return () => document.removeEventListener("click", onDocClickCapture, true);
-  }, [pathname]);
+  }, [mode, pathname]);
 
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -230,7 +244,7 @@ export function AddPropertyPage() {
                   className="inline-flex items-center gap-2 text-sm font-medium text-charcoal/80 transition hover:text-charcoal"
                 >
                   <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
-                  {t("manageListingsTitle")}
+                  {mode === "admin" ? "Manage Listings" : t("manageListingsTitle")}
                 </button>
               </div>
               <div className="relative">
@@ -304,6 +318,18 @@ export function AddPropertyPage() {
           </div>
 
           <main className="mx-auto w-full p-4">
+            {mode !== "admin" && wizard.submissionStatus === "rejected" ? (
+              <Alert variant="destructive" className="mb-4 border-rose-200 bg-rose-50">
+                <AlertDescription className="text-charcoal">
+                  <p>{t("rejectedSubmissionBanner")}</p>
+                  {wizard.adminReviewReason?.trim() ? (
+                    <p className="mt-2 rounded-lg border border-rose-200 bg-white/80 px-3 py-2 text-sm font-medium">
+                      {wizard.adminReviewReason.trim()}
+                    </p>
+                  ) : null}
+                </AlertDescription>
+              </Alert>
+            ) : null}
             <AddPropertyWizard ref={wizardNavRef} />
           </main>
         </div>

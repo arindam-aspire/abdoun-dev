@@ -32,6 +32,19 @@ export interface AgentListing {
   statusDisplayName?: string;
   /** `property_listing_submissions.status` when the API enriches the row. */
   submissionStatus?: string | null;
+  /** Linked submission id for edit/delete/resume flows. */
+  submissionId?: string | null;
+  /**
+   * Human workflow label from API (e.g. "Pending Admin Approval"). Prefer for badge when set.
+   */
+  submissionWorkflowLabel?: string | null;
+  /** Rejection or review note from admin (when status is rejected / changes requested). */
+  reviewReason?: string | null;
+  reviewedAt?: string | null;
+  reviewedBy?: string | null;
+  /** Server-driven; prefer over inferring from `submissionStatus`. */
+  canEditSubmission?: boolean;
+  canDeleteSubmission?: boolean;
   /** Catalog / `property_status` label (e.g. Verified) when `submissionStatus` is also shown. */
   catalogStatusName?: string | null;
 }

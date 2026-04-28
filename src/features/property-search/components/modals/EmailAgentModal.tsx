@@ -27,6 +27,10 @@ export interface EmailAgentModalProps {
     id: number;
     title: string;
   };
+  recipient?: {
+    name?: string;
+    email?: string | null;
+  };
   initialValues?: {
     name?: string;
     email?: string;
@@ -40,6 +44,7 @@ export function EmailAgentModal({
   open,
   onClose,
   listing,
+  recipient,
   initialValues,
   translations: t,
   isRtl = false,
@@ -47,6 +52,8 @@ export function EmailAgentModal({
   const tSearch = useTranslations("searchResult");
   const propertyRef = `${listing.title} - #${listing.id}`;
   const defaultMessage = tSearch("messageDefault", { propertyRef });
+  const recipientEmail = recipient?.email?.trim() ? recipient.email.trim() : "contact@abdoun.com";
+  const recipientName = recipient?.name?.trim() ? recipient.name.trim() : "Abdoun Real Estate";
 
   const [name, setName] = useState(() => initialValues?.name ?? "");
   const [email, setEmail] = useState(() => initialValues?.email ?? "");
@@ -60,7 +67,7 @@ export function EmailAgentModal({
     const body = encodeURIComponent(
       `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\n\n${message}`,
     );
-    window.location.href = `mailto:contact@abdoun.com?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:${encodeURIComponent(recipientEmail)}?subject=${subject}&body=${body}`;
     onClose();
   };
 
@@ -85,8 +92,18 @@ export function EmailAgentModal({
           </button>
         </div>
 
+        <div className="px-5 pt-4">
+          <div className="rounded-lg border border-subtle bg-surface px-3 py-2 text-size-xs text-charcoal/75">
+            <p className="fw-semibold text-charcoal">To: {recipientName}</p>
+            <p className="mt-0.5">
+              Sent to:{" "}
+              <span className="font-mono text-charcoal/80">{recipientEmail}</span>
+            </p>
+          </div>
+        </div>
+
         {/* Form */}
-        <form onSubmit={handleSubmit} className="px-5 py-4">
+        <form onSubmit={handleSubmit} className="px-5 pb-4 pt-4">
           <label className="mb-1.5 block text-size-sm fw-medium text-charcoal">
             {t.enterName} *
           </label>

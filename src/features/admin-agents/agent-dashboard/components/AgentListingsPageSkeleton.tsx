@@ -1,6 +1,7 @@
 "use client";
 
 import { Building2, ChevronDown, Filter, Plus } from "lucide-react";
+import { CustomTable, type CustomTableColumn } from "@/components/ui";
 import { useTranslations } from "@/hooks/useTranslations";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/cn";
@@ -30,6 +31,20 @@ function Bar({ className }: { className?: string }) {
 
 export function AgentListingsPageSkeleton() {
   const t = useTranslations("agentDashboard");
+  const columns: CustomTableColumn<Record<string, never>>[] = [
+    { id: "title", header: t("tableTitle"), render: () => null },
+    { id: "type", header: t("tableType"), render: () => null },
+    { id: "status", header: t("tableStatus"), render: () => null },
+    { id: "updated", header: t("tableLastUpdated"), render: () => null },
+    { id: "price", header: t("tablePrice"), render: () => null },
+    {
+      id: "actions",
+      header: t("tableActions"),
+      headerClassName: "text-right",
+      className: "text-right",
+      render: () => null,
+    },
+  ];
 
   return (
     <div
@@ -92,29 +107,32 @@ export function AgentListingsPageSkeleton() {
 
       {/* Main table — same card + header as loaded page */}
       <article className="overflow-hidden rounded-2xl border border-subtle bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px] text-left">
-            <thead>
-              <tr className="border-b border-subtle bg-surface text-xs text-charcoal/65">
-                <th className="px-4 py-3 font-medium">{t("tableTitle")}</th>
-                <th className="px-4 py-3 font-medium">{t("tableType")}</th>
-                <th className="px-4 py-3 font-medium">{t("tableStatus")}</th>
-                <th className="px-4 py-3 font-medium">{t("tableLastUpdated")}</th>
-                <th className="px-4 py-3 font-medium">{t("tablePrice")}</th>
-                <th className="px-4 py-3 text-right font-medium">{t("tableActions")}</th>
+        <CustomTable<Record<string, never>>
+          columns={columns}
+          data={[]}
+          getRowId={() => "skeleton"}
+          sortConfig={[]}
+          onSort={() => {}}
+          loading
+          skeleton={
+            <tbody>
+              <tr>
+                <td colSpan={columns.length} className="px-4 py-12 text-center">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <Building2 className="h-10 w-10 text-charcoal/40" aria-hidden />
+                    <div className="mt-3 flex flex-col items-center gap-2">
+                      <Bar className="h-4 w-44 max-w-[min(100%,12rem)]" />
+                      <Bar className="h-3.5 w-36 max-w-full opacity-80" />
+                    </div>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>{null}</tbody>
-          </table>
-        </div>
-        {/* Same empty zone as loaded page (icon + line); text line is skeleton until data arrives */}
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Building2 className="h-10 w-10 text-charcoal/40" aria-hidden />
-          <div className="mt-3 flex flex-col items-center gap-2">
-            <Bar className="h-4 w-44 max-w-[min(100%,12rem)]" />
-            <Bar className="h-3.5 w-36 max-w-full opacity-80" />
-          </div>
-        </div>
+            </tbody>
+          }
+          error={null}
+          emptyMessage={null}
+          minTableWidth="700px"
+        />
       </article>
     </div>
   );

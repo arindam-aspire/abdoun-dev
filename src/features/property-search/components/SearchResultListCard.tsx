@@ -415,6 +415,10 @@ export function SearchResultListCard({
         open={emailModalOpen}
         onClose={() => setEmailModalOpen(false)}
         listing={{ id: listing.id, title: listing.title }}
+        recipient={{
+          name: listing.brokerName,
+          email: null,
+        }}
         initialValues={{
           name: signedInUser?.name ?? "",
           email: signedInUser?.email ?? "",

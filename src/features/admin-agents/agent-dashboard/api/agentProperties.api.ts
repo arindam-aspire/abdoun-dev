@@ -32,9 +32,22 @@ export type AgentPropertyListItem = {
   /** Set when a submission is linked to this property (same `submitted_by`). */
   submission_id?: string | null;
   submission_status?: string | null;
+  /** Backend display label for workflow (prefer for badge). */
+  submission_workflow_label?: string | null;
   submission_submitted_at?: string | null;
   submission_reviewed_at?: string | null;
   submission_review_reason?: string | null;
+  review_reason?: string | null;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
+  can_edit_submission?: boolean;
+  can_delete_submission?: boolean;
+} & {
+  /** Some API versions return camelCase for the same fields. */
+  submissionId?: string | null;
+  canEditSubmission?: boolean;
+  canDeleteSubmission?: boolean;
+  listing_submission_id?: string | null;
 };
 
 /** Draft / in-progress wizards with no `property_id` yet. */
@@ -62,6 +75,13 @@ export type FetchAgentPropertiesParams = {
   limit?: number;
 };
 
+export type AgentDraftSubmissionsListData = {
+  items: AgentDraftSubmissionItem[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
 /**
  * List properties the current user created (submitted via stepper), newest first.
  */
@@ -72,6 +92,22 @@ export async function fetchAgentProperties(
   const limit = params.limit ?? 20;
   const response = await authApi.get<StandardApiResponse<AgentPropertyListData>>(
     "/agent-properties",
+    { params: { page, limit } },
+  );
+  return unwrap(response.data);
+}
+
+/**
+ * Draft-only API: returns only draft / in_progress submissions (no property_id yet).
+ * `GET /agent-properties/drafts?page=1&limit=20`
+ */
+export async function fetchAgentPropertyDrafts(
+  params: FetchAgentPropertiesParams = {},
+): Promise<AgentDraftSubmissionsListData> {
+  const page = params.page ?? 1;
+  const limit = params.limit ?? 20;
+  const response = await authApi.get<StandardApiResponse<AgentDraftSubmissionsListData>>(
+    "/agent-properties/drafts",
     { params: { page, limit } },
   );
   return unwrap(response.data);

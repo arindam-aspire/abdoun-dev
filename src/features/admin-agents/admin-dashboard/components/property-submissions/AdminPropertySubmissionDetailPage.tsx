@@ -1,16 +1,30 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import type { AppLocale } from "@/i18n/routing";
-import { Button, Textarea } from "@/components/ui";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 import {
   getAdminPropertySubmission,
-  reviewAdminPropertySubmission,
   type AdminGetSubmissionResult,
-} from "@/features/admin-agents/agent-dashboard/api/adminPropertySubmissions.api";
+} from "@/features/admin-agents/admin-dashboard/api/adminPropertySubmissions.api";
 import { getApiErrorMessage } from "@/lib/http/apiError";
+import { submissionPayloadToDetailedProperty } from "@/features/admin-agents/admin-dashboard/lib/submissionPayloadToDetailedProperty";
+import { PropertyDetailsMain } from "@/features/property-details/components/PropertyDetailsMain";
+import { PropertyDetailsHero } from "@/features/property-details/components/PropertyDetailsHero";
+import { PropertyDetailsTabBar, type PropertyDetailsTabKey } from "@/features/property-details/components/PropertyDetailsTabBar";
+import { PropertyHighlights } from "@/features/property-details/components/PropertyHighlights";
+import { PropertyOverview } from "@/features/property-details/components/PropertyOverview";
+import { PropertyAmenities } from "@/features/property-details/components/PropertyAmenities";
+import { PropertyNeighborhood } from "@/features/property-details/components/PropertyNeighborhood";
+import { PropertyDetailsPriceCard } from "@/features/property-details/components/PropertyDetailsPriceCard";
+import { PropertyInsightsSidebar } from "@/features/property-details/components/PropertyInsightsSidebar";
+import { SimilarProperties } from "@/features/property-details/components/SimilarProperties";
+import { PropertyVirtualTour } from "@/features/property-details/components/PropertyVirtualTour";
+import { PropertyDetailsDocumentsTab, type PropertyDocumentSection } from "@/features/property-details/components/PropertyDetailsDocumentsTab";
+import { usePropertyDetailsTabs } from "@/features/property-details/hooks/usePropertyDetailsTabs";
+import { useSession } from "@/features/auth/hooks/useSession";
 
 type Props = { submissionId: string };
 
@@ -25,12 +39,12 @@ function payloadTitle(payload: Record<string, unknown>): string {
 
 export function AdminPropertySubmissionDetailPage({ submissionId }: Props) {
   const locale = useLocale() as AppLocale;
+  const tabPanelRef = useRef<HTMLDivElement | null>(null);
+  const isRtl = locale === "ar";
+  const { role } = useSession();
   const [data, setData] = useState<AdminGetSubmissionResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [reason, setReason] = useState("");
-  const [acting, setActing] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -50,42 +64,93 @@ export function AdminPropertySubmissionDetailPage({ submissionId }: Props) {
     void load();
   }, [load]);
 
-  const runReview = async (action: "approve" | "changes_requested" | "reject") => {
-    if ((action === "changes_requested" || action === "reject") && !reason.trim()) {
-      setToast("Please enter a reason for this outcome.");
-      return;
-    }
-    setActing(true);
-    setToast(null);
-    try {
-      await reviewAdminPropertySubmission(submissionId, {
-        action,
-        ...(reason.trim() ? { reason: reason.trim() } : {}),
-      });
-      setToast(
-        action === "approve"
-          ? "Submission approved."
-          : action === "changes_requested"
-            ? "Changes requested; the owner can edit and resubmit."
-            : "Submission rejected.",
-      );
-      setReason("");
-      await load();
-    } catch (e) {
-      setToast(getApiErrorMessage(e));
-    } finally {
-      setActing(false);
-    }
-  };
+  const isPrivilegedUser = role === "admin" || role === "agent";
+  const canShowLocationTab = isPrivilegedUser;
+  const canShowDocumentsTab = isPrivilegedUser;
+
+  const { displayTab, handleTabChange } = usePropertyDetailsTabs({
+    canShowLocationTab,
+    canShowDocumentsTab,
+  });
+
+  const adapted = useMemo(() => {
+    if (!data) return null;
+    return submissionPayloadToDetailedProperty({
+      submissionId: data.submission_id,
+      status: data.status,
+      payload: data.payload,
+      propertyReferenceNumber: null,
+      submittedByName: null,
+    });
+  }, [data]);
+
+  const overview = useMemo(() => {
+    const payload = data?.payload ?? {};
+    const bi =
+      payload.basic_information &&
+      typeof payload.basic_information === "object" &&
+      !Array.isArray(payload.basic_information)
+        ? (payload.basic_information as Record<string, unknown>)
+        : null;
+    const desc = bi?.description;
+    const raw = typeof desc === "string" ? desc.trim() : "";
+
+    const description: string[] = raw
+      ? raw
+          .split(/\n{2,}/)
+          .map((p) => p.trim())
+          .filter(Boolean)
+      : ["No description has been provided for this submission yet."];
+
+    return {
+      title: "Overview",
+      description,
+      media: {
+        video_label: "Watch property video on YouTube",
+        platform: "",
+        video_link: "",
+      },
+    };
+  }, [data?.payload]);
+
+  const documentSections: PropertyDocumentSection[] = useMemo(() => [], []);
+
+  useEffect(() => {
+    const node = tabPanelRef.current;
+    if (!node || typeof node.animate !== "function") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const enterOffset = isRtl ? -18 : 18;
+    node.animate(
+      [
+        { opacity: 0, transform: `translateX(${enterOffset}px)` },
+        { opacity: 1, transform: "translateX(0)" },
+      ],
+      {
+        duration: 220,
+        easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
+      },
+    );
+  }, [displayTab, isRtl]);
 
   if (loading) {
-    return <p className="text-sm text-charcoal/60">Loading submission…</p>;
+    return (
+      <div className="container mx-auto px-4 py-10 md:px-8">
+        <LoadingScreen
+          title="Loading submission"
+          description="Please wait while we fetch submission details."
+        />
+      </div>
+    );
   }
 
-  if (error || !data) {
+  if (error || !data || !adapted) {
     return (
       <div className="space-y-4">
-        <Link href={`/${locale}/property-submissions`} className="text-sm text-secondary hover:underline">
+        <Link
+          href={`/${locale}/admin-dashboard/listings`}
+          className="text-sm text-secondary hover:underline"
+        >
           ← Back to submissions
         </Link>
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -95,30 +160,47 @@ export function AdminPropertySubmissionDetailPage({ submissionId }: Props) {
     );
   }
 
-  const locked =
-    data.status === "draft" ||
-    data.status === "in_progress" ||
-    data.status === "approved" ||
-    data.status === "rejected";
+  // Best-case: render the exact same page flow as Agent/public property details
+  // (this calls `GET /api/v1/properties/{id}` internally and populates all sections).
+  if (typeof data.property_hash === "number" && Number.isFinite(data.property_hash)) {
+    return (
+      <div className="space-y-4">
+        <Link
+          href={`/${locale}/admin-dashboard/listings`}
+          className="text-sm text-secondary hover:underline"
+        >
+          ← Back to listings
+        </Link>
+        <PropertyDetailsMain language={locale} propertyId={String(data.property_hash)} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Link href={`/${locale}/property-submissions`} className="text-sm text-secondary hover:underline">
-            ← Back to submissions
+          <Link
+            href={`/${locale}/admin-dashboard/listings`}
+            className="text-sm text-secondary hover:underline"
+          >
+            ← Back to listings
           </Link>
           <h1 className="mt-2 text-2xl font-semibold text-charcoal">{payloadTitle(data.payload)}</h1>
-          <p className="mt-1 font-mono text-xs text-charcoal/60">{data.submission_id}</p>
+          <p className="mt-1 text-xs text-charcoal/60">Submission details</p>
         </div>
         <div className="text-right text-sm">
           <div className="rounded-full bg-charcoal/5 px-3 py-1 text-xs font-medium capitalize text-charcoal">
             {data.status.replace(/_/g, " ")}
           </div>
-          {data.property_id ? (
-            <p className="mt-2 text-xs text-charcoal/60">
-              Property ID: <span className="font-mono">{data.property_id}</span>
-            </p>
+          <p className="mt-2 text-xs text-charcoal/60">
+            Submitted: {data.submitted_at ? new Date(data.submitted_at).toLocaleString() : "—"}
+          </p>
+          <p className="mt-1 text-xs text-charcoal/60">
+            Reviewed: {data.reviewed_at ? new Date(data.reviewed_at).toLocaleString() : "—"}
+          </p>
+          {data.reviewed_by ? (
+            <p className="mt-1 text-xs text-charcoal/60">Reviewed by: {data.reviewed_by}</p>
           ) : null}
           {data.review_reason ? (
             <p className="mt-2 max-w-md text-xs text-amber-900/90">
@@ -128,67 +210,98 @@ export function AdminPropertySubmissionDetailPage({ submissionId }: Props) {
         </div>
       </div>
 
-      <section className="rounded-xl border border-charcoal/10 bg-white p-4 shadow-sm">
-        <h2 className="text-sm font-semibold text-charcoal">Payload (read-only)</h2>
-        <pre className="mt-3 max-h-[480px] overflow-auto rounded-lg bg-slate-50 p-3 text-xs leading-relaxed text-slate-800">
-          {JSON.stringify(data.payload, null, 2)}
-        </pre>
-      </section>
-
-      <section className="rounded-xl border border-charcoal/10 bg-white p-4 shadow-sm">
-        <h2 className="text-sm font-semibold text-charcoal">Moderation</h2>
-        <p className="mt-1 text-xs text-charcoal/60">
-          Approve publishes the listing workflow outcome on the server. Request changes unlocks the owner
-          stepper; reject is terminal.
-        </p>
-        <label className="mt-4 block text-xs font-medium text-charcoal/80" htmlFor="review-reason">
-          Reason (required for request changes / reject; optional for approve)
-        </label>
-        <Textarea
-          id="review-reason"
-          className="mt-1 min-h-[88px] rounded-lg border border-charcoal/15"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          disabled={acting || locked}
-          placeholder="Explain the decision for the submitter when applicable."
+      <div
+        className={`container mx-auto px-4 py-6 md:px-8 md:py-8 relative min-h-screen overflow-x-clip bg-linear-to-b from-surface via-white to-surface text-charcoal ${
+          isRtl ? "text-right" : "text-left"
+        }`}
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl"
         />
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="accent"
-            className="bg-emerald-700 text-white hover:bg-emerald-800"
-            disabled={acting || locked}
-            onClick={() => void runReview("approve")}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-112 -right-20 h-64 w-64 rounded-full bg-secondary/10 blur-3xl"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute bottom-0 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-accent/10 blur-3xl"
+        />
+
+        <PropertyDetailsHero property={adapted} isRtl={isRtl} />
+
+        <main className="relative z-10">
+          <PropertyDetailsTabBar
+            activeTab={displayTab as PropertyDetailsTabKey}
+            onTabChange={handleTabChange}
+            isRtl={isRtl}
+            showLocationTab={canShowLocationTab}
+            showDocumentsTab={canShowDocumentsTab}
+          />
+
+          <div
+            className={`pt-8 grid gap-7 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] md:gap-8 ${
+              isRtl ? "md:[direction:rtl]" : ""
+            }`}
           >
-            Approve
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={acting || locked}
-            onClick={() => void runReview("changes_requested")}
-          >
-            Request changes
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="border-red-200 text-red-800 hover:bg-red-50"
-            disabled={acting || locked}
-            onClick={() => void runReview("reject")}
-          >
-            Reject
-          </Button>
-        </div>
-        {locked && data.status !== "submitted" && data.status !== "changes_requested" ? (
-          <p className="mt-3 text-xs text-charcoal/55">
-            {data.status === "draft" || data.status === "in_progress"
-              ? "This submission is still a draft and cannot be moderated yet."
-              : "This submission is already in a terminal moderation state."}
-          </p>
-        ) : null}
-        {toast ? <p className="mt-3 text-sm text-charcoal/80">{toast}</p> : null}
-      </section>
+            <section className="space-y-6 md:space-y-7">
+              <div key={displayTab} ref={tabPanelRef}>
+                {displayTab === "overview" && (
+                  <section className="">
+                    <PropertyHighlights property={adapted} stats={[]} />
+                    <PropertyOverview overview={overview} />
+                    <PropertyVirtualTour property={adapted} />
+                  </section>
+                )}
+
+                {displayTab === "amenities" && (
+                  <section className="rounded-2xl border border-subtle bg-white/95 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] md:p-6">
+                    <PropertyAmenities amenities={adapted.amenities} />
+                  </section>
+                )}
+
+                {displayTab === "location" && (
+                  canShowLocationTab ? (
+                    <section className="rounded-2xl border border-subtle bg-white/95 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] md:p-6">
+                      <PropertyNeighborhood property={adapted} />
+                    </section>
+                  ) : (
+                    <section className="rounded-2xl border border-subtle bg-white/95 p-5 text-sm text-(--color-charcoal)/70 shadow-[0_8px_24px_rgba(15,23,42,0.06)] md:p-6">
+                      Location details are available for exclusive listings.
+                    </section>
+                  )
+                )}
+
+                {displayTab === "documents" && canShowDocumentsTab && (
+                  <PropertyDetailsDocumentsTab sections={documentSections} />
+                )}
+              </div>
+            </section>
+
+            <div
+              className={`${isRtl ? "md:pl-0 md:pr-4" : "md:pl-4"} self-start md:sticky md:top-[124px]`}
+            >
+              <PropertyDetailsPriceCard
+                price={adapted.price}
+                pricePerM2={adapted.pricePerSqm}
+                documentVerificationLabel={adapted.documentVerificationStatus}
+              />
+              <PropertyInsightsSidebar
+                listing={{
+                  id: adapted.id,
+                  title: adapted.title,
+                  brokerName: adapted.brokerName ?? "Abdoun Real Estate",
+                  agentName: adapted.agent?.name,
+                  agentTagline: adapted.agent?.licenseNumber
+                    ? `License ${adapted.agent.licenseNumber}`
+                    : undefined,
+                }}
+              />
+            </div>
+          </div>
+        </main>
+        <SimilarProperties />
+      </div>
     </div>
   );
 }

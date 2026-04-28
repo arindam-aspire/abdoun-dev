@@ -22,9 +22,17 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Button, Input, Label } from "@/components/ui";
+import {
+  Button,
+  CustomTable,
+  Input,
+  Label,
+  Skeleton,
+  sortRowsByConfig,
+  type CustomTableColumn,
+  type SortConfig,
+} from "@/components/ui";
 import { Dropdown } from "@/components/ui/dropdown";
-import { Pagination } from "@/components/ui/Pagination";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 function statusClass(status: string): string {
@@ -101,6 +109,9 @@ export function ListingsPage() {
   const [editTitle, setEditTitle] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [saving, setSaving] = useState(false);
+  const [sortConfig, setSortConfig] = useState<SortConfig>([
+    { id: "updated", direction: "desc" },
+  ]);
 
   const statusParam = searchParams.get("status");
   const periodParam = searchParams.get("period");
@@ -169,13 +180,121 @@ export function ListingsPage() {
     });
   }, [listings, periodFilter, statusFilter, query]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredListings.length / PAGE_SIZE));
+  const sortedListings = useMemo(() => {
+    return sortRowsByConfig(filteredListings, sortConfig, (row, columnId) => {
+      if (columnId === "title") return row.title;
+      if (columnId === "type") return `${row.type} ${row.subType ?? ""}`;
+      if (columnId === "status") return row.status;
+      if (columnId === "updated") return row.lastUpdated;
+      if (columnId === "price") return row.price;
+      return "";
+    });
+  }, [filteredListings, sortConfig]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedListings.length / PAGE_SIZE));
   const currentPage =
     Number.isFinite(pageParam) && pageParam > 0 ? Math.min(pageParam, totalPages) : 1;
-  const paginatedListings = filteredListings.slice(
+  const paginatedListings = sortedListings.slice(
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE,
   );
+
+  const columns = useMemo((): CustomTableColumn<AgentListing>[] => {
+    return [
+      {
+        id: "title",
+        header: t("tableTitle"),
+        sortable: true,
+        getSortValue: (row) => row.title,
+        render: (row) => <span className="font-medium text-charcoal">{row.title}</span>,
+      },
+      {
+        id: "type",
+        header: t("tableType"),
+        sortable: true,
+        getSortValue: (row) => `${row.type} ${row.subType ?? ""}`,
+        render: (row) => (
+          <span className="text-charcoal/80">{formatTypeWithSubType(row.type, row.subType)}</span>
+        ),
+      },
+      {
+        id: "status",
+        header: t("tableStatus"),
+        sortable: true,
+        getSortValue: (row) => row.status,
+        render: (row) => (
+          <span
+            className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-medium ${statusClass(row.status)}`}
+          >
+            {statusLabel(row.status, t)}
+          </span>
+        ),
+      },
+      {
+        id: "updated",
+        header: t("tableLastUpdated"),
+        sortable: true,
+        getSortValue: (row) => row.lastUpdated,
+        render: (row) => <span className="text-charcoal/80">{formatDate(row.lastUpdated)}</span>,
+      },
+      {
+        id: "price",
+        header: t("tablePrice"),
+        sortable: true,
+        getSortValue: (row) => row.price,
+        render: (row) => <span className="text-charcoal">{formatPrice(row.price)}</span>,
+      },
+      {
+        id: "actions",
+        header: t("tableActions"),
+        headerClassName: "text-right",
+        className: "text-right",
+        render: (row) => (
+          <div className="flex items-center justify-end gap-2">
+            <Link
+              href={`/${locale}/property-details/${row.id}`}
+              className="inline-flex items-center gap-1 rounded-lg border border-subtle bg-surface px-2 py-1.5 text-xs font-medium text-charcoal hover:bg-primary/5"
+            >
+              <Eye className="h-3.5 w-3.5" />
+              {t("view")}
+            </Link>
+            {row.status !== "active" &&
+            row.status !== "pending_approval" &&
+            row.status !== "approved" ? (
+              <button
+                type="button"
+                onClick={() => openEdit(row)}
+                className="inline-flex items-center gap-1 rounded-lg border border-subtle bg-surface px-2 py-1.5 text-xs font-medium text-charcoal hover:bg-primary/5"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                {t("edit")}
+              </button>
+            ) : null}
+            {row.status === "approved" ? (
+              <button
+                type="button"
+                onClick={() => handlePublish(row.id)}
+                className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+              >
+                <Upload className="h-3.5 w-3.5" />
+                {t("publish")}
+              </button>
+            ) : null}
+            {row.status !== "pending_approval" ? (
+              <button
+                type="button"
+                onClick={() => handleDelete(row.id)}
+                className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {t("delete")}
+              </button>
+            ) : null}
+          </div>
+        ),
+      },
+    ];
+  }, [locale, t]);
 
   const statusOptions = LISTING_STATUS_FILTERS.map((status) => ({
     value: status,
@@ -300,117 +419,66 @@ export function ListingsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px] text-left">
-              <thead>
-                <tr className="border-b border-subtle bg-surface text-xs text-charcoal/65">
-                  <th className="px-4 py-3 font-medium">{t("tableTitle")}</th>
-                  <th className="px-4 py-3 font-medium">{t("tableType")}</th>
-                  <th className="px-4 py-3 font-medium">{t("tableStatus")}</th>
-                  <th className="px-4 py-3 font-medium">{t("tableLastUpdated")}</th>
-                  <th className="px-4 py-3 font-medium">{t("tablePrice")}</th>
-                  <th className="px-4 py-3 font-medium text-right">
-                    {t("tableActions")}
-                  </th>
-                </tr>
-              </thead>
+          <CustomTable
+            columns={columns}
+            data={paginatedListings}
+            getRowId={(row) => row.id}
+            sortConfig={sortConfig}
+            onSort={setSortConfig}
+            multiSortWithShift
+            loading={false}
+            skeleton={
               <tbody>
-                {paginatedListings.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-subtle/70 text-sm last:border-b-0"
-                  >
-                    <td className="px-4 py-3 font-medium text-charcoal">{row.title}</td>
-                    <td className="px-4 py-3 text-charcoal/80">
-                      {formatTypeWithSubType(row.type, row.subType)}
+                {Array.from({ length: 7 }, (_, i) => (
+                  <tr key={i} className="border-b border-subtle/70 last:border-b-0">
+                    <td className="px-4 py-3">
+                      <Skeleton className="h-4 w-40 max-w-full" />
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-medium ${statusClass(row.status)}`}
-                      >
-                        {statusLabel(row.status, t)}
-                      </span>
+                      <Skeleton className="h-4 w-28 max-w-full" />
                     </td>
-                    <td className="px-4 py-3 text-charcoal/80">
-                      {formatDate(row.lastUpdated)}
+                    <td className="px-4 py-3">
+                      <Skeleton className="h-6 w-20 rounded-full" />
                     </td>
-                    <td className="px-4 py-3 text-charcoal">
-                      {formatPrice(row.price)}
+                    <td className="px-4 py-3">
+                      <Skeleton className="h-4 w-24 max-w-full" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <Skeleton className="h-4 w-24 max-w-full" />
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={`/${locale}/property-details/${row.id}`}
-                          className="inline-flex items-center gap-1 rounded-lg border border-subtle bg-surface px-2 py-1.5 text-xs font-medium text-charcoal hover:bg-primary/5"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          {t("view")}
-                        </Link>
-                        {row.status !== "active" &&
-                        row.status !== "pending_approval" &&
-                        row.status !== "approved" ? (
-                          <button
-                            type="button"
-                            onClick={() => openEdit(row)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-subtle bg-surface px-2 py-1.5 text-xs font-medium text-charcoal hover:bg-primary/5"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                            {t("edit")}
-                          </button>
-                        ) : null}
-                        {row.status === "approved" ? (
-                          <button
-                            type="button"
-                            onClick={() => handlePublish(row.id)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
-                          >
-                            <Upload className="h-3.5 w-3.5" />
-                            {t("publish")}
-                          </button>
-                        ) : null}
-                        {row.status !== "pending_approval" ? (
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(row.id)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            {t("delete")}
-                          </button>
-                        ) : null}
-                      </div>
+                      <Skeleton className="ml-auto h-8 w-24 rounded-lg" />
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
-
-          {filteredListings.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Building2 className="h-10 w-10 text-charcoal/40" />
-              <p className="mt-2 text-sm text-charcoal/70">{t("noListings")}</p>
-            </div>
-          ) : (
-            <div className="border-t border-subtle px-4 py-4 md:px-5">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={filteredListings.length}
-                pageSize={PAGE_SIZE}
-                basePath={pathname}
-                translations={{
-                  previous: tSearch("paginationPrevious"),
-                  next: tSearch("paginationNext"),
-                  page: tSearch("paginationPage"),
-                  of: tSearch("paginationOf"),
-                  showing: tSearch("paginationShowing"),
-                  to: tSearch("paginationTo"),
-                  results: tSearch("paginationResults"),
-                }}
-              />
-            </div>
-          )}
+            }
+            error={null}
+            emptyMessage={
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Building2 className="h-10 w-10 text-charcoal/40" />
+                <p className="mt-2 text-sm text-charcoal/70">{t("noListings")}</p>
+              </div>
+            }
+            minTableWidth="700px"
+            pagination={{
+              showWhen: sortedListings.length > 0,
+              currentPage,
+              totalPages,
+              totalItems: sortedListings.length,
+              pageSize: PAGE_SIZE,
+              basePath: pathname,
+              translations: {
+                previous: tSearch("paginationPrevious"),
+                next: tSearch("paginationNext"),
+                page: tSearch("paginationPage"),
+                of: tSearch("paginationOf"),
+                showing: tSearch("paginationShowing"),
+                to: tSearch("paginationTo"),
+                results: tSearch("paginationResults"),
+              },
+            }}
+          />
         </CardContent>
       </Card>
 

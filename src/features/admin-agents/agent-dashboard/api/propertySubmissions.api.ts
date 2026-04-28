@@ -19,6 +19,8 @@ export type SubmissionStatus =
   | "submitted"
   | "changes_requested"
   | "approved"
+  /** Some APIs use this synonym for an admin-approved submission. */
+  | "verified"
   | "rejected";
 
 export type ApiSubmissionStep =
@@ -177,4 +179,14 @@ export async function submitExistingPropertySubmission(
     { confirm_submit: true },
   );
   return unwrap(response.data);
+}
+
+/**
+ * Permanently delete a property submission. Allowed for draft, in_progress, changes_requested, rejected
+ * (per product rules); server returns 409 if not deletable.
+ */
+export async function deletePropertySubmission(submissionId: string, reason?: string): Promise<void> {
+  await authApi.delete(`/property-submissions/${submissionId}`, {
+    params: reason?.trim() ? { reason: reason.trim() } : undefined,
+  });
 }
