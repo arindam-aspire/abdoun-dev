@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,12 +19,15 @@ import {
   selectAddPropertyIsEditable,
   selectAddPropertyWizard,
   setCategory,
+  setCategoryId,
   setDescription,
   setListingPurpose,
   setPropertyTitle,
   setPropertyType,
+  setTypeId,
 } from "../addPropertyWizardSlice";
 import type { Category, ListingPurpose } from "../addPropertyWizard.types";
+import { fetchPropertyTaxonomy } from "../../../api/taxonomy.api";
 
 type DropdownOption = {
   value: string;
@@ -113,28 +116,37 @@ function WizardDropdownSelect({
   );
 }
 
-function getPropertyTypeOptions(category: Category) {
+function getPropertyTypeOptionsFallback(category: Category): DropdownOption[] {
   if (category === "commercial") {
     return [
-      { value: "office", label: "Office" },
-      { value: "shop", label: "Shop" },
-      { value: "warehouse", label: "Warehouse" },
+      { value: "Office", label: "Office" },
+      { value: "Shop", label: "Shop" },
+      { value: "Warehouse", label: "Warehouse" },
     ];
   }
 
   if (category === "land") {
     return [
-      { value: "residential-land", label: "Residential Land" },
-      { value: "commercial-land", label: "Commercial Land" },
-      { value: "farm-land", label: "Farm Land" },
+      { value: "Residential Land", label: "Residential Land" },
+      { value: "Commercial Land", label: "Commercial Land" },
+      { value: "Farm Land", label: "Farm Land" },
     ];
   }
 
   return [
-    { value: "apartment", label: "Apartment" },
-    { value: "villa", label: "Villa" },
-    { value: "building", label: "Building" },
+    { value: "Apartment", label: "Apartment" },
+    { value: "Villa", label: "Villa" },
+    { value: "Building", label: "Building" },
   ];
+}
+
+function toWizardCategory(value?: string | null): Category | null {
+  const normalized = value?.trim()?.toLowerCase();
+  if (!normalized) return null;
+  if (normalized === "residential") return "residential";
+  if (normalized === "commercial") return "commercial";
+  if (normalized === "land" || normalized === "lands") return "land";
+  return null;
 }
 
 export function BasicInformationStep() {
@@ -142,10 +154,76 @@ export function BasicInformationStep() {
   const canEdit = useAppSelector(selectAddPropertyIsEditable);
   const { listingPurpose, category, propertyType, propertyTitle, description } =
     useAppSelector(selectAddPropertyWizard);
+  const [taxonomyCategories, setTaxonomyCategories] = useState<
+    Array<{
+      id: number;
+      name: string;
+      slug?: string | null;
+      property_types: Array<{ id: number; name: string }>;
+    }>
+  >([]);
   const [openDropdown, setOpenDropdown] = useState<
     "listingPurpose" | "category" | "propertyType" | null
   >(null);
-  const propertyTypeOptions = getPropertyTypeOptions(category);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPropertyTaxonomy()
+      .then((data) => {
+        if (cancelled) return;
+        setTaxonomyCategories(
+          (data ?? []).map((c) => ({
+            id: c.id,
+            name: c.name,
+            slug: c.slug ?? null,
+            property_types: (c.property_types ?? []).map((pt) => ({
+              id: pt.id,
+              name: pt.name,
+            })),
+          })),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setTaxonomyCategories([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const categoryOptions: DropdownOption[] = useMemo(() => {
+    const fromApi = taxonomyCategories
+      .map((c) => {
+        const mapped = toWizardCategory(c.slug ?? c.name);
+        if (!mapped) return null;
+        const label = c.name?.trim() || mapped;
+        return { value: mapped, label };
+      })
+      .filter(Boolean) as DropdownOption[];
+    return fromApi.length
+      ? fromApi
+      : [
+          { value: "residential", label: "Residential" },
+          { value: "commercial", label: "Commercial" },
+          { value: "land", label: "Land" },
+        ];
+  }, [taxonomyCategories]);
+
+  const propertyTypeOptions: DropdownOption[] = useMemo(() => {
+    const categoryEntry = taxonomyCategories.find(
+      (c) => toWizardCategory(c.slug ?? c.name) === category,
+    );
+    const fromApi = (categoryEntry?.property_types ?? [])
+      .filter((pt) => pt.name?.trim())
+      .map((pt) => ({ value: pt.name, label: pt.name }));
+    return fromApi.length ? fromApi : getPropertyTypeOptionsFallback(category);
+  }, [category, taxonomyCategories]);
+
+  const selectedTaxonomyCategory = useMemo(() => {
+    return taxonomyCategories.find(
+      (c) => toWizardCategory(c.slug ?? c.name) === category,
+    );
+  }, [category, taxonomyCategories]);
 
   return (
     <CardSection
@@ -190,9 +268,15 @@ export function BasicInformationStep() {
           <WizardDropdownSelect
             id="category"
             value={category}
-            onChange={(nextValue) =>
-              dispatch(setCategory(nextValue as Category))
-            }
+            onChange={(nextValue) => {
+              const mapped = nextValue as Category;
+              dispatch(setCategory(mapped));
+              const nextCat = taxonomyCategories.find(
+                (c) => toWizardCategory(c.slug ?? c.name) === mapped,
+              );
+              dispatch(setCategoryId(nextCat?.id ?? null));
+              dispatch(setTypeId(null));
+            }}
             isOpen={openDropdown === "category"}
             onToggle={() =>
               setOpenDropdown((current) =>
@@ -204,11 +288,7 @@ export function BasicInformationStep() {
                 current === "category" ? null : current,
               )
             }
-            options={[
-              { value: "residential", label: "Residential" },
-              { value: "commercial", label: "Commercial" },
-              { value: "land", label: "Land" },
-            ]}
+            options={categoryOptions}
           />
         </FormField>
 
@@ -217,7 +297,13 @@ export function BasicInformationStep() {
           <WizardDropdownSelect
             id="property-type"
             value={propertyType}
-            onChange={(nextValue) => dispatch(setPropertyType(nextValue))}
+            onChange={(nextValue) => {
+              dispatch(setPropertyType(nextValue));
+              const type = selectedTaxonomyCategory?.property_types?.find(
+                (pt) => pt.name === nextValue,
+              );
+              dispatch(setTypeId(type?.id ?? null));
+            }}
             isOpen={openDropdown === "propertyType"}
             onToggle={() =>
               setOpenDropdown((current) =>

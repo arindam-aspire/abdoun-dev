@@ -35,16 +35,16 @@ export function buildStepData(
     case "basic-information":
       return {
         listing_purpose: state.listingPurpose,
-        category_id: getCategoryId(state.category),
-        type_id: getTypeId(state.category, state.propertyType),
+        category_id: state.categoryId ?? getCategoryId(state.category),
+        type_id: state.typeId ?? getTypeId(state.category, state.propertyType),
         title: state.propertyTitle,
         description: state.description,
       };
     case "location": {
       const { city_id, area_id } = getCityAndAreaIds(state.city, state.selectedAreas);
       return {
-        city_id,
-        area_id,
+        city_id: state.cityId ?? city_id,
+        area_id: state.areaId ?? area_id,
         address: state.address,
       };
     }

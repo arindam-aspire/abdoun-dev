@@ -5,6 +5,7 @@ import { DialogRoot } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
 
 const DEFAULT_PHONE = "+962-6-0000000";
+const DEFAULT_PHONE_HREF = "tel:+962600000000";
 
 export interface ContactPropertyModalTranslations {
   contactUs: string;
@@ -23,9 +24,18 @@ export interface ContactPropertyModalProps {
     id: number;
     title: string;
     brokerName: string;
+    agentName?: string;
+    agentPhone?: string | null;
   };
   translations: ContactPropertyModalTranslations;
   isRtl?: boolean;
+}
+
+function buildTelHref(raw?: string | null): string | null {
+  if (!raw?.trim()) return null;
+  const normalized = raw.trim().replace(/[^\d+]/g, "");
+  if (!normalized) return null;
+  return `tel:${normalized}`;
 }
 
 export function ContactPropertyModal({
@@ -36,7 +46,9 @@ export function ContactPropertyModal({
   isRtl = false,
 }: ContactPropertyModalProps) {
   const propertyRef = `${listing.title} - #${listing.id}`;
-  const phoneHref = "tel:+962600000000";
+  const phoneHref = buildTelHref(listing.agentPhone) ?? DEFAULT_PHONE_HREF;
+  const displayName = listing.agentName?.trim() || listing.brokerName;
+  const displayPhone = listing.agentPhone?.trim() || DEFAULT_PHONE;
 
   return (
     <DialogRoot
@@ -61,7 +73,7 @@ export function ContactPropertyModal({
 
         {/* Content */}
         <div className="px-5 py-4">
-          <p className="text-size-sm fw-medium text-charcoal">{listing.brokerName}</p>
+          <p className="text-size-sm fw-medium text-charcoal">{displayName}</p>
 
           {/* Phone with icon */}
           <div
@@ -77,12 +89,12 @@ export function ContactPropertyModal({
               href={phoneHref}
               className="text-size-base fw-bold text-secondary hover:underline"
             >
-              {DEFAULT_PHONE}
+              {displayPhone}
             </a>
           </div>
 
           <p className="mt-2 text-size-sm text-charcoal/80">
-            {t.agentLabel}: {t.agentName}
+            {t.agentLabel}: {listing.agentName?.trim() || t.agentName}
           </p>
 
           <p className="mt-3 text-size-sm text-charcoal/80">

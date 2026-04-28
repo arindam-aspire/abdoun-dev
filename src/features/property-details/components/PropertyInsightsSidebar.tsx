@@ -10,6 +10,9 @@ export interface PropertyInsightsSidebarProps {
     /** When API returns an agent, shown in the card */
     agentName?: string;
     agentTagline?: string;
+    agentEmail?: string | null;
+    agentPhone?: string | null;
+    agentWhatsapp?: string | null;
   };
 }
 

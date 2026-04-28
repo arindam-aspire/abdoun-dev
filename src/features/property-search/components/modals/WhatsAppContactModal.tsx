@@ -31,9 +31,19 @@ export interface WhatsAppContactModalProps {
     id: number;
     title: string;
     brokerName: string;
+    agentName?: string;
+    agentPhone?: string | null;
+    agentWhatsapp?: string | null;
   };
   translations: WhatsAppContactModalTranslations;
   isRtl?: boolean;
+}
+
+function buildWhatsAppNumber(raw?: string | null): string | null {
+  if (!raw?.trim()) return null;
+  const digits = raw.trim().replace(/[^\d]/g, "");
+  if (!digits) return null;
+  return digits;
 }
 
 export function WhatsAppContactModal({
@@ -45,7 +55,14 @@ export function WhatsAppContactModal({
 }: WhatsAppContactModalProps) {
   const propertyRef = `${listing.title} - #${listing.id}`;
   const defaultText = `Hi, I'm interested in: ${propertyRef}. Please get in touch when you can.`;
-  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(defaultText)}`;
+  const resolvedNumber =
+    buildWhatsAppNumber(listing.agentWhatsapp) ??
+    buildWhatsAppNumber(listing.agentPhone) ??
+    WHATSAPP_NUMBER;
+  const whatsappUrl = `https://wa.me/${resolvedNumber}?text=${encodeURIComponent(defaultText)}`;
+  const displayName = listing.agentName?.trim() || listing.brokerName;
+  const displayPhone =
+    listing.agentWhatsapp?.trim() || listing.agentPhone?.trim() || DEFAULT_PHONE_DISPLAY;
 
   return (
     <DialogRoot
@@ -68,7 +85,7 @@ export function WhatsAppContactModal({
         </div>
 
         <div className="px-5 py-4">
-          <p className="text-size-sm fw-medium text-charcoal">{listing.brokerName}</p>
+          <p className="text-size-sm fw-medium text-charcoal">{displayName}</p>
 
           {/* WhatsApp with icon (same layout and color as Call modal) */}
           <div
@@ -87,12 +104,12 @@ export function WhatsAppContactModal({
               onClick={onClose}
               className="text-size-base fw-bold text-secondary hover:underline"
             >
-              {DEFAULT_PHONE_DISPLAY}
+              {displayPhone}
             </a>
           </div>
 
           <p className="mt-2 text-size-sm text-charcoal/80">
-            {t.agentLabel}: {t.agentName}
+            {t.agentLabel}: {listing.agentName?.trim() || t.agentName}
           </p>
 
           <p className="mt-3 text-size-sm text-charcoal/80">

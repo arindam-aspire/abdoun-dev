@@ -21,6 +21,9 @@ export interface PropertyDetailsAgentSectionProps {
     brokerName: string;
     agentName?: string;
     agentTagline?: string;
+    agentEmail?: string | null;
+    agentPhone?: string | null;
+    agentWhatsapp?: string | null;
   };
 }
 
@@ -42,6 +45,14 @@ export function PropertyDetailsAgentSection({ listing }: PropertyDetailsAgentSec
   const isRtl = locale === "ar";
   const tSearch = useTranslations("searchResult");
   const signedInUser = useAppSelector(selectCurrentUser);
+  const currentRole = signedInUser?.role?.toLowerCase();
+  const isAdmin = currentRole === "admin";
+  const agentName = listing.agentName?.trim() || listing.brokerName;
+  const agentEmail = listing.agentEmail?.trim() ? listing.agentEmail.trim() : null;
+  const agentPhone = listing.agentPhone?.trim() ? listing.agentPhone.trim() : null;
+  const agentWhatsapp = listing.agentWhatsapp?.trim()
+    ? listing.agentWhatsapp.trim()
+    : null;
 
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
@@ -113,17 +124,23 @@ export function PropertyDetailsAgentSection({ listing }: PropertyDetailsAgentSec
         onClose={() => setEmailModalOpen(false)}
         listing={{ id: listing.id, title: listing.title }}
         recipient={{
-          name: listing.agentName?.trim() || listing.brokerName,
-          email: null,
+          name: agentName,
+          email: agentEmail,
         }}
         initialValues={
-          signedInUser
+          isAdmin
             ? {
-                name: signedInUser.name,
-                email: signedInUser.email,
-                phone: signedInUser.phone,
+                name: agentName,
+                email: agentEmail ?? "",
+                phone: agentPhone ?? "",
               }
-            : undefined
+            : signedInUser
+              ? {
+                  name: signedInUser.name,
+                  email: signedInUser.email,
+                  phone: signedInUser.phone,
+                }
+              : undefined
         }
         translations={{
           title: tSearch("emailAgentTitle"),

@@ -46,6 +46,17 @@ type DropdownOption = {
   label: string;
 };
 
+const OWNER_DOCUMENT_MAX_SIZE_MB = 10;
+
+function maxBytes(mb: number): number {
+  return mb * 1024 * 1024;
+}
+
+function prettyMb(bytes: number): string {
+  const mb = bytes / (1024 * 1024);
+  return `${mb.toFixed(mb >= 10 ? 0 : 1)}MB`;
+}
+
 interface WizardDropdownSelectProps {
   id: string;
   value: string;
@@ -144,14 +155,21 @@ function OwnerDocumentsUpload({
       return;
     }
     const accepted = Array.from(files).filter((file) => {
-      const type = file.type.toLowerCase();
-      return (
-        type.includes("pdf") ||
-        type.includes("msword") ||
-        type.includes("wordprocessingml") ||
-        type.startsWith("image/")
-      );
+      const isPdf = file.name.toLowerCase().endsWith(".pdf");
+      if (!isPdf) return false;
+      if (file.size > maxBytes(OWNER_DOCUMENT_MAX_SIZE_MB)) return false;
+      return true;
     });
+    const rejected = Array.from(files).filter((file) => !accepted.includes(file));
+    if (rejected.length) {
+      const reasons = rejected.slice(0, 3).map((f) => {
+        if (!f.name.toLowerCase().endsWith(".pdf")) return `${f.name}: documents must be PDF.`;
+        return `${f.name}: document must be ≤ ${OWNER_DOCUMENT_MAX_SIZE_MB}MB (selected ${prettyMb(f.size)}).`;
+      });
+      setLocalError(
+        reasons.join("\n") + (rejected.length > 3 ? `\n+${rejected.length - 3} more` : ""),
+      );
+    }
     if (accepted.length === 0) return;
     setUploading(true);
     try {
@@ -163,7 +181,7 @@ function OwnerDocumentsUpload({
         next.push(row);
       }
       setDocs(next);
-      setLocalError(null);
+      if (!rejected.length) setLocalError(null);
     } catch (e) {
       setLocalError(getApiErrorMessage(e));
     } finally {
@@ -179,8 +197,9 @@ function OwnerDocumentsUpload({
     <div className="mt-5">
       <h3 className="text-size-xl fw-semibold text-[#24415c]">Owner Document</h3>
       <p className="mt-1 text-size-sm text-[#6b7c93]">
-        Upload multiple documents and verification documents (PDF, DOC, Images).
+        Upload multiple documents and verification documents (PDF).
       </p>
+      <p className="mt-1 text-size-xs text-[#6b7c93]">Max {OWNER_DOCUMENT_MAX_SIZE_MB}MB per PDF.</p>
 
       {localError ? (
         <p className="mt-2 text-size-sm text-red-600" role="alert">
@@ -192,7 +211,7 @@ function OwnerDocumentsUpload({
         ref={documentInputRef}
         type="file"
         multiple
-        accept=".pdf,.doc,.docx,image/*"
+        accept=".pdf"
         className="hidden"
         onChange={(event) => {
           void addDocuments(event.target.files);

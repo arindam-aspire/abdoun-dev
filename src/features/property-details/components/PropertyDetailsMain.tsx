@@ -264,6 +264,9 @@ export function PropertyDetailsMain({
                 agentTagline: displayProperty.agent?.licenseNumber
                   ? `License ${displayProperty.agent.licenseNumber}`
                   : undefined,
+                agentEmail: displayProperty.agent?.email ?? null,
+                agentPhone: displayProperty.agent?.phone ?? null,
+                agentWhatsapp: displayProperty.agent?.whatsapp ?? null,
               }}
             />
           </div>

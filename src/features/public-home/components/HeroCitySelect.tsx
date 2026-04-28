@@ -6,6 +6,8 @@ import { JORDAN_CITIES_WITH_AREAS } from "@/lib/mocks/jordanCities";
 import { cn } from "@/lib/cn";
 import { ChevronDown } from "lucide-react";
 
+type CityOption = { id: string | number; name: string };
+
 export interface HeroCitySelectProps {
   label: string;
   placeholder: string;
@@ -15,6 +17,8 @@ export interface HeroCitySelectProps {
   onClose: () => void;
   onChange: (city: string) => void;
   isRtl: boolean;
+  /** Optional override to avoid hardcoded cities list. */
+  cities?: CityOption[];
 }
 
 export function HeroCitySelect({
@@ -26,8 +30,10 @@ export function HeroCitySelect({
   onClose,
   onChange,
   isRtl,
+  cities,
 }: HeroCitySelectProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const cityOptions: CityOption[] = cities?.length ? cities : JORDAN_CITIES_WITH_AREAS;
 
   const handleSelect = (cityName: string) => {
     onChange(cityName);
@@ -79,7 +85,7 @@ export function HeroCitySelect({
             >
               <span>{placeholder}</span>
             </button>
-            {JORDAN_CITIES_WITH_AREAS.map((city) => (
+            {cityOptions.map((city) => (
               <button
                 key={city.id}
                 type="button"

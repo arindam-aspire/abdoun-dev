@@ -28,6 +28,55 @@ type PendingPreview = {
   kind: "image" | "video";
 };
 
+const IMAGE_MAX_SIZE_MB = 5;
+const DOCUMENT_MAX_SIZE_MB = 10;
+const VIDEO_MAX_SIZE_MB = 5;
+const VIDEO_REQUIRED_WIDTH = 1280;
+const VIDEO_REQUIRED_HEIGHT = 720;
+const VIDEO_MIN_DURATION_SEC = 10;
+const VIDEO_MAX_DURATION_SEC = 15;
+
+function maxBytes(mb: number): number {
+  return mb * 1024 * 1024;
+}
+
+function prettyMb(bytes: number): string {
+  const mb = bytes / (1024 * 1024);
+  return `${mb.toFixed(mb >= 10 ? 0 : 1)}MB`;
+}
+
+async function getVideoMeta(file: File): Promise<{ width: number; height: number; duration: number }> {
+  const url = URL.createObjectURL(file);
+  try {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+
+    await new Promise<void>((resolve, reject) => {
+      const cleanup = () => {
+        video.onloadedmetadata = null;
+        video.onerror = null;
+      };
+      video.onloadedmetadata = () => {
+        cleanup();
+        resolve();
+      };
+      video.onerror = () => {
+        cleanup();
+        reject(new Error("Unable to read video metadata."));
+      };
+      video.src = url;
+    });
+
+    return {
+      width: video.videoWidth,
+      height: video.videoHeight,
+      duration: Number.isFinite(video.duration) ? video.duration : 0,
+    };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 export function MediaDocumentsStep() {
   const dispatch = useAppDispatch();
   const { youtubeUrl, virtualTourUrl, submissionId, draftClientId, mediaImages, mediaVideos, propertyListingDocuments } =
@@ -51,17 +100,76 @@ export function MediaDocumentsStep() {
       if (!canUpload) setError("Upload is not available. Save a draft or try again.");
       return;
     }
-    const nextPending: PendingPreview[] = files.map((file) => ({
+
+    const validFiles: File[] = [];
+    const rejected: string[] = [];
+
+    for (const file of files) {
+      const name = file.name.toLowerCase();
+      const isImage = /\.(jpg|jpeg|png|webp)$/.test(name);
+      const isVideo = /\.(mp4|mov|avi)$/.test(name);
+      if (!isImage && !isVideo) {
+        rejected.push(`${file.name}: unsupported file type.`);
+        continue;
+      }
+
+      if (isImage) {
+        if (file.size > maxBytes(IMAGE_MAX_SIZE_MB)) {
+          rejected.push(
+            `${file.name}: image must be ≤ ${IMAGE_MAX_SIZE_MB}MB (selected ${prettyMb(file.size)}).`,
+          );
+          continue;
+        }
+        validFiles.push(file);
+        continue;
+      }
+
+      // video
+      if (file.size > maxBytes(VIDEO_MAX_SIZE_MB)) {
+        rejected.push(
+          `${file.name}: video must be ≤ ${VIDEO_MAX_SIZE_MB}MB (selected ${prettyMb(file.size)}).`,
+        );
+        continue;
+      }
+      try {
+        const meta = await getVideoMeta(file);
+        if (meta.width !== VIDEO_REQUIRED_WIDTH || meta.height !== VIDEO_REQUIRED_HEIGHT) {
+          rejected.push(
+            `${file.name}: video resolution must be ${VIDEO_REQUIRED_WIDTH}x${VIDEO_REQUIRED_HEIGHT} (got ${meta.width}x${meta.height}).`,
+          );
+          continue;
+        }
+        if (meta.duration < VIDEO_MIN_DURATION_SEC || meta.duration > VIDEO_MAX_DURATION_SEC) {
+          rejected.push(
+            `${file.name}: video duration must be ${VIDEO_MIN_DURATION_SEC}-${VIDEO_MAX_DURATION_SEC}s (got ${meta.duration.toFixed(1)}s).`,
+          );
+          continue;
+        }
+      } catch {
+        rejected.push(`${file.name}: unable to validate video metadata.`);
+        continue;
+      }
+      validFiles.push(file);
+    }
+
+    if (rejected.length) {
+      setError(rejected.slice(0, 3).join("\n") + (rejected.length > 3 ? `\n+${rejected.length - 3} more` : ""));
+      if (!validFiles.length) return;
+    } else {
+      setError(null);
+    }
+
+    const nextPending: PendingPreview[] = validFiles.map((file) => ({
       id: `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2, 8)}`,
       file,
       url: URL.createObjectURL(file),
-      kind: file.type.startsWith("video/") ? "video" : "image",
+      kind: /\.(mp4|mov|avi)$/.test(file.name.toLowerCase()) ? "video" : "image",
     }));
     setPending((c) => [...c, ...nextPending]);
-    setError(null);
+
     try {
-      for (const file of files) {
-        const isVideo = file.type.startsWith("video/");
+      for (const file of validFiles) {
+        const isVideo = /\.(mp4|mov|avi)$/.test(file.name.toLowerCase());
         const context = isVideo ? "property_media_video" : "property_media_image";
         const row: MediaFileRef = submissionId
           ? await uploadPropertyFile({ submissionId, file, context })
@@ -87,9 +195,12 @@ export function MediaDocumentsStep() {
 
   const addMediaFiles = (files: FileList | null) => {
     if (!files) return;
-    const accepted = Array.from(files).filter(
-      (file) => file.type.startsWith("image/") || file.type.startsWith("video/"),
-    );
+    const accepted = Array.from(files).filter((file) => {
+      const name = file.name.toLowerCase();
+      const isImage = /\.(jpg|jpeg|png|webp)$/.test(name);
+      const isVideo = /\.(mp4|mov|avi)$/.test(name);
+      return isImage || isVideo;
+    });
     if (accepted.length === 0) return;
     void uploadMediaBatch(accepted);
   };
@@ -109,17 +220,23 @@ export function MediaDocumentsStep() {
     }
     if (!files) return;
     const accepted = Array.from(files).filter((file) => {
-      const type = file.type.toLowerCase();
-      return (
-        type.includes("pdf") ||
-        type.includes("msword") ||
-        type.includes("wordprocessingml") ||
-        type.startsWith("image/")
-      );
+      const isPdf = file.name.toLowerCase().endsWith(".pdf");
+      if (!isPdf) return false;
+      if (file.size > maxBytes(DOCUMENT_MAX_SIZE_MB)) return false;
+      return true;
     });
+    const rejected = Array.from(files).filter((file) => !accepted.includes(file));
+    if (rejected.length) {
+      const reasons = rejected.slice(0, 3).map((f) => {
+        if (!f.name.toLowerCase().endsWith(".pdf")) return `${f.name}: documents must be PDF.`;
+        return `${f.name}: document must be ≤ ${DOCUMENT_MAX_SIZE_MB}MB (selected ${prettyMb(f.size)}).`;
+      });
+      setError(reasons.join("\n") + (rejected.length > 3 ? `\n+${rejected.length - 3} more` : ""));
+    } else {
+      setError(null);
+    }
     if (accepted.length === 0) return;
     setDocUploading(true);
-    setError(null);
     try {
       for (const file of accepted) {
         const row = submissionId
@@ -162,7 +279,7 @@ export function MediaDocumentsStep() {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"
+            accept="image/jpeg,image/png,image/webp,video/mp4,video/mov,video/avi"
             multiple
             className="hidden"
             onChange={(event) => {
@@ -175,7 +292,8 @@ export function MediaDocumentsStep() {
             <UploadCloud className="h-5 w-5" />
           </div>
           <p className="text-[27px] fw-medium text-[#2f3a47]">Choose a file or drag & drop it here</p>
-          <p className="mt-2 text-size-sm text-[#8a97a8]">JPEG, PNG, WEBP, GIF, and MP4 formats, up to 50MB</p>
+          <p className="mt-2 text-size-sm text-[#8a97a8]">JPG, JPEG, PNG, WEBP, MP4, MOV, AVI formats, up to 50MB</p>
+          <p className="mt-1 text-size-xs text-[#8a97a8]">Images: max {IMAGE_MAX_SIZE_MB}MB. Videos: {VIDEO_REQUIRED_WIDTH}x{VIDEO_REQUIRED_HEIGHT}, {VIDEO_MIN_DURATION_SEC}-{VIDEO_MAX_DURATION_SEC}s, max {VIDEO_MAX_SIZE_MB}MB.</p>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -278,14 +396,15 @@ export function MediaDocumentsStep() {
         <div>
           <h3 className="text-size-xl fw-semibold text-[#24415c]">Documents</h3>
           <p className="mt-1 text-size-sm text-[#6b7c93]">
-            Upload multiple documents and verification documents (PDF, DOC, Images).
+            Upload multiple documents and verification documents (PDF).
           </p>
+          <p className="mt-1 text-size-xs text-[#6b7c93]">Max {DOCUMENT_MAX_SIZE_MB}MB per PDF.</p>
 
           <input
             ref={documentInputRef}
             type="file"
             multiple
-            accept=".pdf,.doc,.docx,image/*"
+            accept=".pdf"
             className="hidden"
             onChange={(event) => {
               void addDocuments(event.target.files);

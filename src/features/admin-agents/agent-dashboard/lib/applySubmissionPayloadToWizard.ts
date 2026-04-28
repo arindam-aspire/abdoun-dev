@@ -85,11 +85,13 @@ export function applySubmissionPayloadToWizardState(
         typeof bi.category_id === "number" && Number.isFinite(bi.category_id)
           ? bi.category_id
           : undefined;
+      state.categoryId = categoryId ?? null;
       state.category = getCategoryFromCategoryId(categoryId);
     }
     if ("type_id" in bi) {
       const typeId =
         typeof bi.type_id === "number" && Number.isFinite(bi.type_id) ? bi.type_id : undefined;
+      state.typeId = typeId ?? null;
       state.propertyType = getPropertyTypeSlugFromTypeId(state.category, typeId);
     }
     if ("title" in bi) {
@@ -106,6 +108,8 @@ export function applySubmissionPayloadToWizardState(
       typeof loc.city_id === "number" && Number.isFinite(loc.city_id) ? loc.city_id : undefined;
     const areaId =
       typeof loc.area_id === "number" && Number.isFinite(loc.area_id) ? loc.area_id : undefined;
+    state.cityId = cityId ?? null;
+    state.areaId = areaId ?? null;
     const cityName = getCityNameForSubmissionCityId(cityId);
     if (cityName) {
       state.city = cityName;

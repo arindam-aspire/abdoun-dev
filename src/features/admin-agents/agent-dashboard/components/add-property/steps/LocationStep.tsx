@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
@@ -8,6 +8,7 @@ import { HeroAreaSelect } from "@/features/public-home/components/HeroAreaSelect
 import { HeroCitySelect } from "@/features/public-home/components/HeroCitySelect";
 import { getAreasByCityName } from "@/lib/mocks/jordanCities";
 import type { AppLocale } from "@/i18n/routing";
+import { fetchLocationTaxonomy } from "../../../api/taxonomy.api";
 
 import {
   CardSection,
@@ -20,6 +21,8 @@ import {
   selectAddPropertyWizard,
   setAddress,
   setCity,
+  setCityId,
+  setAreaId,
   setSelectedAreas,
 } from "../addPropertyWizardSlice";
 
@@ -31,9 +34,40 @@ export function LocationStep() {
   const canEdit = useAppSelector(selectAddPropertyIsEditable);
   const { city, selectedAreas, address } = useAppSelector(selectAddPropertyWizard);
   const [openDropdown, setOpenDropdown] = useState<LocationDropdownKey>(null);
+  const [cities, setCities] = useState<
+    Array<{ id: number; name: string; areas: Array<{ id: number; name: string }> }>
+  >([]);
 
   const isRtl = locale === "ar";
-  const areaOptions = city ? getAreasByCityName(city) : [];
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchLocationTaxonomy()
+      .then((data) => {
+        if (cancelled) return;
+        setCities(
+          (data ?? []).map((c) => ({
+            id: c.id,
+            name: c.name,
+            areas: (c.areas ?? []).map((a) => ({ id: a.id, name: a.name })),
+          })),
+        );
+      })
+      .catch(() => {
+        // Keep existing hardcoded behavior if taxonomy API is unavailable.
+        if (!cancelled) setCities([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const areaOptions = useMemo(() => {
+    if (!city) return [];
+    const fromApi = cities.find((c) => c.name === city)?.areas ?? [];
+    const names = fromApi.map((a) => a.name).filter(Boolean);
+    return names.length ? names : getAreasByCityName(city);
+  }, [city, cities]);
 
   const toggleDropdown = (key: Exclude<LocationDropdownKey, null>) => {
     setOpenDropdown((current) => (current === key ? null : key));
@@ -61,8 +95,14 @@ export function LocationStep() {
               isOpen={openDropdown === "city"}
               onToggle={() => toggleDropdown("city")}
               onClose={() => closeDropdown("city")}
-              onChange={(nextCity) => dispatch(setCity(nextCity))}
+              onChange={(nextCity) => {
+                dispatch(setCity(nextCity));
+                const match = cities.find((c) => c.name === nextCity);
+                dispatch(setCityId(match?.id ?? null));
+                dispatch(setAreaId(null));
+              }}
               isRtl={isRtl}
+              cities={cities.length ? cities.map(({ id, name }) => ({ id, name })) : undefined}
             />
           </div>
         </FormField>
@@ -77,7 +117,13 @@ export function LocationStep() {
               isOpen={openDropdown === "area"}
               onToggle={() => toggleDropdown("area")}
               onClose={() => closeDropdown("area")}
-              onSelectionChange={(areas) => dispatch(setSelectedAreas(areas))}
+              onSelectionChange={(areas) => {
+                dispatch(setSelectedAreas(areas));
+                const first = areas[0]?.trim() ?? "";
+                const matchCity = cities.find((c) => c.name === city);
+                const matchArea = matchCity?.areas.find((a) => a.name === first);
+                dispatch(setAreaId(matchArea?.id ?? null));
+              }}
               areaOptions={areaOptions}
               disabled={!city}
               isRtl={isRtl}

@@ -18,7 +18,7 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0)} ${units[i]}`;
 }
 
-const ACCEPTED_TYPES = ".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp";
+const ACCEPTED_TYPES = ".pdf";
 
 export interface DocumentUploadFieldProps {
   title: string;
@@ -43,7 +43,7 @@ export function DocumentUploadField({
   accept = ACCEPTED_TYPES,
   acceptHint,
 }: DocumentUploadFieldProps) {
-  const displayHint = acceptHint ?? "PDF, DOC, DOCX, JPG, PNG, WEBP";
+  const displayHint = acceptHint ?? "PDF";
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 

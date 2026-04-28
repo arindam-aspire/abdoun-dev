@@ -53,11 +53,19 @@ export interface AddPropertyWizardState {
   listingWorkflowStatus: AddPropertyWorkflowStatus;
   listingPurpose: ListingPurpose;
   category: Category;
+  /** Backend `basic_information.category_id` (from taxonomy). */
+  categoryId: number | null;
   propertyType: string;
+  /** Backend `basic_information.type_id` (from taxonomy). */
+  typeId: number | null;
   propertyTitle: string;
   description: string;
   city: string;
+  /** Backend `location.city_id` (from taxonomy). */
+  cityId: number | null;
   selectedAreas: string[];
+  /** Backend `location.area_id` (single) (from taxonomy). */
+  areaId: number | null;
   address: string;
   price: string;
   serviceFee: string;
@@ -110,11 +118,15 @@ const initialState: AddPropertyWizardState = {
   activeStep: "basic-information",
   listingPurpose: "sale",
   category: "residential",
+  categoryId: null,
   propertyType: "",
+  typeId: null,
   propertyTitle: "",
   description: "",
   city: "",
+  cityId: null,
   selectedAreas: [],
+  areaId: null,
   address: "",
   price: "",
   serviceFee: "",
@@ -200,10 +212,19 @@ const addPropertyWizardSlice = createSlice({
       touch(state);
       state.category = action.payload;
       state.propertyType = "";
+      state.typeId = null;
+    },
+    setCategoryId(state, action: PayloadAction<number | null>) {
+      touch(state);
+      state.categoryId = action.payload;
     },
     setPropertyType(state, action: PayloadAction<string>) {
       touch(state);
       state.propertyType = action.payload;
+    },
+    setTypeId(state, action: PayloadAction<number | null>) {
+      touch(state);
+      state.typeId = action.payload;
     },
     setPropertyTitle(state, action: PayloadAction<string>) {
       touch(state);
@@ -217,10 +238,19 @@ const addPropertyWizardSlice = createSlice({
       touch(state);
       state.city = action.payload;
       state.selectedAreas = [];
+      state.areaId = null;
+    },
+    setCityId(state, action: PayloadAction<number | null>) {
+      touch(state);
+      state.cityId = action.payload;
     },
     setSelectedAreas(state, action: PayloadAction<string[]>) {
       touch(state);
       state.selectedAreas = action.payload;
+    },
+    setAreaId(state, action: PayloadAction<number | null>) {
+      touch(state);
+      state.areaId = action.payload;
     },
     setAddress(state, action: PayloadAction<string>) {
       touch(state);
@@ -421,11 +451,15 @@ export const {
   setActiveStep,
   setListingPurpose,
   setCategory,
+  setCategoryId,
   setPropertyType,
+  setTypeId,
   setPropertyTitle,
   setDescription,
   setCity,
+  setCityId,
   setSelectedAreas,
+  setAreaId,
   setAddress,
   setPrice,
   setServiceFee,
