@@ -842,7 +842,7 @@ export function AdminAgentsPage() {
             minTableWidth="900px"
             pagination={{
               showWhen:
-                !loading && !error && totalPages > 1 && tableRows.length > 0,
+                !loading && !error && tableRows.length > 0,
               currentPage: safePage,
               totalPages,
               totalItems,

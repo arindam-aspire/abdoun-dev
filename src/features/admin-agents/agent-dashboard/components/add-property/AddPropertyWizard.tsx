@@ -98,6 +98,9 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
   const isRejectedResubmit =
     isReviewStep && canEdit && wizardState.submissionStatus === "rejected";
   const isAdmin = wizardMode === "admin";
+  // When an agent is editing a previously rejected submission, hide "Save as Draft"
+  // to avoid implying a new draft flow; the primary action is "Resubmit".
+  const shouldHideSaveAsDraft = !isAdmin && isRejectedResubmit;
 
   const [initLoading, setInitLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -591,18 +594,20 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
           </Button>
 
           <div className="flex items-center gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                void handleDraft();
-              }}
-              className="rounded-xl"
-              disabled={saving || !canEdit}
-            >
-              <Save className="h-4 w-4" />
-              Save as Draft
-            </Button>
+            {!shouldHideSaveAsDraft ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  void handleDraft();
+                }}
+                className="rounded-xl"
+                disabled={saving || !canEdit}
+              >
+                <Save className="h-4 w-4" />
+                Save as Draft
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="accent"

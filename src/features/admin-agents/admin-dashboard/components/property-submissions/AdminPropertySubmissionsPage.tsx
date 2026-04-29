@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
@@ -8,6 +8,10 @@ import type { AppLocale } from "@/i18n/routing";
 import {
   ActionsMenu,
   Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   CustomTable,
   IconButton,
   Input,
@@ -18,18 +22,23 @@ import {
   type CustomTableColumn,
   type SortConfig,
 } from "@/components/ui";
+import {
+  DEFAULT_PAGINATION_PAGE_SIZE,
+  PAGINATION_PAGE_SIZES,
+} from "@/components/ui/Pagination";
 import { DialogRoot, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Dropdown } from "@/components/ui/dropdown";
 import {
+  Building2,
   CheckCircle2,
-  Filter,
   MoreVertical,
   Eye,
   Pencil,
   Trash2,
   UserPlus,
   UserMinus,
+  X,
   XCircle,
 } from "lucide-react";
 import {
@@ -45,7 +54,6 @@ import { getApiErrorMessage } from "@/lib/http/apiError";
 import { listAdminAgents, type AdminAgent } from "@/services/adminAgentApiService";
 import { useAppDispatch } from "@/hooks/storeHooks";
 import { initializeNewPropertyWizard } from "@/features/admin-agents/agent-dashboard/components/add-property/addPropertyWizardSlice";
-import { useSession } from "@/features/auth/hooks/useSession";
 
 type StatusFilter =
   | ""
@@ -55,6 +63,9 @@ type StatusFilter =
 
 const PERIOD_FILTERS = ["all", "weekly", "monthly", "yearly"] as const;
 type PeriodFilter = (typeof PERIOD_FILTERS)[number];
+const PAGE_PARAM = "page";
+const PAGE_SIZE_PARAM = "pageSize";
+const FETCH_LIMIT = 200;
 
 const TABLE_SKELETON_ROWS = 6;
 
@@ -124,21 +135,6 @@ function isDeletedRow(row: AdminSubmissionListItem): boolean {
   return Boolean(row.deleted_at);
 }
 
-function isAgentSubmittedProperty(row: AdminSubmissionListItem, currentUserId?: string | null): boolean {
-  const role =
-    row.submitted_by_role ?? row.created_by_role ?? row.source_role ?? row.submission_source;
-  if (typeof role === "string" && role.trim()) {
-    return role.trim().toLowerCase() === "agent";
-  }
-  // Fallback (backend-guided): if we know current user id, treat submissions created by someone else as agent-submitted.
-  // This avoids showing Assign Agent on admin-created properties (submitted_by == current admin).
-  if (currentUserId && row.submitted_by && row.submitted_by !== currentUserId) {
-    return true;
-  }
-  // TODO(back-end): expose `submitted_by_role` or `source_role` ("agent" | "admin") in admin list response.
-  return false;
-}
-
 function canShowReviewActions(row: AdminSubmissionListItem): boolean {
   return getSubmissionStatus(row) === "submitted" && !isDeletedRow(row);
 }
@@ -178,30 +174,14 @@ export function AdminPropertySubmissionsPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
-  const { user } = useSession();
-  const currentUserId = user?.id ? String(user.id) : null;
-  const statusParam = (searchParams.get("status") ?? "").trim();
-  const periodParam = (searchParams.get("period") ?? "").trim();
-  const pageParam = Number(searchParams.get("page") ?? "1");
-  const filter: StatusFilter =
-    statusParam === "" ||
-    statusParam === "submitted" ||
-    statusParam === "approved" ||
-    statusParam === "rejected"
-      ? (statusParam as StatusFilter)
-      : "submitted";
-  const periodFilter: PeriodFilter =
-    periodParam && PERIOD_FILTERS.includes(periodParam as PeriodFilter)
-      ? (periodParam as PeriodFilter)
-      : "all";
-  const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
-  const limit = 20;
   const [items, setItems] = useState<AdminSubmissionListItem[]>([]);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<AdminDraftSubmissionItem[]>([]);
   const [draftsTotal, setDraftsTotal] = useState(0);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("");
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
   const [toast, setToast] = useState<{ kind: "success" | "error"; message: string } | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>([
     { id: "submitted_at", direction: "desc" },
@@ -227,82 +207,177 @@ export function AdminPropertySubmissionsPage() {
   const [agentSearch, setAgentSearch] = useState("");
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
 
-  const updateQueryParams = useCallback(
-    (updates: Record<string, string | null>) => {
-      const params = new URLSearchParams(searchParams.toString());
-      Object.entries(updates).forEach(([key, value]) => {
-        if (!value || value === "all") params.delete(key);
-        else params.set(key, value);
-      });
-      const query = params.toString();
-      router.push(query ? `${pathname}?${query}` : pathname);
-    },
-    [pathname, router, searchParams],
-  );
+  const pageSize = useMemo(() => {
+    const raw = searchParams.get(PAGE_SIZE_PARAM);
+    const n = Number.parseInt(raw ?? String(DEFAULT_PAGINATION_PAGE_SIZE), 10);
+    return PAGINATION_PAGE_SIZES.includes(
+      n as (typeof PAGINATION_PAGE_SIZES)[number],
+    )
+      ? n
+      : DEFAULT_PAGINATION_PAGE_SIZE;
+  }, [searchParams]);
+
+  const currentPage = useMemo(() => {
+    const raw = searchParams.get(PAGE_PARAM);
+    const n = Number.parseInt(raw ?? "1", 10);
+    return Number.isFinite(n) && n >= 1 ? n : 1;
+  }, [searchParams]);
+
+  useLayoutEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const legacyQ = params.get("q");
+    const legacyStatus = params.get("status");
+    const legacyPeriod = params.get("period");
+    if (legacyQ) setQuery(legacyQ);
+    if (
+      legacyStatus === "" ||
+      legacyStatus === "submitted" ||
+      legacyStatus === "approved" ||
+      legacyStatus === "rejected"
+    ) {
+      setStatusFilter(legacyStatus as StatusFilter);
+    }
+    if (legacyPeriod && PERIOD_FILTERS.includes(legacyPeriod as PeriodFilter)) {
+      setPeriodFilter(legacyPeriod as PeriodFilter);
+    }
+    if (!params.has("q") && !params.has("status") && !params.has("period")) {
+      return;
+    }
+    params.delete("q");
+    params.delete("status");
+    params.delete("period");
+    const next = params.toString();
+    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate legacy params once on mount
+  }, []);
+
+  const resetToFirstPageIfNeeded = useCallback(() => {
+    if (currentPage <= 1) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(PAGE_PARAM);
+    const next = params.toString();
+    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+  }, [currentPage, pathname, router, searchParams]);
 
   const loadDrafts = useCallback(async () => {
     try {
       const res = await fetchAdminPropertyDrafts({ page: 1, limit: 20 });
       setDrafts(res.items ?? []);
       setDraftsTotal(res.total ?? res.items?.length ?? 0);
-    } catch (e) {
+    } catch {
       // Keep page usable even if drafts endpoint fails.
       setDrafts([]);
       setDraftsTotal(0);
     }
   }, []);
 
+  const loadAllSubmissions = useCallback(async (status: StatusFilter) => {
+    const collected: AdminSubmissionListItem[] = [];
+    let page = 1;
+    let total = 0;
+
+    while (true) {
+      const res = await listAdminPropertySubmissions({
+        page,
+        limit: FETCH_LIMIT,
+        status,
+      });
+      if (page === 1) total = res.total ?? 0;
+      collected.push(...(res.items ?? []));
+      if ((res.items?.length ?? 0) === 0 || collected.length >= total) {
+        break;
+      }
+      page += 1;
+    }
+
+    return collected;
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      // Always load drafts section (agent parity).
       await loadDrafts();
-      const res = await listAdminPropertySubmissions({
-        page,
-        limit,
-        status: filter,
-      });
-      setItems(res.items);
-      setTotal(res.total);
+      const nextItems = await loadAllSubmissions(statusFilter);
+      setItems(nextItems);
     } catch (e) {
       setError(getApiErrorMessage(e));
       setItems([]);
-      setTotal(0);
     } finally {
       setLoading(false);
     }
-  }, [filter, page, limit, loadDrafts]);
+  }, [loadAllSubmissions, loadDrafts, statusFilter]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const sorted = useMemo(() => {
-    return sortRowsByConfig(items, sortConfig, (row, colId) => {
+  const filteredRows = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return items.filter((row) => {
+      if (periodFilter !== "all") {
+        const days = periodFilter === "weekly" ? 7 : periodFilter === "monthly" ? 30 : 365;
+        const candidate = row.submitted_at ?? row.reviewed_at ?? "";
+        if (!candidate || !isWithinDays(candidate, days)) {
+          return false;
+        }
+      }
+
+      if (!normalizedQuery) return true;
+
+      const haystack = [
+        row.submitted_by_name,
+        row.submitted_by,
+        row.property_title,
+        row.property_reference_number,
+        row.property_id,
+        row.submission_id,
+        row.submission_status,
+        row.status,
+        row.submission_workflow_label,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(normalizedQuery);
+    });
+  }, [items, periodFilter, query]);
+
+  const sortedRows = useMemo(() => {
+    return sortRowsByConfig(filteredRows, sortConfig, (row, colId) => {
       if (colId === "submission_id") return row.submission_id;
-      if (colId === "status") return row.status;
+      if (colId === "status") return getSubmissionStatus(row);
       if (colId === "property") {
         return `${row.property_title ?? ""} ${row.property_reference_number ?? ""} ${row.property_id ?? ""}`.trim();
       }
       if (colId === "current_step") return row.current_step;
       if (colId === "submitted_at") return row.submitted_at ?? "";
+      if (colId === "reviewed_at") return row.reviewed_at ?? "";
       if (colId === "submitted_by") return row.submitted_by_name ?? row.submitted_by;
       return "";
     });
-  }, [items, sortConfig]);
+  }, [filteredRows, sortConfig]);
 
-  const filteredByPeriod = useMemo(() => {
-    if (periodFilter === "all") return sorted;
-    const days = periodFilter === "weekly" ? 7 : periodFilter === "monthly" ? 30 : 365;
-    return sorted.filter((row) => {
-      const candidate = row.submitted_at ?? row.reviewed_at ?? "";
-      if (!candidate) return false;
-      return isWithinDays(candidate, days);
-    });
-  }, [periodFilter, sorted]);
+  const totalItems = sortedRows.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedRows = useMemo(
+    () => sortedRows.slice((safePage - 1) * pageSize, safePage * pageSize),
+    [pageSize, safePage, sortedRows],
+  );
 
-  const totalPages = Math.max(1, Math.ceil(total / limit));
+  useEffect(() => {
+    if (loading || error) return;
+    if (currentPage > totalPages) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete(PAGE_PARAM);
+      const next = params.toString();
+      router.replace(next ? `${pathname}?${next}` : pathname, {
+        scroll: false,
+      });
+    }
+  }, [currentPage, error, loading, pathname, router, searchParams, totalPages]);
 
   const statusOptions = [
     { value: "", label: "All" },
@@ -315,13 +390,48 @@ export function AdminPropertySubmissionsPage() {
     value: period,
     label:
       period === "all"
-        ? "All time"
+        ? "All"
         : period === "weekly"
           ? "Weekly"
           : period === "monthly"
             ? "Monthly"
             : "Yearly",
   }));
+
+  const onSearchChange = (value: string) => {
+    setQuery(value);
+    resetToFirstPageIfNeeded();
+  };
+
+  const onStatusChange = (value: string) => {
+    const next =
+      value === "submitted" || value === "approved" || value === "rejected"
+        ? value
+        : "";
+    setStatusFilter(next);
+    resetToFirstPageIfNeeded();
+  };
+
+  const onPeriodChange = (value: string) => {
+    const next = PERIOD_FILTERS.includes(value as PeriodFilter)
+      ? (value as PeriodFilter)
+      : "all";
+    setPeriodFilter(next);
+    resetToFirstPageIfNeeded();
+  };
+
+  const emptyListMessage = useMemo(() => {
+    if (query.trim()) {
+      return "No listings match your search. Try a different property, submitter, or reference.";
+    }
+    if (statusFilter) {
+      return "No listings with this status. Clear the status filter to see everything.";
+    }
+    if (periodFilter !== "all") {
+      return "No listings in this time range. Try another period.";
+    }
+    return "No submissions.";
+  }, [periodFilter, query, statusFilter]);
 
   const columns = useMemo((): CustomTableColumn<AdminSubmissionListItem>[] => {
     return [
@@ -399,7 +509,6 @@ export function AdminPropertySubmissionsPage() {
         headerClassName: "text-right",
         className: "text-right",
         render: (row) => {
-          const status = getSubmissionStatus(row);
           const deleted = isDeletedRow(row);
           const canModerate = canShowReviewActions(row);
           const busy = actingId === row.submission_id;
@@ -605,7 +714,7 @@ export function AdminPropertySubmissionsPage() {
         },
       },
     ];
-  }, [actingId, agents.length, dispatch, locale, load, selectedAgentId]);
+  }, [actingId, agents.length, locale, load]);
 
   return (
     <div className="space-y-6">
@@ -633,48 +742,6 @@ export function AdminPropertySubmissionsPage() {
           >
             Add Property
           </Link>
-          <Button type="button" variant="outline" className="shrink-0" onClick={() => void load()}>
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-        <div className="flex items-center gap-2 text-xs font-medium text-charcoal/80">
-          <Filter className="h-4 w-4" />
-          Filter
-        </div>
-        <div className="hidden h-4 w-px bg-subtle sm:block" />
-        <div className="flex flex-1 flex-col sm:flex-row items-center gap-2">
-          <Dropdown
-            buttonId="admin-submissions-status-filter"
-            label="Status"
-            value={filter}
-            onChange={(val) => {
-              const next = String(val ?? "");
-              const status =
-                next === "submitted" ||
-                next === "approved" ||
-                next === "rejected"
-                  ? next
-                  : "";
-              updateQueryParams({ status, page: null });
-            }}
-            options={statusOptions as unknown as { value: string; label: string }[]}
-            align="left"
-          />
-          <Dropdown
-            buttonId="admin-submissions-period-filter"
-            label="All time"
-            value={periodFilter}
-            onChange={(val) => {
-              const next = String(val ?? "");
-              const period = PERIOD_FILTERS.includes(next as PeriodFilter) ? next : "all";
-              updateQueryParams({ period: period === "all" ? null : period, page: null });
-            }}
-            options={periodOptions as unknown as { value: string; label: string }[]}
-            align="left"
-          />
         </div>
       </div>
 
@@ -711,28 +778,88 @@ export function AdminPropertySubmissionsPage() {
         </section>
       ) : null}
 
-      <article className="rounded-2xl border border-subtle bg-white shadow-sm overflow-hidden">
+      <Card className="rounded-xl border-subtle">
+        <CardHeader className="flex flex-col gap-3 space-y-0 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-secondary" />
+            <CardTitle className="text-size-sm text-charcoal">
+              Property list
+            </CardTitle>
+          </div>
+          <div className="flex w-full justify-end md:w-auto">
+            <div className="flex w-full flex-col gap-2 md:flex-row md:items-center md:justify-end">
+              <div className="w-full md:w-64 lg:w-80">
+                <Input
+                  value={query}
+                  onChange={(event) => onSearchChange(event.target.value)}
+                  placeholder="Search by submitter, property, reference"
+                  className="h-10 w-full rounded-lg"
+                  rightAdornment={
+                    query.trim() ? (
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Clear search"
+                        className="text-charcoal/55 hover:bg-charcoal/10 hover:text-charcoal"
+                        onClick={() => onSearchChange("")}
+                      >
+                        <X />
+                      </IconButton>
+                    ) : undefined
+                  }
+                />
+              </div>
+              <div className="flex w-full items-center gap-2 md:w-auto">
+                <Dropdown
+                  buttonId="admin-submissions-status-filter"
+                  label="All"
+                  value={statusFilter}
+                  onChange={(value) => onStatusChange(String(value ?? ""))}
+                  align="right"
+                  menuClassName="w-44"
+                  buttonClassName="h-10 rounded-lg border-subtle bg-surface px-3 text-size-xs text-charcoal shadow-sm focus-visible:ring-primary/40 justify-between"
+                  options={statusOptions as unknown as { value: string; label: string }[]}
+                />
+              </div>
+              <div className="flex w-full items-center gap-2 md:w-auto">
+                <Dropdown
+                  buttonId="admin-submissions-period-filter"
+                  label="All"
+                  value={periodFilter}
+                  onChange={(value) => onPeriodChange(String(value ?? "all"))}
+                  align="right"
+                  menuClassName="w-44"
+                  buttonClassName="h-10 rounded-lg border-subtle bg-surface px-3 text-size-xs text-charcoal shadow-sm focus-visible:ring-primary/40 justify-between"
+                  options={periodOptions as unknown as { value: string; label: string }[]}
+                />
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
         <CustomTable
           columns={columns}
-          data={filteredByPeriod}
+          data={paginatedRows}
           getRowId={(row) => row.submission_id}
           sortConfig={sortConfig}
           onSort={setSortConfig}
+          multiSortWithShift
           loading={loading}
           skeleton={<AdminSubmissionsTableSkeleton />}
           error={error}
-          emptyMessage={<div className="py-10 text-center text-sm text-charcoal/60">No submissions.</div>}
+          emptyMessage={emptyListMessage}
           minTableWidth="1000px"
           pagination={{
             // Show the footer whenever we have results, even if it is a single page,
             // so the "Showing X–Y of Z results" line matches the agent listings table.
-            showWhen: !loading && !error && total > 0,
-            currentPage: page,
+            showWhen: !loading && !error && paginatedRows.length > 0,
+            currentPage: safePage,
             totalPages,
-            totalItems: total,
-            pageSize: limit,
-            basePath: `/${locale}/admin-dashboard/listings`,
-            onPageChange: (nextPage) => updateQueryParams({ page: String(nextPage) }),
+            totalItems,
+            pageSize,
+            pageParam: PAGE_PARAM,
+            pageSizeParam: PAGE_SIZE_PARAM,
             translations: {
               previous: "Previous",
               next: "Next",
@@ -743,8 +870,9 @@ export function AdminPropertySubmissionsPage() {
               results: "results",
             },
           }}
-        />
-      </article>
+          />
+        </CardContent>
+      </Card>
 
       <DialogRoot
         open={reasonDialog.open}

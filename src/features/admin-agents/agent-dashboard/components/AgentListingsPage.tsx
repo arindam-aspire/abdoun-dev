@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
@@ -15,7 +15,7 @@ import {
   Plus,
   Trash2,
   Upload,
-  Filter,
+  X,
 } from "lucide-react";
 import {
   fetchAgentProperties,
@@ -34,7 +34,7 @@ import {
   publishDraft,
   updateListing,
 } from "@/services/agentDashboardMockService";
-import type { AgentListing, ListingStatus, PropertyType } from "@/types/agent";
+import type { AgentListing, ListingStatus } from "@/types/agent";
 import { getApiErrorMessage } from "@/lib/http/apiError";
 import { useAppDispatch } from "@/hooks/storeHooks";
 import { useTranslations } from "@/hooks/useTranslations";
@@ -43,6 +43,10 @@ import { DialogRoot, DialogTitle, DialogDescription, DialogFooter } from "@/comp
 import {
   ActionsMenu,
   Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   CustomTable,
   IconButton,
   Input,
@@ -53,6 +57,10 @@ import {
   type CustomTableColumn,
   type SortConfig,
 } from "@/components/ui";
+import {
+  DEFAULT_PAGINATION_PAGE_SIZE,
+  PAGINATION_PAGE_SIZES,
+} from "@/components/ui/Pagination";
 import { Dropdown } from "@/components/ui/dropdown";
 import { Toast } from "@/components/ui/toast";
 import { AgentListingsPageSkeleton } from "@/features/admin-agents/agent-dashboard/components/AgentListingsPageSkeleton";
@@ -62,7 +70,6 @@ function statusClass(status: string): string {
   if (status === "pending_approval") return "bg-sky-100 text-sky-800 border-sky-200";
   if (status === "approved") return "bg-violet-100 text-violet-800 border-violet-200";
   if (status === "rejected") return "bg-rose-100 text-rose-800 border-rose-200";
-  if (status === "deactivated") return "bg-charcoal/10 text-charcoal/80 border-subtle";
   return "bg-charcoal/10 text-charcoal/80 border-subtle";
 }
 
@@ -71,7 +78,6 @@ function statusLabel(status: string, t: (k: string) => string): string {
   if (status === "approved") return t("statusApproved");
   if (status === "active") return t("statusActive");
   if (status === "rejected") return t("statusRejected");
-  if (status === "deactivated") return t("statusDeactivated");
   return status;
 }
 
@@ -120,27 +126,15 @@ function formatTypeWithSubType(type: string, subType?: string | null): string {
   return typeLabel;
 }
 
-const PROPERTY_TYPES: PropertyType[] = [
-  "villa",
-  "apartment",
-  "office",
-  "land",
-  "house",
-  "duplex",
-  "warehouse",
-  "studio",
-  "penthouse",
-  "commercial",
-];
-
-const PAGE_SIZE = 10;
+const PAGE_PARAM = "page";
+const PAGE_SIZE_PARAM = "pageSize";
+const FETCH_LIMIT = 200;
 const LISTING_STATUS_FILTERS: readonly ("all" | ListingStatus)[] = [
   "all",
   "active",
   "pending_approval",
   "approved",
-  "rejected",
-  "deactivated",
+  "rejected"
 ];
 const PERIOD_FILTERS = ["all", "weekly", "monthly", "yearly"] as const;
 
@@ -209,46 +203,94 @@ export function AgentListingsPage() {
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [deleteErrorToast, setDeleteErrorToast] = useState<string | null>(null);
   const [deleteSuccessToast, setDeleteSuccessToast] = useState(false);
+  const [rejectedReasonDialog, setRejectedReasonDialog] = useState<{
+    open: boolean;
+    reason: string | null;
+  }>({ open: false, reason: null });
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | ListingStatus>("all");
+  const [periodFilter, setPeriodFilter] = useState<ListingPeriodFilter>("all");
   const [sortConfig, setSortConfig] = useState<SortConfig>([
     { id: "updated", direction: "desc" },
   ]);
 
-  const statusParam = searchParams.get("status");
-  const periodParam = searchParams.get("period");
-  const pageParam = Number(searchParams.get("page") ?? "1");
-  const statusFilter: "all" | ListingStatus =
-    statusParam && LISTING_STATUS_FILTERS.includes(statusParam as "all" | ListingStatus)
-      ? (statusParam as "all" | ListingStatus)
-      : "all";
-  const periodFilter: ListingPeriodFilter =
-    periodParam && PERIOD_FILTERS.includes(periodParam as ListingPeriodFilter)
-      ? (periodParam as ListingPeriodFilter)
-      : "all";
+  const pageSize = useMemo(() => {
+    const raw = searchParams.get(PAGE_SIZE_PARAM);
+    const n = Number.parseInt(raw ?? String(DEFAULT_PAGINATION_PAGE_SIZE), 10);
+    return PAGINATION_PAGE_SIZES.includes(
+      n as (typeof PAGINATION_PAGE_SIZES)[number],
+    )
+      ? n
+      : DEFAULT_PAGINATION_PAGE_SIZE;
+  }, [searchParams]);
 
-  const updateQueryParams = useCallback(
-    (updates: Record<string, string | null>) => {
-      const params = new URLSearchParams(searchParams.toString());
-      Object.entries(updates).forEach(([key, value]) => {
-        if (!value || value === "all") params.delete(key);
-        else params.set(key, value);
-      });
-      params.delete("page");
-      const query = params.toString();
-      router.push(query ? `${pathname}?${query}` : pathname);
-    },
-    [pathname, router, searchParams],
-  );
+  const currentPage = useMemo(() => {
+    const raw = searchParams.get(PAGE_PARAM);
+    const n = Number.parseInt(raw ?? "1", 10);
+    return Number.isFinite(n) && n >= 1 ? n : 1;
+  }, [searchParams]);
+
+  useLayoutEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const legacyQ = params.get("q");
+    const legacyStatus = params.get("status");
+    const legacyPeriod = params.get("period");
+    if (legacyQ) setQuery(legacyQ);
+    if (
+      legacyStatus &&
+      LISTING_STATUS_FILTERS.includes(legacyStatus as "all" | ListingStatus)
+    ) {
+      setStatusFilter(legacyStatus as "all" | ListingStatus);
+    }
+    if (legacyPeriod && PERIOD_FILTERS.includes(legacyPeriod as ListingPeriodFilter)) {
+      setPeriodFilter(legacyPeriod as ListingPeriodFilter);
+    }
+    if (!params.has("q") && !params.has("status") && !params.has("period")) {
+      return;
+    }
+    params.delete("q");
+    params.delete("status");
+    params.delete("period");
+    const next = params.toString();
+    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate legacy params once on mount
+  }, []);
+
+  const resetToFirstPageIfNeeded = useCallback(() => {
+    if (currentPage <= 1) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(PAGE_PARAM);
+    const next = params.toString();
+    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+  }, [currentPage, pathname, router, searchParams]);
+
+  const loadAllAgentProperties = useCallback(async () => {
+    const collected: AgentListing[] = [];
+    let page = 1;
+    let total = 0;
+
+    while (true) {
+      const res = await fetchAgentProperties({ page, limit: FETCH_LIMIT });
+      if (page === 1) total = res.total ?? 0;
+      collected.push(...res.items.map(mapAgentPropertyItemToAgentListing));
+      if ((res.items?.length ?? 0) === 0 || collected.length >= total) {
+        break;
+      }
+      page += 1;
+    }
+
+    return collected;
+  }, []);
 
   const load = useCallback(() => {
     setLoading(true);
     setLoadError(null);
     Promise.all([
-      fetchAgentProperties({ page: 1, limit: 200 }),
+      loadAllAgentProperties(),
       fetchAgentPropertyDrafts({ page: 1, limit: 20 }),
     ])
-      .then(([propertiesRes, draftsRes]) => {
-        const list = propertiesRes.items.map(mapAgentPropertyItemToAgentListing);
-        setListings(list);
+      .then(([properties, draftsRes]) => {
+        setListings(properties);
         setDraftSubmissions(draftsRes.items ?? []);
         setDraftSubmissionsTotal(draftsRes.total ?? draftsRes.items?.length ?? 0);
       })
@@ -263,7 +305,7 @@ export function AgentListingsPage() {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [loadAllAgentProperties]);
 
   useEffect(() => {
     load();
@@ -288,17 +330,35 @@ export function AgentListingsPage() {
   }, [searchParams, pathname, router]);
 
   const filteredListings = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
     return listings.filter((listing) => {
       if (listing.status === "draft" && !listing.isFromApi) return false;
       if (statusFilter !== "all" && listing.status !== statusFilter) {
         return false;
       }
-      if (periodFilter === "weekly") return isWithinDays(listing.lastUpdated, 7);
-      if (periodFilter === "monthly") return isWithinDays(listing.lastUpdated, 30);
-      if (periodFilter === "yearly") return isWithinDays(listing.lastUpdated, 365);
-      return true;
+      if (periodFilter === "weekly" && !isWithinDays(listing.lastUpdated, 7)) return false;
+      if (periodFilter === "monthly" && !isWithinDays(listing.lastUpdated, 30)) return false;
+      if (periodFilter === "yearly" && !isWithinDays(listing.lastUpdated, 365)) return false;
+      if (!normalizedQuery) return true;
+
+      const haystack = [
+        listing.title,
+        listing.type,
+        listing.subType,
+        listing.status,
+        listing.statusDisplayName,
+        listing.submissionStatus,
+        listing.submissionWorkflowLabel,
+        listing.catalogStatusName,
+        getDisplayStatusLabel(listing, t),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(normalizedQuery);
     });
-  }, [listings, periodFilter, statusFilter]);
+  }, [listings, periodFilter, query, statusFilter, t]);
 
   const sortedListings = useMemo(() => {
     return sortRowsByConfig(filteredListings, sortConfig, (row, columnId) => {
@@ -311,13 +371,80 @@ export function AgentListingsPage() {
     });
   }, [filteredListings, sortConfig]);
 
-  const totalPages = Math.max(1, Math.ceil(sortedListings.length / PAGE_SIZE));
-  const currentPage =
-    Number.isFinite(pageParam) && pageParam > 0 ? Math.min(pageParam, totalPages) : 1;
+  const totalPages = Math.max(1, Math.ceil(sortedListings.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
   const paginatedListings = sortedListings.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
+    (safePage - 1) * pageSize,
+    safePage * pageSize,
   );
+
+  useEffect(() => {
+    if (loading || loadError) return;
+    if (currentPage > totalPages) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete(PAGE_PARAM);
+      const next = params.toString();
+      router.replace(next ? `${pathname}?${next}` : pathname, {
+        scroll: false,
+      });
+    }
+  }, [currentPage, loadError, loading, pathname, router, searchParams, totalPages]);
+
+  const onSearchChange = (value: string) => {
+    setQuery(value);
+    resetToFirstPageIfNeeded();
+  };
+
+  const onStatusChange = (value: string) => {
+    const next = LISTING_STATUS_FILTERS.includes(value as "all" | ListingStatus)
+      ? (value as "all" | ListingStatus)
+      : "all";
+    setStatusFilter(next);
+    resetToFirstPageIfNeeded();
+  };
+
+  const onPeriodChange = (value: string) => {
+    const next = PERIOD_FILTERS.includes(value as ListingPeriodFilter)
+      ? (value as ListingPeriodFilter)
+      : "all";
+    setPeriodFilter(next);
+    resetToFirstPageIfNeeded();
+  };
+
+  const emptyListMessage = useMemo(() => {
+    if (query.trim()) {
+      return "No listings match your search. Try a different property, type, or status.";
+    }
+    if (statusFilter !== "all") {
+      return "No listings with this status. Set the filter to All to see everything.";
+    }
+    if (periodFilter !== "all") {
+      return "No listings in this time range. Try another period.";
+    }
+    return null;
+  }, [periodFilter, query, statusFilter]);
+
+  const handlePublish = useCallback(
+    async (id: string) => {
+      const row = listings.find((l) => l.id === id);
+      if (row?.isFromApi) return;
+      await publishDraft(id);
+      load();
+    },
+    [listings, load],
+  );
+
+  const handleDeleteMock = useCallback(
+    async (id: string) => {
+      const row = listings.find((l) => l.id === id);
+      if (row?.isFromApi) return;
+      if (!confirm(t("deleteConfirm"))) return;
+      await deleteListing(id);
+      load();
+    },
+    [listings, load, t],
+  );
+
   const columns = useMemo<CustomTableColumn<AgentListing>[]>(() => {
     return [
       {
@@ -358,28 +485,7 @@ export function AgentListingsPage() {
               >
                 {getDisplayStatusLabel(row, t)}
               </span>
-              {row.isFromApi &&
-              row.submissionStatus?.toLowerCase() === "rejected" &&
-              row.reviewReason?.trim() ? (
-                <span
-                  className="text-charcoal/50"
-                  title={row.reviewReason.trim()}
-                  aria-label={row.reviewReason.trim()}
-                >
-                  <Info className="h-3.5 w-3.5" />
-                </span>
-              ) : null}
             </span>
-            {row.isFromApi &&
-            row.submissionStatus?.toLowerCase() === "rejected" &&
-            row.reviewReason?.trim() ? (
-              <p
-                className="line-clamp-2 max-w-[260px] text-size-[11px] text-charcoal/60"
-                title={row.reviewReason.trim()}
-              >
-                {row.reviewReason.trim()}
-              </p>
-            ) : null}
           </div>
         ),
       },
@@ -434,6 +540,30 @@ export function AgentListingsPage() {
               hoverClassName: "bg-primary/5",
               onSelect: () => router.push(viewHref),
             },
+            ...(row.isFromApi &&
+            row.submissionStatus?.toLowerCase() === "rejected" &&
+            row.reviewReason?.trim()
+              ? [
+                  {
+                    key: "view-rejected-reason",
+                    label: (
+                      <span className="inline-flex items-center gap-2">
+                        <Info className="h-4 w-4 opacity-70" />
+                        View rejected reason
+                      </span>
+                    ),
+                    className: "text-charcoal",
+                    hoverClassName: "bg-primary/5",
+                    disabled: deleteBusy,
+                    onSelect: () => {
+                      setRejectedReasonDialog({
+                        open: true,
+                        reason: row.reviewReason?.trim() ?? null,
+                      });
+                    },
+                  },
+                ]
+              : []),
             ...(canEditApi && editHref
               ? [
                   {
@@ -588,21 +718,6 @@ export function AgentListingsPage() {
     }
   };
 
-  async function handlePublish(id: string) {
-    const row = listings.find((l) => l.id === id);
-    if (row?.isFromApi) return;
-    await publishDraft(id);
-    load();
-  }
-
-  async function handleDeleteMock(id: string) {
-    const row = listings.find((l) => l.id === id);
-    if (row?.isFromApi) return;
-    if (!confirm(t("deleteConfirm"))) return;
-    await deleteListing(id);
-    load();
-  }
-
   const confirmDeleteSubmission = async () => {
     if (!deleteTarget?.submissionId) {
       setDeleteTarget(null);
@@ -703,32 +818,6 @@ export function AgentListingsPage() {
         </Link>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-        <div className="flex items-center gap-2 text-xs font-medium text-charcoal/80">
-          <Filter className="h-4 w-4" />
-          {t("filter")}
-        </div>
-        <div className="hidden h-4 w-px bg-subtle sm:block" />
-        <div className="flex flex-1 flex-col sm:flex-row items-center gap-2">
-          <Dropdown
-            buttonId="listings-status-filter"
-            label={t("filterStatusLabel")}
-            value={statusFilter}
-            onChange={(val) => updateQueryParams({ status: val })}
-            options={statusOptions}
-            align="left"
-          />
-          <Dropdown
-            buttonId="listings-period-filter"
-            label={t("filterPeriodLabel")}
-            value={periodFilter}
-            onChange={(val) => updateQueryParams({ period: val })}
-            options={periodOptions}
-            align="left"
-          />
-        </div>
-      </div>
-
       {!loadError && draftSubmissions.length > 0 ? (
         <section className="rounded-2xl border border-amber-200/80 bg-amber-50/50 p-4 md:p-5">
           <h2 className="text-size-sm fw-semibold text-charcoal">
@@ -762,8 +851,67 @@ export function AgentListingsPage() {
         </section>
       ) : null}
 
-      <article className="rounded-2xl border border-subtle bg-white shadow-sm overflow-hidden">
-        <CustomTable
+      <Card className="rounded-xl border-subtle">
+        <CardHeader className="flex flex-col gap-3 space-y-0 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-secondary" />
+            <CardTitle className="text-size-sm text-charcoal">
+              Property list
+            </CardTitle>
+          </div>
+          <div className="flex w-full justify-end md:w-auto">
+            <div className="flex w-full flex-col gap-2 md:flex-row md:items-center md:justify-end">
+              <div className="w-full md:w-64 lg:w-80">
+                <Input
+                  value={query}
+                  onChange={(event) => onSearchChange(event.target.value)}
+                  placeholder="Search by property, type, status"
+                  className="h-10 w-full rounded-lg"
+                  rightAdornment={
+                    query.trim() ? (
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Clear search"
+                        className="text-charcoal/55 hover:bg-charcoal/10 hover:text-charcoal"
+                        onClick={() => onSearchChange("")}
+                      >
+                        <X />
+                      </IconButton>
+                    ) : undefined
+                  }
+                />
+              </div>
+              <div className="flex w-full items-center gap-2 md:w-auto">
+                <Dropdown
+                  buttonId="listings-status-filter"
+                  label="All"
+                  value={statusFilter}
+                  onChange={(value) => onStatusChange(String(value ?? "all"))}
+                  align="right"
+                  menuClassName="w-44"
+                  buttonClassName="h-10 rounded-lg border-subtle bg-surface px-3 text-size-xs text-charcoal shadow-sm focus-visible:ring-primary/40 justify-between"
+                  options={statusOptions}
+                />
+              </div>
+              <div className="flex w-full items-center gap-2 md:w-auto">
+                <Dropdown
+                  buttonId="listings-period-filter"
+                  label="All"
+                  value={periodFilter}
+                  onChange={(value) => onPeriodChange(String(value ?? "all"))}
+                  align="right"
+                  menuClassName="w-44"
+                  buttonClassName="h-10 rounded-lg border-subtle bg-surface px-3 text-size-xs text-charcoal shadow-sm focus-visible:ring-primary/40 justify-between"
+                  options={periodOptions}
+                />
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <CustomTable
           columns={columns}
           data={paginatedListings}
           getRowId={(row) => row.id}
@@ -788,19 +936,24 @@ export function AgentListingsPage() {
             </div>
           }
           emptyMessage={
-            <div className="flex flex-col items-center justify-center py-2 text-center">
-              <Building2 className="h-10 w-10 text-charcoal/40" />
-              <p className="mt-2 text-sm text-charcoal/70">{t("noListings")}</p>
-            </div>
+            emptyListMessage ? (
+              emptyListMessage
+            ) : (
+              <div className="flex flex-col items-center justify-center py-2 text-center">
+                <Building2 className="h-10 w-10 text-charcoal/40" />
+                <p className="mt-2 text-sm text-charcoal/70">{t("noListings")}</p>
+              </div>
+            )
           }
           minTableWidth="700px"
           pagination={{
-            showWhen: !loadError && sortedListings.length > 0,
-            currentPage,
+            showWhen: !loadError && paginatedListings.length > 0,
+            currentPage: safePage,
             totalPages,
             totalItems: sortedListings.length,
-            pageSize: PAGE_SIZE,
-            basePath: pathname,
+            pageSize,
+            pageParam: PAGE_PARAM,
+            pageSizeParam: PAGE_SIZE_PARAM,
             translations: {
               previous: tSearch("paginationPrevious"),
               next: tSearch("paginationNext"),
@@ -811,8 +964,9 @@ export function AgentListingsPage() {
               results: tSearch("paginationResults"),
             },
           }}
-        />
-      </article>
+          />
+        </CardContent>
+      </Card>
 
       <DialogRoot
         open={!!deleteTarget}
@@ -880,6 +1034,35 @@ export function AgentListingsPage() {
           </Button>
           <Button type="button" variant="accent" onClick={handleSave} disabled={saving}>
             {saving ? t("saving") : t("save")}
+          </Button>
+        </DialogFooter>
+      </DialogRoot>
+
+      <DialogRoot
+        open={rejectedReasonDialog.open}
+        onClose={() => setRejectedReasonDialog({ open: false, reason: null })}
+        className="relative max-w-md"
+      >
+        <DialogTitle>Rejected reason</DialogTitle>
+        <DialogDescription className="text-pretty text-sm text-charcoal/75">
+          Reason provided by admin for this listing rejection.
+        </DialogDescription>
+        <div className="mt-4">
+          {rejectedReasonDialog.reason ? (
+            <p className="whitespace-pre-wrap text-size-sm text-charcoal/80">
+              {rejectedReasonDialog.reason}
+            </p>
+          ) : (
+            <p className="text-size-sm text-charcoal/60">—</p>
+          )}
+        </div>
+        <DialogFooter className="mt-6">
+          <Button
+            type="button"
+            variant="accent"
+            onClick={() => setRejectedReasonDialog({ open: false, reason: null })}
+          >
+            Close
           </Button>
         </DialogFooter>
       </DialogRoot>
