@@ -4,15 +4,15 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { BrandLogo } from "@/components/layout/brand-logo";
-import { AgentInviteForm } from "@/features/admin-agents/agent-dashboard/components/agent-invite/AgentInviteForm";
+import { AgentInviteForm } from "@/features/agent/dashboard/components/agent-invite/AgentInviteForm";
 import { useTranslations } from "@/hooks/useTranslations";
 import {
   getInviteByToken,
   tokenForEmail,
-} from "@/services/agentInviteMockService";
-import { validateInviteToken } from "@/services/adminAgentApiService";
-import { completeAgentOnboarding } from "@/services/agentOnboardingApiService";
-import type { AgentInviteFormPayload } from "@/features/admin-agents/agent-dashboard/components/agent-invite/AgentInviteForm";
+} from "@/features/agent/api/mocks/agentInviteMockService";
+import { validateInviteToken } from "@/features/admin/api/adminAgentApiService";
+import { completeAgentOnboarding } from "@/features/agent/api/agentOnboardingApiService";
+import type { AgentInviteFormPayload } from "@/features/agent/dashboard/components/agent-invite/AgentInviteForm";
 import { LoadingScreen } from "@/components/ui";
 
 /** Decode email from query: handle %22 (quotes) and trim. */

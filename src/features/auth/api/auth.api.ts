@@ -20,7 +20,7 @@ export type {
   SessionUser,
   SetPasswordPayload,
   SignupPayload,
-} from "@/services/authService";
+} from "@/features/auth/api/authService";
 
 export {
   changePassword,
@@ -42,4 +42,4 @@ export {
   setAuthUsername,
   loginWithPasswordAndPersist,
   logout,
-} from "@/services/authService";
+} from "@/features/auth/api/authService";

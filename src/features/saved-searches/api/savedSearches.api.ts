@@ -1,14 +1,7 @@
 "use client";
 
-import { createHttpClients } from "@/lib/http";
+import { authApi } from "@/lib/http/clients";
 import type { SavedSearch } from "@/features/saved-searches/types";
-
-type StandardApiResponse<T> = {
-  success: boolean;
-  data: T;
-  message?: string | null;
-  error?: string | null;
-};
 
 type SavedSearchApiItem = {
   id: string;
@@ -40,10 +33,6 @@ type SavedSearchUpdateRequest = {
   notification_enabled?: boolean;
 };
 
-const { authApi } = createHttpClients();
-
-const unwrap = <T,>(response: StandardApiResponse<T>): T => response.data;
-
 const buildSearchCriteria = (queryString: string): Record<string, unknown> => {
   const params = new URLSearchParams(queryString);
   return Object.fromEntries(params.entries());
@@ -59,13 +48,25 @@ const toSavedSearch = (item: SavedSearchApiItem): SavedSearch => ({
   createdAt: item.last_run_at ? Date.parse(item.last_run_at) || Date.now() : Date.now(),
 });
 
+let listSavedSearchesInFlight: Promise<SavedSearch[]> | null = null;
+
 export async function listSavedSearches(): Promise<SavedSearch[]> {
-  const response = await authApi.get<
-    StandardApiResponse<SavedSearchListData | SavedSearchApiItem[]>
-  >("/saved-searches");
-  const data = unwrap(response.data);
-  const items = Array.isArray(data) ? data : (data.items ?? []);
-  return items.map(toSavedSearch);
+  if (listSavedSearchesInFlight) {
+    return listSavedSearchesInFlight;
+  }
+  listSavedSearchesInFlight = (async () => {
+    try {
+      const response = await authApi.get<SavedSearchListData | SavedSearchApiItem[]>(
+        "/saved-searches",
+      );
+      const data = response.data;
+      const items = Array.isArray(data) ? data : (data.items ?? []);
+      return items.map(toSavedSearch);
+    } finally {
+      listSavedSearchesInFlight = null;
+    }
+  })();
+  return listSavedSearchesInFlight;
 }
 
 export async function createSavedSearch(payload: {
@@ -77,18 +78,16 @@ export async function createSavedSearch(payload: {
     search_criteria: buildSearchCriteria(payload.queryString),
     notification_enabled: true,
   };
-  const response = await authApi.post<StandardApiResponse<SavedSearchApiItem>>(
+  const response = await authApi.post<SavedSearchApiItem>(
     "/saved-searches",
     requestPayload,
   );
-  return toSavedSearch(unwrap(response.data));
+  return toSavedSearch(response.data);
 }
 
 export async function deleteSavedSearch(id: string): Promise<true> {
-  const response = await authApi.delete<StandardApiResponse<true>>(
-    `/saved-searches/${id}`,
-  );
-  return unwrap(response.data);
+  const response = await authApi.delete<true>(`/saved-searches/${id}`);
+  return response.data;
 }
 
 export async function updateSavedSearchName(
@@ -102,9 +101,9 @@ export async function updateSavedSearch(
   id: string,
   payload: SavedSearchUpdateRequest,
 ): Promise<SavedSearch> {
-  const response = await authApi.patch<StandardApiResponse<SavedSearchApiItem>>(
+  const response = await authApi.patch<SavedSearchApiItem>(
     `/saved-searches/${id}`,
     payload,
   );
-  return toSavedSearch(unwrap(response.data));
+  return toSavedSearch(response.data);
 }

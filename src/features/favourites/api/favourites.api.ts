@@ -1,17 +1,6 @@
 "use client";
 
-import { createHttpClients } from "@/lib/http";
-
-type StandardApiResponse<T> = {
-  success: boolean;
-  data: T;
-  message?: string | null;
-  error?: string | null;
-};
-
-const { authApi } = createHttpClients();
-
-const unwrap = <T,>(response: StandardApiResponse<T>): T => response.data;
+import { authApi } from "@/lib/http/clients";
 
 type FavoriteRequestPayload = {
   property_hash: number;
@@ -63,26 +52,22 @@ type FavoriteListResponseData = {
 };
 
 export async function addFavoriteProperty(propertyId: number): Promise<true> {
-  const response = await authApi.post<StandardApiResponse<true>>(
-    "/favorites",
-    { property_hash: propertyId } satisfies FavoriteRequestPayload,
-  );
-  return unwrap(response.data);
+  const response = await authApi.post<true>("/favorites", {
+    property_hash: propertyId,
+  } satisfies FavoriteRequestPayload);
+  return response.data;
 }
 
 export async function removeFavoriteProperty(propertyId: number): Promise<true> {
-  const response = await authApi.delete<StandardApiResponse<true>>(
-    `/favorites/${propertyId}`,
-  );
-  return unwrap(response.data);
+  const response = await authApi.delete<true>(`/favorites/${propertyId}`);
+  return response.data;
 }
 
 export async function bulkAddFavoriteProperties(propertyIds: number[]): Promise<true> {
-  const response = await authApi.post<StandardApiResponse<true>>(
-    "/favorites/bulk",
-    { property_hashes: propertyIds },
-  );
-  return unwrap(response.data);
+  const response = await authApi.post<true>("/favorites/bulk", {
+    property_hashes: propertyIds,
+  });
+  return response.data;
 }
 
 export async function listFavoriteProperties(): Promise<number[]> {
@@ -97,10 +82,10 @@ export async function listFavoriteProperties(): Promise<number[]> {
 }
 
 export async function listFavoritePropertyItems(): Promise<FavoriteListItem[]> {
-  const response = await authApi.get<
-    StandardApiResponse<FavoriteListResponseData | number[]>
-  >("/favorites");
-  const data = unwrap(response.data);
+  const response = await authApi.get<FavoriteListResponseData | number[]>(
+    "/favorites",
+  );
+  const data = response.data;
 
   // Backward compatible: support both [number] and { items: [...] } shapes.
   if (Array.isArray(data)) {

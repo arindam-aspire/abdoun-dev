@@ -41,13 +41,13 @@ describe("useSearchFilters", () => {
     expect(params.get("status")).toBe("buy");
   });
 
-  it("setView updates view and clears page", () => {
+  it("setView updates view and preserves page", () => {
     const { result } = renderHook(() => useSearchFilters());
     act(() => result.current.setView("list"));
     const url = String(replaceMock.mock.calls[0][0]);
     const params = new URLSearchParams(url.replace(/^\?/, ""));
     expect(params.get("view")).toBe("list");
-    expect(params.get("page")).toBeNull();
+    expect(params.get("page")).toBe("3");
   });
 });
 

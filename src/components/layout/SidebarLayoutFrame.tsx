@@ -3,7 +3,7 @@
 import AppFooter from "@/components/layout/AppFooter";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { LayoutWrapper } from "@/components/layout/LayoutWrapper";
-import { AgentDashboardSummaryHydrator } from "@/features/admin-agents/agent-dashboard/components/AgentDashboardSummaryHydrator";
+import { AgentDashboardSummaryHydrator } from "@/features/agent/dashboard/components/AgentDashboardSummaryHydrator";
 
 type SidebarLayoutFrameProps = {
   children: React.ReactNode;

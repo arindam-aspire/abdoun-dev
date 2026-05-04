@@ -11,8 +11,8 @@ import { PhoneOtpModal } from "@/features/profile/components/modals/PhoneOtpModa
 import { changePassword } from "@/features/auth/api/auth.api";
 import { useProfile } from "@/hooks/useProfile";
 import { cn } from "@/lib/cn";
-import { getApiErrorMessage } from "@/lib/http";
-import { requestPhoneOtp } from "@/lib/profileApi";
+import { getApiErrorMessage } from "@/lib/http/apiError";
+import { requestPhoneOtp } from "@/features/profile/api/profileIdentity";
 
 export type ProfileTabId = "personal" | "security" | "privacy";
 

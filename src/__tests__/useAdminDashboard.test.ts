@@ -4,12 +4,12 @@ import * as React from "react";
 import type { ReactNode } from "react";
 import { Provider } from "react-redux";
 import type { AdminDashboardData } from "@/types/adminDashboard";
-import { useAdminDashboard } from "@/features/admin-agents/admin-dashboard/hooks/useAdminDashboard";
-import adminDashboardSummaryReducer from "@/features/admin-agents/admin-dashboard/adminDashboardSummarySlice";
+import { useAdminDashboard } from "@/features/admin/dashboard/hooks/useAdminDashboard";
+import adminDashboardSummaryReducer from "@/features/admin/dashboard/adminDashboardSummarySlice";
 
 const fetchAdminDashboardDataMock = jest.fn<Promise<AdminDashboardData>, []>();
 
-jest.mock("@/features/admin-agents/admin-dashboard/api/adminDashboard.api", () => ({
+jest.mock("@/features/admin/dashboard/api/adminDashboard.api", () => ({
   fetchAdminDashboardData: () => fetchAdminDashboardDataMock(),
 }));
 

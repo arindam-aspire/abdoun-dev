@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useTranslations } from "@/hooks/useTranslations";
 import { useSession } from "@/features/auth/hooks/useSession";
 import { changePassword } from "@/features/auth/api/auth.api";
-import { getApiErrorMessage } from "@/lib/http";
+import { getApiErrorMessage } from "@/lib/http/apiError";
 import { SettingsPasswordForm } from "@/features/settings/components/SettingsPasswordForm";
 import { Toast } from "@/components/ui";
 import type { ToastKind } from "@/components/ui/toast";

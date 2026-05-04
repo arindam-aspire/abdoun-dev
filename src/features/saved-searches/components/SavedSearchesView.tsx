@@ -64,7 +64,7 @@ export function SavedSearchesView({ variant = "main" }: SavedSearchesViewProps) 
     void (async () => {
       setIsLoading(true);
       setLoadError(false);
-      const result = await load();
+      const result = await load(refetchNonce > 0 ? { force: true } : undefined);
       if (!active) return;
       if (!result.ok) {
         setLoadError(true);

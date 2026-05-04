@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { Property } from "@/features/public-home/components/types";
 import { getExclusiveProperties } from "@/features/exclusive-properties/api/exclusiveProperties.api";
+import { getApiErrorMessage, getThunkRejectedMessage } from "@/lib/http/apiError";
 
 type ExclusivePropertiesState = {
   items: Property[];
@@ -28,10 +29,7 @@ export const fetchExclusivePropertiesOnce = createAsyncThunk(
     try {
       return await getExclusiveProperties();
     } catch (error) {
-      if (error instanceof Error && error.message) {
-        return thunkApi.rejectWithValue(error.message);
-      }
-      return thunkApi.rejectWithValue("Failed to load exclusive properties");
+      return thunkApi.rejectWithValue(getApiErrorMessage(error));
     }
   },
 );
@@ -51,9 +49,9 @@ const exclusivePropertiesSlice = createSlice({
         state.loading = false;
         state.error = null;
         state.items = action.payload.items;
-        state.total = action.payload.total;
-        state.page = action.payload.page;
-        state.pageSize = action.payload.pageSize;
+        state.total = action.payload.pagination.total;
+        state.page = action.payload.pagination.page;
+        state.pageSize = action.payload.pagination.pageSize;
         state.status = "succeeded";
       })
       .addCase(fetchExclusivePropertiesOnce.rejected, (state, action) => {
@@ -62,10 +60,10 @@ const exclusivePropertiesSlice = createSlice({
         state.total = 0;
         state.page = 1;
         state.pageSize = 12;
-        state.error =
-          (typeof action.payload === "string" ? action.payload : null) ||
-          action.error.message ||
-          "Failed to load exclusive properties";
+        state.error = getThunkRejectedMessage(
+          action,
+          "Failed to load exclusive properties",
+        );
         state.status = "failed";
       });
   },

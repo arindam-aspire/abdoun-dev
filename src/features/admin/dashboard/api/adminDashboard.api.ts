@@ -1,0 +1,424 @@
+import { getApiErrorMessage } from "@/lib/http/apiError";
+import { isFailedV1Envelope } from "@/lib/http/standardEnvelope";
+import { authApi } from "@/lib/http/clients";
+import type { AdminDashboardData, PerformanceComparisonItem } from "@/types/adminDashboard";
+import type { StandardApiResponse } from "@/lib/http/standardApiResponse";
+import { createPaginatedResult, type PaginatedResult } from "@/lib/api/pagination";
+
+type AdminDashboardSummaryApiData = Record<string, unknown>;
+
+const toFiniteNumber = (value: unknown, fallback = 0): number => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return fallback;
+};
+
+const toNumberSeries = (value: unknown): number[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.map((item) => toFiniteNumber(item, 0));
+};
+
+const toStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.map((item) => (typeof item === "string" ? item : String(item ?? "")));
+};
+
+const toOptionalLabelString = (value: unknown): string => {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return "";
+};
+
+type AdminDashboardActivityTone = "neutral" | "success" | "warning";
+
+type AdminDashboardApiActivity = {
+  text?: unknown;
+  time?: unknown;
+  tone?: unknown;
+};
+
+function toActivityTone(tone: unknown): AdminDashboardActivityTone {
+  if (tone === "success" || tone === "warning" || tone === "neutral") return tone;
+  return "neutral";
+}
+
+function toRecentActivity(activity: unknown): AdminDashboardData["recentActivity"] {
+  if (!Array.isArray(activity)) return [];
+  return activity.map((item) => {
+    const row = (item ?? {}) as AdminDashboardApiActivity;
+    return {
+      text: typeof row.text === "string" ? row.text : String(row.text ?? ""),
+      time: typeof row.time === "string" ? row.time : String(row.time ?? ""),
+      tone: toActivityTone(row.tone),
+    };
+  });
+}
+
+/**
+ * Maps `propertyPerformance` rows from `GET /admin/dashboard/summary`
+ * (supports older key variants; label vs title; value vs views).
+ */
+const toPropertyPerformanceSeries = (value: unknown): PerformanceComparisonItem[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.map((row) => {
+    const r = (row ?? {}) as Record<string, unknown>;
+    const labelRaw =
+      r.label ??
+      r.property_title ??
+      r.propertyTitle ??
+      r.title ??
+      r.name ??
+      r.property_name ??
+      r.propertyName;
+    const label = toOptionalLabelString(labelRaw).trim();
+    const valueRaw =
+      r.value ??
+      r.views ??
+      r.view_count ??
+      r.viewCount ??
+      r.total_views ??
+      r.totalViews ??
+      r.count;
+    return {
+      label: label || toOptionalLabelString(r.id).trim() || "—",
+      value: toFiniteNumber(valueRaw, 0),
+    };
+  });
+};
+
+/** Normalizes `data` from `GET /admin/property-performance` (array or common wrapper keys). */
+function parsePropertyPerformanceApiData(data: unknown): PerformanceComparisonItem[] {
+  if (Array.isArray(data)) {
+    return toPropertyPerformanceSeries(data);
+  }
+  if (data && typeof data === "object") {
+    const o = data as Record<string, unknown>;
+    if (Array.isArray(o.items)) return toPropertyPerformanceSeries(o.items);
+    if (Array.isArray(o.propertyPerformanceSeries)) {
+      return toPropertyPerformanceSeries(o.propertyPerformanceSeries);
+    }
+    if (Array.isArray(o.results)) return toPropertyPerformanceSeries(o.results);
+  }
+  return [];
+}
+
+/** Time window for property-performance aggregation; sent as query param `period`. */
+export type AdminPropertyPerformancePeriod = "all" | "weekly" | "monthly" | "yearly";
+
+export type AdminPropertyPerformanceParams = {
+  /** 1-based page index. */
+  page?: number;
+  /** Page size (query: `pageSize`). */
+  pageSize?: number;
+  /**
+   * Period window — sent as query param `period` (`all` | `weekly` | `monthly` | `yearly`).
+   */
+  period?: AdminPropertyPerformancePeriod;
+};
+
+export type AdminPropertyPerformanceResult = PaginatedResult<PerformanceComparisonItem>;
+
+function parsePropertyPerformancePayload(
+  data: unknown,
+  fallback: { page: number; pageSize: number },
+): AdminPropertyPerformanceResult {
+  const items = parsePropertyPerformanceApiData(data);
+  let total: number | undefined;
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    const o = data as Record<string, unknown>;
+    const totalRaw =
+      o.total ?? o.total_count ?? o.count ?? o.totalItems ?? o.total_records ?? o.totalCount;
+    if (typeof totalRaw === "number" && Number.isFinite(totalRaw)) {
+      total = totalRaw;
+    } else if (typeof totalRaw === "string") {
+      const n = Number(totalRaw);
+      if (Number.isFinite(n)) total = n;
+    }
+  }
+  return createPaginatedResult(items, undefined, {
+    ...fallback,
+    total: total != null ? Math.max(total, items.length) : items.length,
+  });
+}
+
+function currentLocalMonth(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
+
+function resolveFailureMessage(body: StandardApiResponse<unknown> | undefined): string {
+  if (body && typeof body === "object") {
+    const err = body.error;
+    const msg = body.message;
+    if (typeof err === "string" && err.trim()) return err;
+    if (typeof msg === "string" && msg.trim()) return msg;
+  }
+  return "Unable to load admin dashboard.";
+}
+
+function pickPropertyPerformanceSeriesRaw(
+  payload: AdminDashboardSummaryApiData,
+): unknown {
+  const p = payload as Record<string, unknown>;
+  // New backend key (preferred if present).
+  const direct = p.propertyPerformance;
+  if (Array.isArray(direct)) return direct;
+  const camel = p.propertyPerformanceSeries;
+  const snake = p.property_performance_series;
+  if (Array.isArray(camel)) return camel;
+  if (Array.isArray(snake)) return snake;
+  return direct ?? camel ?? snake;
+}
+
+const toAdminDashboardData = (payload: AdminDashboardSummaryApiData): AdminDashboardData => {
+  const monthRaw = payload.month;
+  const month =
+    typeof monthRaw === "string" && /^\d{4}-\d{2}$/.test(monthRaw) ? monthRaw : currentLocalMonth();
+
+  const usersThisMonthRaw =
+    payload.usersThisMonth ??
+    payload.registerUsersThisMonth ??
+    payload.register_users_this_month ??
+    payload.register_users_this_month_count;
+
+  const usersMoMDeltaRaw =
+    payload.usersMoMDelta ??
+    payload.registerUsersMoMDelta ??
+    payload.register_users_mom_delta ??
+    payload.register_users_m_o_m_delta;
+
+  return {
+    month,
+    usersThisMonth: toFiniteNumber(usersThisMonthRaw),
+    usersMoMDelta: toFiniteNumber(usersMoMDeltaRaw),
+    agentsThisMonth: toFiniteNumber(payload.agentsThisMonth ?? payload.totalAgentCount),
+    agentsMoMDelta: toFiniteNumber(payload.agentsMoMDelta),
+    pendingApprovals: toFiniteNumber(payload.pendingApprovals),
+    pendingApprovalsToday: toFiniteNumber(payload.pendingApprovalsToday),
+    listingsThisMonth: toFiniteNumber(payload.listingsThisMonth),
+    listingsMoMDelta: toFiniteNumber(payload.listingsMoMDelta),
+    leadsThisMonth: toFiniteNumber(payload.leadsThisMonth),
+    leadsMoMDelta: toFiniteNumber(payload.leadsMoMDelta),
+    closedDealsThisMonth: toFiniteNumber(payload.closedDealsThisMonth),
+    userGrowthSeries: toNumberSeries(payload.userGrowthSeries),
+    listingGrowthSeries: toNumberSeries(payload.listingGrowthSeries),
+    leadGrowthSeries: toNumberSeries(payload.leadGrowthSeries),
+    leadSourceLabels: toStringArray(payload.leadSourceLabels),
+    leadSourceValues: toNumberSeries(payload.leadSourceValues),
+    monthLabels: toStringArray(payload.monthLabels),
+    propertyPerformance: toPropertyPerformanceSeries(pickPropertyPerformanceSeriesRaw(payload)),
+    recentActivity: toRecentActivity((payload as Record<string, unknown>).recentActivity),
+  };
+};
+
+/**
+ * Property performance list — call **only** from `AdminViewRatePage` (admin `/admin-dashboard/view-rate` route).
+ * `GET /admin/property-performance?page=&pageSize=&period=`
+ * (`period` = `all` | `weekly` | `monthly` | `yearly` — same shape as agent `GET /agent/property-performance`).
+ */
+export async function fetchAdminPropertyPerformance(
+  params: AdminPropertyPerformanceParams = {},
+): Promise<AdminPropertyPerformanceResult> {
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? 10;
+  const period = params.period ?? "all";
+  try {
+    const response = await authApi.get<unknown>("/admin/property-performance", {
+      params: {
+        page,
+        pageSize,
+        period: period,
+      },
+    });
+    const data = response.data;
+    if (isFailedV1Envelope(data)) {
+      throw new Error(resolveFailureMessage(data));
+    }
+    return parsePropertyPerformancePayload(data, { page, pageSize });
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error), { cause: error });
+  }
+}
+
+/**
+ * Loads the admin dashboard from `GET /admin/dashboard/summary` only.
+ * Property-performance chart data comes from the summary payload when the API includes it;
+ * the dedicated property-performance endpoint is used only on `AdminViewRatePage`.
+ */
+export async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
+  try {
+    const response = await authApi.get<AdminDashboardSummaryApiData>(
+      "/admin/dashboard/summary",
+    );
+    const summaryData = response.data;
+    if (summaryData == null || typeof summaryData !== "object") {
+      throw new Error("Invalid dashboard response.");
+    }
+    return toAdminDashboardData(summaryData);
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error), { cause: error });
+  }
+}
+
+export type AdminUserGrowthTrendsResult = {
+  monthLabels: string[];
+  values: number[];
+};
+
+function parseTrendsRowsArray(rows: unknown[]): AdminUserGrowthTrendsResult {
+  const monthLabels: string[] = [];
+  const values: number[] = [];
+  for (const row of rows) {
+    if (!row || typeof row !== "object") continue;
+    const r = row as Record<string, unknown>;
+    const labelRaw = r.month ?? r.label ?? r.period ?? r.name ?? r.monthLabel;
+    const valueRaw = r.value ?? r.count ?? r.users ?? r.newUsers ?? r.signups ?? r.total;
+    monthLabels.push(typeof labelRaw === "string" ? labelRaw : String(labelRaw ?? ""));
+    values.push(toFiniteNumber(valueRaw));
+  }
+  return { monthLabels, values };
+}
+
+/**
+ * Normalizes `GET /admin/dashboard/trends` payload (object with series fields or rows array).
+ */
+export function parseAdminUserGrowthTrendsPayload(data: unknown): AdminUserGrowthTrendsResult {
+  if (data == null) {
+    return { monthLabels: [], values: [] };
+  }
+  if (Array.isArray(data)) {
+    if (data.length > 0 && typeof data[0] === "object") {
+      return parseTrendsRowsArray(data);
+    }
+    return { monthLabels: [], values: toNumberSeries(data) };
+  }
+  if (typeof data !== "object") {
+    return { monthLabels: [], values: [] };
+  }
+  const o = data as Record<string, unknown>;
+
+  const rowCandidate = [o.items, o.trends, o.rows, o.results, o.data].find(
+    (v): v is unknown[] => Array.isArray(v) && v.length > 0 && typeof v[0] === "object",
+  );
+  if (rowCandidate) {
+    return parseTrendsRowsArray(rowCandidate);
+  }
+
+  const monthLabels = toStringArray(
+    o.monthLabels ?? o.labels ?? o.months ?? o.categories,
+  );
+  const values = toNumberSeries(
+    o.userGrowthSeries ?? o.series ?? o.values ?? o.counts ?? o.newUsers,
+  );
+  if (monthLabels.length > 0 || values.length > 0) {
+    return { monthLabels, values };
+  }
+  if (Array.isArray(o.data)) {
+    return { monthLabels: [], values: toNumberSeries(o.data) };
+  }
+  return { monthLabels: [], values: [] };
+}
+
+/**
+ * `GET /admin/dashboard/trends?months=` — user growth time series for admin charts.
+ */
+export async function fetchAdminUserGrowthTrends(months = 12): Promise<AdminUserGrowthTrendsResult> {
+  try {
+    const response = await authApi.get<unknown>("/admin/dashboard/trends", {
+      params: { months },
+    });
+    const data = response.data;
+    if (isFailedV1Envelope(data)) {
+      throw new Error(resolveFailureMessage(data));
+    }
+    return parseAdminUserGrowthTrendsPayload(data);
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error), { cause: error });
+  }
+}
+
+/* —— Agent leaderboard (admin home) —— */
+
+export type AgentLeaderboardRow = {
+  name: string;
+  closedDeals: number;
+  responseRate: string;
+  area: string | null;
+};
+
+export type AdminLeaderboardData = {
+  periodStart: string;
+  periodEnd: string;
+  agents: AgentLeaderboardRow[];
+};
+
+type LeaderboardApiAgent = {
+  name?: unknown;
+  closedDeals?: unknown;
+  responseRate?: unknown;
+  area?: unknown;
+};
+
+function toLeaderboardRow(row: unknown): AgentLeaderboardRow {
+  const r = (row ?? {}) as LeaderboardApiAgent;
+  const areaRaw = r.area;
+  return {
+    name: typeof r.name === "string" ? r.name : String(r.name ?? ""),
+    closedDeals: toFiniteNumber(r.closedDeals, 0),
+    responseRate:
+      typeof r.responseRate === "string"
+        ? r.responseRate
+        : String(r.responseRate ?? ""),
+    area:
+      areaRaw === null || areaRaw === undefined
+        ? null
+        : typeof areaRaw === "string"
+          ? areaRaw
+          : String(areaRaw),
+  };
+}
+
+/**
+ * `GET /agents/leaderboard` — top agents for the current period (admin dashboard).
+ */
+export async function fetchAdminAgentLeaderboard(): Promise<AdminLeaderboardData> {
+  try {
+    const response = await authApi.get<{
+      periodStart?: unknown;
+      periodEnd?: unknown;
+      agents?: unknown;
+    }>("/agents/leaderboard");
+    const raw = response.data;
+    if (isFailedV1Envelope(raw)) {
+      throw new Error(resolveFailureMessage(raw));
+    }
+    if (!raw || typeof raw !== "object") {
+      throw new Error("Invalid leaderboard response.");
+    }
+    const o = raw as Record<string, unknown>;
+    const periodStart = typeof o.periodStart === "string" ? o.periodStart : "";
+    const periodEnd = typeof o.periodEnd === "string" ? o.periodEnd : "";
+    const rawAgents = o.agents;
+    const agents: AgentLeaderboardRow[] = Array.isArray(rawAgents)
+      ? rawAgents.map((item) => toLeaderboardRow(item))
+      : [];
+    return { periodStart, periodEnd, agents };
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error), { cause: error });
+  }
+}

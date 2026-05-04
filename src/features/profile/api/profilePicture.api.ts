@@ -1,18 +1,7 @@
 "use client";
 
-import { createHttpClients } from "@/lib/http";
-import { putFileToPresignedUrl } from "@/features/admin-agents/agent-dashboard/api/uploads.api";
-
-type StandardApiResponse<T> = {
-  success: boolean;
-  data: T;
-  message?: string | null;
-  error?: string | null;
-};
-
-const { authApi } = createHttpClients();
-
-const unwrap = <T,>(raw: StandardApiResponse<T>): T => raw.data;
+import { authApi } from "@/lib/http/clients";
+import { putFileToPresignedUrl } from "@/lib/api/upload";
 
 /** Matches FastAPI `ProfilePictureUploadRequest` (JSON body — not multipart). */
 type ProfilePicturePresignRequest = {
@@ -35,7 +24,7 @@ type ProfilePictureUploadData = {
 export async function uploadProfilePicture(file: File): Promise<void> {
   const contentType =
     file.type && file.type.length > 0 ? file.type : "application/octet-stream";
-  const response = await authApi.post<StandardApiResponse<ProfilePictureUploadData>>(
+  const response = await authApi.post<ProfilePictureUploadData>(
     "/auth/me/profile-picture",
     {
       file_name: file.name,
@@ -43,7 +32,7 @@ export async function uploadProfilePicture(file: File): Promise<void> {
       file_size: file.size,
     } satisfies ProfilePicturePresignRequest,
   );
-  const data = unwrap(response.data);
+  const data = response.data;
   await putFileToPresignedUrl(data.upload_url, file, contentType);
 }
 

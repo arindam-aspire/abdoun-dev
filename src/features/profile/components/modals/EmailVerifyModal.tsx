@@ -14,7 +14,7 @@ import {
   requestEmailChange,
   verifyEmail,
   type ProfileRequestExtras,
-} from "@/lib/profileApi";
+} from "@/features/profile/api/profileIdentity";
 import { useOtpResendCooldown } from "@/hooks/useOtpResendCooldown";
 
 type Step = "send" | "sent";

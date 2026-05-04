@@ -1,6 +1,11 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { SearchResultListing } from "@/features/property-search/types";
-import { searchPropertiesByQuery } from "@/features/property-search/api/propertySearch.api";
+import {
+  searchPropertiesByQuery,
+  type PropertySearchResult,
+} from "@/features/property-search/api/propertySearch.api";
+import { getApiErrorMessage, getThunkRejectedMessage } from "@/lib/http/apiError";
+import { normalizePropertySearchQueryKey } from "@/features/property-search/utils/queryStringBuilder";
 
 type PropertySearchState = {
   items: SearchResultListing[];
@@ -10,6 +15,10 @@ type PropertySearchState = {
   loading: boolean;
   error: string | null;
   lastQuery: string;
+  /** Normalized key for the request currently in flight (dedupe). */
+  inFlightQueryKey: string | null;
+  /** Normalized key for the last successful fetch (skip identical re-dispatch when `error` is clear). */
+  lastSuccessfulQueryKey: string | null;
 };
 
 const initialState: PropertySearchState = {
@@ -20,20 +29,39 @@ const initialState: PropertySearchState = {
   loading: true,
   error: null,
   lastQuery: "",
+  inFlightQueryKey: null,
+  lastSuccessfulQueryKey: null,
 };
 
-export const fetchProperties = createAsyncThunk(
+type PropertySearchThunkState = {
+  propertySearch: PropertySearchState;
+};
+
+export const fetchProperties = createAsyncThunk<
+  PropertySearchResult,
+  string,
+  { state: PropertySearchThunkState }
+>(
   "propertySearch/fetchProperties",
   async (queryString: string, thunkApi) => {
     try {
       return await searchPropertiesByQuery(queryString);
     } catch (error) {
-      const fallbackMessage = "Failed to load properties";
-      if (error instanceof Error && error.message) {
-        return thunkApi.rejectWithValue(error.message);
-      }
-      return thunkApi.rejectWithValue(fallbackMessage);
+      return thunkApi.rejectWithValue(getApiErrorMessage(error));
     }
+  },
+  {
+    condition: (queryString, { getState }) => {
+      const s = getState().propertySearch;
+      const key = normalizePropertySearchQueryKey(queryString);
+      if (s.inFlightQueryKey === key) {
+        return false;
+      }
+      if (s.lastSuccessfulQueryKey === key && s.error === null) {
+        return false;
+      }
+      return true;
+    },
   },
 );
 
@@ -47,25 +75,27 @@ const propertySearchSlice = createSlice({
         state.loading = true;
         state.error = null;
         state.lastQuery = action.meta.arg;
+        state.inFlightQueryKey = normalizePropertySearchQueryKey(action.meta.arg);
       })
       .addCase(fetchProperties.fulfilled, (state, action) => {
         state.loading = false;
         state.error = null;
+        state.inFlightQueryKey = null;
+        state.lastSuccessfulQueryKey = normalizePropertySearchQueryKey(action.meta.arg);
         state.items = action.payload.items;
-        state.total = action.payload.total;
-        state.page = action.payload.page;
-        state.pageSize = action.payload.pageSize;
+        state.total = action.payload.pagination.total;
+        state.page = action.payload.pagination.page;
+        state.pageSize = action.payload.pagination.pageSize;
       })
       .addCase(fetchProperties.rejected, (state, action) => {
+        if (action.meta.condition) return;
         state.loading = false;
+        state.inFlightQueryKey = null;
         state.items = [];
         state.total = 0;
         state.page = 1;
         state.pageSize = 12;
-        state.error =
-          (typeof action.payload === "string" ? action.payload : null) ||
-          action.error.message ||
-          "Failed to load properties";
+        state.error = getThunkRejectedMessage(action, "Failed to load properties");
       });
   },
 });

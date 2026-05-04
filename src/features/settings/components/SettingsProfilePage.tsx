@@ -7,7 +7,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { ProfileForm } from "@/features/profile/components/ProfileForm";
 import { SettingsProfileSkeleton } from "@/features/settings/components/SettingsProfileSkeleton";
 import { Toast } from "@/components/ui";
-import { getApiErrorMessage } from "@/lib/http";
+import { getApiErrorMessage } from "@/lib/http/apiError";
 import type { ToastKind } from "@/components/ui/toast";
 
 export function SettingsProfilePage() {

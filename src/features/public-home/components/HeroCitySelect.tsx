@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { HeroDropdown } from "@/features/public-home/components/HeroDropdown";
-import { JORDAN_CITIES_WITH_AREAS } from "@/lib/mocks/jordanCities";
+import { JORDAN_CITIES_WITH_AREAS } from "@/lib/constants/jordanCities";
 import { cn } from "@/lib/cn";
 import { ChevronDown } from "lucide-react";
 

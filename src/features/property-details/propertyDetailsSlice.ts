@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { getApiErrorMessage, getThunkRejectedMessage } from "@/lib/http/apiError";
 import {
   fetchPropertyDetailsById,
   type PropertyDetailsApiResponse,
@@ -24,10 +25,7 @@ export const fetchPropertyDetails = createAsyncThunk(
     try {
       return await fetchPropertyDetailsById(propertyId);
     } catch (error) {
-      if (error instanceof Error && error.message) {
-        return thunkApi.rejectWithValue(error.message);
-      }
-      return thunkApi.rejectWithValue("Failed to load property details");
+      return thunkApi.rejectWithValue(getApiErrorMessage(error));
     }
   },
 );
@@ -51,10 +49,10 @@ const propertyDetailsSlice = createSlice({
       .addCase(fetchPropertyDetails.rejected, (state, action) => {
         state.loading = false;
         state.item = null;
-        state.error =
-          (typeof action.payload === "string" ? action.payload : null) ||
-          action.error.message ||
-          "Failed to load property details";
+        state.error = getThunkRejectedMessage(
+          action,
+          "Failed to load property details",
+        );
       });
   },
 });

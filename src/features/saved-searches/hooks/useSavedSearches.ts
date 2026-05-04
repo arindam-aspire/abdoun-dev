@@ -31,7 +31,8 @@ export type UseSavedSearchesResult = {
     notificationEnabled?: boolean;
   }) => Promise<{ ok: boolean; message?: string }>;
   clearAll: () => void;
-  load: () => Promise<{ ok: boolean; message?: string }>;
+  /** Skip network if `UiProvider` already hydrated for this user unless `force` is true. */
+  load: (options?: { force?: boolean }) => Promise<{ ok: boolean; message?: string }>;
   isLoading: boolean;
   runUrl: (args: { locale: string; queryString: string }) => string;
 };
@@ -40,21 +41,29 @@ export function useSavedSearches(): UseSavedSearchesResult {
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectCurrentUser);
   const items = useAppSelector((state) => state.savedSearches.items) as SavedSearch[];
-  const isLoading = useAppSelector((state) => state.savedSearches.hydratedUserId == null);
+  const hydratedUserId = useAppSelector((state) => state.savedSearches.hydratedUserId);
+  const isLoading = hydratedUserId == null;
 
-  const load = useCallback(async () => {
-    if (!user) {
-      dispatch(clearSavedSearches());
-      return { ok: false, message: "Please sign in first." };
-    }
-    try {
-      const savedSearches = await listSavedSearches();
-      dispatch(hydrateSavedSearches({ userId: user.id, items: savedSearches }));
-      return { ok: true };
-    } catch (error) {
-      return { ok: false, message: getApiErrorMessage(error) };
-    }
-  }, [dispatch, user]);
+  const load = useCallback(
+    async (options?: { force?: boolean }) => {
+      const force = options?.force ?? false;
+      if (!user) {
+        dispatch(clearSavedSearches());
+        return { ok: false, message: "Please sign in first." };
+      }
+      if (!force && hydratedUserId === user.id) {
+        return { ok: true };
+      }
+      try {
+        const savedSearches = await listSavedSearches();
+        dispatch(hydrateSavedSearches({ userId: user.id, items: savedSearches }));
+        return { ok: true };
+      } catch (error) {
+        return { ok: false, message: getApiErrorMessage(error) };
+      }
+    },
+    [dispatch, user, hydratedUserId],
+  );
 
   const add = useCallback(
     async (payload: { name: string; queryString: string }) => {

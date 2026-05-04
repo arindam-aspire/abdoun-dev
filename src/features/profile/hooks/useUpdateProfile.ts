@@ -8,11 +8,8 @@ import { setProfileExtra } from "@/features/profile/profileSlice";
 import { enrichWithPhoneParts } from "@/lib/auth/enrichSessionUser";
 import { persistSession } from "@/lib/auth/sessionManager";
 import { selectCurrentUser } from "@/store/selectors";
-import {
-  requestProfileUpdate,
-  getCurrentUser,
-  toSessionUserForProfile,
-} from "@/features/profile/api/profile.api";
+import { requestProfileUpdate, toSessionUserForProfile } from "@/features/profile/api/profile.api";
+import { getCurrentUserDeduped } from "@/lib/auth/currentUserRequest";
 import {
   dataUrlToProfileFile,
   deleteProfilePicture,
@@ -34,7 +31,7 @@ export function useUpdateProfile(): {
 
   const refreshProfile = useCallback(async () => {
     if (!authUser) return;
-    const updated = await getCurrentUser();
+    const updated = await getCurrentUserDeduped({ force: true });
     const sessionUser = enrichWithPhoneParts(toSessionUserForProfile(updated));
     persistSession({ user: sessionUser });
     dispatch(login(sessionUser));
@@ -92,7 +89,7 @@ export function useUpdateProfile(): {
         } else {
           // Legacy or unknown string — still sync from /me
         }
-        const updated = await getCurrentUser();
+        const updated = await getCurrentUserDeduped({ force: true });
         sessionUser = enrichWithPhoneParts(toSessionUserForProfile(updated));
         persistSession({ user: sessionUser });
         dispatch(login(sessionUser));
@@ -106,7 +103,7 @@ export function useUpdateProfile(): {
               "Verification required for email or phone. Complete OTP verification first.",
           );
         }
-        const updated = await getCurrentUser();
+        const updated = await getCurrentUserDeduped({ force: true });
         sessionUser = enrichWithPhoneParts(toSessionUserForProfile(updated));
         persistSession({ user: sessionUser });
         dispatch(login(sessionUser));

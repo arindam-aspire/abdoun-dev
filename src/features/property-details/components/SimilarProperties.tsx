@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSimilarProperties } from "@/features/property-details/hooks/useSimilarProperties";
 import { useLocale } from "next-intl";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -8,7 +9,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Property } from "@/features/public-home/components/types";
 import { PropertyCard } from "@/features/public-home/components/PropertyCard";
 import type { SearchResultListing } from "@/features/property-search/types";
-import { fetchSimilarPropertiesById } from "@/services/propertyService";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=1200&auto=format&fit=crop";
@@ -35,8 +35,6 @@ export function SimilarProperties() {
   const isRtl = locale === "ar";
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
-  const [items, setItems] = useState<SearchResultListing[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const routeId = useMemo(() => {
     const raw = params?.id;
@@ -44,12 +42,14 @@ export function SimilarProperties() {
     return typeof value === "string" && value.trim().length > 0 ? value : null;
   }, [params]);
 
+  const { items, loading: similarLoading, error } = useSimilarProperties(routeId);
+
   const similarProperties = useMemo(
     () => (items ?? []).map(toPropertyCard),
     [items],
   );
   const invalidRouteId = !routeId;
-  const loading = !invalidRouteId && items == null && !error;
+  const loading = !invalidRouteId && similarLoading;
   const shouldUseCarousel = similarProperties.length > 4;
 
   useEffect(() => {
@@ -163,34 +163,6 @@ export function SimilarProperties() {
       behavior: "smooth",
     });
   };
-
-  useEffect(() => {
-    if (!routeId) {
-      return;
-    }
-
-    let mounted = true;
-
-    void fetchSimilarPropertiesById(routeId)
-      .then((data) => {
-        if (!mounted) return;
-        setError(null);
-        setItems(data.filter((item) => String(item.id) !== routeId));
-      })
-      .catch((err) => {
-        if (!mounted) return;
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to load similar properties.",
-        );
-        setItems([]);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [routeId]);
 
   const hasSimilarProperties = similarProperties.length > 4;
   const viewMoreHref = useMemo(() => {

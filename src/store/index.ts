@@ -3,21 +3,20 @@ import type { Middleware } from "@reduxjs/toolkit";
 import { login } from "@/features/auth/authSlice";
 import profileReducer, { setProfileUser } from "@/features/profile/profileSlice";
 import type { ProfileUser } from "@/features/profile/profileSlice";
-import counterReducer from "@/features/counter/counterSlice";
 import uiReducer from "@/features/ui/uiSlice";
 import authReducer from "@/features/auth/authSlice";
 import favouritesReducer from "@/features/favourites/favouritesSlice";
 import compareReducer from "@/features/compare/compareSlice";
 import savedSearchesReducer from "@/features/saved-searches/savedSearchesSlice";
-import adminAgentsReducer from "@/features/admin-agents/adminAgentsSlice";
+import adminAgentsReducer from "@/features/admin/adminAgentsSlice";
 import adminUsersReducer from "@/features/admin-users/adminUsersSlice";
 import propertySearchReducer from "@/features/property-search/propertySearchSlice";
 import propertyDetailsReducer from "@/features/property-details/propertyDetailsSlice";
 import exclusivePropertiesReducer from "@/features/exclusive-properties/exclusivePropertiesSlice";
-import agentDashboardSummaryReducer from "@/features/admin-agents/agent-dashboard/agentDashboardSummarySlice";
-import adminUserGrowthTrendsReducer from "@/features/admin-agents/admin-dashboard/adminUserGrowthTrendsSlice";
-import adminDashboardSummaryReducer from "@/features/admin-agents/admin-dashboard/adminDashboardSummarySlice";
-import addPropertyWizardReducer from "@/features/admin-agents/agent-dashboard/components/add-property/addPropertyWizardSlice";
+import agentDashboardSummaryReducer from "@/features/agent/dashboard/agentDashboardSummarySlice";
+import adminUserGrowthTrendsReducer from "@/features/admin/dashboard/adminUserGrowthTrendsSlice";
+import adminDashboardSummaryReducer from "@/features/admin/dashboard/adminDashboardSummarySlice";
+import addPropertyWizardReducer from "@/features/agent/dashboard/components/add-property/addPropertyWizardSlice";
 
 /** Syncs auth login payload into profile reducer so profile has user details. */
 const profileUserSyncMiddleware: Middleware =
@@ -37,7 +36,6 @@ const profileUserSyncMiddleware: Middleware =
 
 export const store = configureStore({
   reducer: {
-    counter: counterReducer,
     ui: uiReducer,
     auth: authReducer,
     profile: profileReducer,

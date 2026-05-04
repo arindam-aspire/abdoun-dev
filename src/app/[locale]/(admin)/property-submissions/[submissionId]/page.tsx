@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { AdminPropertySubmissionDetailPage } from "@/features/admin-agents/admin-dashboard/components/property-submissions/AdminPropertySubmissionDetailPage";
+import { AdminPropertySubmissionDetailPage } from "@/features/admin/dashboard/components/property-submissions/AdminPropertySubmissionDetailPage";
 
 export default function AdminPropertySubmissionDetailRoute() {
   const params = useParams();

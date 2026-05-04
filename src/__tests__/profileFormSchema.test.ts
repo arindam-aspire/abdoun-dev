@@ -12,8 +12,8 @@ describe("profileFormSchema", () => {
       });
     });
 
-    it("accepts non-empty", () => {
-      expect(validatePhone("+962600000000")).toEqual({ valid: true });
+    it("accepts valid E.164", () => {
+      expect(validatePhone("+12025550123")).toEqual({ valid: true });
     });
   });
 

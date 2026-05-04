@@ -1,4 +1,4 @@
-import { AgentListingsPage } from "@/features/admin-agents/agent-dashboard/components/AgentListingsPage";
+import { AgentListingsPage } from "@/features/agent/dashboard/components/AgentListingsPage";
 
 export default function AgentListingsRoute() {
   return <AgentListingsPage />;

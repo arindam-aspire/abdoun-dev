@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocale } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Property } from "@/features/public-home/components/types";
 import { PropertyCard } from "@/features/public-home/components/PropertyCard";
-import { fetchSimilarPropertiesById } from "@/services/propertyService";
+import { useSimilarProperties } from "@/features/property-details/hooks/useSimilarProperties";
 import type { SearchResultListing } from "@/features/property-search/types";
 
 const FALLBACK_IMAGE =
@@ -31,34 +31,12 @@ export interface PropertyDetailsSimilarPropertiesProps {
 
 export function PropertyDetailsSimilarProperties({ propertyId }: PropertyDetailsSimilarPropertiesProps) {
   const [activeSimilar, setActiveSimilar] = useState(0);
-  const [items, setItems] = useState<SearchResultListing[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { items, loading, error } = useSimilarProperties(propertyId);
   const similarProperties = useMemo(() => (items ?? []).map(toPropertyCard), [items]);
   const total = similarProperties.length;
   const normalizedIndex = total === 0 ? 0 : Math.min(activeSimilar, total - 1);
   const current = total > 0 ? similarProperties[normalizedIndex] : null;
-  const loading = items == null && !error;
   const isRtl = useLocale() === "ar";
-
-  useEffect(() => {
-    let mounted = true;
-
-    void fetchSimilarPropertiesById(String(propertyId))
-      .then((data) => {
-        if (!mounted) return;
-        setItems(data.filter((item) => item.id !== propertyId));
-      })
-      .catch((err) => {
-        if (!mounted) return;
-        setError(err instanceof Error ? err.message : "Failed to load similar properties.");
-        setItems([]);
-      })
-      ;
-
-    return () => {
-      mounted = false;
-    };
-  }, [propertyId]);
 
   const goTo = (index: number) => {
     if (total === 0) return;

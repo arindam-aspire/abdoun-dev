@@ -6,13 +6,13 @@ import { clearProfileForUser } from "@/features/profile/profileSlice";
 import { clearFavourites } from "@/features/favourites/favouritesSlice";
 import { clearSavedSearches } from "@/features/saved-searches/savedSearchesSlice";
 import { clearCompare } from "@/features/compare/compareSlice";
-import { resetAdminAgents } from "@/features/admin-agents/adminAgentsSlice";
+import { resetAdminAgents } from "@/features/admin/adminAgentsSlice";
 import { resetAdminUsers } from "@/features/admin-users/adminUsersSlice";
-import { clearAgentDashboardSummary } from "@/features/admin-agents/agent-dashboard/agentDashboardSummarySlice";
-import { clearAdminDashboardSummary } from "@/features/admin-agents/admin-dashboard/adminDashboardSummarySlice";
-import { clearAdminUserGrowthTrends } from "@/features/admin-agents/admin-dashboard/adminUserGrowthTrendsSlice";
+import { clearAgentDashboardSummary } from "@/features/agent/dashboard/agentDashboardSummarySlice";
+import { clearAdminDashboardSummary } from "@/features/admin/dashboard/adminDashboardSummarySlice";
+import { clearAdminUserGrowthTrends } from "@/features/admin/dashboard/adminUserGrowthTrendsSlice";
 import { clearAuthSession } from "@/lib/auth/sessionCookies";
-import { logout as apiLogout } from "@/services/authService";
+import { logout as apiLogout } from "@/features/auth/api/auth.api";
 import { LocalStorageTokenStore } from "@/lib/auth/adapters/localStorageTokenStore";
 
 const AUTH_USERNAME_STORAGE_KEY = "authUsername";

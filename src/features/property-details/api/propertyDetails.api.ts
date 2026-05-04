@@ -1,7 +1,7 @@
 import {
   fetchPropertyDetailsById as fetchPropertyDetailsByIdService,
   type PropertyDetailsApiResponse,
-} from "@/services/propertyService";
+} from "@/features/property-search/api/propertySearch.api";
 
 export type { PropertyDetailsApiResponse };
 

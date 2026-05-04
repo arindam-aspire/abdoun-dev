@@ -144,7 +144,7 @@ This application is a bilingual real-estate platform for Abdoun Real Estate, com
   - Persist filters in querystring for shareable URLs
 - **Entry points**:
   - Route(s): `/[locale]/search-result`
-  - Components: `src/app/[locale]/(main)/search-result/page.tsx`, `src/components/search-result/SearchFields.tsx`, `src/lib/mocks/jordanCities.ts`
+  - Components: `src/app/[locale]/(main)/search-result/page.tsx`, `src/features/property-search/components/SearchFieldsCore.tsx`, `src/lib/constants/jordanCities.ts`
 - **Permissions / roles**: public
 
 #### 3.2 Search Results Listing Grid/List View with Sorting & Pagination
@@ -159,7 +159,7 @@ This application is a bilingual real-estate platform for Abdoun Real Estate, com
   - Handle empty-state messaging when no results match
 - **Entry points**:
   - Route(s): `/[locale]/search-result`
-  - Components: `src/components/search-result/SearchResults.tsx`, `src/components/search-result/SearchResultPropertyCard.tsx`, `src/components/search-result/SearchResultListCard.tsx`, `src/components/search-result/SearchResultSortDropdown.tsx`, `src/components/search-result/SearchResultViewToggle.tsx`, `src/features/property-search/propertySearchSlice.ts`, `src/services/propertyService.ts`
+  - Components: `src/features/property-search/components/SearchResults.tsx`, `src/features/property-search/components/SearchResultPropertyCard.tsx`, `src/features/property-search/components/SearchResultListCard.tsx`, `src/features/property-search/components/SearchResultSortDropdown.tsx`, `src/features/property-search/components/SearchResultViewToggle.tsx`, `src/features/property-search/propertySearchSlice.ts`, `src/features/property-search/api/propertyService.ts`
 - **Permissions / roles**: public
 
 #### 3.3 Property Contact Modal

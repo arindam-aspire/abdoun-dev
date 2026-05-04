@@ -26,7 +26,7 @@ import {
   requestEmailChange,
   requestPhoneOtp,
   type ProfileRequestExtras,
-} from "@/lib/profileApi";
+} from "@/features/profile/api/profileIdentity";
 import type { ProfileData } from "@/types/auth";
 import { EmailVerifyModal } from "@/features/profile/components/modals/EmailVerifyModal";
 import { PhoneOtpModal } from "@/features/profile/components/modals/PhoneOtpModal";

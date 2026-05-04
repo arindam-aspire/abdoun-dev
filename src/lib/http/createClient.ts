@@ -6,6 +6,7 @@ import axios, {
   type RawAxiosRequestHeaders,
 } from "axios";
 import type { AuthService, LogoutHandler, TokenStore } from "@/lib/auth/ports";
+import { peelV1EnvelopeForAxios } from "@/lib/http/standardEnvelope";
 
 type ResolveHeaders = (
   config: InternalAxiosRequestConfig,
@@ -97,6 +98,10 @@ export const createClient = (options: CreateClientOptions): AxiosInstance => {
   });
 
   if (!options.withAuth) {
+    client.interceptors.response.use((response) => {
+      peelV1EnvelopeForAxios(response);
+      return response;
+    });
     if (options.resolveHeaders) {
       client.interceptors.request.use(async (config) => {
         const headers = AxiosHeaders.from(config.headers);
@@ -159,7 +164,10 @@ export const createClient = (options: CreateClientOptions): AxiosInstance => {
   });
 
   client.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      peelV1EnvelopeForAxios(response);
+      return response;
+    },
     async (error: AxiosError) => {
       if (!isUnauthorized(error) || !error.config) {
         throw error;

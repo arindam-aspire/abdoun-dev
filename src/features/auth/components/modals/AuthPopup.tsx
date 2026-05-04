@@ -23,13 +23,13 @@ import {
   MOCK_AGENT_CREDENTIALS,
 } from "@/types/auth";
 import {
-  getCurrentUser,
   persistTokens,
   requestOtpLogin,
   setAuthUsername,
   toSessionUserForProfile,
   verifyOtpLogin,
 } from "@/features/auth/api/auth.api";
+import { getCurrentUserDeduped } from "@/lib/auth/currentUserRequest";
 import { getApiErrorMessage } from "@/lib/http/apiError";
 import { BrandLogo } from "@/components/layout/brand-logo";
 
@@ -342,7 +342,7 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
       });
       persistTokens(tokens);
       setAuthUsername(otcIdentifier.trim());
-      const me = await getCurrentUser();
+      const me = await getCurrentUserDeduped();
       if (me.requires_password_set) {
         onClose();
         router.push(`/${locale}/force-change-password`);

@@ -1,18 +1,12 @@
 import axios, { type AxiosInstance } from "axios";
 import type { AuthService, AuthTokens } from "@/lib/auth/ports";
+import { peelV1EnvelopePayload } from "@/lib/http/standardEnvelope";
 
 type RestAuthServiceOptions = {
   baseURL: string;
   refreshPath?: string;
   logoutPath?: string;
   client?: AxiosInstance;
-};
-
-type StandardApiResponse<T> = {
-  success: boolean;
-  data: T;
-  message?: string | null;
-  error?: string | null;
 };
 
 type RefreshResponse = {
@@ -47,17 +41,16 @@ export class RestAuthService implements AuthService {
         ? window.localStorage.getItem(AUTH_SUBID_STORAGE_KEY)
         : null;
 
-    const response = await this.client.post<StandardApiResponse<RefreshResponse>>(
-      this.refreshPath,
-      {
-        refresh_token: refreshToken,
-        username: subId || undefined,
-      },
-    );
+    const response = await this.client.post<unknown>(this.refreshPath, {
+      refresh_token: refreshToken,
+      username: subId || undefined,
+    });
+
+    const peeled = peelV1EnvelopePayload(response.data) as RefreshResponse;
 
     return {
-      accessToken: response.data.data.access_token,
-      refreshToken: response.data.data.refresh_token ?? refreshToken,
+      accessToken: peeled.access_token,
+      refreshToken: peeled.refresh_token ?? refreshToken,
     };
   }
 

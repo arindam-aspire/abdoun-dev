@@ -4,7 +4,7 @@
 import {
   fetchExclusiveProperties,
   type ExclusivePropertiesResult,
-} from "@/services/propertyService";
+} from "@/features/property-search/api/propertySearch.api";
 
 export type { ExclusivePropertiesResult };
 

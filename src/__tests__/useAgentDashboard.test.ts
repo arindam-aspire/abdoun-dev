@@ -4,13 +4,13 @@ import * as React from "react";
 import type { ReactNode } from "react";
 import { Provider } from "react-redux";
 import type { AgentDashboardData, PerformanceComparisonItem } from "@/types/agent";
-import agentDashboardSummaryReducer from "@/features/admin-agents/agent-dashboard/agentDashboardSummarySlice";
+import agentDashboardSummaryReducer from "@/features/agent/dashboard/agentDashboardSummarySlice";
 import authReducer from "@/features/auth/authSlice";
-import { useAgentDashboard } from "@/features/admin-agents/agent-dashboard/hooks/useAgentDashboard";
+import { useAgentDashboard } from "@/features/agent/dashboard/hooks/useAgentDashboard";
 
 const fetchAgentDashboardDataMock = jest.fn<Promise<AgentDashboardData>, []>();
 
-jest.mock("@/features/admin-agents/agent-dashboard/api/agentDashboard.api", () => ({
+jest.mock("@/features/agent/dashboard/api/agentDashboard.api", () => ({
   fetchAgentDashboardData: () => fetchAgentDashboardDataMock(),
 }));
 
@@ -96,7 +96,7 @@ describe("useAgentDashboard", () => {
     expect(result.current.loading).toBe(true);
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.data).toEqual(dashboard);
+    expect(result.current.data).toEqual({ ...dashboard, propertyPerformance: perf });
     expect(result.current.performanceData).toEqual(perf);
     expect(result.current.error).toBeNull();
   });
@@ -133,6 +133,6 @@ describe("useAgentDashboard", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.data).toBeNull();
-    expect(result.current.error).toBeInstanceOf(Error);
+    expect(result.current.error).toBe("boom");
   });
 });

@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { getApiErrorMessage } from "@/lib/http";
+import { getApiErrorMessage, getThunkRejectedMessage } from "@/lib/http/apiError";
 import {
   listUsers,
   softDeleteUser,
@@ -7,7 +7,7 @@ import {
   type ListUsersParams,
   type ListUsersResult,
   type UserManagementUser,
-} from "@/services/userService";
+} from "@/features/admin-users/api/userService";
 
 export const ADMIN_USERS_LIST_USER_TYPE = "register_user";
 
@@ -133,7 +133,7 @@ export const fetchAdminUsersSidebarTotal = createAsyncThunk<
   async (_, thunkApi) => {
     const authUserId = thunkApi.getState().auth.userId;
     try {
-      const { items, total } = await listUsers(
+      const { items, pagination } = await listUsers(
         normalizeAdminUsersListParams({
           page: 1,
           pageSize: 1,
@@ -141,7 +141,11 @@ export const fetchAdminUsersSidebarTotal = createAsyncThunk<
         }),
       );
       const resolved =
-        total != null ? total : items.length === 0 ? 0 : null;
+        typeof pagination.total === "number" && Number.isFinite(pagination.total)
+          ? pagination.total
+          : items.length === 0
+            ? 0
+            : null;
       return { total: resolved, authUserId };
     } catch (error) {
       return thunkApi.rejectWithValue(getApiErrorMessage(error));
@@ -218,14 +222,10 @@ const adminUsersSlice = createSlice({
         const params = normalizeAdminUsersListParams(action.meta.arg);
         state.page = params.page ?? 1;
         state.pageSize = params.pageSize ?? 10;
-        const { items, total } = action.payload;
+        const { items, pagination } = action.payload;
         state.items = items;
-        state.listTotal = total;
-        if (total != null && Number.isFinite(total)) {
-          state.hasNextPage = state.page * state.pageSize < total;
-        } else {
-          state.hasNextPage = items.length === state.pageSize;
-        }
+        state.listTotal = pagination.total;
+        state.hasNextPage = pagination.hasNext;
         state.lastFetchKey = adminUsersListCacheKey(params);
       })
       .addCase(fetchAdminUsers.rejected, (state, action) => {
@@ -235,10 +235,7 @@ const adminUsersSlice = createSlice({
         state.items = [];
         state.listTotal = null;
         state.hasNextPage = false;
-        state.error =
-          (typeof action.payload === "string" ? action.payload : null) ||
-          action.error.message ||
-          "Failed to load users.";
+        state.error = getThunkRejectedMessage(action, "Failed to load users.");
         state.status = "failed";
       })
       .addCase(fetchAdminUsersSidebarTotal.pending, (state) => {

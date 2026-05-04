@@ -9,11 +9,8 @@ import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { login } from "@/features/auth/authSlice";
 import { persistAuthSession } from "@/lib/auth/sessionCookies";
 import { selectCurrentUser } from "@/store/selectors";
-import {
-  getCurrentUser,
-  setPasswordAfterLogin,
-  toSessionUserForProfile,
-} from "@/services/authService";
+import { setPasswordAfterLogin, toSessionUserForProfile } from "@/features/auth/api/auth.api";
+import { getCurrentUserDeduped } from "@/lib/auth/currentUserRequest";
 
 export default function ForceChangePasswordPage() {
   const [ready, setReady] = useState(false);
@@ -84,7 +81,7 @@ export default function ForceChangePasswordPage() {
               password: newPassword,
             });
 
-            const me = await getCurrentUser();
+            const me = await getCurrentUserDeduped({ force: true });
             const sessionUser = toSessionUserForProfile(me);
             persistAuthSession(sessionUser);
             dispatch(login(sessionUser));

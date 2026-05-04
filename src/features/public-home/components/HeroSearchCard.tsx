@@ -17,7 +17,7 @@ import {
 } from "@/features/public-home/components/PropertyTypeSelect";
 import { HeroCitySelect } from "@/features/public-home/components/HeroCitySelect";
 import { HeroAreaSelect } from "@/features/public-home/components/HeroAreaSelect";
-import { getAreasByCityName } from "@/lib/mocks/jordanCities";
+import { getAreasByCityName } from "@/lib/constants/jordanCities";
 
 export interface HeroSearchCardProps {
   translations: HeroTranslations;
@@ -109,8 +109,8 @@ export function HeroSearchCard({
       params.set("type", slugify(propertyType));
     }
     params.set("status", activeTab);
-    if (minBudget.trim()) params.set("minPrice", minBudget.trim());
-    if (maxBudget.trim()) params.set("maxPrice", maxBudget.trim());
+    if (minBudget.trim()) params.set("budgetMin", minBudget.trim());
+    if (maxBudget.trim()) params.set("budgetMax", maxBudget.trim());
     const searchQuery = params.toString();
     const destination = searchQuery
       ? `/${locale}/search-result?${searchQuery}`

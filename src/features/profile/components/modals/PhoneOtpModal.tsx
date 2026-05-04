@@ -14,7 +14,7 @@ import {
   requestPhoneOtp,
   verifyPhoneOtp,
   type ProfileRequestExtras,
-} from "@/lib/profileApi";
+} from "@/features/profile/api/profileIdentity";
 import { formatPhoneDialHyphenNational } from "@/lib/phoneDisplay";
 import { useOtpResendCooldown } from "@/hooks/useOtpResendCooldown";
 

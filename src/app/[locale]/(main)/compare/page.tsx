@@ -8,7 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import type { AppLocale } from "@/i18n/routing";
 import { useTranslations } from "@/hooks/useTranslations";
 import { SearchResultPropertyCard } from "@/features/property-search/components/SearchResultPropertyCard";
-import { MOCK_SEARCH_RESULTS } from "@/lib/mocks/mockSearchResults";
+import { MOCK_SEARCH_RESULTS } from "@/features/property-search/mocks/mockSearchResults";
 import type { SearchResultListing } from "@/features/property-search/types";
 import { parseCompareIds } from "@/features/compare/utils/compareIds";
 import { useCompareSelection } from "@/features/compare/hooks/useCompareSelection";

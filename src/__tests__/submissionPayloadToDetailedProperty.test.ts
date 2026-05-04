@@ -1,4 +1,4 @@
-import { submissionPayloadToDetailedProperty } from "@/features/admin-agents/admin-dashboard/lib/submissionPayloadToDetailedProperty";
+import { submissionPayloadToDetailedProperty } from "@/features/admin/dashboard/lib/submissionPayloadToDetailedProperty";
 
 describe("submissionPayloadToDetailedProperty", () => {
   it("maps basic fields from payload into DetailedProperty", () => {

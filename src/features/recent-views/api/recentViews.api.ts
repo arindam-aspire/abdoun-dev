@@ -1,14 +1,7 @@
 "use client";
 
-import { createHttpClients } from "@/lib/http";
+import { authApi } from "@/lib/http/clients";
 import type { SearchResultListing } from "@/features/property-search/types";
-
-type StandardApiResponse<T> = {
-  success: boolean;
-  data: T;
-  message?: string | null;
-  error?: string | null;
-};
 
 type RecentViewApiItem = {
   id?: string;
@@ -36,10 +29,6 @@ type RecentViewApiItem = {
 type RecentViewsListData = {
   items?: RecentViewApiItem[] | null;
 };
-
-const { authApi } = createHttpClients();
-
-const unwrap = <T,>(response: StandardApiResponse<T>): T => response.data;
 
 function toPrice(value: string | number | null | undefined, currency?: string | null): string {
   if (value == null) return "Price on request";
@@ -88,7 +77,10 @@ function toListing(item: RecentViewApiItem): SearchResultListing | null {
     title: toDisplayText(property?.title ?? null) || "Untitled Property",
     price: toPrice(property?.price, null),
     propertyType: property?.propertyType || "Property",
-    images: property?.media?.images?.map((image:any) => image.url) ?? [],
+    images:
+      property?.media?.images?.filter(
+        (image): image is string => typeof image === "string" && image.length > 0,
+      ) ?? [],
     location,
     beds: property?.beds ?? 0,
     baths: property?.baths ?? 0,
@@ -98,10 +90,10 @@ function toListing(item: RecentViewApiItem): SearchResultListing | null {
 }
 
 export async function listRecentViewedListings(): Promise<SearchResultListing[]> {
-  const response = await authApi.get<StandardApiResponse<RecentViewsListData | RecentViewApiItem[]>>(
+  const response = await authApi.get<RecentViewsListData | RecentViewApiItem[]>(
     "/users/recent-views",
   );
-  const data = unwrap(response.data);
+  const data = response.data;
   const items = Array.isArray(data)
     ? data
     : Array.isArray(data?.items)
@@ -113,15 +105,11 @@ export async function listRecentViewedListings(): Promise<SearchResultListing[]>
 }
 
 export async function removeRecentlyViewedProperty(propertyId: number): Promise<boolean> {
-  const response = await authApi.delete<StandardApiResponse<boolean>>(
-    `/users/recent-views/${propertyId}`,
-  );
-  return unwrap(response.data);
+  const response = await authApi.delete<boolean>(`/users/recent-views/${propertyId}`);
+  return response.data;
 }
 
 export async function clearRecentlyViewedProperties(): Promise<boolean> {
-  const response = await authApi.delete<StandardApiResponse<boolean>>(
-    "/users/recent-views",
-  );
-  return unwrap(response.data);
+  const response = await authApi.delete<boolean>("/users/recent-views");
+  return response.data;
 }

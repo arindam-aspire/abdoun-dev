@@ -61,13 +61,16 @@ jest.mock("@/lib/auth/enrichSessionUser", () => ({
 }));
 
 const requestProfileUpdateMock = jest.fn();
-const getCurrentUserMock = jest.fn();
+const getCurrentUserDedupedMock = jest.fn();
 const toSessionUserForProfileMock = jest.fn();
 
 jest.mock("@/features/profile/api/profile.api", () => ({
   requestProfileUpdate: (...args: unknown[]) => requestProfileUpdateMock(...args),
-  getCurrentUser: () => getCurrentUserMock(),
   toSessionUserForProfile: (u: unknown) => toSessionUserForProfileMock(u),
+}));
+
+jest.mock("@/lib/auth/currentUserRequest", () => ({
+  getCurrentUserDeduped: (...args: unknown[]) => getCurrentUserDedupedMock(...args),
 }));
 
 const uploadProfilePictureMock = jest.fn();
@@ -87,7 +90,7 @@ describe("useUpdateProfile", () => {
     loginActionMock.mockClear();
     setProfileExtraMock.mockClear();
     requestProfileUpdateMock.mockReset();
-    getCurrentUserMock.mockReset();
+    getCurrentUserDedupedMock.mockReset();
     toSessionUserForProfileMock.mockReset();
     persistSessionMock.mockReset();
     uploadProfilePictureMock.mockReset();
@@ -102,7 +105,7 @@ describe("useUpdateProfile", () => {
       verification_fields: [],
       dev_phone_otp: null,
     });
-    getCurrentUserMock.mockResolvedValue({ id: "u1" });
+    getCurrentUserDedupedMock.mockResolvedValue({ id: "u1" });
     toSessionUserForProfileMock.mockReturnValue({
       id: "u1",
       name: "New",
@@ -131,7 +134,7 @@ describe("useUpdateProfile", () => {
   });
 
   it("refreshes from GET /auth/me for avatar and setProfileExtra only for displayName", async () => {
-    getCurrentUserMock.mockResolvedValue({ id: "u1" });
+    getCurrentUserDedupedMock.mockResolvedValue({ id: "u1" });
     toSessionUserForProfileMock.mockReturnValue({
       id: "u1",
       name: "User",
@@ -149,7 +152,7 @@ describe("useUpdateProfile", () => {
     });
 
     expect(requestProfileUpdateMock).not.toHaveBeenCalled();
-    expect(getCurrentUserMock).toHaveBeenCalled();
+    expect(getCurrentUserDedupedMock).toHaveBeenCalled();
     expect(setProfileExtraMock).toHaveBeenCalledWith({
       userId: "u1",
       extra: { displayName: "D" },
@@ -176,11 +179,11 @@ describe("useUpdateProfile", () => {
     });
 
     expect(thrown).toBeInstanceOf(Error);
-    expect(getCurrentUserMock).not.toHaveBeenCalled();
+    expect(getCurrentUserDedupedMock).not.toHaveBeenCalled();
   });
 
   it("refreshProfile persists session and dispatches login from GET /auth/me", async () => {
-    getCurrentUserMock.mockResolvedValue({ id: "u1" });
+    getCurrentUserDedupedMock.mockResolvedValue({ id: "u1" });
     toSessionUserForProfileMock.mockReturnValue({
       id: "u1",
       name: "Synced",
@@ -194,7 +197,7 @@ describe("useUpdateProfile", () => {
       await result.current.refreshProfile();
     });
 
-    expect(getCurrentUserMock).toHaveBeenCalled();
+    expect(getCurrentUserDedupedMock).toHaveBeenCalled();
     expect(persistSessionMock).toHaveBeenCalledWith({
       user: { id: "u1", name: "Synced", email: "u@u", role: "user" },
     });

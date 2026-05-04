@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useLocale } from "next-intl";
 import { ExclusivePropertiesSection } from "@/features/public-home/components/ExclusivePropertiesSection";
 import type {
@@ -8,7 +8,7 @@ import type {
   Property,
 } from "@/features/public-home/components/types";
 import type { SearchResultListing } from "@/features/property-search/types";
-import { fetchSimilarPropertiesById } from "@/services/propertyService";
+import { useSimilarProperties } from "@/features/property-details/hooks/useSimilarProperties";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=1200&auto=format&fit=crop";
@@ -42,37 +42,12 @@ export function PropertyDetailsSimilarPropertiesSection({
   propertyId,
 }: PropertyDetailsSimilarPropertiesSectionProps) {
   const isRtl = useLocale() === "ar";
-  const [items, setItems] = useState<SearchResultListing[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { items, loading, error } = useSimilarProperties(propertyId);
 
   const similarProperties = useMemo(
     () => (items ?? []).map(toPropertyCard),
     [items],
   );
-  const loading = items == null && !error;
-
-  useEffect(() => {
-    let mounted = true;
-
-    void fetchSimilarPropertiesById(String(propertyId))
-      .then((data) => {
-        if (!mounted) return;
-        setItems(data.filter((item) => item.id !== propertyId));
-      })
-      .catch((err) => {
-        if (!mounted) return;
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to load similar properties.",
-        );
-        setItems([]);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [propertyId]);
 
   return (
     <ExclusivePropertiesSection

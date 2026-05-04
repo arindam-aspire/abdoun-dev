@@ -22,7 +22,8 @@ import {
 } from "@/lib/auth/sessionManager";
 import { selectCurrentUser } from "@/store/selectors";
 import { enrichWithPhoneParts } from "@/lib/auth/enrichSessionUser";
-import { getCurrentUser, toSessionUserForProfile } from "@/features/auth/api/auth.api";
+import { toSessionUserForProfile } from "@/features/auth/api/auth.api";
+import { getCurrentUserDeduped } from "@/lib/auth/currentUserRequest";
 import { listFavoriteProperties } from "@/features/favourites/api/favourites.api";
 import { listSavedSearches } from "@/features/saved-searches/api/savedSearches.api";
 
@@ -60,7 +61,7 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
       if (tokens) {
         void (async () => {
           try {
-            const me = await getCurrentUser();
+            const me = await getCurrentUserDeduped();
             if (me.requires_password_set) {
               clearSession();
               router.push(`/${locale}/force-change-password`);
@@ -84,7 +85,7 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
 
     void (async () => {
       try {
-        const me = await getCurrentUser();
+        const me = await getCurrentUserDeduped();
 
         if (me.requires_password_set) {
           clearSession();

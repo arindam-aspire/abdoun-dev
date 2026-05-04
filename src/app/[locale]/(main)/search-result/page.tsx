@@ -3,8 +3,8 @@
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "@/hooks/useTranslations";
 import type { AppLocale } from "@/i18n/routing";
-import { JORDAN_CITIES_WITH_AREAS } from "@/lib/mocks/jordanCities";
-import { getAreasByCityName } from "@/lib/mocks/jordanCities";
+import { JORDAN_CITIES_WITH_AREAS } from "@/lib/constants/jordanCities";
+import { getAreasByCityName } from "@/lib/constants/jordanCities";
 import { useLocale } from "next-intl";
 import { StickySearchWrapper } from "@/components/ui/StickySearchWrapper";
 import { SearchFields } from "@/features/property-search/components/SearchFields";

@@ -1,0 +1,428 @@
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import {
+  getAdminAgentsSummary,
+  inviteAdminAgent,
+  listAdminAgents,
+  approveAgent,
+  declineAgent,
+  deleteAgent,
+  grantAdminAccess,
+  type ListAdminAgentsParams,
+  type AdminAgent,
+  type AdminAgentsSummaryData,
+  type InviteAgentResponse,
+  agentOnboardingManually,
+} from "@/features/admin/api/adminAgentApiService";
+import { AGENT_STATUS } from "@/constants/agentStatus";
+import { normalizeAgentStatus } from "@/constants/agentStatus";
+import { getApiErrorMessage, getThunkRejectedMessage } from "@/lib/http/apiError";
+
+/** Thunk argument: same as list API params, plus optional `force` to bypass session cache. */
+export type FetchAdminAgentsArg = ListAdminAgentsParams & { force?: boolean };
+
+function toPositiveInt(value: unknown): number | undefined {
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return undefined;
+    const n = Math.floor(value);
+    return n >= 1 ? n : undefined;
+  }
+  if (typeof value === "string") {
+    const n = Number.parseInt(value, 10);
+    return Number.isFinite(n) && n >= 1 ? n : undefined;
+  }
+  return undefined;
+}
+
+function normalizeSortBy(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  if (trimmed === "invitedAt") return "invited_at";
+  if (trimmed === "reviewedAt") return "reviewed_at";
+  if (trimmed === "invited_at" || trimmed === "reviewed_at" || trimmed === "created_at") {
+    return trimmed;
+  }
+  return undefined;
+}
+
+function normalizeSortOrder(raw: unknown): "asc" | "desc" | undefined {
+  if (typeof raw !== "string") return undefined;
+  const v = raw.trim().toLowerCase();
+  return v === "asc" || v === "desc" ? v : undefined;
+}
+
+function normalizePeriod(raw: unknown): ListAdminAgentsParams["period"] | undefined {
+  if (typeof raw !== "string") return undefined;
+  const v = raw.trim().toLowerCase();
+  return v === "weekly" || v === "monthly" || v === "yearly"
+    ? (v as ListAdminAgentsParams["period"])
+    : undefined;
+}
+
+function normalizeListParamsForCache(
+  params: ListAdminAgentsParams,
+): Required<Pick<ListAdminAgentsParams, "page" | "pageSize" | "sortBy" | "sortOrder">> &
+  Pick<ListAdminAgentsParams, "status" | "search" | "period"> {
+  const page = toPositiveInt(params.page) ?? 1;
+  const pageSize = toPositiveInt(params.pageSize) ?? 20;
+  const sortBy = normalizeSortBy(params.sortBy) ?? "invited_at";
+  const sortOrder = normalizeSortOrder(params.sortOrder) ?? "desc";
+  const status = params.status?.trim() ? params.status.trim() : "";
+  const search = params.search?.trim() ?? "";
+  const period = normalizePeriod(params.period);
+  return { page, pageSize, sortBy, sortOrder, status, search, period };
+}
+
+function listParamsFromFetchArg(arg: FetchAdminAgentsArg | undefined): ListAdminAgentsParams {
+  if (!arg) return {};
+  const { force: _force, ...rest } = arg;
+  return rest;
+}
+
+/** Stable key for `GET /agents` query (must match `listAdminAgents` defaults). */
+export function adminAgentsListCacheKey(params: ListAdminAgentsParams): string {
+  const { page, pageSize, sortBy, sortOrder, status, search, period } =
+    normalizeListParamsForCache(params);
+  return `${page}|${pageSize}|${sortBy}|${sortOrder}|${status}|${search}|${period ?? ""}`;
+}
+
+type AdminAgentsState = {
+  /** All agents we've seen so far across any page/filter (merged by id). */
+  allItems: AdminAgent[];
+  /** Agents for the current page/filter coming from the last fetch. */
+  currentItems: AdminAgent[];
+  total: number;
+  /** Page number of the currently stored items (1-based). */
+  page: number;
+  status: "idle" | "loading" | "succeeded" | "failed";
+  loading: boolean;
+  error: string | null;
+  inviting: boolean;
+  inviteError: string | null;
+  inviteSuccessMessage: string | null;
+  /** Last successful `GET /agents` query key; used to skip duplicate fetches. */
+  lastFetchKey: string | null;
+  /** True after invite/create/delete until the next successful list fetch. */
+  agentsListStale: boolean;
+  /** Query key for the in-flight list request (dedupes parallel identical dispatches). */
+  listInFlightKey: string | null;
+  /** Directory-wide counts from `GET /agents/summary` (independent of list pagination). */
+  summary: AdminAgentsSummaryData | null;
+  summaryStatus: "idle" | "loading" | "succeeded" | "failed";
+  summaryError: string | null;
+};
+
+/** Minimal `getState()` shape for the agents list thunk (avoids importing `RootState`). */
+type AdminAgentsThunkState = {
+  adminAgents: AdminAgentsState;
+};
+
+const initialState: AdminAgentsState = {
+  allItems: [],
+  currentItems: [],
+  total: 0,
+  page: 1,
+  status: "idle",
+  loading: false,
+  error: null,
+  inviting: false,
+  inviteError: null,
+  inviteSuccessMessage: null,
+  lastFetchKey: null,
+  agentsListStale: false,
+  listInFlightKey: null,
+  summary: null,
+  summaryStatus: "idle",
+  summaryError: null,
+};
+
+export const fetchAdminAgents = createAsyncThunk<
+  Awaited<ReturnType<typeof listAdminAgents>>,
+  FetchAdminAgentsArg | undefined,
+  { state: AdminAgentsThunkState }
+>(
+  "adminAgents/fetchAdminAgents",
+  async (params, thunkApi) => {
+    const listParams = listParamsFromFetchArg(params);
+    try {
+      return await listAdminAgents(listParams);
+    } catch (error) {
+      return thunkApi.rejectWithValue(getApiErrorMessage(error));
+    }
+  },
+  {
+    condition: (arg, { getState }) => {
+      if (arg?.force) return true;
+      const listParams = listParamsFromFetchArg(arg);
+      const key = adminAgentsListCacheKey(listParams);
+      const { adminAgents: s } = getState();
+      if (s.loading && s.listInFlightKey === key) return false;
+      if (s.status === "succeeded" && s.lastFetchKey === key && !s.agentsListStale) {
+        return false;
+      }
+      return true;
+    },
+  },
+);
+
+export const fetchAdminAgentsSummary = createAsyncThunk<AdminAgentsSummaryData, void>(
+  "adminAgents/fetchAdminAgentsSummary",
+  async (_, thunkApi) => {
+    try {
+      return await getAdminAgentsSummary();
+    } catch (error) {
+      return thunkApi.rejectWithValue(getApiErrorMessage(error));
+    }
+  },
+);
+
+function dispatchSummaryRefresh(thunkApi: { dispatch: (action: unknown) => void }) {
+  void thunkApi.dispatch(fetchAdminAgentsSummary());
+}
+
+/** Map invite API response to AdminAgent for storing in the list. */
+function inviteResponseToAgent(res: InviteAgentResponse): AdminAgent {
+  return {
+    id: res.id,
+    fullName: "Agent",
+    email: res.email,
+    phone: "N/A",
+    city: "N/A",
+    status: normalizeAgentStatus(res.status),
+    invitedAt: res.invitedAt ?? new Date().toISOString(),
+    // Use backend-provided invitedBy (logged-in user), fallback to N/A
+    invitedBy: res.invitedBy?.trim() || "N/A",
+  };
+}
+
+export const inviteAdminAgentByEmail = createAsyncThunk(
+  "adminAgents/inviteAdminAgentByEmail",
+  async (email: string, thunkApi) => {
+    try {
+      const data = await inviteAdminAgent(email);
+      dispatchSummaryRefresh(thunkApi);
+      return data;
+    } catch (error) {
+      return thunkApi.rejectWithValue(getApiErrorMessage(error));
+    }
+  },
+);
+
+export const approveAdminAgent = createAsyncThunk(
+  "adminAgents/approveAdminAgent",
+  async (agentId: string, thunkApi) => {
+    try {
+      await approveAgent(agentId);
+      dispatchSummaryRefresh(thunkApi);
+      return { agentId };
+    } catch (error) {
+      return thunkApi.rejectWithValue(getApiErrorMessage(error));
+    }
+  },
+);
+
+export const declineAdminAgent = createAsyncThunk(
+  "adminAgents/declineAdminAgent",
+  async (agentId: string, thunkApi) => {
+    try {
+      await declineAgent(agentId);
+      dispatchSummaryRefresh(thunkApi);
+      return { agentId };
+    } catch (error) {
+      return thunkApi.rejectWithValue(getApiErrorMessage(error));
+    }
+  },
+);
+
+export const deleteAdminAgent = createAsyncThunk(
+  "adminAgents/deleteAdminAgent",
+  async (agentId: string, thunkApi) => {
+    try {
+      await deleteAgent(agentId);
+      dispatchSummaryRefresh(thunkApi);
+      return { agentId };
+    } catch (error) {
+      return thunkApi.rejectWithValue(getApiErrorMessage(error));
+    }
+  },
+);
+
+export const grantAdminAccessForAgent = createAsyncThunk(
+  "adminAgents/grantAdminAccessForAgent",
+  async (
+    options: {
+      adminId: string;
+      agentId: string;
+    },
+    thunkApi,
+  ) => {
+    try {
+      await grantAdminAccess(options);
+      return options;
+    } catch (error) {
+      return thunkApi.rejectWithValue(getApiErrorMessage(error));
+    }
+  },
+);
+
+export const createAdminAgentManually = createAsyncThunk(
+  "adminAgents/createAdminAgentManually",
+  async (agent: AdminAgent, thunkApi) => {
+    try {
+      await agentOnboardingManually(agent);
+      dispatchSummaryRefresh(thunkApi);
+      return agent;
+    } catch (error) {
+      return thunkApi.rejectWithValue(getApiErrorMessage(error));
+    }
+  },
+);
+
+const adminAgentsSlice = createSlice({
+  name: "adminAgents",
+  initialState,
+  reducers: {
+    clearInviteFeedback(state) {
+      state.inviteError = null;
+      state.inviteSuccessMessage = null;
+    },
+    resetAdminAgents() {
+      return initialState;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchAdminAgentsSummary.pending, (state) => {
+        state.summaryStatus = "loading";
+        state.summaryError = null;
+      })
+      .addCase(fetchAdminAgentsSummary.fulfilled, (state, action) => {
+        state.summary = action.payload;
+        state.summaryStatus = "succeeded";
+        state.summaryError = null;
+      })
+      .addCase(fetchAdminAgentsSummary.rejected, (state, action) => {
+        state.summaryStatus = "failed";
+        state.summaryError = getThunkRejectedMessage(
+          action,
+          "Failed to load agent summary.",
+        );
+      })
+      .addCase(fetchAdminAgents.pending, (state, action) => {
+        state.loading = true;
+        state.error = null;
+        state.status = "loading";
+        state.listInFlightKey = adminAgentsListCacheKey(listParamsFromFetchArg(action.meta.arg));
+      })
+      .addCase(fetchAdminAgents.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        const pageItems = action.payload.items;
+        state.currentItems = pageItems;
+        state.total = action.payload.pagination.total;
+        state.page = action.payload.pagination.page;
+        state.status = "succeeded";
+        state.agentsListStale = false;
+        state.lastFetchKey = adminAgentsListCacheKey(listParamsFromFetchArg(action.meta.arg));
+        state.listInFlightKey = null;
+        // Merge into allItems, upserting by id
+        const byId = new Map(state.allItems.map((a) => [a.id, a] as const));
+        for (const agent of pageItems) {
+          byId.set(agent.id, agent);
+        }
+        state.allItems = Array.from(byId.values());
+      })
+      .addCase(fetchAdminAgents.rejected, (state, action) => {
+        if (action.meta.condition === true) return;
+        state.loading = false;
+        state.listInFlightKey = null;
+        state.currentItems = [];
+        state.error = getThunkRejectedMessage(action, "Failed to load agents.");
+        state.status = "failed";
+      })
+      .addCase(inviteAdminAgentByEmail.pending, (state) => {
+        state.inviting = true;
+        state.inviteError = null;
+        state.inviteSuccessMessage = null;
+      })
+      .addCase(inviteAdminAgentByEmail.fulfilled, (state, action) => {
+        state.inviting = false;
+        state.inviteError = null;
+        state.inviteSuccessMessage = `Invitation sent to ${action.payload.email}`;
+        state.agentsListStale = true;
+        const newAgent = inviteResponseToAgent(action.payload);
+        state.total += 1;
+        if (state.page === 1) {
+          state.currentItems = [newAgent, ...state.currentItems];
+        }
+        state.allItems = [newAgent, ...state.allItems.filter((a) => a.id !== newAgent.id)];
+      })
+      .addCase(inviteAdminAgentByEmail.rejected, (state, action) => {
+        state.inviting = false;
+        state.inviteSuccessMessage = null;
+        state.inviteError = getThunkRejectedMessage(
+          action,
+          "Failed to invite agent.",
+        );
+      })
+      .addCase(approveAdminAgent.fulfilled, (state, action) => {
+        const id = action.payload.agentId;
+        const apply = (list: AdminAgent[]) => {
+          const agent = list.find((a) => a.id === id);
+          if (agent) {
+            agent.status = AGENT_STATUS.ACTIVE;
+            if (agent.reviewedAt == null || !String(agent.reviewedAt).trim()) {
+              agent.reviewedAt = new Date().toISOString();
+            }
+          }
+        };
+        apply(state.currentItems);
+        apply(state.allItems);
+      })
+      .addCase(declineAdminAgent.fulfilled, (state, action) => {
+        const id = action.payload.agentId;
+        const apply = (list: AdminAgent[]) => {
+          const agent = list.find((a) => a.id === id);
+          if (agent) {
+            agent.status = AGENT_STATUS.DECLINED;
+          }
+        };
+        apply(state.currentItems);
+        apply(state.allItems);
+      })
+      .addCase(deleteAdminAgent.fulfilled, (state, action) => {
+        state.agentsListStale = true;
+        const id = action.payload.agentId;
+        state.currentItems = state.currentItems.filter((a) => a.id !== id);
+        state.allItems = state.allItems.filter((a) => a.id !== id);
+        if (state.total > 0) state.total -= 1;
+      })
+      .addCase(createAdminAgentManually.fulfilled, (state, action) => {
+        state.agentsListStale = true;
+        // Use the original payload to build the new agent entry
+        const arg = action.meta.arg as AdminAgent;
+        const now = new Date().toISOString();
+        const st = normalizeAgentStatus(arg.status ?? AGENT_STATUS.ACTIVE);
+        const newAgent: AdminAgent = {
+          id: arg.id ?? `manual_${Date.now()}`,
+          fullName: arg.fullName,
+          email: arg.email,
+          phone: arg.phone,
+          city: arg.city,
+          status: st,
+          invitedAt: arg.invitedAt ?? now,
+          reviewedAt: st === AGENT_STATUS.ACTIVE ? (arg.reviewedAt ?? now) : null,
+          invitedBy: arg.invitedBy ?? "Manual onboarding",
+        };
+
+        state.total += 1;
+        if (state.page === 1) {
+          state.currentItems = [newAgent, ...state.currentItems];
+        }
+        state.allItems = [newAgent, ...state.allItems.filter((a) => a.id !== newAgent.id)];
+      });
+  },
+});
+
+export const { clearInviteFeedback, resetAdminAgents } = adminAgentsSlice.actions;
+export default adminAgentsSlice.reducer;

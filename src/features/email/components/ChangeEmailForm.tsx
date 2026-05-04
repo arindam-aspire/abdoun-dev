@@ -9,7 +9,7 @@ import {
   getProfileRequestRetryAfterSeconds,
   isProfileRequestRateLimited,
   requestEmailChange,
-} from "@/lib/profileApi";
+} from "@/features/profile/api/profileIdentity";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";

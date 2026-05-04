@@ -1,21 +1,16 @@
 /**
  * Profile feature API module. Wraps user/profile and self-service profile update endpoints.
  */
-import { createHttpClients } from "@/lib/http";
+import { authApi } from "@/lib/http/clients";
 import {
   updateUser as updateUserService,
   getUserById,
-  type StandardApiResponse,
   type UpdateUserPayload,
   type UserManagementUser,
-} from "@/services/userService";
+} from "@/features/admin-users/api/userService";
 import { getCurrentUser, toSessionUserForProfile } from "@/features/auth/api/auth.api";
 
 export type { UpdateUserPayload, UserManagementUser };
-
-const { authApi } = createHttpClients();
-
-const unwrap = <T,>(body: StandardApiResponse<T>): T => body.data;
 
 export type ProfileUpdateRequestPayload = {
   full_name?: string;
@@ -36,11 +31,11 @@ export type ProfileUpdateRequestData = {
 export async function requestProfileUpdate(
   payload: ProfileUpdateRequestPayload,
 ): Promise<ProfileUpdateRequestData> {
-  const response = await authApi.patch<StandardApiResponse<ProfileUpdateRequestData>>(
+  const response = await authApi.patch<ProfileUpdateRequestData>(
     "/auth/me/profile/request",
     payload,
   );
-  return unwrap(response.data);
+  return response.data;
 }
 
 export type ProfileUpdateVerifyPayload = {
@@ -56,11 +51,11 @@ export type ProfileUpdateVerifyPayload = {
 export async function verifyProfileUpdate(
   payload: ProfileUpdateVerifyPayload,
 ): Promise<{ message: string }> {
-  const response = await authApi.post<StandardApiResponse<{ message: string }>>(
+  const response = await authApi.post<{ message: string }>(
     "/auth/me/profile/verify",
     payload,
   );
-  return unwrap(response.data);
+  return response.data;
 }
 
 /**

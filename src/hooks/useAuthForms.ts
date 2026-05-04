@@ -14,7 +14,8 @@ import {
   requestForgotPassword,
   resendConfirmation,
   signup as apiSignup,
-} from "@/services/authService";
+} from "@/features/auth/api/auth.api";
+import { getApiErrorMessage } from "@/lib/http/apiError";
 import { AxiosError } from "axios";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function isEmailOrPhone(value: string) {
@@ -147,7 +148,7 @@ export function useSignupFlow(locale: string) {
       );
       router.push(`/${locale}`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Social signup failed.");
+      setMessage(getApiErrorMessage(error) || "Social signup failed.");
     } finally {
       setLoading(false);
     }
@@ -193,7 +194,7 @@ export function useSignupFlow(locale: string) {
           const message =
             typeof axiosError.response?.data?.detail === "string"
               ? axiosError.response.data.detail
-              : "Account already exists. Please log in.";
+              : getApiErrorMessage(axiosError) || "Account already exists. Please log in.";
           setMessage(message);
           router.push(`/${locale}`);
           return;
@@ -207,7 +208,7 @@ export function useSignupFlow(locale: string) {
       timer.restart(600);
       setScreen("otp");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to sign up.");
+      setMessage(getApiErrorMessage(error) || "Unable to sign up.");
     } finally {
       setLoading(false);
     }
@@ -233,7 +234,7 @@ export function useSignupFlow(locale: string) {
       setMessage("Signup completed. Redirecting...");
       router.push(`/${locale}`);
     } catch (error) {
-      const errMsg = error instanceof Error ? error.message : "Invalid OTP.";
+      const errMsg = getApiErrorMessage(error) || "Invalid OTP.";
       setErrors({ otp: errMsg });
       setMessage(errMsg);
     } finally {
@@ -251,7 +252,7 @@ export function useSignupFlow(locale: string) {
       timer.restart(600);
       setMessage("OTP resent successfully.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Failed to resend OTP.");
+      setMessage(getApiErrorMessage(error) || "Failed to resend OTP.");
     } finally {
       setLoading(false);
     }
@@ -349,7 +350,7 @@ export function useLoginFlow(locale: string) {
         router.push(`/${locale}`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed.");
+      setError(getApiErrorMessage(err) || "Login failed.");
     } finally {
       setLoading(false);
     }
@@ -374,7 +375,7 @@ export function useLoginFlow(locale: string) {
       );
       router.push(`/${locale}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Social login failed.");
+      setError(getApiErrorMessage(err) || "Social login failed.");
     } finally {
       setLoading(false);
     }
@@ -478,7 +479,7 @@ export function useForgotPasswordFlow() {
       timer.restart(600);
       setStep("otp");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to request OTP.");
+      setMessage(getApiErrorMessage(error) || "Unable to request OTP.");
     } finally {
       setLoading(false);
     }
@@ -500,7 +501,7 @@ export function useForgotPasswordFlow() {
       setResetToken(challengeId);
       setStep("reset");
     } catch (error) {
-      const errMsg = error instanceof Error ? error.message : "Invalid OTP.";
+      const errMsg = getApiErrorMessage(error) || "Invalid OTP.";
       setErrors({ otp: errMsg });
       setMessage(errMsg);
     } finally {
@@ -517,7 +518,7 @@ export function useForgotPasswordFlow() {
       timer.restart(600);
       setMessage("OTP resent successfully.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to resend OTP.");
+      setMessage(getApiErrorMessage(error) || "Unable to resend OTP.");
     } finally {
       setLoading(false);
     }
@@ -549,7 +550,7 @@ export function useForgotPasswordFlow() {
       });
       setStep("success");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to reset password.");
+      setMessage(getApiErrorMessage(error) || "Unable to reset password.");
     } finally {
       setLoading(false);
     }
