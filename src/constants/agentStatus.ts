@@ -7,6 +7,7 @@ export const AGENT_STATUS = {
   DECLINED: "DECLINED",
   INVITED: "INVITED",
   ACTIVE: "ACTIVE",
+  INACTIVE: "INACTIVE",
 } as const;
 
 export type AgentStatusValue =
@@ -17,6 +18,7 @@ export const AGENT_STATUS_VALUES: readonly AgentStatusValue[] = [
   AGENT_STATUS.DECLINED,
   AGENT_STATUS.INVITED,
   AGENT_STATUS.ACTIVE,
+  AGENT_STATUS.INACTIVE,
 ];
 
 export type AgentStatusFilterValue = "all" | AgentStatusValue;
@@ -41,6 +43,10 @@ const STATUS_CONFIG: Record<
   [AGENT_STATUS.ACTIVE]: {
     label: "Active",
     className: "border border-emerald-200 bg-emerald-50 text-emerald-700",
+  },
+  [AGENT_STATUS.INACTIVE]: {
+    label: "Inactive",
+    className: "border border-zinc-200 bg-zinc-50 text-zinc-700",
   },
 };
 
@@ -72,6 +78,7 @@ export const AGENT_STATUS_FILTER_OPTIONS: ReadonlyArray<{
 }> = [
   { value: "all", label: "All" },
   { value: AGENT_STATUS.ACTIVE, label: STATUS_CONFIG[AGENT_STATUS.ACTIVE].label },
+  { value: AGENT_STATUS.INACTIVE, label: STATUS_CONFIG[AGENT_STATUS.INACTIVE].label },
   { value: AGENT_STATUS.INVITED, label: STATUS_CONFIG[AGENT_STATUS.INVITED].label },
   {
     value: AGENT_STATUS.PENDING_REVIEW,

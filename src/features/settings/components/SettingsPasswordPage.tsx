@@ -33,8 +33,8 @@ export function SettingsPasswordPage() {
         setToast({ kind: "success", message: t("passwordUpdatedToast") });
       } catch (e) {
         const message = getApiErrorMessage(e) || t("toastError");
-        setToast({ kind: "error", message });
-        throw e;
+        // Let the form render the inline error (avoid duplicate toast + inline feedback).
+        throw new Error(message);
       }
     },
     [t],

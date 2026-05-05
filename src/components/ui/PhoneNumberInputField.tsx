@@ -63,7 +63,7 @@ export function PhoneNumberInputField({
   placeholder,
   disabled = false,
   rightAdornment,
-  countryButtonLabel = "full",
+  countryButtonLabel = "flag-only",
 }: PhoneNumberInputFieldProps) {
   const tPhone = useTranslations("phoneInput");
   const defaultPlaceholder = tPhone("placeholder");

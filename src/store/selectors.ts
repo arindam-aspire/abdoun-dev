@@ -91,7 +91,7 @@ export const selectSidebarCounts = createSelector(
       agentDashboardSummary.dashboardCacheAuthUserId === user.id;
     // Agents: sidebar "Manage Listings" + leads counts come only from the agent dashboard
     // bundle in Redux (`agentDashboardSummary` / `setAgentDashboardCache`), not from search.
-    // Admins: `GET /agent-properties` total via `fetchAdminManageListingsSidebarTotal` (-1 hides badge).
+    // Admins: `GET /admin/property-submissions` total via `fetchAdminManageListingsSidebarTotal` (-1 hides badge).
     const totalListings = isAgent
       ? agentSummaryCountsValid
         ? agentDashboardSummary.totalProperties

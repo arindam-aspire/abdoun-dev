@@ -17,6 +17,7 @@ import agentDashboardSummaryReducer from "@/features/agent/dashboard/agentDashbo
 import adminUserGrowthTrendsReducer from "@/features/admin/dashboard/adminUserGrowthTrendsSlice";
 import adminDashboardSummaryReducer from "@/features/admin/dashboard/adminDashboardSummarySlice";
 import addPropertyWizardReducer from "@/features/agent/dashboard/components/add-property/addPropertyWizardSlice";
+import locationTaxonomyReducer from "@/features/location-taxonomy/locationTaxonomySlice";
 
 /** Syncs auth login payload into profile reducer so profile has user details. */
 const profileUserSyncMiddleware: Middleware =
@@ -51,6 +52,7 @@ export const store = configureStore({
     adminUserGrowthTrends: adminUserGrowthTrendsReducer,
     adminDashboardSummary: adminDashboardSummaryReducer,
     addPropertyWizard: addPropertyWizardReducer,
+    locationTaxonomy: locationTaxonomyReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(profileUserSyncMiddleware),

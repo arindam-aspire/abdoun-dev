@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -152,7 +152,7 @@ function toWizardCategory(value?: string | null): Category | null {
 export function BasicInformationStep() {
   const dispatch = useAppDispatch();
   const canEdit = useAppSelector(selectAddPropertyIsEditable);
-  const { listingPurpose, category, propertyType, propertyTitle, description } =
+  const { listingPurpose, category, propertyType, propertyTitle, description, typeId } =
     useAppSelector(selectAddPropertyWizard);
   const { categories: propertyTaxonomyRaw } = usePropertyTaxonomy();
   const taxonomyCategories = useMemo(
@@ -171,6 +171,32 @@ export function BasicInformationStep() {
   const [openDropdown, setOpenDropdown] = useState<
     "listingPurpose" | "category" | "propertyType" | null
   >(null);
+
+  /**
+   * Draft GET hydrates `type_id` and a label from the payload mapper; dropdown values are taxonomy
+   * `name` strings. Once {@link usePropertyTaxonomy} data is available, align the control with the
+   * saved type when the current string does not match any option.
+   */
+  useEffect(() => {
+    if (typeId == null || !Number.isFinite(typeId) || !taxonomyCategories.length) return;
+    const categoryEntry = taxonomyCategories.find(
+      (c) => toWizardCategory(c.slug ?? c.name) === category,
+    );
+    const match = categoryEntry?.property_types?.find((pt) => pt.id === typeId);
+    if (!match?.name) return;
+    if (propertyType === match.name) return;
+    const apiNames = (categoryEntry?.property_types ?? [])
+      .map((pt) => pt.name?.trim())
+      .filter(Boolean) as string[];
+    if (apiNames.length > 0) {
+      if (apiNames.includes(propertyType)) return;
+      dispatch(setPropertyType(match.name));
+      return;
+    }
+    const fallbackValues = getPropertyTypeOptionsFallback(category).map((o) => o.value);
+    if (fallbackValues.includes(propertyType)) return;
+    dispatch(setPropertyType(match.name));
+  }, [taxonomyCategories, category, typeId, propertyType, dispatch]);
 
   const categoryOptions: DropdownOption[] = useMemo(() => {
     const fromApi = taxonomyCategories

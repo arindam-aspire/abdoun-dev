@@ -62,6 +62,8 @@ export function InlineEditableField({
     try {
       await onSave(options ? editValue : trimmed);
       setEditing(false);
+    } catch {
+      return;
     } finally {
       setSaving(false);
     }

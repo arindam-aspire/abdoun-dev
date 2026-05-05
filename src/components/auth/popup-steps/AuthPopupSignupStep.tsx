@@ -1,6 +1,6 @@
 import { Eye, EyeOff, Mail, Phone } from "lucide-react";
 import { Button } from "@/components/ui";
-import { AuthPopupField, OTPVerificationBlock, PasswordPolicyHelper } from "@/components/auth";
+import { AuthAlert, AuthPopupField, OTPVerificationBlock, PasswordPolicyHelper } from "@/components/auth";
 import { AuthProviderLogo } from "@/components/auth/popup-steps/AuthProviderLogo";
 import {
   AUTH_POPUP_DIVIDER,
@@ -43,6 +43,10 @@ export function AuthPopupSignupStep({
 }: AuthPopupSignupStepProps) {
   return (
     <div className={AUTH_POPUP_STEP_STACK}>
+      {signup.message ? (
+        <AuthAlert kind={signup.messageKind ?? "info"} message={signup.message} />
+      ) : null}
+
       {signup.screen === "landing" ? (
         <>
           <Button

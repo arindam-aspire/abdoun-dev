@@ -7,7 +7,9 @@ import { ChangePasswordForm } from "@/components/auth/ChangePasswordForm";
 import { LoadingScreen } from "@/components/ui";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { login } from "@/features/auth/authSlice";
+import { getApiErrorMessage } from "@/lib/http";
 import { persistAuthSession } from "@/lib/auth/sessionCookies";
+import { queueRouteToast } from "@/lib/ui/routeToast";
 import { selectCurrentUser } from "@/store/selectors";
 import { setPasswordAfterLogin, toSessionUserForProfile } from "@/features/auth/api/auth.api";
 import { getCurrentUserDeduped } from "@/lib/auth/currentUserRequest";
@@ -85,6 +87,7 @@ export default function ForceChangePasswordPage() {
             const sessionUser = toSessionUserForProfile(me);
             persistAuthSession(sessionUser);
             dispatch(login(sessionUser));
+            queueRouteToast({ kind: "success", message: "Password updated successfully." });
 
             if (sessionUser.role === "agent") {
               router.push(`/${locale}/agent-dashboard`);
@@ -94,10 +97,7 @@ export default function ForceChangePasswordPage() {
               router.push(`/${locale}`);
             }
           } catch (error) {
-            const message =
-              error instanceof Error && error.message
-                ? error.message
-                : "Failed to set password. Please try again.";
+            const message = getApiErrorMessage(error, "Failed to set password. Please try again.");
             setSubmitError(message);
           } finally {
             setSubmitting(false);

@@ -6,6 +6,8 @@ import { isValidPhoneNumber } from "libphonenumber-js";
 import { useAppDispatch } from "@/hooks/storeHooks";
 import { login } from "@/features/auth/authSlice";
 import { persistAuthSession } from "@/lib/auth/sessionCookies";
+import { getApiErrorMessage } from "@/lib/http/apiError";
+import { queueRouteToast } from "@/lib/ui/routeToast";
 import type { SocialProvider } from "@/types/auth";
 import {
   confirmForgotPassword,
@@ -15,9 +17,11 @@ import {
   resendConfirmation,
   signup as apiSignup,
 } from "@/features/auth/api/auth.api";
-import { getApiErrorMessage } from "@/lib/http/apiError";
 import { AxiosError } from "axios";
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+type FlowMessageKind = "info" | "error" | "success";
+
 function isEmailOrPhone(value: string) {
   const trimmed = value.trim();
   const cleaned = trimmed.replace(/[\s()-]/g, "");
@@ -76,6 +80,7 @@ export function useSignupFlow(locale: string) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [message, setMessage] = useState<string | null>(null);
+  const [messageKind, setMessageKind] = useState<FlowMessageKind | null>(null);
   const [loading, setLoading] = useState(false);
   const timer = useOtpTimer(60);
 
@@ -88,6 +93,10 @@ export function useSignupFlow(locale: string) {
       else delete next[key];
       return next;
     });
+  };
+  const setStatusMessage = (kind: FlowMessageKind, nextMessage: string | null) => {
+    setMessage(nextMessage);
+    setMessageKind(nextMessage ? kind : null);
   };
 
   const validateFullName = (value: string) =>
@@ -107,7 +116,7 @@ export function useSignupFlow(locale: string) {
     setScreen("manual");
     setErrors({});
     setTouched({});
-    setMessage(null);
+    setStatusMessage("info", null);
   };
 
   const validateField = (
@@ -131,7 +140,7 @@ export function useSignupFlow(locale: string) {
 
   const signupWithProvider = async (provider: SocialProvider) => {
     setLoading(true);
-    setMessage(null);
+    setStatusMessage("info", null);
     try {
       await new Promise((r) => setTimeout(r, 800));
       if (provider === "facebook") {
@@ -178,7 +187,7 @@ export function useSignupFlow(locale: string) {
     if (Object.keys(nextErrors).length > 0) return;
 
     setLoading(true);
-    setMessage(null);
+    setStatusMessage("info", null);
 
     try {
       try {
@@ -196,6 +205,8 @@ export function useSignupFlow(locale: string) {
               ? axiosError.response.data.detail
               : getApiErrorMessage(axiosError) || "Account already exists. Please log in.";
           setMessage(message);
+          setMessageKind("error");
+          queueRouteToast({ kind: "error", message });
           router.push(`/${locale}`);
           return;
         }
@@ -206,6 +217,7 @@ export function useSignupFlow(locale: string) {
       setChallengeId(emailVal);
       setDebugOtp(null);
       timer.restart(600);
+      setStatusMessage("success", "OTP sent successfully.");
       setScreen("otp");
     } catch (error) {
       setMessage(getApiErrorMessage(error) || "Unable to sign up.");
@@ -224,19 +236,20 @@ export function useSignupFlow(locale: string) {
 
     setLoading(true);
     setErrors({});
-    setMessage(null);
+    setStatusMessage("info", null);
 
     try {
       await confirmSignup({ email: challengeId, code: otp.trim() });
       const { sessionUser } = await loginWithPasswordAndPersist(email.trim(), password);
       persistAuthSession(sessionUser);
       dispatch(login(sessionUser));
-      setMessage("Signup completed. Redirecting...");
+      setStatusMessage("success", "Signup completed. Redirecting...");
+      queueRouteToast({ kind: "success", message: "Signup completed successfully." });
       router.push(`/${locale}`);
     } catch (error) {
       const errMsg = getApiErrorMessage(error) || "Invalid OTP.";
       setErrors({ otp: errMsg });
-      setMessage(errMsg);
+      setStatusMessage("error", errMsg);
     } finally {
       setLoading(false);
     }
@@ -244,13 +257,13 @@ export function useSignupFlow(locale: string) {
 
   const resendSignupOtp = async () => {
     setLoading(true);
-    setMessage(null);
+    setStatusMessage("info", null);
 
     try {
       await resendConfirmation({ email: challengeId });
       setDebugOtp(null);
       timer.restart(600);
-      setMessage("OTP resent successfully.");
+      setStatusMessage("success", "OTP resent successfully.");
     } catch (error) {
       setMessage(getApiErrorMessage(error) || "Failed to resend OTP.");
     } finally {
@@ -262,6 +275,7 @@ export function useSignupFlow(locale: string) {
     screen,
     loading,
     message,
+    messageKind,
     errors,
     fields: {
       fullName,
@@ -341,6 +355,7 @@ export function useLoginFlow(locale: string) {
       const { sessionUser } = await loginWithPasswordAndPersist(identifier, password);
       persistAuthSession(sessionUser);
       dispatch(login(sessionUser));
+      queueRouteToast({ kind: "success", message: "Logged in successfully." });
 
       if (sessionUser.role === "admin") {
         router.push(`/${locale}/admin-dashboard`);
@@ -406,6 +421,7 @@ export function useForgotPasswordFlow() {
   const [resetToken, setResetToken] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageKind, setMessageKind] = useState<FlowMessageKind | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [debugOtp, setDebugOtp] = useState<string | null>(null);
@@ -420,6 +436,10 @@ export function useForgotPasswordFlow() {
       else delete next[key];
       return next;
     });
+  };
+  const setStatusMessage = (kind: FlowMessageKind, nextMessage: string | null) => {
+    setMessage(nextMessage);
+    setMessageKind(nextMessage ? kind : null);
   };
 
   const validateIdentifier = (value: string) =>
@@ -469,13 +489,13 @@ export function useForgotPasswordFlow() {
     if (Object.keys(nextErrors).length > 0) return;
 
     setLoading(true);
-    setMessage(null);
+    setStatusMessage("info", null);
 
     try {
       await requestForgotPassword({ email: identifier.trim() });
       setChallengeId(identifier.trim());
       setDebugOtp(null);
-      setMessage("If an account exists, OTP has been sent.");
+      setStatusMessage("info", "If an account exists, OTP has been sent.");
       timer.restart(600);
       setStep("otp");
     } catch (error) {
@@ -495,7 +515,7 @@ export function useForgotPasswordFlow() {
 
     setLoading(true);
     setErrors({});
-    setMessage(null);
+    setStatusMessage("info", null);
 
     try {
       setResetToken(challengeId);
@@ -503,7 +523,7 @@ export function useForgotPasswordFlow() {
     } catch (error) {
       const errMsg = getApiErrorMessage(error) || "Invalid OTP.";
       setErrors({ otp: errMsg });
-      setMessage(errMsg);
+      setStatusMessage("error", errMsg);
     } finally {
       setLoading(false);
     }
@@ -511,12 +531,12 @@ export function useForgotPasswordFlow() {
 
   const resendOtp = async () => {
     setLoading(true);
-    setMessage(null);
+    setStatusMessage("info", null);
     try {
       await requestForgotPassword({ email: challengeId });
       setDebugOtp(null);
       timer.restart(600);
-      setMessage("OTP resent successfully.");
+      setStatusMessage("success", "OTP resent successfully.");
     } catch (error) {
       setMessage(getApiErrorMessage(error) || "Unable to resend OTP.");
     } finally {
@@ -540,7 +560,7 @@ export function useForgotPasswordFlow() {
     if (Object.keys(nextErrors).length > 0) return;
 
     setLoading(true);
-    setMessage(null);
+    setStatusMessage("info", null);
 
     try {
       await confirmForgotPassword({
@@ -548,6 +568,7 @@ export function useForgotPasswordFlow() {
         code: otp.trim(),
         new_password: newPassword,
       });
+      setStatusMessage("success", null);
       setStep("success");
     } catch (error) {
       setMessage(getApiErrorMessage(error) || "Unable to reset password.");
@@ -560,6 +581,7 @@ export function useForgotPasswordFlow() {
     step,
     loading,
     message,
+    messageKind,
     errors,
     debugOtp,
     timer,

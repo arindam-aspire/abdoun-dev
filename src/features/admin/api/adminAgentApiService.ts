@@ -5,6 +5,8 @@ import { getApiErrorMessage } from "@/lib/http/apiError";
 import { readV1EnvelopeMessage } from "@/lib/http/standardEnvelope";
 import { authApi } from "@/lib/http/clients";
 import { createPaginatedResult, type PaginatedResult } from "@/lib/api/pagination";
+import { StandardApiResponse } from "@/lib/http/standardApiResponse";
+
 
 export type AdminAgentStatus = AgentStatusValue;
 
@@ -175,6 +177,8 @@ export type AdminAgentsSummaryData = {
   lastFiveAgents: AdminAgentsSummaryLastAgent[];
 };
 
+const unwrap = <T,>(response: StandardApiResponse<T>): T => response.data;
+
 export async function inviteAdminAgent(
   email: string,
 ): Promise<InviteAgentResponse> {
@@ -304,6 +308,29 @@ export async function declineAgent(agentId: string): Promise<boolean> {
   return response.data === true;
 }
 
+export type SetAgentStatusValue = "ACTIVE" | "INACTIVE";
+export type SetAgentStatusResult = {
+  id: string;
+  status: string;
+};
+
+/**
+ * Admin-only: activate/deactivate agent.
+ * PATCH `/api/v1/agents/{agent_id}/status`
+ *
+ * Backend also flips `users.is_active` as part of this operation.
+ */
+export async function setAgentStatus(
+  agentId: string,
+  status: SetAgentStatusValue,
+): Promise<SetAgentStatusResult> {
+  const response = await authApi.patch<StandardApiResponse<SetAgentStatusResult>>(
+    `/agents/${agentId}/status`,
+    { status },
+  );
+  return unwrap(response.data);
+}
+
 export async function setUserActive(userId: string, isActive: boolean): Promise<true> {
   await authApi.patch<unknown>(`/users/${userId}`, {
     is_active: isActive,
@@ -328,12 +355,24 @@ export async function grantAdminAccess(options: {
   return response.data === true;
 }
 
-export async function agentOnboardingManually(agent: AdminAgent): Promise<boolean> {
-  const response = await authApi.post<boolean>("/agents/manual-onboard", {
+export type ManualOnboardedAgent = {
+  id: string;
+  email: string;
+  fullName: string;
+  phone: string;
+  serviceArea: string;
+  status: string;
+  temporaryPassword?: string;
+};
+
+export async function agentOnboardingManually(agent: AdminAgent): Promise<ManualOnboardedAgent> {
+  const response = await authApi.post<
+    StandardApiResponse<ManualOnboardedAgent>
+  >("/agents/manual-onboard", {
     fullName: agent.fullName,
     email: agent.email,
     phone: agent.phone,
     serviceArea: agent.city,
   });
-  return response.data === true;
+  return unwrap(response.data);
 }

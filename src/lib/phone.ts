@@ -117,6 +117,28 @@ export function normalizePhoneNumber(iso2: string, localNumber: string): string 
 }
 
 /**
+ * Single E.164 string for storage/API: removes spaces/punctuation; prefers libphonenumber’s
+ * canonical `number` when the value parses (e.g. `+91 97…` → `+9197…`).
+ */
+export function compactE164ForStorage(phone: string): string | undefined {
+  const t = phone.trim();
+  if (!t) return undefined;
+  const collapsed = t.replace(/\s/g, "");
+  const parsed =
+    parsePhoneNumberFromString(t) ??
+    parsePhoneNumberFromString(collapsed) ??
+    (t.startsWith("+")
+      ? parsePhoneNumberFromString(collapsed, DEFAULT_COUNTRY_ISO2 as CountryCode)
+      : undefined);
+  if (parsed?.number) return parsed.number;
+  if (t.startsWith("+")) {
+    const d = t.replace(/\D/g, "");
+    return d ? `+${d}` : undefined;
+  }
+  return t;
+}
+
+/**
  * Read-only profile line: territory flag key + national-style digits (no leading `+` calling code).
  */
 export function getProfilePhoneReadonlyDisplay(phone: string | undefined | null): {

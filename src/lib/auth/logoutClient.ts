@@ -18,6 +18,7 @@ import { LocalStorageTokenStore } from "@/lib/auth/adapters/localStorageTokenSto
 const AUTH_USERNAME_STORAGE_KEY = "authUsername";
 const AUTH_SUBID_STORAGE_KEY = "subId";
 export const SESSION_EXPIRED_MESSAGE_KEY = "auth:session-expired-message";
+export const DEFAULT_SESSION_EXPIRED_MESSAGE = "Your session has expired. Please sign in again.";
 
 /** Clears all token/session storage (localStorage + cookies). */
 function clearAllAuthStorage(): void {
@@ -84,8 +85,12 @@ export function forceLocalLogout(
   }
   dispatch(logoutAction());
 
-  if (typeof window !== "undefined" && message) {
-    window.sessionStorage.setItem(SESSION_EXPIRED_MESSAGE_KEY, message);
+  if (typeof window !== "undefined") {
+    const nextMessage =
+      typeof message === "string" && message.trim()
+        ? message.trim()
+        : DEFAULT_SESSION_EXPIRED_MESSAGE;
+    window.sessionStorage.setItem(SESSION_EXPIRED_MESSAGE_KEY, nextMessage);
   }
 
   onRedirect?.();

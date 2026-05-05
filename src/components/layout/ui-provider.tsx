@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { isRtlLocale } from "@/i18n/routing";
 import { useLocale } from "next-intl";
 import { clearFavourites, hydrateFavourites } from "@/features/favourites/favouritesSlice";
 import { setClientLogoutNavigate } from "@/lib/auth/adapters/browserLogoutHandler";
 import { AUTH_SESSION_EXPIRED_EVENT } from "@/lib/http/createClient";
-import { forceLocalLogout } from "@/lib/auth/logoutClient";
+import {
+  DEFAULT_SESSION_EXPIRED_MESSAGE,
+  forceLocalLogout,
+  SESSION_EXPIRED_MESSAGE_KEY,
+} from "@/lib/auth/logoutClient";
 import {
   clearSavedSearches,
   hydrateSavedSearches,
@@ -26,13 +30,17 @@ import { toSessionUserForProfile } from "@/features/auth/api/auth.api";
 import { getCurrentUserDeduped } from "@/lib/auth/currentUserRequest";
 import { listFavoriteProperties } from "@/features/favourites/api/favourites.api";
 import { listSavedSearches } from "@/features/saved-searches/api/savedSearches.api";
+import { Toast } from "@/components/ui";
+import { consumeRouteToast, ROUTE_TOAST_EVENT, type RouteToastPayload } from "@/lib/ui/routeToast";
 
 export function UiProvider({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const pathname = usePathname();
   const theme = useAppSelector((state) => state.ui.theme);
   const locale = useLocale();
   const user = useAppSelector(selectCurrentUser);
+  const [toast, setToast] = useState<RouteToastPayload | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -113,12 +121,36 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const handler = (e: CustomEvent<{ message: string }>) => {
-      const message = e.detail?.message ?? "Invalid or expired token";
-      forceLocalLogout(dispatch, user?.id, message, () => router.push(`/${locale}/login`));
+      void e;
+      forceLocalLogout(dispatch, user?.id, DEFAULT_SESSION_EXPIRED_MESSAGE, () =>
+        router.push(`/${locale}/login`),
+      );
     };
     window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, handler as EventListener);
     return () => window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, handler as EventListener);
   }, [dispatch, locale, router, user?.id]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const consumePendingToast = () => {
+      const sessionExpiredMessage = window.sessionStorage.getItem(SESSION_EXPIRED_MESSAGE_KEY);
+      if (sessionExpiredMessage) {
+        window.sessionStorage.removeItem(SESSION_EXPIRED_MESSAGE_KEY);
+        setToast({ kind: "error", message: sessionExpiredMessage });
+        return;
+      }
+
+      const routeToast = consumeRouteToast();
+      if (routeToast) {
+        setToast(routeToast);
+      }
+    };
+
+    consumePendingToast();
+    window.addEventListener(ROUTE_TOAST_EVENT, consumePendingToast);
+    return () => window.removeEventListener(ROUTE_TOAST_EVENT, consumePendingToast);
+  }, [pathname]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -159,6 +191,13 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
     })();
   }, [dispatch, user]);
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      {toast ? (
+        <Toast kind={toast.kind} message={toast.message} onClose={() => setToast(null)} />
+      ) : null}
+    </>
+  );
 }
 

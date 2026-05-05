@@ -27,6 +27,8 @@ type ConfirmDialogProps = {
   children?: ReactNode;
   /** When false, hides the default footer (Cancel / Confirm buttons). Defaults to true. */
   showFooter?: boolean;
+  /** When true, modal won't close on overlay click or Escape. Defaults to false. */
+  preventCloseOnOutsideClick?: boolean;
   onConfirm: () => void | Promise<void>;
   onCancel: () => void;
 };
@@ -44,6 +46,7 @@ export function ConfirmDialog({
   size = "md",
   children,
   showFooter = true,
+  preventCloseOnOutsideClick = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -64,6 +67,7 @@ export function ConfirmDialog({
     <DialogRoot
       open={open}
       onClose={onCancel}
+      preventCloseOnOutsideClick={preventCloseOnOutsideClick}
       className={`relative ${sizeClass}`}
     >
       {showCloseIcon ? (

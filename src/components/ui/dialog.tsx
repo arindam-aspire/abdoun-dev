@@ -16,6 +16,11 @@ export interface DialogProps {
   children: ReactNode;
   className?: string;
   containerClassName?: string;
+  /**
+   * When true, disables closing via overlay click and Escape key.
+   * Use when you need users to explicitly click a close/cancel action.
+   */
+  preventCloseOnOutsideClick?: boolean;
 }
 
 export function DialogRoot({
@@ -24,10 +29,15 @@ export function DialogRoot({
   children,
   className,
   containerClassName,
+  preventCloseOnOutsideClick = false,
 }: DialogProps) {
   return (
     <Transition appear show={open} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
+      <Dialog
+        as="div"
+        className="relative z-50"
+        onClose={preventCloseOnOutsideClick ? () => {} : onClose}
+      >
         <TransitionChild
           as={Fragment}
           enter="ease-out duration-200"

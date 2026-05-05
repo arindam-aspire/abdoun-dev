@@ -473,7 +473,11 @@ function ProfileFormBody({
         onSaveSuccess?.();
         onClose?.();
       } catch (err) {
-        setApiError(t("identityGenericError"));
+        // When embedded in a page that provides `onSaveError`, avoid duplicate toasts:
+        // let the parent handle feedback instead of this form's internal toast.
+        if (!onSaveError) {
+          setApiError(t("identityGenericError"));
+        }
         onSaveError?.(err);
       } finally {
         setSavingProfile(false);

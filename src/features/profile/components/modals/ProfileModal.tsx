@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { X, User, Lock } from "lucide-react";
 import { useTranslations } from "@/hooks/useTranslations";
 import { DialogRoot } from "@/components/ui/dialog";
+import { Toast } from "@/components/ui";
 import { ProfilePhoto } from "@/features/profile/components/ProfilePhoto";
 import { PersonalInformationTab } from "@/features/profile/components/PersonalInformationTab";
 import { SignInSecurityTab } from "@/features/profile/components/SignInSecurityTab";
@@ -27,6 +28,8 @@ const TABS: { id: ProfileTabId; labelKey: string; icon: typeof User }[] = [
   { id: "security", labelKey: "signInSecurity", icon: Lock },
   // { id: "privacy", labelKey: "privacyCookies", icon: Shield },
 ];
+const PROFILE_UPDATE_SUCCESS_MESSAGE = "Profile updated successfully.";
+const PHONE_OTP_SENT_SUCCESS_MESSAGE = "Verification code sent successfully.";
 
 export function ProfileModal({
   open,
@@ -41,6 +44,9 @@ export function ProfileModal({
   const [pendingPhoneE164, setPendingPhoneE164] = useState("");
   const [assumePhoneOtpSent, setAssumePhoneOtpSent] = useState(false);
   const [pendingPhoneDevOtp, setPendingPhoneDevOtp] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ kind: "info" | "error" | "success"; message: string } | null>(
+    null,
+  );
 
   const closePhoneOtpModal = useCallback(() => {
     setPhoneOtpModalOpen(false);
@@ -52,20 +58,41 @@ export function ProfileModal({
 
   const handlePhoneVerifiedInModal = useCallback(async () => {
     await profileData?.refreshProfile();
+    setToast({ kind: "success", message: PROFILE_UPDATE_SUCCESS_MESSAGE });
   }, [profileData]);
 
   const beginPhoneChangeWithOtp = useCallback(async (phone: string) => {
-    const res = await requestPhoneOtp(phone);
-    setPendingPhoneE164(phone);
-    setAssumePhoneOtpSent(true);
-    setPendingPhoneDevOtp(res.dev_phone_otp ?? null);
-    setPhoneOtpModalOpen(true);
+    try {
+      const res = await requestPhoneOtp(phone);
+      setPendingPhoneE164(phone);
+      setAssumePhoneOtpSent(true);
+      setPendingPhoneDevOtp(res.dev_phone_otp ?? null);
+      setPhoneOtpModalOpen(true);
+      setToast({ kind: "success", message: PHONE_OTP_SENT_SUCCESS_MESSAGE });
+    } catch (error) {
+      const message = getApiErrorMessage(
+        error,
+        "Failed to send verification code. Please try again.",
+      );
+      setToast({ kind: "error", message });
+      throw new Error(message);
+    }
   }, []);
 
   const handlePhotoRemove = useCallback(() => {
-    if (profileData) {
-      void profileData.saveProfile({ avatarUrl: "" });
-    }
+    if (!profileData) return;
+
+    void (async () => {
+      try {
+        await profileData.saveProfile({ avatarUrl: "" });
+        setToast({ kind: "success", message: PROFILE_UPDATE_SUCCESS_MESSAGE });
+      } catch (error) {
+        setToast({
+          kind: "error",
+          message: getApiErrorMessage(error, "Could not update profile. Please try again."),
+        });
+      }
+    })();
   }, [profileData]);
 
   const handleProfileUpdate = useCallback(
@@ -73,7 +100,14 @@ export function ProfileModal({
       updates: Parameters<NonNullable<typeof profileData>["saveProfile"]>[0],
     ) => {
       if (profileData) {
-        await profileData.saveProfile(updates);
+        try {
+          await profileData.saveProfile(updates);
+          setToast({ kind: "success", message: PROFILE_UPDATE_SUCCESS_MESSAGE });
+        } catch (error) {
+          const message = getApiErrorMessage(error, "Could not update profile. Please try again.");
+          setToast({ kind: "error", message });
+          throw new Error(message);
+        }
       }
     },
     [profileData],
@@ -207,6 +241,9 @@ export function ProfileModal({
       assumeOtpAlreadySent={assumePhoneOtpSent}
       onVerified={handlePhoneVerifiedInModal}
     />
+    {toast ? (
+      <Toast kind={toast.kind} message={toast.message} onClose={() => setToast(null)} />
+    ) : null}
     </>
   );
 }

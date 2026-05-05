@@ -8,11 +8,14 @@ import {
   type SidebarRole,
 } from "@/components/layout/sidebar.config";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Toast } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { useSidebar } from "@/hooks/useSidebar";
 import { useTranslations } from "@/hooks/useTranslations";
 import { performClientLogout } from "@/lib/auth/logoutClient";
+import { getApiErrorMessage } from "@/lib/http/apiError";
+import { queueRouteToast } from "@/lib/ui/routeToast";
 import { ADMIN_AGENTS_DASHBOARD_COUNT_PARAMS } from "@/features/admin/dashboard/hooks/useAdminAgentsTotalForDashboard";
 import { fetchAdminAgents } from "@/features/admin/adminAgentsSlice";
 import { fetchAdminUsersSidebarTotal } from "@/features/admin-users/adminUsersSlice";
@@ -36,6 +39,9 @@ export function Sidebar() {
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [toast, setToast] = useState<{ kind: "info" | "error" | "success"; message: string } | null>(
+    null,
+  );
   const tCommon = useTranslations("common");
   const isRTL = isRtlLocale(locale);
   useEffect(() => {
@@ -80,7 +86,13 @@ export function Sidebar() {
       await performClientLogout(dispatch, user?.id);
       setIsLogoutConfirmOpen(false);
       close();
+      queueRouteToast({ kind: "success", message: "Logged out successfully." });
       router.replace(`/${locale}`);
+    } catch (error) {
+      setToast({
+        kind: "error",
+        message: getApiErrorMessage(error) || "Could not log out. Please try again.",
+      });
     } finally {
       setIsSigningOut(false);
     }
@@ -258,6 +270,9 @@ export function Sidebar() {
         cancelLabel={tCommon("cancel")}
         confirmButtonClassName="bg-rose-700 text-white hover:bg-rose-800"
       />
+      {toast ? (
+        <Toast kind={toast.kind} message={toast.message} onClose={() => setToast(null)} />
+      ) : null}
     </>
   );
 }

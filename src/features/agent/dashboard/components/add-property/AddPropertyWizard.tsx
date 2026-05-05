@@ -17,7 +17,9 @@ import { Toast } from "@/components/ui/toast";
 import { useTranslations } from "@/hooks/useTranslations";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { getApiErrorMessage } from "@/lib/http/apiError";
+import { queueRouteToast } from "@/lib/ui/routeToast";
 import { store } from "@/store";
+import { fetchAdminManageListingsSidebarTotal } from "@/features/agent/dashboard/agentDashboardSummarySlice";
 import {
   createAndSubmitPropertySubmission,
   createPropertySubmissionDraft,
@@ -66,15 +68,14 @@ export type AddPropertyWizardNavigateHandle = {
   requestNavigate: (href: string) => void;
 };
 
+const DRAFT_SAVED_MESSAGE = "Draft saved successfully.";
+const GENERIC_FAILURE_MESSAGE = "Something went wrong. Please try again.";
+
 function messageForSubmitError(e: unknown): string {
-  if (isAxiosError(e) && e.response) {
-    const s = e.response.status;
-    if (s === 401) return "Session expired. Please sign in again.";
-    if (s === 403) return "You do not have access to this action.";
-    if (s === 404) return "Listing draft was not found.";
-    if (s === 409) return "This listing is locked and cannot be updated.";
+  if (isAxiosError(e) && e.response?.status === 404) {
+    return "The requested record was not found.";
   }
-  return getApiErrorMessage(e);
+  return getApiErrorMessage(e, GENERIC_FAILURE_MESSAGE);
 }
 
 export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
@@ -129,7 +130,6 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
       if (wantNew) {
         dispatch(initializeNewPropertyWizard());
         if (!cancelled) {
-          showToast("success", "New draft started.");
           router.replace(pathname, { scroll: false });
         }
         setInitLoading(false);
@@ -344,10 +344,10 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
     const ok = await saveDraftToServer();
     setLeaveSaving(false);
     if (ok) {
-      showToast("success", t("leaveAddPropertyDraftSavedToast"));
+      queueRouteToast({ kind: "success", message: DRAFT_SAVED_MESSAGE });
       proceedNavigate(href);
     }
-  }, [canEdit, leaveModal.href, saveDraftToServer, proceedNavigate, showToast, t]);
+  }, [canEdit, leaveModal.href, saveDraftToServer, proceedNavigate]);
 
   const handleBack = () => {
     requestNavigate(isAdmin ? `/${locale}/admin-dashboard/listings` : `/${locale}/agent-dashboard/listings`);
@@ -362,7 +362,7 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
       const ok = await saveDraftToServer();
       setSaving(false);
       if (ok) {
-        showToast("success", t("draftSavedOnServer"));
+        showToast("success", DRAFT_SAVED_MESSAGE);
       }
       return;
     }
@@ -370,10 +370,10 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
     const ok = await saveDraftToServer();
     setLeaveSaving(false);
     if (ok) {
-      showToast("success", t("leaveAddPropertyDraftSavedToast"));
+      queueRouteToast({ kind: "success", message: DRAFT_SAVED_MESSAGE });
       proceedNavigate(ctx.href);
     }
-  }, [emptyDraftDialog.context, proceedNavigate, saveDraftToServer, showToast, t]);
+  }, [emptyDraftDialog.context, proceedNavigate, saveDraftToServer]);
 
   const closeEmptyDraftDialog = useCallback(() => {
     if (saving || leaveSaving) return;
@@ -398,7 +398,7 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
     const ok = await saveDraftToServer();
     setSaving(false);
     if (ok) {
-      showToast("success", "Draft saved successfully");
+      showToast("success", DRAFT_SAVED_MESSAGE);
     }
   };
 
@@ -432,8 +432,8 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
         if (!subId) {
           await createAndSubmitAdminPropertySubmission(fullPayload);
           dispatch(resetAddPropertyWizard());
-          showToast("success", "Property created and verified successfully");
-          router.push(`/${locale}/admin-dashboard/listings`);
+          void dispatch(fetchAdminManageListingsSidebarTotal({ force: true }));
+          router.push(`/${locale}/admin-dashboard/listings?created=1`);
           return;
         }
 
@@ -466,8 +466,8 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
           }
         }
         dispatch(resetAddPropertyWizard());
-        showToast("success", "Property created and verified successfully");
-        router.push(`/${locale}/admin-dashboard/listings`);
+        void dispatch(fetchAdminManageListingsSidebarTotal({ force: true }));
+        router.push(`/${locale}/admin-dashboard/listings?created=1`);
         return;
       }
 
@@ -482,7 +482,6 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
           }),
         );
         dispatch(resetAddPropertyWizard());
-        showToast("success", t("listingSubmittedRedirect") ?? "Listing submitted.");
         router.push(`/${locale}/agent-dashboard/listings?submitted=1`);
         return;
       }
@@ -531,10 +530,8 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
       );
       dispatch(resetAddPropertyWizard());
       if (wasResubmitFromRejected) {
-        showToast("success", t("propertyResubmittedForApproval"));
         router.push(`/${locale}/agent-dashboard/listings?resubmitted=1`);
       } else {
-        showToast("success", t("listingSubmittedRedirect"));
         router.push(`/${locale}/agent-dashboard/listings?submitted=1`);
       }
     } catch (e) {

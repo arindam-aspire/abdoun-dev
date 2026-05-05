@@ -55,10 +55,12 @@ import { getApiErrorMessage } from "@/lib/http/apiError";
 import { listAdminAgents, type AdminAgent } from "@/features/admin/api/adminAgentApiService";
 import { useAppDispatch } from "@/hooks/storeHooks";
 import { initializeNewPropertyWizard } from "@/features/agent/dashboard/components/add-property/addPropertyWizardSlice";
+import { fetchAdminManageListingsSidebarTotal } from "@/features/agent/dashboard/agentDashboardSummarySlice";
 
 type StatusFilter =
   | ""
   | "submitted"
+  | "changes_requested"
   | "approved"
   | "rejected";
 
@@ -66,6 +68,14 @@ const PERIOD_FILTERS = ["all", "weekly", "monthly", "yearly"] as const;
 type PeriodFilter = (typeof PERIOD_FILTERS)[number];
 const PAGE_PARAM = "page";
 const PAGE_SIZE_PARAM = "pageSize";
+const FETCH_LIMIT = 200;
+const ADMIN_SUBMIT_SUCCESS_MESSAGE = "Property created and verified successfully.";
+const APPROVE_SUCCESS_MESSAGE = "Property approved successfully.";
+const REJECT_SUCCESS_MESSAGE = "Property rejected successfully.";
+const REQUEST_CHANGES_SUCCESS_MESSAGE = "Changes requested successfully.";
+const ASSIGN_SUCCESS_MESSAGE = "Agent assigned successfully.";
+const UNASSIGN_SUCCESS_MESSAGE = "Agent unassigned successfully.";
+const DELETE_SUCCESS_MESSAGE = "Property deleted successfully.";
 
 const TABLE_SKELETON_ROWS = 6;
 
@@ -121,6 +131,7 @@ function prettyStatus(status: string): string {
 function statusPillClass(status: string): string {
   const s = status.trim().toLowerCase();
   if (s === "submitted") return "bg-sky-100 text-sky-800 border-sky-200";
+  if (s === "changes_requested") return "bg-amber-100 text-amber-800 border-amber-200";
   if (s === "approved" || s === "verified") return "bg-violet-100 text-violet-800 border-violet-200";
   if (s === "rejected") return "bg-rose-100 text-rose-800 border-rose-200";
  
@@ -196,7 +207,7 @@ export function AdminPropertySubmissionsPage() {
   ]);
   const [reasonDialog, setReasonDialog] = useState<{
     open: boolean;
-    action: "reject";
+    action: "reject" | "changes_requested";
     submissionId: string | null;
   }>({ open: false, action: "reject", submissionId: null });
   const [reasonText, setReasonText] = useState("");
@@ -240,6 +251,7 @@ export function AdminPropertySubmissionsPage() {
     if (
       legacyStatus === "" ||
       legacyStatus === "submitted" ||
+      legacyStatus === "changes_requested" ||
       legacyStatus === "approved" ||
       legacyStatus === "rejected"
     ) {
@@ -303,6 +315,15 @@ export function AdminPropertySubmissionsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (searchParams.get("created") !== "1") return;
+    setToast({ kind: "success", message: ADMIN_SUBMIT_SUCCESS_MESSAGE });
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete("created");
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [pathname, router, searchParams]);
 
   const filteredRows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -371,6 +392,7 @@ export function AdminPropertySubmissionsPage() {
   const statusOptions = [
     { value: "", label: "All" },
     { value: "submitted", label: "Submitted" },
+    { value: "changes_requested", label: "Changes requested" },
     { value: "approved", label: "Approved" },
     { value: "rejected", label: "Rejected" },
   ] as const;
@@ -394,7 +416,10 @@ export function AdminPropertySubmissionsPage() {
 
   const onStatusChange = (value: string) => {
     const next =
-      value === "submitted" || value === "approved" || value === "rejected"
+      value === "submitted" ||
+      value === "changes_requested" ||
+      value === "approved" ||
+      value === "rejected"
         ? value
         : "";
     setStatusFilter(next);
@@ -525,13 +550,33 @@ export function AdminPropertySubmissionsPage() {
                       setActingId(row.submission_id);
                       try {
                         await reviewAdminPropertySubmission(row.submission_id, { action: "approve" });
-                        setToast({ kind: "success", message: "Submission approved." });
+                        setToast({ kind: "success", message: APPROVE_SUCCESS_MESSAGE });
                         await load();
                       } catch (e) {
                         setToast({ kind: "error", message: getApiErrorMessage(e) });
                       } finally {
                         setActingId(null);
                       }
+                      },
+                    },
+                  {
+                    key: "request-changes",
+                    label: (
+                      <span className="inline-flex items-center gap-2">
+                        <Pencil className="h-4 w-4 opacity-70" />
+                        Request Changes
+                      </span>
+                    ),
+                    className: "text-amber-700",
+                    hoverClassName: "bg-amber-50",
+                    disabled: busy,
+                    onSelect: () => {
+                      setReasonText("");
+                      setReasonDialog({
+                        open: true,
+                        action: "changes_requested",
+                        submissionId: row.submission_id,
+                      });
                     },
                   },
                   {
@@ -629,7 +674,7 @@ export function AdminPropertySubmissionsPage() {
                       setActingId(row.submission_id);
                       try {
                         await assignPropertyToAgent(row.property_id!, null);
-                        setToast({ kind: "success", message: "Agent unassigned successfully" });
+                        setToast({ kind: "success", message: UNASSIGN_SUCCESS_MESSAGE });
                         await load();
                       } catch (e) {
                         setToast({ kind: "error", message: getApiErrorMessage(e) });
@@ -720,7 +765,7 @@ export function AdminPropertySubmissionsPage() {
             Manage Listings
           </h1>
           <p className="mt-1 text-size-sm text-charcoal/70">
-            Review agent-submitted property drafts (approve, or reject).
+            Review agent-submitted property drafts, request changes, or approve them.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -872,10 +917,14 @@ export function AdminPropertySubmissionsPage() {
         className="relative max-w-lg"
       >
         <DialogTitle>
-          Reject submission
+          {reasonDialog.action === "changes_requested"
+            ? "Request changes"
+            : "Reject submission"}
         </DialogTitle>
         <DialogDescription className="text-pretty text-sm text-charcoal/75">
-          Please enter a reason. This will be shown to the agent.
+          {reasonDialog.action === "changes_requested"
+            ? "Please explain what the agent needs to update before this property can be approved."
+            : "Please enter a reason. This will be shown to the agent."}
         </DialogDescription>
         <div className="mt-4 space-y-2">
           <label className="text-xs font-medium text-charcoal/80" htmlFor="admin-review-reason">
@@ -886,7 +935,11 @@ export function AdminPropertySubmissionsPage() {
             value={reasonText}
             onChange={(e) => setReasonText(e.target.value)}
             className="min-h-[100px] rounded-lg border border-charcoal/15"
-            placeholder="Explain what needs to be changed / why it is rejected."
+            placeholder={
+              reasonDialog.action === "changes_requested"
+                ? "Explain what needs to be changed before resubmission."
+                : "Explain what needs to be changed / why it is rejected."
+            }
             disabled={actingId != null}
           />
         </div>
@@ -907,15 +960,19 @@ export function AdminPropertySubmissionsPage() {
             onClick={async () => {
               if (!reasonDialog.submissionId) return;
               const submissionId = reasonDialog.submissionId;
+              const action = reasonDialog.action;
               setActingId(submissionId);
               try {
                 await reviewAdminPropertySubmission(submissionId, {
-                  action: "reject",
+                  action,
                   reason: reasonText.trim(),
                 });
                 setToast({
                   kind: "success",
-                  message: "Submission rejected.",
+                  message:
+                    action === "changes_requested"
+                      ? REQUEST_CHANGES_SUCCESS_MESSAGE
+                      : REJECT_SUCCESS_MESSAGE,
                 });
                 setReasonDialog({ open: false, action: "reject", submissionId: null });
                 setReasonText("");
@@ -927,7 +984,7 @@ export function AdminPropertySubmissionsPage() {
               }
             }}
           >
-            Reject
+            {reasonDialog.action === "changes_requested" ? "Request Changes" : "Reject"}
           </Button>
         </DialogFooter>
       </DialogRoot>
@@ -977,7 +1034,8 @@ export function AdminPropertySubmissionsPage() {
               setActingId(submissionId);
               try {
                 await deleteAdminPropertySubmission(submissionId, deleteReason);
-                setToast({ kind: "success", message: "Property deleted successfully" });
+                setToast({ kind: "success", message: DELETE_SUCCESS_MESSAGE });
+                void dispatch(fetchAdminManageListingsSidebarTotal({ force: true }));
                 setDeleteDialog({ open: false, submissionId: null });
                 setDeleteReason("");
                 await load();
@@ -1097,7 +1155,7 @@ export function AdminPropertySubmissionsPage() {
               setActingId(assignDialog.submissionId ?? assignDialog.propertyId);
               try {
                 await assignPropertyToAgent(assignDialog.propertyId, selectedAgentId);
-                setToast({ kind: "success", message: "Agent assigned successfully" });
+                setToast({ kind: "success", message: ASSIGN_SUCCESS_MESSAGE });
                 setAssignDialog({ open: false, submissionId: null, propertyId: null });
                 await load();
               } catch (e) {

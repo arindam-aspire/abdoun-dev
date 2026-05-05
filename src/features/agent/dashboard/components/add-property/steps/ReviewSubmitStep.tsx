@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { labelForAmenityFeatureId } from "@/features/agent/dashboard/lib/amenityFeatureOptions";
 import type { StepCompletionKey } from "@/features/agent/dashboard/lib/localStepCompletion";
+import { ownerPhoneForPayload } from "@/features/agent/dashboard/lib/buildSubmissionStepData";
 import {
   selectAddPropertyIsEditable,
   selectAddPropertyStepCompletionMap,
@@ -103,7 +104,7 @@ export function ReviewSubmitStep() {
         [
           {
             label: "Phone Number",
-            value: `${safeValue(firstOwner?.countryCode)} ${safeValue(firstOwner?.phone)}`.trim(),
+            value: safeValue(ownerPhoneForPayload(firstOwner?.phone, firstOwner?.countryCode)),
           },
           { label: "Nationality", value: safeValue(firstOwner?.nationality) },
           { label: "Address", value: safeValue(firstOwner?.address) },

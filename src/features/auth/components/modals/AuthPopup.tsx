@@ -32,6 +32,7 @@ import {
 import { getCurrentUserDeduped } from "@/lib/auth/currentUserRequest";
 import { getApiErrorMessage } from "@/lib/http/apiError";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { queueRouteToast } from "@/lib/ui/routeToast";
 
 export type AuthPopupView =
   | "landing"
@@ -206,6 +207,7 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
 
             const withRole = { ...sessionUser, role: "agent" as const };
             persistSessionAndLogin(withRole);
+            queueRouteToast({ kind: "success", message: "Logged in as agent." });
             onClose();
             router.push(`/${locale}/agent-dashboard`);
             return;
@@ -231,6 +233,7 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
 
             const withRole = { ...sessionUser, role: "admin" as const };
             persistSessionAndLogin(withRole);
+            queueRouteToast({ kind: "success", message: "Logged in as admin." });
             onClose();
             router.push(`/${locale}/admin-dashboard`);
             return;
@@ -252,16 +255,22 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
       }
 
       persistSessionAndLogin(sessionUser);
+      queueRouteToast({
+        kind: "success",
+        message:
+          sessionUser.role === "admin"
+            ? "Logged in as admin."
+            : sessionUser.role === "agent"
+              ? "Logged in as agent."
+              : "Logged in successfully.",
+      });
       onClose();
 
       if (sessionUser.role === "admin") {
-        setToast({ kind: "success", message: "Logged in as admin." });
         router.push(`/${locale}/admin-dashboard`);
       } else if (sessionUser.role === "agent") {
-        setToast({ kind: "success", message: "Logged in as agent." });
         router.push(`/${locale}/agent-dashboard`);
       } else {
-        setToast({ kind: "success", message: "Logged in successfully." });
         router.push(`/${locale}`);
       }
     } catch (error) {
@@ -350,16 +359,22 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
       }
       const sessionUser = toSessionUserForProfile(me);
       persistSessionAndLogin(sessionUser);
+      queueRouteToast({
+        kind: "success",
+        message:
+          sessionUser.role === "admin"
+            ? "Logged in as admin."
+            : sessionUser.role === "agent"
+              ? "Logged in as agent."
+              : "Logged in successfully.",
+      });
       onClose();
 
       if (sessionUser.role === "admin") {
-        setToast({ kind: "success", message: "Logged in as admin." });
         router.push(`/${locale}/admin-dashboard`);
       } else if (sessionUser.role === "agent") {
-        setToast({ kind: "success", message: "Logged in as agent." });
         router.push(`/${locale}/agent-dashboard`);
       } else {
-        setToast({ kind: "success", message: "Logged in successfully." });
         router.push(`/${locale}`);
       }
     } catch (error) {

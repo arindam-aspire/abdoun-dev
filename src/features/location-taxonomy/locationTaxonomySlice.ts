@@ -1,0 +1,97 @@
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import type { RootState } from "@/store";
+import {
+  fetchLocationTaxonomy,
+  type LocationTaxonomyCity,
+} from "@/features/agent/dashboard/api/taxonomy.api";
+
+type LocationTaxonomyState = {
+  cities: LocationTaxonomyCity[];
+  status: "idle" | "loading" | "succeeded" | "failed";
+  error: string | null;
+  /** Used to de-dupe parallel dispatches in the same session. */
+  inFlight: boolean;
+};
+
+const initialState: LocationTaxonomyState = {
+  cities: [],
+  status: "idle",
+  error: null,
+  inFlight: false,
+};
+
+export const fetchLocationTaxonomyIfNeeded = createAsyncThunk<
+  LocationTaxonomyCity[],
+  void,
+  { state: RootState }
+>(
+  "locationTaxonomy/fetchLocationTaxonomyIfNeeded",
+  async (_, thunkApi) => {
+    try {
+      return await fetchLocationTaxonomy();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to load location taxonomy.";
+      return thunkApi.rejectWithValue(msg);
+    }
+  },
+  {
+    condition: (_, { getState }) => {
+      const s = getState().locationTaxonomy;
+      if (s.inFlight) return false;
+      if (s.status === "succeeded" && s.cities.length > 0) return false;
+      return true;
+    },
+  },
+);
+
+const locationTaxonomySlice = createSlice({
+  name: "locationTaxonomy",
+  initialState,
+  reducers: {
+    resetLocationTaxonomy() {
+      return initialState;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchLocationTaxonomyIfNeeded.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+        state.inFlight = true;
+      })
+      .addCase(fetchLocationTaxonomyIfNeeded.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.error = null;
+        state.inFlight = false;
+        state.cities = action.payload ?? [];
+      })
+      .addCase(fetchLocationTaxonomyIfNeeded.rejected, (state, action) => {
+        if (action.meta.condition === false) return;
+        state.status = "failed";
+        state.inFlight = false;
+        state.error =
+          (typeof action.payload === "string" ? action.payload : null) ||
+          action.error.message ||
+          "Failed to load location taxonomy.";
+      });
+  },
+});
+
+export const { resetLocationTaxonomy } = locationTaxonomySlice.actions;
+
+export default locationTaxonomySlice.reducer;
+
+export const selectLocationTaxonomyState = (state: RootState) => state.locationTaxonomy;
+export const selectLocationTaxonomyCities = (state: RootState) => state.locationTaxonomy.cities;
+
+/**
+ * Flatten all taxonomy areas into a unique, sorted list for "service area" selection.
+ * Falls back to an empty list when taxonomy is not loaded.
+ */
+export const selectServiceAreaOptions = (state: RootState) => {
+  const areas = state.locationTaxonomy.cities.flatMap((c) => c.areas?.map((a) => a.name) ?? []);
+  const unique = Array.from(new Set(areas.map((a) => (a ?? "").trim()).filter(Boolean)));
+  unique.sort((a, b) => a.localeCompare(b));
+  return unique.map((name) => ({ value: name, label: name }));
+};
+

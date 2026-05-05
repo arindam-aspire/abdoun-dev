@@ -18,6 +18,8 @@ import { DialogRoot, DialogTitle, DialogDescription, DialogFooter } from "@/comp
 import { Button, Label } from "@/components/ui";
 import { Dropdown } from "@/components/ui/dropdown";
 import { Pagination } from "@/components/ui/Pagination";
+import { Toast } from "@/components/ui";
+import { getApiErrorMessage } from "@/lib/http";
 
 function statusClass(status: string): string {
   if (status === "new") return "bg-sky-100 text-sky-800 border-sky-200";
@@ -95,6 +97,9 @@ export function AgentInquiriesPage() {
   const [selected, setSelected] = useState<AgentInquiry | null>(null);
   const [responseText, setResponseText] = useState("");
   const [sending, setSending] = useState(false);
+  const [toast, setToast] = useState<{ kind: "success" | "error"; message: string } | null>(
+    null,
+  );
 
   const updateQueryParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -149,16 +154,30 @@ export function AgentInquiriesPage() {
       load();
       setResponseText("");
       getInquiryById(selectedId).then(setSelected);
+      setToast({ kind: "success", message: "Response sent successfully." });
+    } catch (error) {
+      setToast({
+        kind: "error",
+        message: getApiErrorMessage(error, "Failed to send response. Please try again."),
+      });
     } finally {
       setSending(false);
     }
   };
 
   const handleUpdateStatus = async (id: string, status: InquiryStatus) => {
-    await updateInquiryStatus(id, status);
-    load();
-    if (selectedId === id) {
-      getInquiryById(id).then(setSelected);
+    try {
+      await updateInquiryStatus(id, status);
+      load();
+      if (selectedId === id) {
+        getInquiryById(id).then(setSelected);
+      }
+      setToast({ kind: "success", message: "Status updated successfully." });
+    } catch (error) {
+      setToast({
+        kind: "error",
+        message: getApiErrorMessage(error, "Failed to update status. Please try again."),
+      });
     }
   };
 
@@ -395,6 +414,9 @@ export function AgentInquiriesPage() {
           </Button>
         </DialogFooter>
       </DialogRoot>
+      {toast ? (
+        <Toast kind={toast.kind} message={toast.message} onClose={() => setToast(null)} />
+      ) : null}
     </div>
   );
 }

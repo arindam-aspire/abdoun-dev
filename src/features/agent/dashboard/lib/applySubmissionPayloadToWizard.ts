@@ -1,3 +1,4 @@
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 import type { AddPropertyWizardState } from "../components/add-property/addPropertyWizardSlice";
 import {
   createOwner,
@@ -33,6 +34,20 @@ function readNumStr(obj: Record<string, unknown>, key: string): string {
 function splitPhone(phone: string): { countryCode: string; phone: string } {
   const t = phone.trim();
   if (!t) return { countryCode: "+962", phone: "" };
+
+  /** Legacy submissions joined default `countryCode` with full E.164 (`+962 +91…`). Prefer the parsed international number. */
+  const doubleCc = t.match(/^(\+\d{1,4})\s+(\+[\d\s()/-]+)$/);
+  if (doubleCc?.[2]) {
+    const compact = doubleCc[2].replace(/[\s()-]/g, "");
+    const parsed = parsePhoneNumberFromString(compact);
+    if (parsed?.number) {
+      return {
+        countryCode: `+${parsed.countryCallingCode}`,
+        phone: parsed.number,
+      };
+    }
+  }
+
   const m = t.match(/^(\+\d{1,4})\s*(.*)$/);
   if (m) {
     return { countryCode: m[1] ?? "+962", phone: (m[2] ?? "").trim() };

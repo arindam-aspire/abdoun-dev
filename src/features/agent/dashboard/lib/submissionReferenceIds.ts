@@ -54,7 +54,18 @@ export function getCategoryFromCategoryId(categoryId: number | undefined | null)
   return match ?? "residential";
 }
 
-/** Resolve property type slug from API `type_id` for a given category (inverse of `getTypeId`). */
+/**
+ * Turn internal slug (e.g. `building`, `residential-land`) into dropdown labels that match
+ * {@link BasicInformationStep} fallbacks and typical English taxonomy names.
+ */
+function propertyTypeSlugToDisplayLabel(slug: string): string {
+  return slug
+    .split("-")
+    .map((seg) => (seg ? seg.charAt(0).toUpperCase() + seg.slice(1).toLowerCase() : ""))
+    .join(" ");
+}
+
+/** Resolve property type **display value** from API `type_id` for a given category (inverse of `getTypeId`). */
 export function getPropertyTypeSlugFromTypeId(
   category: Category,
   typeId: number | undefined | null,
@@ -63,7 +74,7 @@ export function getPropertyTypeSlugFromTypeId(
   const prefix = `${category}:`;
   for (const [key, id] of Object.entries(TYPE_ID_BY_KEY)) {
     if (id === typeId && key.startsWith(prefix)) {
-      return key.slice(prefix.length);
+      return propertyTypeSlugToDisplayLabel(key.slice(prefix.length));
     }
   }
   return "";
@@ -80,8 +91,8 @@ export function getCityNameForSubmissionCityId(cityId: number | undefined | null
 }
 
 /**
- * Area IDs are not modeled in the frontend mock data; we only return `[]` unless you extend
- * `AREA_OVERRIDES` / API metadata. Users may need to re-pick an area after resume.
+ * Area names from `area_id` are resolved in {@link LocationStep} once location taxonomy loads.
+ * This stub remains so synchronous GET hydration does not depend on async taxonomy.
  */
 export function getAreaNamesForSubmissionAreaId(
   _cityName: string,

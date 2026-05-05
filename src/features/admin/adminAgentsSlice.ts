@@ -7,6 +7,8 @@ import {
   declineAgent,
   deleteAgent,
   grantAdminAccess,
+  setAgentStatus,
+  type SetAgentStatusValue,
   type ListAdminAgentsParams,
   type AdminAgent,
   type AdminAgentsSummaryData,
@@ -234,6 +236,36 @@ export const declineAdminAgent = createAsyncThunk(
   },
 );
 
+export const setAdminAgentActiveStatus = createAsyncThunk(
+  "adminAgents/setAdminAgentActiveStatus",
+  async (
+    options: { agentId: string; status: SetAgentStatusValue },
+    thunkApi,
+  ) => {
+    try {
+      const res = await setAgentStatus(options.agentId, options.status);
+      dispatchSummaryRefresh(thunkApi);
+      return { agentId: options.agentId, status: res.status };
+    } catch (error) {
+      const anyError = error as unknown as {
+        response?: { data?: { detail?: unknown; message?: unknown } };
+        message?: string;
+      };
+
+      const detail =
+        anyError.response?.data?.detail ??
+        anyError.response?.data?.message ??
+        anyError.message;
+
+      if (typeof detail === "string" && detail.trim()) {
+        return thunkApi.rejectWithValue(detail);
+      }
+
+      return thunkApi.rejectWithValue("Failed to update agent status.");
+    }
+  },
+);
+
 export const deleteAdminAgent = createAsyncThunk(
   "adminAgents/deleteAdminAgent",
   async (agentId: string, thunkApi) => {
@@ -269,9 +301,9 @@ export const createAdminAgentManually = createAsyncThunk(
   "adminAgents/createAdminAgentManually",
   async (agent: AdminAgent, thunkApi) => {
     try {
-      await agentOnboardingManually(agent);
+      const created = await agentOnboardingManually(agent);
       dispatchSummaryRefresh(thunkApi);
-      return agent;
+      return created;
     } catch (error) {
       return thunkApi.rejectWithValue(getApiErrorMessage(error));
     }
@@ -390,6 +422,23 @@ const adminAgentsSlice = createSlice({
         apply(state.currentItems);
         apply(state.allItems);
       })
+      .addCase(setAdminAgentActiveStatus.fulfilled, (state, action) => {
+        const id = action.payload.agentId;
+        const normalized = normalizeAgentStatus(action.payload.status);
+        const now = new Date().toISOString();
+        const apply = (list: AdminAgent[]) => {
+          const agent = list.find((a) => a.id === id);
+          if (!agent) return;
+          agent.status = normalized;
+          if (normalized === AGENT_STATUS.ACTIVE) {
+            if (agent.reviewedAt == null || !String(agent.reviewedAt).trim()) {
+              agent.reviewedAt = now;
+            }
+          }
+        };
+        apply(state.currentItems);
+        apply(state.allItems);
+      })
       .addCase(deleteAdminAgent.fulfilled, (state, action) => {
         state.agentsListStale = true;
         const id = action.payload.agentId;
@@ -399,20 +448,19 @@ const adminAgentsSlice = createSlice({
       })
       .addCase(createAdminAgentManually.fulfilled, (state, action) => {
         state.agentsListStale = true;
-        // Use the original payload to build the new agent entry
-        const arg = action.meta.arg as AdminAgent;
+        const created = action.payload as Awaited<ReturnType<typeof agentOnboardingManually>>;
         const now = new Date().toISOString();
-        const st = normalizeAgentStatus(arg.status ?? AGENT_STATUS.ACTIVE);
+        const st = normalizeAgentStatus(created.status ?? AGENT_STATUS.INVITED);
         const newAgent: AdminAgent = {
-          id: arg.id ?? `manual_${Date.now()}`,
-          fullName: arg.fullName,
-          email: arg.email,
-          phone: arg.phone,
-          city: arg.city,
+          id: created.id,
+          fullName: created.fullName ?? "Agent",
+          email: created.email,
+          phone: created.phone ?? "N/A",
+          city: created.serviceArea ?? "N/A",
           status: st,
-          invitedAt: arg.invitedAt ?? now,
-          reviewedAt: st === AGENT_STATUS.ACTIVE ? (arg.reviewedAt ?? now) : null,
-          invitedBy: arg.invitedBy ?? "Manual onboarding",
+          invitedAt: now,
+          reviewedAt: st === AGENT_STATUS.ACTIVE ? now : null,
+          invitedBy: "Manual onboarding",
         };
 
         state.total += 1;

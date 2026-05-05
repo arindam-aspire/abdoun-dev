@@ -5,6 +5,7 @@ import { MoreVertical } from "lucide-react";
 import { ActionsMenu, IconButton } from "@/components/ui";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AGENT_STATUS } from "@/constants/agentStatus";
+import { getApiErrorMessage } from "@/lib/http/apiError";
 import {
   resendAdminAgentInvitation,
   type AdminAgent,
@@ -14,9 +15,10 @@ import {
   declineAdminAgent,
   deleteAdminAgent,
   grantAdminAccessForAgent,
+  setAdminAgentActiveStatus,
 } from "@/features/admin/adminAgentsSlice";
+
 import { useAppDispatch } from "@/hooks/storeHooks";
-import { getApiErrorMessage } from "@/lib/http/apiError";
 
 type ToastPayload = { kind: "info" | "error" | "success"; message: string };
 
@@ -50,6 +52,7 @@ export function AdminAgentActionsMenu({ agent, adminId, onToast }: AdminAgentAct
       try {
         await fn();
         onToast({ kind: "success", message: successMessage });
+        return true;
       } catch (error) {
         onToast({ kind: "error", message: getApiErrorMessage(error) });
       } finally {
@@ -106,14 +109,7 @@ export function AdminAgentActionsMenu({ agent, adminId, onToast }: AdminAgentAct
         onSelect: () => setPendingAction("decline"),
       });
     } else if (agent.status === AGENT_STATUS.DECLINED) {
-      list.push({
-        key: "approve",
-        label: "Approve",
-        disabled: busyKey !== null,
-        className: "text-green-700",
-        hoverClassName: "bg-green-50",
-        onSelect: () => setPendingAction("approve"),
-      });
+      // Intentionally no "Approve" action for declined agents.
     } else {
       const isActive = agent.status === AGENT_STATUS.ACTIVE;
       list.push({
@@ -235,37 +231,59 @@ export function AdminAgentActionsMenu({ agent, adminId, onToast }: AdminAgentAct
 
     switch (key) {
       case "resend-invite": {
-        await run(
+        const ok = await run(
           key,
           async () => resendAdminAgentInvitation(agentId),
           `Invitation resent to ${agent.email}.`,
         );
-        resetPending();
+        if (ok) resetPending();
         break;
       }
       case "revoke-invite": {
-        await run(key, async () => dispatch(deleteAdminAgent(agentId)).unwrap(), "Invitation revoked.");
-        resetPending();
+        const ok = await run(
+          key,
+          async () => dispatch(deleteAdminAgent(agentId)).unwrap(),
+          "Invitation revoked.",
+        );
+        if (ok) resetPending();
         break;
       }
       case "approve": {
-        await run(key, async () => dispatch(approveAdminAgent(agentId)).unwrap(), "Agent approved.");
-        resetPending();
+        const ok = await run(
+          key,
+          async () => dispatch(approveAdminAgent(agentId)).unwrap(),
+          "Agent approved.",
+        );
+        if (ok) resetPending();
         break;
       }
       case "decline": {
-        await run(key, async () => dispatch(declineAdminAgent(agentId)).unwrap(), "Agent declined.");
-        resetPending();
+        const ok = await run(
+          key,
+          async () => dispatch(declineAdminAgent(agentId)).unwrap(),
+          "Agent declined.",
+        );
+        if (ok) resetPending();
         break;
       }
       case "set-active": {
-        await run(key, async () => dispatch(approveAdminAgent(agentId)).unwrap(), "Agent set to active.");
-        resetPending();
+        const ok = await run(
+          key,
+          async () =>
+            dispatch(setAdminAgentActiveStatus({ agentId, status: "ACTIVE" })).unwrap(),
+          "Agent set to active.",
+        );
+        if (ok) resetPending();
         break;
       }
       case "set-inactive": {
-        await run(key, async () => dispatch(declineAdminAgent(agentId)).unwrap(), "Agent set to inactive.");
-        resetPending();
+        const ok = await run(
+          key,
+          async () =>
+            dispatch(setAdminAgentActiveStatus({ agentId, status: "INACTIVE" })).unwrap(),
+          "Agent set to inactive.",
+        );
+        if (ok) resetPending();
         break;
       }
       case "grant-admin": {
@@ -277,17 +295,21 @@ export function AdminAgentActionsMenu({ agent, adminId, onToast }: AdminAgentAct
           resetPending();
           return;
         }
-        await run(
+        const ok = await run(
           key,
           async () => dispatch(grantAdminAccessForAgent({ adminId, agentId })).unwrap(),
           "Admin access granted.",
         );
-        resetPending();
+        if (ok) resetPending();
         break;
       }
       case "delete": {
-        await run(key, async () => dispatch(deleteAdminAgent(agentId)).unwrap(), "Agent deleted.");
-        resetPending();
+        const ok = await run(
+          key,
+          async () => dispatch(deleteAdminAgent(agentId)).unwrap(),
+          "Agent deleted.",
+        );
+        if (ok) resetPending();
         break;
       }
       default:

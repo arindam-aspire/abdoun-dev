@@ -137,6 +137,9 @@ const LISTING_STATUS_FILTERS: readonly ("all" | ListingStatus)[] = [
   "rejected"
 ];
 const PERIOD_FILTERS = ["all", "weekly", "monthly", "yearly"] as const;
+const AGENT_SUBMIT_SUCCESS_MESSAGE = "Property submitted for admin approval.";
+const RESUBMIT_SUCCESS_MESSAGE = "Property resubmitted for admin approval.";
+const DELETE_SUCCESS_MESSAGE = "Property deleted successfully.";
 
 type ListingPeriodFilter = (typeof PERIOD_FILTERS)[number];
 
@@ -758,14 +761,14 @@ export function AgentListingsPage() {
       {submittedToast ? (
         <Toast
           kind="success"
-          message={t("listingSubmittedRedirect")}
+          message={AGENT_SUBMIT_SUCCESS_MESSAGE}
           onClose={() => setSubmittedToast(false)}
         />
       ) : null}
       {resubmittedToast ? (
         <Toast
           kind="success"
-          message={t("propertyResubmittedForApproval")}
+          message={RESUBMIT_SUCCESS_MESSAGE}
           onClose={() => setResubmittedToast(false)}
         />
       ) : null}
@@ -779,7 +782,7 @@ export function AgentListingsPage() {
       {deleteSuccessToast ? (
         <Toast
           kind="success"
-          message={t("deleteSubmissionSuccess")}
+          message={DELETE_SUCCESS_MESSAGE}
           onClose={() => setDeleteSuccessToast(false)}
         />
       ) : null}

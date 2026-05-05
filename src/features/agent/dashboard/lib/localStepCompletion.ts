@@ -58,16 +58,23 @@ export function isMediaStepSatisfied(w: AddPropertyWizardState): boolean {
 export function computeLocalStepCompletion(
   w: AddPropertyWizardState,
 ): Record<StepCompletionKey, boolean> {
+  const hasPersistedTypeId = w.typeId != null && w.typeId > 0;
+  const typeResolvedBySlug =
+    w.propertyType.trim() !== "" && getTypeId(w.category, w.propertyType) > 0;
   const basic_info =
     w.propertyTitle.trim() !== "" &&
-    w.propertyType.trim() !== "" &&
+    (w.propertyType.trim() !== "" || hasPersistedTypeId) &&
     (w.listingPurpose === "sale" || w.listingPurpose === "rent") &&
     getCategoryId(w.category) > 0 &&
-    getTypeId(w.category, w.propertyType) > 0;
+    (typeResolvedBySlug || hasPersistedTypeId);
 
   const { city_id, area_id } = getCityAndAreaIds(w.city, w.selectedAreas);
-  const hasRealLocation = w.city.trim() !== "" && w.selectedAreas.length > 0;
-  const location = hasRealLocation && city_id > 0 && area_id > 0;
+  const effCityId = w.cityId ?? city_id;
+  const effAreaId = w.areaId ?? area_id;
+  const hasAreaSelection =
+    w.selectedAreas.length > 0 || (w.areaId != null && w.areaId > 0);
+  const hasRealLocation = w.city.trim() !== "" && hasAreaSelection;
+  const location = hasRealLocation && effCityId > 0 && effAreaId > 0;
 
   const owners = w.owners;
   const owner_information =

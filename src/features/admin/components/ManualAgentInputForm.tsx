@@ -1,19 +1,23 @@
 "use client";
 
 import type * as React from "react";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Button, Input, PhoneNumberInputField } from "@/components/ui";
 import { HeroDropdown } from "@/features/public-home/components/HeroDropdown";
 import { cn } from "@/lib/cn";
 import { JORDAN_CITIES_WITH_AREAS } from "@/lib/constants/jordanCities";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import {
+  fetchLocationTaxonomyIfNeeded,
+  selectLocationTaxonomyState,
+  selectServiceAreaOptions,
+} from "@/features/location-taxonomy/locationTaxonomySlice";
 
-const SERVICE_AREA_OPTIONS = Array.from(
-  new Set(
-    JORDAN_CITIES_WITH_AREAS.flatMap((city) => city.areas),
-  ),
+const FALLBACK_SERVICE_AREA_OPTIONS = Array.from(
+  new Set(JORDAN_CITIES_WITH_AREAS.flatMap((city) => city.areas)),
 )
-  .sort((firstArea, secondArea) => firstArea.localeCompare(secondArea))
+  .sort((a, b) => a.localeCompare(b))
   .map((area) => ({ value: area, label: area }));
 
 export interface ManualAgentInputFormProps {
@@ -30,6 +34,7 @@ export interface ManualAgentInputFormProps {
   onFocusEmail?: () => void;
   onFocusPhone?: () => void;
   onFocusServiceArea?: () => void;
+  onBack?: () => void;
   onSubmit: (event: React.SyntheticEvent<HTMLFormElement>) => void;
   onFullNameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
@@ -51,16 +56,43 @@ export function ManualAgentInputForm({
   onFocusEmail,
   onFocusPhone,
   onFocusServiceArea,
+  onBack,
   onSubmit,
   onFullNameChange,
   onEmailChange,
   onPhoneChange,
   onServiceAreaChange,
 }: ManualAgentInputFormProps) {
+  const dispatch = useAppDispatch();
+  const taxonomy = useAppSelector(selectLocationTaxonomyState);
+  const serviceAreaOptionsFromStore = useAppSelector(selectServiceAreaOptions);
   const [isServiceAreaOpen, setIsServiceAreaOpen] = useState(false);
+  const [serviceAreaQuery, setServiceAreaQuery] = useState("");
   const serviceAreaTriggerRef = useRef<HTMLButtonElement>(null);
   const selectedServiceAreaLabel =
     serviceArea.length > 0 ? serviceArea.join(", ") : "Select service area";
+
+  useEffect(() => {
+    void dispatch(fetchLocationTaxonomyIfNeeded());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!isServiceAreaOpen && serviceAreaQuery) {
+      setServiceAreaQuery("");
+    }
+  }, [isServiceAreaOpen, serviceAreaQuery]);
+
+  const serviceAreaOptions = useMemo(() => {
+    return serviceAreaOptionsFromStore.length
+      ? serviceAreaOptionsFromStore
+      : FALLBACK_SERVICE_AREA_OPTIONS;
+  }, [serviceAreaOptionsFromStore]);
+
+  const filteredServiceAreaOptions = useMemo(() => {
+    const q = serviceAreaQuery.trim().toLowerCase();
+    if (!q) return serviceAreaOptions;
+    return serviceAreaOptions.filter((opt) => opt.label.toLowerCase().includes(q));
+  }, [serviceAreaOptions, serviceAreaQuery]);
 
   return (
     <form className="mt-3 space-y-3" onSubmit={onSubmit}>
@@ -122,30 +154,49 @@ export function ManualAgentInputForm({
           align="left"
           anchorRef={serviceAreaTriggerRef}
         >
-          <div className="max-h-64 w-full overflow-y-auto rounded-xl border border-zinc-200 bg-white p-2 shadow-lg focus:outline-none">
-          {SERVICE_AREA_OPTIONS.map((option) => {
-            const isSelected = serviceArea.includes(option.value);
-            return (
-              <label
-                key={option.value}
-                className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-size-sm hover:bg-zinc-50"
-              >
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onFocus={onFocusServiceArea}
-                  onChange={() => {
-                    const nextServiceAreas = isSelected
-                      ? serviceArea.filter((area) => area !== option.value)
-                      : [...serviceArea, option.value];
-                    onServiceAreaChange(nextServiceAreas);
-                  }}
-                  className="h-4 w-4 rounded border-zinc-300 text-primary focus:ring-primary"
-                />
-                <span className="text-zinc-800">{option.label}</span>
-              </label>
-            );
-          })}
+          <div className="w-full rounded-xl border border-zinc-200 bg-white p-2 shadow-lg focus:outline-none">
+            <div className="pb-2">
+              <Input
+                type="text"
+                value={serviceAreaQuery}
+                onChange={(e) => setServiceAreaQuery(e.target.value)}
+                placeholder="Search service area..."
+                className="h-9 rounded-lg"
+                onFocus={onFocusServiceArea}
+              />
+            </div>
+
+            <div className="max-h-56 w-full overflow-y-auto">
+              {taxonomy.status === "loading" && serviceAreaOptions.length === 0 ? (
+                <div className="p-2 text-size-sm text-zinc-500">Loading service areas…</div>
+              ) : null}
+              {filteredServiceAreaOptions.length === 0 ? (
+                <div className="p-2 text-size-sm text-zinc-500">No matches.</div>
+              ) : null}
+              {filteredServiceAreaOptions.map((option) => {
+                const isSelected = serviceArea.includes(option.value);
+                return (
+                  <label
+                    key={option.value}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-size-sm hover:bg-zinc-50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onFocus={onFocusServiceArea}
+                      onChange={() => {
+                        const nextServiceAreas = isSelected
+                          ? serviceArea.filter((area) => area !== option.value)
+                          : [...serviceArea, option.value];
+                        onServiceAreaChange(nextServiceAreas);
+                      }}
+                      className="h-4 w-4 rounded border-zinc-300 text-primary focus:ring-primary"
+                    />
+                    <span className="text-zinc-800">{option.label}</span>
+                  </label>
+                );
+              })}
+            </div>
           </div>
         </HeroDropdown>
       </div>
@@ -154,9 +205,25 @@ export function ManualAgentInputForm({
           {serviceAreaError}
         </p>
       ) : null}
-      <Button type="submit" size="lg" disabled={loading} className="h-10 w-full rounded-xl text-white">
-        {loading ? "Onboarding..." : "Onboard agent"}
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={loading}
+          className="h-10 flex-1 rounded-xl"
+          onClick={() => onBack?.()}
+        >
+          Back
+        </Button>
+        <Button
+          type="submit"
+          size="lg"
+          disabled={loading}
+          className="h-10 flex-1 rounded-xl text-white"
+        >
+          {loading ? "Onboarding..." : "Onboard agent"}
+        </Button>
+      </div>
     </form>
   );
 }

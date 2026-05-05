@@ -645,6 +645,7 @@ export function AdminAgentsPage() {
         open={isOnboardModalOpen}
         title="Onboard agent"
         showCloseIcon
+        preventCloseOnOutsideClick
         showFooter={false}
         onCancel={() => {
           setIsOnboardModalOpen(false);
@@ -733,6 +734,10 @@ export function AdminAgentsPage() {
               onFocusEmail={validateEmail}
               onFocusPhone={validatePhone}
               onFocusServiceArea={validateServiceArea}
+              onBack={() => {
+                setOnboardStep("choice");
+                resetManualForm();
+              }}
               onSubmit={onManualOnboard}
               onFullNameChange={(val) => {
                 setManualFullName(val);

@@ -181,7 +181,12 @@ export function MediaDocumentsStep() {
         }
       }
     } catch (e) {
-      setError(getApiErrorMessage(e));
+      setError(
+        getApiErrorMessage(
+          e,
+          "Upload failed. Please check file type, storage access, or try again.",
+        ),
+      );
     } finally {
       setPending((current) => {
         nextPending.forEach((p) => {
@@ -245,7 +250,12 @@ export function MediaDocumentsStep() {
         dispatch(addPropertyListingDocument(row));
       }
     } catch (e) {
-      setError(getApiErrorMessage(e));
+      setError(
+        getApiErrorMessage(
+          e,
+          "Upload failed. Please check file type, storage access, or try again.",
+        ),
+      );
     } finally {
       setDocUploading(false);
     }

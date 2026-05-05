@@ -1,7 +1,9 @@
+import { compactE164ForStorage } from "@/lib/phone";
 import type { AddPropertyWizardState } from "../components/add-property/addPropertyWizardSlice";
 import {
   ADD_PROPERTY_STEP_ORDER,
   type AddPropertyStepId,
+  type OwnerState,
 } from "../components/add-property/addPropertyWizard.types";
 import { getCategoryId, getCityAndAreaIds, getTypeId } from "./submissionReferenceIds";
 import type { ApiSubmissionStep } from "../api/propertySubmissions.api";
@@ -11,6 +13,23 @@ function parseNum(s: string): number | undefined {
   if (!t) return undefined;
   const n = Number(t);
   return Number.isFinite(n) ? n : undefined;
+}
+
+/**
+ * `PhoneNumberInputField` stores full E.164 in `phone`; `countryCode` is legacy and defaults to
+ * +962. Joining both produced values like `+962 +91…` on submit.
+ */
+export function ownerPhoneForPayload(
+  phone: OwnerState["phone"] | undefined,
+  countryCode: OwnerState["countryCode"] | undefined,
+): string | undefined {
+  const p = phone?.trim() ?? "";
+  if (!p) return undefined;
+  const raw = p.startsWith("+")
+    ? p
+    : [countryCode?.trim() ?? "", p].filter(Boolean).join(" ").trim();
+  if (!raw) return undefined;
+  return compactE164ForStorage(raw);
 }
 
 export function uiStepToApiStep(ui: AddPropertyStepId): ApiSubmissionStep {
@@ -54,7 +73,7 @@ export function buildStepData(
         return {
           full_name: o.fullName,
           email: o.email || undefined,
-          phone: [o.countryCode, o.phone].filter(Boolean).join(" ").trim() || undefined,
+          phone: ownerPhoneForPayload(o.phone, o.countryCode),
           nationality: o.nationality?.trim() || undefined,
           address: o.address?.trim() || undefined,
           social_security_id: o.socialSecurityId?.trim() || undefined,

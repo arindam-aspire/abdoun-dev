@@ -164,15 +164,15 @@ export const fetchAgentPropertyPerformancePage = createAsyncThunk<
 );
 
 /**
- * Loads listing directory total for admin sidebar (`GET /agent-properties` pagination `total`).
+ * Loads listing directory total for admin sidebar (`GET /admin/property-submissions` total).
  */
 export const fetchAdminManageListingsSidebarTotal = createAsyncThunk<
   { total: number | null; authUserId: string | null },
-  void,
+  { force?: boolean } | undefined,
   { state: AgentDashboardSummaryThunkState }
 >(
   "agentDashboardSummary/fetchAdminManageListingsSidebarTotal",
-  async (_, thunkApi) => {
+  async (_arg, thunkApi) => {
     const authUserId = thunkApi.getState().auth.userId;
     try {
       const data = await fetchAgentProperties({ page: 1, pageSize: 1 });
@@ -188,7 +188,8 @@ export const fetchAdminManageListingsSidebarTotal = createAsyncThunk<
     }
   },
   {
-    condition: (_, { getState }) => {
+    condition: (arg, { getState }) => {
+      if (arg?.force) return true;
       const s = getState().agentDashboardSummary;
       const uid = getState().auth.userId;
       if (s.adminManageListingsTotalStatus === "loading") return false;

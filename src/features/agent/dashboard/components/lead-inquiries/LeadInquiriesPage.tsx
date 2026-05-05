@@ -24,6 +24,8 @@ import { useTranslations } from "@/hooks/useTranslations";
 import { LeadInquiriesFilters, type PeriodFilter } from "./LeadInquiriesFilters";
 import { LeadInquiriesTable } from "./LeadInquiriesTable";
 import { LeadInquiryDetailModal } from "./LeadInquiryDetailModal";
+import { Toast } from "@/components/ui";
+import { getApiErrorMessage } from "@/lib/http";
 
 const PAGE_SIZE = 10;
 
@@ -76,6 +78,9 @@ export function LeadInquiriesPage() {
   const [noteText, setNoteText] = useState("");
   const [sending, setSending] = useState(false);
   const [addingNote, setAddingNote] = useState(false);
+  const [toast, setToast] = useState<{ kind: "success" | "error"; message: string } | null>(
+    null,
+  );
 
   const updateQueryParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -135,6 +140,12 @@ export function LeadInquiriesPage() {
       load();
       setResponseText("");
       getLeadInquiryById(selectedId).then(setSelected);
+      setToast({ kind: "success", message: "Response sent successfully." });
+    } catch (error) {
+      setToast({
+        kind: "error",
+        message: getApiErrorMessage(error, "Failed to send response. Please try again."),
+      });
     } finally {
       setSending(false);
     }
@@ -150,7 +161,15 @@ export function LeadInquiriesPage() {
         setNoteText("");
         load();
         getLeadInquiryById(selectedId).then(setSelected);
+        setToast({ kind: "success", message: "Note added successfully." });
+        return;
       }
+      setToast({ kind: "error", message: "Could not add note. Please try again." });
+    } catch (error) {
+      setToast({
+        kind: "error",
+        message: getApiErrorMessage(error, "Failed to add note. Please try again."),
+      });
     } finally {
       setAddingNote(false);
     }
@@ -158,9 +177,17 @@ export function LeadInquiriesPage() {
 
   const handleStatusChange = async (status: LeadStatus) => {
     if (!selectedId) return;
-    await updateLeadStatus(selectedId, status);
-    load();
-    getLeadInquiryById(selectedId).then(setSelected);
+    try {
+      await updateLeadStatus(selectedId, status);
+      load();
+      getLeadInquiryById(selectedId).then(setSelected);
+      setToast({ kind: "success", message: "Status updated successfully." });
+    } catch (error) {
+      setToast({
+        kind: "error",
+        message: getApiErrorMessage(error, "Failed to update status. Please try again."),
+      });
+    }
   };
 
   const filtered = useMemo(() => {
@@ -255,6 +282,9 @@ export function LeadInquiriesPage() {
         onAddNote={handleAddNote}
         onStatusChange={handleStatusChange}
       />
+      {toast ? (
+        <Toast kind={toast.kind} message={toast.message} onClose={() => setToast(null)} />
+      ) : null}
     </div>
   );
 }

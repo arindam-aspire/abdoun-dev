@@ -107,7 +107,13 @@ export function SignInSecurityTab({
       return;
     }
     setPhoneError(null);
-    await onPhoneUpdate(phoneValue ?? "");
+    try {
+      await onPhoneUpdate(phoneValue ?? "");
+    } catch (err) {
+      setPhoneError(
+        err instanceof Error ? err.message : "Failed to send verification code.",
+      );
+    }
   }, [onPhoneUpdate, phoneValue, tPhone]);
 
   return (
