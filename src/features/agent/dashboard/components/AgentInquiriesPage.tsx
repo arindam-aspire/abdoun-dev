@@ -19,7 +19,7 @@ import { Button, Label } from "@/components/ui";
 import { Dropdown } from "@/components/ui/dropdown";
 import { Pagination } from "@/components/ui/Pagination";
 import { Toast } from "@/components/ui";
-import { getApiErrorMessage } from "@/lib/http";
+import { getApiErrorMessage } from "@/lib/http/apiError";
 
 function statusClass(status: string): string {
   if (status === "new") return "bg-sky-100 text-sky-800 border-sky-200";

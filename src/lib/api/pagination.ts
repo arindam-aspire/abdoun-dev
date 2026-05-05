@@ -17,6 +17,51 @@ type PaginationInput = Partial<PaginationMeta> & {
   count?: number;
 };
 
+/**
+ * Raw list payloads from the API may use either a nested `pagination` object or
+ * flat `page` / `pageSize` / `total` / `totalPages` / `hasNext` / `hasPrevious`
+ * next to `items` (see `docs/refractor/Pagination/PAGINATION_FE_CLEANUP.md`).
+ */
+export type ListPaginationWire = {
+  items?: unknown;
+  pagination?: (Partial<PaginationMeta> & { totalItems?: number; count?: number }) | null;
+  page?: unknown;
+  pageSize?: unknown;
+  total?: unknown;
+  totalPages?: unknown;
+  hasNext?: unknown;
+  hasPrevious?: unknown;
+};
+
+/**
+ * Prefer nested `pagination` when present; otherwise read flat pagination fields from the payload.
+ */
+export function paginationInputFromListPayload(
+  payload: ListPaginationWire | null | undefined,
+): PaginationInput | undefined {
+  if (!payload || typeof payload !== "object") return undefined;
+  const nested = payload.pagination;
+  if (nested != null && typeof nested === "object") {
+    return nested as PaginationInput;
+  }
+  const hasFlat =
+    payload.total != null ||
+    payload.totalPages != null ||
+    payload.page != null ||
+    payload.pageSize != null ||
+    typeof payload.hasNext === "boolean" ||
+    typeof payload.hasPrevious === "boolean";
+  if (!hasFlat) return undefined;
+  return {
+    page: toFiniteNumber(payload.page),
+    pageSize: toFiniteNumber(payload.pageSize),
+    total: toFiniteNumber(payload.total),
+    totalPages: toFiniteNumber(payload.totalPages),
+    hasNext: typeof payload.hasNext === "boolean" ? payload.hasNext : undefined,
+    hasPrevious: typeof payload.hasPrevious === "boolean" ? payload.hasPrevious : undefined,
+  };
+}
+
 function toFiniteNumber(value: unknown): number | undefined {
   if (typeof value === "number" && Number.isFinite(value)) {
     return value;
@@ -97,4 +142,19 @@ export function createPaginatedResult<T>(
       itemsLength: safeItems.length,
     }),
   };
+}
+
+/** Normalize `items` + nested or flat pagination from a list wire payload. */
+export function createPaginatedResultFromListWire<T>(
+  payload: ListPaginationWire | null | undefined,
+  fallback: { page?: number; pageSize?: number; total?: number } = {},
+): PaginatedResult<T> {
+  const rawItems =
+    payload && typeof payload === "object" && "items" in payload ? payload.items : undefined;
+  const safeItems = Array.isArray(rawItems) ? (rawItems as T[]) : [];
+  return createPaginatedResult(
+    safeItems,
+    paginationInputFromListPayload(payload ?? undefined),
+    fallback,
+  );
 }

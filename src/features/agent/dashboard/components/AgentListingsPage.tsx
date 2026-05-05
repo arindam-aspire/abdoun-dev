@@ -43,17 +43,11 @@ import { DialogRoot, DialogTitle, DialogDescription, DialogFooter } from "@/comp
 import {
   ActionsMenu,
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CustomTable,
   IconButton,
   Input,
   Label,
   LoadingButton,
   Skeleton,
-  sortRowsByConfig,
   type CustomTableColumn,
   type SortConfig,
 } from "@/components/ui";
@@ -62,9 +56,9 @@ import {
   PAGINATION_PAGE_SIZES,
 } from "@/components/ui/Pagination";
 import type { PaginationMeta } from "@/lib/api/pagination";
-import { Dropdown } from "@/components/ui/dropdown";
 import { Toast } from "@/components/ui/toast";
 import { AgentListingsPageSkeleton } from "@/features/agent/dashboard/components/AgentListingsPageSkeleton";
+import { DataTable } from "@/components/common/DataTable";
 
 function statusClass(status: string): string {
   if (status === "active") return "bg-emerald-100 text-emerald-800 border-emerald-200";
@@ -75,9 +69,9 @@ function statusClass(status: string): string {
 }
 
 function statusLabel(status: string, t: (k: string) => string): string {
+  if (status === "pending_admin_approval") return t("statusPendingApproval");
   if (status === "pending_approval") return t("statusPendingApproval");
   if (status === "approved") return t("statusApproved");
-  if (status === "active") return t("statusActive");
   if (status === "rejected") return t("statusRejected");
   return status;
 }
@@ -129,17 +123,24 @@ function formatTypeWithSubType(type: string, subType?: string | null): string {
 
 const PAGE_PARAM = "page";
 const PAGE_SIZE_PARAM = "pageSize";
-const LISTING_STATUS_FILTERS: readonly ("all" | ListingStatus)[] = [
+
+type AgentListingStatusFilter =
+  | "all"
+  | "approved"
+  | "pending_admin_approval"
+  | "rejected";
+
+const LISTING_STATUS_FILTERS: readonly AgentListingStatusFilter[] = [
   "all",
-  "active",
-  "pending_approval",
   "approved",
-  "rejected"
+  "pending_admin_approval",
+  "rejected",
 ];
 const PERIOD_FILTERS = ["all", "weekly", "monthly", "yearly"] as const;
 const AGENT_SUBMIT_SUCCESS_MESSAGE = "Property submitted for admin approval.";
 const RESUBMIT_SUCCESS_MESSAGE = "Property resubmitted for admin approval.";
 const DELETE_SUCCESS_MESSAGE = "Property deleted successfully.";
+const SEARCH_DEBOUNCE_MS = 300;
 
 type ListingPeriodFilter = (typeof PERIOD_FILTERS)[number];
 
@@ -182,6 +183,45 @@ function isWithinDays(iso: string, days: number): boolean {
   return date >= cutoff;
 }
 
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(t);
+  }, [delayMs, value]);
+  return debounced;
+}
+
+function mapStatusFilterToApiStatus(
+  status: AgentListingStatusFilter,
+): string | undefined {
+  if (status === "all") return undefined;
+  // Explicit allow-list (do not invent values).
+  if (
+    status === "approved" ||
+    status === "pending_admin_approval" ||
+    status === "rejected"
+  ) {
+    return status;
+  }
+  return undefined;
+}
+
+function mapSortConfigToApiSort(
+  sortConfig: SortConfig,
+): { sortBy?: string; sortOrder?: "asc" | "desc" } {
+  const primary = sortConfig?.[0];
+  if (!primary?.id || !primary?.direction) return {};
+  const sortOrder: "asc" | "desc" = primary.direction === "asc" ? "asc" : "desc";
+  // Backend supports sortBy/sortOrder; map our visible columns to likely API keys.
+  if (primary.id === "updated") return { sortBy: "updated_at", sortOrder };
+  if (primary.id === "title") return { sortBy: "title", sortOrder };
+  if (primary.id === "price") return { sortBy: "price", sortOrder };
+  if (primary.id === "type") return { sortBy: "type_name", sortOrder };
+  if (primary.id === "status") return { sortBy: "status", sortOrder };
+  return {};
+}
+
 export function AgentListingsPage() {
   const dispatch = useAppDispatch();
   const locale = useLocale() as AppLocale;
@@ -219,7 +259,8 @@ export function AgentListingsPage() {
     reason: string | null;
   }>({ open: false, reason: null });
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | ListingStatus>("all");
+  const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
+  const [statusFilter, setStatusFilter] = useState<AgentListingStatusFilter>("all");
   const [periodFilter, setPeriodFilter] = useState<ListingPeriodFilter>("all");
   const [sortConfig, setSortConfig] = useState<SortConfig>([
     { id: "updated", direction: "desc" },
@@ -247,11 +288,18 @@ export function AgentListingsPage() {
     const legacyStatus = params.get("status");
     const legacyPeriod = params.get("period");
     if (legacyQ) setQuery(legacyQ);
-    if (
-      legacyStatus &&
-      LISTING_STATUS_FILTERS.includes(legacyStatus as "all" | ListingStatus)
-    ) {
-      setStatusFilter(legacyStatus as "all" | ListingStatus);
+    if (legacyStatus) {
+      const normalized = legacyStatus.trim().toLowerCase().replace(/-/g, "_");
+      const mapped: AgentListingStatusFilter | null =
+        normalized === "all"
+          ? "all"
+          : normalized === "pending_approval"
+            ? "pending_admin_approval"
+            : LISTING_STATUS_FILTERS.includes(normalized as AgentListingStatusFilter)
+              ? (normalized as AgentListingStatusFilter)
+              : null;
+
+      if (mapped) setStatusFilter(mapped);
     }
     if (legacyPeriod && PERIOD_FILTERS.includes(legacyPeriod as ListingPeriodFilter)) {
       setPeriodFilter(legacyPeriod as ListingPeriodFilter);
@@ -267,19 +315,30 @@ export function AgentListingsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate legacy params once on mount
   }, []);
 
-  const resetToFirstPageIfNeeded = useCallback(() => {
-    if (currentPage <= 1) return;
+  const resetToFirstPage = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete(PAGE_PARAM);
     const next = params.toString();
     router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
-  }, [currentPage, pathname, router, searchParams]);
+  }, [pathname, router, searchParams]);
 
   const load = useCallback(() => {
     setLoading(true);
     setLoadError(null);
+
+    const apiStatus = mapStatusFilterToApiStatus(statusFilter);
+    const sort = mapSortConfigToApiSort(sortConfig);
+
     Promise.all([
-      fetchAgentProperties({ page: currentPage, pageSize }),
+      fetchAgentProperties({
+        page: currentPage,
+        pageSize,
+        search: debouncedQuery.trim() ? debouncedQuery.trim() : undefined,
+        status: apiStatus,
+        sortBy: sort.sortBy,
+        sortOrder: sort.sortOrder,
+      }),
+      // Drafts stay separate and unchanged.
       fetchAgentPropertyDrafts({ page: 1, pageSize: 20 }),
     ])
       .then(([propertiesRes, draftsRes]) => {
@@ -300,7 +359,7 @@ export function AgentListingsPage() {
       .finally(() => {
         setLoading(false);
       });
-  }, [currentPage, pageSize]);
+  }, [currentPage, debouncedQuery, pageSize, sortConfig, statusFilter]);
 
   useEffect(() => {
     load();
@@ -324,75 +383,21 @@ export function AgentListingsPage() {
     router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
   }, [searchParams, pathname, router]);
 
-  const filteredListings = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-    return listings.filter((listing) => {
-      if (listing.status === "draft" && !listing.isFromApi) return false;
-      if (statusFilter !== "all" && listing.status !== statusFilter) {
-        return false;
-      }
-      if (periodFilter === "weekly" && !isWithinDays(listing.lastUpdated, 7)) return false;
-      if (periodFilter === "monthly" && !isWithinDays(listing.lastUpdated, 30)) return false;
-      if (periodFilter === "yearly" && !isWithinDays(listing.lastUpdated, 365)) return false;
-      if (!normalizedQuery) return true;
-
-      const haystack = [
-        listing.title,
-        listing.type,
-        listing.subType,
-        listing.status,
-        listing.statusDisplayName,
-        listing.submissionStatus,
-        listing.submissionWorkflowLabel,
-        listing.catalogStatusName,
-        getDisplayStatusLabel(listing, t),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(normalizedQuery);
-    });
-  }, [listings, periodFilter, query, statusFilter, t]);
-
-  const sortedListings = useMemo(() => {
-    return sortRowsByConfig(filteredListings, sortConfig, (row, columnId) => {
-      if (columnId === "title") return row.title;
-      if (columnId === "type") return `${row.type} ${row.subType ?? ""}`;
-      if (columnId === "status") return row.submissionWorkflowLabel ?? row.submissionStatus ?? row.status;
-      if (columnId === "updated") return row.lastUpdated;
-      if (columnId === "price") return row.price;
-      return "";
-    });
-  }, [filteredListings, sortConfig]);
-
-  const totalPages = Math.max(1, listPagination.totalPages);
+  const totalItems = listPagination.total ?? 0;
+  const totalPages = Math.max(1, listPagination.totalPages ?? 1);
   const safePage = Math.min(currentPage, totalPages);
-  const paginatedListings = sortedListings;
-
-  useEffect(() => {
-    if (loading || loadError) return;
-    if (currentPage > totalPages) {
-      const params = new URLSearchParams(searchParams.toString());
-      params.delete(PAGE_PARAM);
-      const next = params.toString();
-      router.replace(next ? `${pathname}?${next}` : pathname, {
-        scroll: false,
-      });
-    }
-  }, [currentPage, loadError, loading, pathname, router, searchParams, totalPages]);
 
   const onSearchChange = (value: string) => {
     setQuery(value);
-    resetToFirstPageIfNeeded();
+    resetToFirstPage();
   };
 
   const onStatusChange = (value: string) => {
-    const next = LISTING_STATUS_FILTERS.includes(value as "all" | ListingStatus)
-      ? (value as "all" | ListingStatus)
+    const next = LISTING_STATUS_FILTERS.includes(value as AgentListingStatusFilter)
+      ? (value as AgentListingStatusFilter)
       : "all";
     setStatusFilter(next);
-    resetToFirstPageIfNeeded();
+    resetToFirstPage();
   };
 
   const onPeriodChange = (value: string) => {
@@ -400,21 +405,18 @@ export function AgentListingsPage() {
       ? (value as ListingPeriodFilter)
       : "all";
     setPeriodFilter(next);
-    resetToFirstPageIfNeeded();
+    resetToFirstPage();
   };
 
   const emptyListMessage = useMemo(() => {
-    if (query.trim()) {
+    if (debouncedQuery.trim()) {
       return "No listings match your search. Try a different property, type, or status.";
     }
     if (statusFilter !== "all") {
       return "No listings with this status. Set the filter to All to see everything.";
     }
-    if (periodFilter !== "all") {
-      return "No listings in this time range. Try another period.";
-    }
     return null;
-  }, [periodFilter, query, statusFilter]);
+  }, [debouncedQuery, statusFilter]);
 
   const handlePublish = useCallback(
     async (id: string) => {
@@ -669,7 +671,7 @@ export function AgentListingsPage() {
 
   const statusOptions = LISTING_STATUS_FILTERS.map((status) => ({
     value: status,
-    label: status === "all" ? t("filterAllStatuses") : statusLabel(status, t),
+    label: status === "all" ? "All" : statusLabel(status, t),
   }));
 
   const periodOptions = PERIOD_FILTERS.map((period) => ({
@@ -719,7 +721,6 @@ export function AgentListingsPage() {
     setDeleteErrorToast(null);
     try {
       await deletePropertySubmission(deleteTarget.submissionId);
-      setListings((prev) => prev.filter((l) => l.id !== deleteTarget.id));
       setDeleteTarget(null);
       setDeleteErrorToast(null);
       setDeleteSuccessToast(true);
@@ -843,122 +844,101 @@ export function AgentListingsPage() {
         </section>
       ) : null}
 
-      <Card className="rounded-xl border-subtle">
-        <CardHeader className="flex flex-col gap-3 space-y-0 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-secondary" />
-            <CardTitle className="text-size-sm text-charcoal">
-              Property list
-            </CardTitle>
-          </div>
-          <div className="flex w-full justify-end md:w-auto">
-            <div className="flex w-full flex-col gap-2 md:flex-row md:items-center md:justify-end">
-              <div className="w-full md:w-64 lg:w-80">
-                <Input
-                  value={query}
-                  onChange={(event) => onSearchChange(event.target.value)}
-                  placeholder="Search by property, type, status"
-                  className="h-10 w-full rounded-lg"
-                  rightAdornment={
-                    query.trim() ? (
-                      <IconButton
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        aria-label="Clear search"
-                        className="text-charcoal/55 hover:bg-charcoal/10 hover:text-charcoal"
-                        onClick={() => onSearchChange("")}
-                      >
-                        <X />
-                      </IconButton>
-                    ) : undefined
-                  }
-                />
-              </div>
-              <div className="flex w-full items-center gap-2 md:w-auto">
-                <Dropdown
-                  buttonId="listings-status-filter"
-                  label="All"
-                  value={statusFilter}
-                  onChange={(value) => onStatusChange(String(value ?? "all"))}
-                  align="right"
-                  menuClassName="w-44"
-                  buttonClassName="h-10 rounded-lg border-subtle bg-surface px-3 text-size-xs text-charcoal shadow-sm focus-visible:ring-primary/40 justify-between"
-                  options={statusOptions}
-                />
-              </div>
-              <div className="flex w-full items-center gap-2 md:w-auto">
-                <Dropdown
-                  buttonId="listings-period-filter"
-                  label="All"
-                  value={periodFilter}
-                  onChange={(value) => onPeriodChange(String(value ?? "all"))}
-                  align="right"
-                  menuClassName="w-44"
-                  buttonClassName="h-10 rounded-lg border-subtle bg-surface px-3 text-size-xs text-charcoal shadow-sm focus-visible:ring-primary/40 justify-between"
-                  options={periodOptions}
-                />
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <CustomTable
-          columns={columns}
-          data={paginatedListings}
-          getRowId={(row) => row.id}
-          sortConfig={sortConfig}
-          onSort={setSortConfig}
-          multiSortWithShift
-          loading={false}
-          skeleton={<AgentListingsTableSkeleton />}
-          error={loadError}
-          errorTitle={t("loadListingsError")}
-          errorDescription={
-            <div className="space-y-2 text-center">
-              <p className="text-sm font-medium text-charcoal">{t("loadListingsError")}</p>
-              <p className="text-xs text-charcoal/60">{t("loadListingsErrorHint")}</p>
-              <button
-                type="button"
-                onClick={() => void load()}
-                className="mx-auto mt-2 inline-flex items-center justify-center rounded-lg border border-subtle bg-white px-4 py-2 text-sm font-medium text-charcoal shadow-sm transition hover:bg-surface"
-              >
-                {t("retryLoadListings")}
-              </button>
-            </div>
+      <DataTable
+        className="rounded-xl border-subtle"
+          headerLeft={
+            <span className="inline-flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-secondary" />
+              <span>Property list</span>
+            </span>
           }
-          emptyMessage={
-            emptyListMessage ? (
+          search={{
+            value: query,
+            onChange: onSearchChange,
+            placeholder: "Search by property, type, status",
+          }}
+          filters={[
+            {
+              id: "status",
+              buttonId: "listings-status-filter",
+              value: statusFilter,
+              onChange: (value) => onStatusChange(String(value ?? "all")),
+              options: statusOptions,
+              label: "All",
+              align: "right",
+              menuClassName: "w-44",
+              buttonClassName:
+                "h-10 rounded-lg border-subtle bg-surface px-3 text-size-xs text-charcoal shadow-sm focus-visible:ring-primary/40 justify-between",
+            },
+            {
+              id: "period",
+              buttonId: "listings-period-filter",
+              value: periodFilter,
+              onChange: (value) => onPeriodChange(String(value ?? "all")),
+              options: periodOptions,
+              label: t("filterAllTime"),
+              align: "right",
+              menuClassName: "w-44",
+              buttonClassName:
+                "h-10 rounded-lg border-subtle bg-surface px-3 text-size-xs text-charcoal shadow-sm focus-visible:ring-primary/40 justify-between",
+            },
+          ]}
+          table={{
+            columns,
+            data: listings,
+            getRowId: (row) => row.id,
+            sortConfig,
+            onSort: (next) => {
+              setSortConfig(next);
+              resetToFirstPage();
+            },
+            multiSortWithShift: true,
+            loading: false,
+            skeleton: <AgentListingsTableSkeleton />,
+            error: loadError,
+            errorTitle: t("loadListingsError"),
+            errorDescription: (
+              <div className="space-y-2 text-center">
+                <p className="text-sm font-medium text-charcoal">{t("loadListingsError")}</p>
+                <p className="text-xs text-charcoal/60">{t("loadListingsErrorHint")}</p>
+                <button
+                  type="button"
+                  onClick={() => void load()}
+                  className="mx-auto mt-2 inline-flex items-center justify-center rounded-lg border border-subtle bg-white px-4 py-2 text-sm font-medium text-charcoal shadow-sm transition hover:bg-surface"
+                >
+                  {t("retryLoadListings")}
+                </button>
+              </div>
+            ),
+            emptyMessage: emptyListMessage ? (
               emptyListMessage
             ) : (
               <div className="flex flex-col items-center justify-center py-2 text-center">
                 <Building2 className="h-10 w-10 text-charcoal/40" />
                 <p className="mt-2 text-sm text-charcoal/70">{t("noListings")}</p>
               </div>
-            )
-          }
-          minTableWidth="700px"
-          pagination={{
-            showWhen: !loadError && paginatedListings.length > 0,
-            currentPage: safePage,
-            totalPages,
-            totalItems: listPagination.total,
-            pageSize,
-            pageParam: PAGE_PARAM,
-            pageSizeParam: PAGE_SIZE_PARAM,
-            translations: {
-              previous: tSearch("paginationPrevious"),
-              next: tSearch("paginationNext"),
-              page: tSearch("paginationPage"),
-              of: tSearch("paginationOf"),
-              showing: tSearch("paginationShowing"),
-              to: tSearch("paginationTo"),
-              results: tSearch("paginationResults"),
+            ),
+            minTableWidth: "700px",
+            pagination: {
+              showWhen: !loadError && totalItems > 0,
+              currentPage: safePage,
+              totalPages,
+              totalItems,
+              pageSize,
+              pageParam: PAGE_PARAM,
+              pageSizeParam: PAGE_SIZE_PARAM,
+              translations: {
+                previous: tSearch("paginationPrevious"),
+                next: tSearch("paginationNext"),
+                page: tSearch("paginationPage"),
+                of: tSearch("paginationOf"),
+                showing: tSearch("paginationShowing"),
+                to: tSearch("paginationTo"),
+                results: tSearch("paginationResults"),
+              },
             },
           }}
-          />
-        </CardContent>
-      </Card>
+      />
 
       <DialogRoot
         open={!!deleteTarget}

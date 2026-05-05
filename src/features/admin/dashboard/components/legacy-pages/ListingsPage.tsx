@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   Button,
-  CustomTable,
   Input,
   Label,
   Skeleton,
@@ -32,11 +31,10 @@ import {
   type CustomTableColumn,
   type SortConfig,
 } from "@/components/ui";
-import { Dropdown } from "@/components/ui/dropdown";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { DataTable } from "@/components/common/DataTable";
 
 function statusClass(status: string): string {
-  if (status === "active") return "bg-emerald-100 text-emerald-800 border-emerald-200";
   if (status === "pending_approval") return "bg-sky-100 text-sky-800 border-sky-200";
   if (status === "approved") return "bg-violet-100 text-violet-800 border-violet-200";
   if (status === "rejected") return "bg-rose-100 text-rose-800 border-rose-200";
@@ -47,7 +45,6 @@ function statusClass(status: string): string {
 function statusLabel(status: string, t: (k: string) => string): string {
   if (status === "pending_approval") return t("statusPendingApproval");
   if (status === "approved") return t("statusApproved");
-  if (status === "active") return t("statusActive");
   if (status === "rejected") return t("statusRejected");
   if (status === "deactivated") return t("statusDeactivated");
   return status;
@@ -76,7 +73,6 @@ function formatTypeWithSubType(type: string, subType?: string | null): string {
 const PAGE_SIZE = 10;
 const LISTING_STATUS_FILTERS: readonly ("all" | ListingStatus)[] = [
   "all",
-  "active",
   "pending_approval",
   "approved",
   "rejected",
@@ -370,64 +366,62 @@ export function ListingsPage() {
       </div>
 
       <Card className="rounded-2xl border-subtle">
-        <CardHeader className="flex flex-col gap-3 space-y-0 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-secondary" />
-            <CardTitle className="text-size-sm text-charcoal">
-              {t("manageListingsTitle")}
-            </CardTitle>
-          </div>
-          <div className="flex w-full justify-end md:w-auto">
-            <div className="flex w-full flex-col gap-2 md:flex-row md:items-center md:justify-end">
-              <div className="w-full md:w-64 lg:w-80">
-                <Input
-                  value={queryParam}
-                  onChange={(event) => updateQueryParams({ q: event.target.value })}
-                  placeholder="Search listings..."
-                  className="h-10 w-full rounded-xl"
-                />
-              </div>
-              <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center">
-                <Dropdown
-                  buttonId="admin-listings-status-filter"
-                  label={t("filterStatusLabel")}
-                  value={statusFilter}
-                  onChange={(val) => updateQueryParams({ status: val })}
-                  options={statusOptions}
-                  align="left"
-                />
-                <Dropdown
-                  buttonId="admin-listings-period-filter"
-                  label={t("filterPeriodLabel")}
-                  value={periodFilter}
-                  onChange={(val) => updateQueryParams({ period: val })}
-                  options={periodOptions}
-                  align="left"
-                />
-              </div>
-              <Link
-                href={`/${locale}/agent-dashboard/add-property`}
-                onClick={() => {
-                  dispatch(initializeNewPropertyWizard());
-                }}
-                className="w-full md:w-auto shrink-0 whitespace-nowrap inline-flex items-center justify-center gap-2 rounded-xl border border-primary bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary/90"
-              >
-                <Plus className="h-4 w-4" />
-                {t("addProperty")}
-              </Link>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <CustomTable
-            columns={columns}
-            data={paginatedListings}
-            getRowId={(row) => row.id}
-            sortConfig={sortConfig}
-            onSort={setSortConfig}
-            multiSortWithShift
-            loading={false}
-            skeleton={
+        <DataTable
+          className="rounded-2xl border-subtle"
+          headerLeft={
+            <span className="inline-flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-secondary" />
+              <span>{t("manageListingsTitle")}</span>
+            </span>
+          }
+          search={{
+            value: queryParam,
+            onChange: (value) => updateQueryParams({ q: value }),
+            placeholder: "Search listings...",
+            inputClassName: "h-10 w-full rounded-xl",
+            clearable: false,
+          }}
+          filters={[
+            {
+              id: "status",
+              buttonId: "admin-listings-status-filter",
+              value: statusFilter,
+              onChange: (value) => updateQueryParams({ status: value }),
+              options: statusOptions as { value: string; label: string }[],
+              label: t("filterStatusLabel"),
+              align: "left",
+            },
+            {
+              id: "period",
+              buttonId: "admin-listings-period-filter",
+              value: periodFilter,
+              onChange: (value) => updateQueryParams({ period: value }),
+              options: periodOptions as { value: string; label: string }[],
+              label: t("filterPeriodLabel"),
+              align: "left",
+            },
+          ]}
+          headerRight={
+            <Link
+              href={`/${locale}/agent-dashboard/add-property`}
+              onClick={() => {
+                dispatch(initializeNewPropertyWizard());
+              }}
+              className="w-full md:w-auto shrink-0 whitespace-nowrap inline-flex items-center justify-center gap-2 rounded-xl border border-primary bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4" />
+              {t("addProperty")}
+            </Link>
+          }
+          table={{
+            columns,
+            data: paginatedListings,
+            getRowId: (row) => row.id,
+            sortConfig,
+            onSort: setSortConfig,
+            multiSortWithShift: true,
+            loading: false,
+            skeleton: (
               <tbody>
                 {Array.from({ length: 7 }, (_, i) => (
                   <tr key={i} className="border-b border-subtle/70 last:border-b-0">
@@ -452,16 +446,16 @@ export function ListingsPage() {
                   </tr>
                 ))}
               </tbody>
-            }
-            error={null}
-            emptyMessage={
+            ),
+            error: null,
+            emptyMessage: (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Building2 className="h-10 w-10 text-charcoal/40" />
                 <p className="mt-2 text-sm text-charcoal/70">{t("noListings")}</p>
               </div>
-            }
-            minTableWidth="700px"
-            pagination={{
+            ),
+            minTableWidth: "700px",
+            pagination: {
               showWhen: sortedListings.length > 0,
               currentPage,
               totalPages,
@@ -477,9 +471,9 @@ export function ListingsPage() {
                 to: tSearch("paginationTo"),
                 results: tSearch("paginationResults"),
               },
-            }}
-          />
-        </CardContent>
+            },
+          }}
+        />
       </Card>
 
       <DialogRoot open={!!editing} onClose={closeEdit}>

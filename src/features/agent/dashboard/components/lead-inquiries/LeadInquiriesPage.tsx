@@ -25,7 +25,7 @@ import { LeadInquiriesFilters, type PeriodFilter } from "./LeadInquiriesFilters"
 import { LeadInquiriesTable } from "./LeadInquiriesTable";
 import { LeadInquiryDetailModal } from "./LeadInquiryDetailModal";
 import { Toast } from "@/components/ui";
-import { getApiErrorMessage } from "@/lib/http";
+import { getApiErrorMessage } from "@/lib/http/apiError";
 
 const PAGE_SIZE = 10;
 

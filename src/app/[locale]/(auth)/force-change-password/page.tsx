@@ -7,7 +7,7 @@ import { ChangePasswordForm } from "@/components/auth/ChangePasswordForm";
 import { LoadingScreen } from "@/components/ui";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { login } from "@/features/auth/authSlice";
-import { getApiErrorMessage } from "@/lib/http";
+import { getApiErrorMessage } from "@/lib/http/apiError";
 import { persistAuthSession } from "@/lib/auth/sessionCookies";
 import { queueRouteToast } from "@/lib/ui/routeToast";
 import { selectCurrentUser } from "@/store/selectors";

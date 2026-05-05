@@ -3,7 +3,7 @@
  * Handles FastAPI-style detail, validation error arrays, and generic message/error fields.
  * Also accepts plain strings (e.g. RTK `unwrap()` rejection payloads).
  */
-export function getApiErrorMessage(error: unknown): string {
+export function getApiErrorMessage(error: unknown, fallback?: string): string {
   if (typeof error === "string") {
     const trimmed = error.trim();
     if (trimmed) return trimmed;
@@ -28,6 +28,7 @@ export function getApiErrorMessage(error: unknown): string {
     const msg = (error as { message?: unknown }).message;
     if (typeof msg === "string" && msg.trim()) return msg.trim();
   }
+  if (typeof fallback === "string" && fallback.trim()) return fallback.trim();
   return "Something went wrong.";
 }
 

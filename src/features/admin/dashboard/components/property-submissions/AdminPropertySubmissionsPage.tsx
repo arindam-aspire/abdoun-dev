@@ -60,7 +60,6 @@ import { fetchAdminManageListingsSidebarTotal } from "@/features/agent/dashboard
 type StatusFilter =
   | ""
   | "submitted"
-  | "changes_requested"
   | "approved"
   | "rejected";
 
@@ -68,11 +67,9 @@ const PERIOD_FILTERS = ["all", "weekly", "monthly", "yearly"] as const;
 type PeriodFilter = (typeof PERIOD_FILTERS)[number];
 const PAGE_PARAM = "page";
 const PAGE_SIZE_PARAM = "pageSize";
-const FETCH_LIMIT = 200;
 const ADMIN_SUBMIT_SUCCESS_MESSAGE = "Property created and verified successfully.";
 const APPROVE_SUCCESS_MESSAGE = "Property approved successfully.";
 const REJECT_SUCCESS_MESSAGE = "Property rejected successfully.";
-const REQUEST_CHANGES_SUCCESS_MESSAGE = "Changes requested successfully.";
 const ASSIGN_SUCCESS_MESSAGE = "Agent assigned successfully.";
 const UNASSIGN_SUCCESS_MESSAGE = "Agent unassigned successfully.";
 const DELETE_SUCCESS_MESSAGE = "Property deleted successfully.";
@@ -131,7 +128,6 @@ function prettyStatus(status: string): string {
 function statusPillClass(status: string): string {
   const s = status.trim().toLowerCase();
   if (s === "submitted") return "bg-sky-100 text-sky-800 border-sky-200";
-  if (s === "changes_requested") return "bg-amber-100 text-amber-800 border-amber-200";
   if (s === "approved" || s === "verified") return "bg-violet-100 text-violet-800 border-violet-200";
   if (s === "rejected") return "bg-rose-100 text-rose-800 border-rose-200";
  
@@ -207,9 +203,8 @@ export function AdminPropertySubmissionsPage() {
   ]);
   const [reasonDialog, setReasonDialog] = useState<{
     open: boolean;
-    action: "reject" | "changes_requested";
     submissionId: string | null;
-  }>({ open: false, action: "reject", submissionId: null });
+  }>({ open: false, submissionId: null });
   const [reasonText, setReasonText] = useState("");
   const [actingId, setActingId] = useState<string | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; submissionId: string | null }>(
@@ -251,7 +246,6 @@ export function AdminPropertySubmissionsPage() {
     if (
       legacyStatus === "" ||
       legacyStatus === "submitted" ||
-      legacyStatus === "changes_requested" ||
       legacyStatus === "approved" ||
       legacyStatus === "rejected"
     ) {
@@ -392,7 +386,6 @@ export function AdminPropertySubmissionsPage() {
   const statusOptions = [
     { value: "", label: "All" },
     { value: "submitted", label: "Submitted" },
-    { value: "changes_requested", label: "Changes requested" },
     { value: "approved", label: "Approved" },
     { value: "rejected", label: "Rejected" },
   ] as const;
@@ -417,7 +410,6 @@ export function AdminPropertySubmissionsPage() {
   const onStatusChange = (value: string) => {
     const next =
       value === "submitted" ||
-      value === "changes_requested" ||
       value === "approved" ||
       value === "rejected"
         ? value
@@ -560,26 +552,6 @@ export function AdminPropertySubmissionsPage() {
                       },
                     },
                   {
-                    key: "request-changes",
-                    label: (
-                      <span className="inline-flex items-center gap-2">
-                        <Pencil className="h-4 w-4 opacity-70" />
-                        Request Changes
-                      </span>
-                    ),
-                    className: "text-amber-700",
-                    hoverClassName: "bg-amber-50",
-                    disabled: busy,
-                    onSelect: () => {
-                      setReasonText("");
-                      setReasonDialog({
-                        open: true,
-                        action: "changes_requested",
-                        submissionId: row.submission_id,
-                      });
-                    },
-                  },
-                  {
                     key: "reject",
                     label: (
                       <span className="inline-flex items-center gap-2">
@@ -593,7 +565,6 @@ export function AdminPropertySubmissionsPage() {
                       setReasonText("");
                       setReasonDialog({
                         open: true,
-                        action: "reject",
                         submissionId: row.submission_id,
                       });
                     },
@@ -885,9 +856,9 @@ export function AdminPropertySubmissionsPage() {
           emptyMessage={emptyListMessage}
           minTableWidth="1000px"
           pagination={{
-            // Show the footer whenever we have results, even if it is a single page,
-            // so the "Showing X–Y of Z results" line matches the agent listings table.
-            showWhen: !loading && !error && paginatedRows.length > 0,
+            // Keep pager visible when the server has rows but client search/period filtered
+            // the current page to zero — user can change page or clear filters.
+            showWhen: !loading && !error && totalItems > 0,
             currentPage: safePage,
             totalPages,
             totalItems,
@@ -912,19 +883,13 @@ export function AdminPropertySubmissionsPage() {
         open={reasonDialog.open}
         onClose={() => {
           if (actingId) return;
-          setReasonDialog({ open: false, action: "reject", submissionId: null });
+          setReasonDialog({ open: false, submissionId: null });
         }}
         className="relative max-w-lg"
       >
-        <DialogTitle>
-          {reasonDialog.action === "changes_requested"
-            ? "Request changes"
-            : "Reject submission"}
-        </DialogTitle>
+        <DialogTitle>Reject submission</DialogTitle>
         <DialogDescription className="text-pretty text-sm text-charcoal/75">
-          {reasonDialog.action === "changes_requested"
-            ? "Please explain what the agent needs to update before this property can be approved."
-            : "Please enter a reason. This will be shown to the agent."}
+          Please enter a reason. This will be shown to the agent.
         </DialogDescription>
         <div className="mt-4 space-y-2">
           <label className="text-xs font-medium text-charcoal/80" htmlFor="admin-review-reason">
@@ -935,11 +900,7 @@ export function AdminPropertySubmissionsPage() {
             value={reasonText}
             onChange={(e) => setReasonText(e.target.value)}
             className="min-h-[100px] rounded-lg border border-charcoal/15"
-            placeholder={
-              reasonDialog.action === "changes_requested"
-                ? "Explain what needs to be changed before resubmission."
-                : "Explain what needs to be changed / why it is rejected."
-            }
+            placeholder="Explain what needs to be changed / why it is rejected."
             disabled={actingId != null}
           />
         </div>
@@ -947,7 +908,7 @@ export function AdminPropertySubmissionsPage() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => setReasonDialog({ open: false, action: "reject", submissionId: null })}
+            onClick={() => setReasonDialog({ open: false, submissionId: null })}
             disabled={actingId != null}
           >
             Cancel
@@ -960,21 +921,17 @@ export function AdminPropertySubmissionsPage() {
             onClick={async () => {
               if (!reasonDialog.submissionId) return;
               const submissionId = reasonDialog.submissionId;
-              const action = reasonDialog.action;
               setActingId(submissionId);
               try {
                 await reviewAdminPropertySubmission(submissionId, {
-                  action,
+                  action: "reject",
                   reason: reasonText.trim(),
                 });
                 setToast({
                   kind: "success",
-                  message:
-                    action === "changes_requested"
-                      ? REQUEST_CHANGES_SUCCESS_MESSAGE
-                      : REJECT_SUCCESS_MESSAGE,
+                  message: REJECT_SUCCESS_MESSAGE,
                 });
-                setReasonDialog({ open: false, action: "reject", submissionId: null });
+                setReasonDialog({ open: false, submissionId: null });
                 setReasonText("");
                 await load();
               } catch (e) {
@@ -984,7 +941,7 @@ export function AdminPropertySubmissionsPage() {
               }
             }}
           >
-            {reasonDialog.action === "changes_requested" ? "Request Changes" : "Reject"}
+            Reject
           </Button>
         </DialogFooter>
       </DialogRoot>

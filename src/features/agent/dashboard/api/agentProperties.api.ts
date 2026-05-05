@@ -1,7 +1,11 @@
 "use client";
 
 import { authApi } from "@/lib/http/clients";
-import { createPaginatedResult, type PaginatedResult } from "@/lib/api/pagination";
+import {
+  createPaginatedResultFromListWire,
+  type ListPaginationWire,
+  type PaginatedResult,
+} from "@/lib/api/pagination";
 
 export type AgentPropertyListItem = {
   property_id: string;
@@ -50,6 +54,12 @@ export type AgentDraftSubmissionItem = {
   updated_at: string | null;
 };
 
+type AgentPropertyListWire = ListPaginationWire & {
+  items?: AgentPropertyListItem[] | null;
+  draft_submissions?: AgentDraftSubmissionItem[];
+  draft_submissions_total?: number;
+};
+
 export type AgentPropertyListData = PaginatedResult<AgentPropertyListItem> & {
   /** May be absent on older API versions. */
   draft_submissions?: AgentDraftSubmissionItem[];
@@ -59,9 +69,23 @@ export type AgentPropertyListData = PaginatedResult<AgentPropertyListItem> & {
 export type FetchAgentPropertiesParams = {
   page?: number;
   pageSize?: number;
+  /** Full-text search across agent properties (backend applies before pagination). */
+  search?: string;
+  /** Workflow/catalog status filter (backend applies before pagination). */
+  status?: string;
+  /** Field to sort by (backend applies before pagination). */
+  sortBy?: string;
+  /** Sort direction for `sortBy`. */
+  sortOrder?: "asc" | "desc";
+  /** When true, backend may include draft-linked rows (if supported). */
+  include_drafts?: boolean;
 };
 
 export type AgentDraftSubmissionsListData = PaginatedResult<AgentDraftSubmissionItem>;
+
+type AgentDraftListWire = ListPaginationWire & {
+  items?: AgentDraftSubmissionItem[] | null;
+};
 
 /**
  * List properties the current user created (submitted via stepper), newest first.
@@ -71,13 +95,23 @@ export async function fetchAgentProperties(
 ): Promise<AgentPropertyListData> {
   const page = params.page ?? 1;
   const pageSize = params.pageSize ?? 20;
-  const response = await authApi.get<AgentPropertyListData>("/agent-properties", {
-    params: { page, pageSize },
+  const response = await authApi.get<AgentPropertyListWire>("/agent-properties", {
+    params: {
+      page,
+      pageSize,
+      ...(params.search?.trim() ? { search: params.search.trim() } : {}),
+      ...(params.status?.trim() ? { status: params.status.trim() } : {}),
+      ...(params.sortBy?.trim() ? { sortBy: params.sortBy.trim() } : {}),
+      ...(params.sortOrder ? { sortOrder: params.sortOrder } : {}),
+      ...(typeof params.include_drafts === "boolean"
+        ? { include_drafts: params.include_drafts }
+        : {}),
+    },
   });
   const payload = response.data;
   return {
     ...payload,
-    ...createPaginatedResult(payload.items, payload.pagination, { page, pageSize }),
+    ...createPaginatedResultFromListWire<AgentPropertyListItem>(payload, { page, pageSize }),
   };
 }
 
@@ -90,10 +124,9 @@ export async function fetchAgentPropertyDrafts(
 ): Promise<AgentDraftSubmissionsListData> {
   const page = params.page ?? 1;
   const pageSize = params.pageSize ?? 20;
-  const response = await authApi.get<AgentDraftSubmissionsListData>(
-    "/agent-properties/drafts",
-    { params: { page, pageSize } },
-  );
+  const response = await authApi.get<AgentDraftListWire>("/agent-properties/drafts", {
+    params: { page, pageSize },
+  });
   const payload = response.data;
-  return createPaginatedResult(payload.items, payload.pagination, { page, pageSize });
+  return createPaginatedResultFromListWire<AgentDraftSubmissionItem>(payload, { page, pageSize });
 }

@@ -1,7 +1,11 @@
 "use client";
 
 import { authApi } from "@/lib/http/clients";
-import { createPaginatedResult, type PaginatedResult } from "@/lib/api/pagination";
+import {
+  createPaginatedResultFromListWire,
+  type ListPaginationWire,
+  type PaginatedResult,
+} from "@/lib/api/pagination";
 
 export type AdminSubmissionListItem = {
   submission_id: string;
@@ -31,6 +35,11 @@ export type AdminSubmissionListItem = {
   review_reason?: string | null;
   reviewed_by?: string | null;
   deleted_at?: string | null;
+};
+
+/** Wire API body (after envelope peel): `items` plus nested or flat pagination fields. */
+export type AdminSubmissionListWire = ListPaginationWire & {
+  items?: AdminSubmissionListItem[] | null;
 };
 
 export type AdminSubmissionListResponse = PaginatedResult<AdminSubmissionListItem>;
@@ -207,19 +216,16 @@ export async function fetchAdminSubmissions(params: {
 }): Promise<AdminSubmissionListResponse> {
   const page = params.page ?? 1;
   const pageSize = params.pageSize ?? 20;
-  const response = await authApi.get<AdminSubmissionListResponse>(
-    "/admin/property-submissions",
-    {
-      params: {
-        status: params.status ?? "",
-        page,
-        pageSize,
-        ...(params.include_deleted ? { include_deleted: true } : {}),
-      },
+  const response = await authApi.get<AdminSubmissionListWire>("/admin/property-submissions", {
+    params: {
+      status: params.status ?? "",
+      page,
+      pageSize,
+      ...(params.include_deleted ? { include_deleted: true } : {}),
     },
-  );
+  });
   const payload = response.data;
-  return createPaginatedResult(payload.items, payload.pagination, { page, pageSize });
+  return createPaginatedResultFromListWire<AdminSubmissionListItem>(payload, { page, pageSize });
 }
 
 /**
@@ -247,18 +253,21 @@ export type AdminDraftSubmissionItem = {
 
 export type AdminDraftSubmissionsListData = PaginatedResult<AdminDraftSubmissionItem>;
 
+type AdminDraftListWire = ListPaginationWire & {
+  items?: AdminDraftSubmissionItem[] | null;
+};
+
 export async function fetchAdminPropertyDrafts(params: {
   page?: number;
   pageSize?: number;
 } = {}): Promise<AdminDraftSubmissionsListData> {
   const page = params.page ?? 1;
   const pageSize = params.pageSize ?? 20;
-  const response = await authApi.get<AdminDraftSubmissionsListData>(
-    "/admin/property-submissions/drafts",
-    { params: { page, pageSize } },
-  );
+  const response = await authApi.get<AdminDraftListWire>("/admin/property-submissions/drafts", {
+    params: { page, pageSize },
+  });
   const payload = response.data;
-  return createPaginatedResult(payload.items, payload.pagination, { page, pageSize });
+  return createPaginatedResultFromListWire<AdminDraftSubmissionItem>(payload, { page, pageSize });
 }
 
 export async function reviewAdminSubmission(
