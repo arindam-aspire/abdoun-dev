@@ -60,7 +60,6 @@ import {
   setStepProgressFromServer,
   setSubmissionMeta,
   initializeNewPropertyWizard,
-  setWizardMode,
 } from "./addPropertyWizardSlice";
 import { ADD_PROPERTY_STEP_ORDER } from "./addPropertyWizard.types";
 
@@ -99,7 +98,14 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
   const isRejectedResubmit =
     isReviewStep && canEdit && wizardState.submissionStatus === "rejected";
   const isAdmin = wizardMode === "admin";
-  // When an agent is editing a previously rejected submission, hide "Save as Draft"
+  const isUser = wizardMode === "user";
+  // Listings landing for back/cancel/post-submit, parameterized by mode (agent / admin / user).
+  const listingsHref = isAdmin
+    ? `/${locale}/admin-dashboard/listings`
+    : isUser
+      ? `/${locale}/my-listings`
+      : `/${locale}/agent-dashboard/listings`;
+  // When an agent or user is editing a previously rejected submission, hide "Save as Draft"
   // to avoid implying a new draft flow; the primary action is "Resubmit".
   const shouldHideSaveAsDraft = !isAdmin && isRejectedResubmit;
 
@@ -149,8 +155,7 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
             if (cancelled) return;
             dispatch(rehydrateAddPropertyWizard(wizardStateFromApiSubmission(sub)));
           }
-          // `rehydrateAddPropertyWizard` replaces the whole slice; re-assert mode.
-          dispatch(setWizardMode(isAdmin ? "admin" : "agent"));
+          // `rehydrateAddPropertyWizard` preserves `wizardMode`, so no re-assert is needed here.
         } catch (e) {
           if (!cancelled) {
             showToast("error", messageForSubmitError(e));
@@ -350,7 +355,7 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
   }, [canEdit, leaveModal.href, saveDraftToServer, proceedNavigate]);
 
   const handleBack = () => {
-    requestNavigate(isAdmin ? `/${locale}/admin-dashboard/listings` : `/${locale}/agent-dashboard/listings`);
+    requestNavigate(listingsHref);
   };
 
   const confirmEmptyDraftSave = useCallback(async () => {
@@ -482,7 +487,7 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
           }),
         );
         dispatch(resetAddPropertyWizard());
-        router.push(`/${locale}/agent-dashboard/listings?submitted=1`);
+        router.push(`${listingsHref}?submitted=1`);
         return;
       }
 
@@ -530,9 +535,9 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
       );
       dispatch(resetAddPropertyWizard());
       if (wasResubmitFromRejected) {
-        router.push(`/${locale}/agent-dashboard/listings?resubmitted=1`);
+        router.push(`${listingsHref}?resubmitted=1`);
       } else {
-        router.push(`/${locale}/agent-dashboard/listings?submitted=1`);
+        router.push(`${listingsHref}?submitted=1`);
       }
     } catch (e) {
       showToast("error", messageForSubmitError(e));

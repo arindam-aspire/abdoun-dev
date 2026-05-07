@@ -25,7 +25,10 @@
     "mySavedSearches": "My Saved Searches",
     "myRecentlyViewed": "My Recently Viewed",
     "myAccountSettings": "My Account Settings",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "myListings": "My Listings",
+    "listYourProperty": "List Your Property",
+    "addNewProperty": "Add New Property"
   },
   "home": {
     "heroTitle": "Find your next property in Abdoun and beyond",

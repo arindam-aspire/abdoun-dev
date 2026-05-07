@@ -31,7 +31,7 @@ export type AddPropertyWorkflowStatus =
   | "verified"
   | "rejected";
 
-export type AddPropertyWizardMode = "agent" | "admin";
+export type AddPropertyWizardMode = "agent" | "admin" | "user";
 
 function touch(state: { dirty: boolean }) {
   state.dirty = true;
@@ -418,9 +418,15 @@ const addPropertyWizardSlice = createSlice({
     },
     initializeNewPropertyWizard: () => buildFreshInitialState(),
     resetAddPropertyWizard: () => buildFreshInitialState(),
-    /** Replaces the entire wizard slice (used when loading a draft from GET submission). */
-    rehydrateAddPropertyWizard: (_state, action: PayloadAction<AddPropertyWizardState>) =>
-      action.payload,
+    /**
+     * Replaces the entire wizard slice (used when loading a draft from GET submission).
+     * Preserves the current `wizardMode` so the calling page (agent / admin / user) is not lost
+     * when rehydrating from server payload.
+     */
+    rehydrateAddPropertyWizard: (state, action: PayloadAction<AddPropertyWizardState>) => ({
+      ...action.payload,
+      wizardMode: state.wizardMode,
+    }),
     /** Merged `payload` from PATCH / POST without changing `activeStep` (partial merge). */
     mergeServerPayloadAfterPatch(state, action: PayloadAction<Record<string, unknown>>) {
       applyPatchResponsePayloadToWizard(state, action.payload);

@@ -222,9 +222,22 @@ function mapSortConfigToApiSort(
   return {};
 }
 
-export function AgentListingsPage() {
+export type AgentListingsPageMode = "agent" | "user";
+
+export interface AgentListingsPageProps {
+  /** Render mode. `agent` (default) keeps the existing /agent-dashboard URLs; `user` renders the
+   * same data + actions under the public `/my-listings` URL space and disables agent-only mock
+   * shortcuts. */
+  mode?: AgentListingsPageMode;
+}
+
+export function AgentListingsPage({ mode = "agent" }: AgentListingsPageProps = {}) {
   const dispatch = useAppDispatch();
   const locale = useLocale() as AppLocale;
+  const isUserMode = mode === "user";
+  const addPropertyBasePath = isUserMode
+    ? `/${locale}/my-listings/add-property`
+    : `/${locale}/agent-dashboard/add-property`;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -505,19 +518,22 @@ export function AgentListingsPage() {
         render: (row) => {
           const canEditApi = row.isFromApi && canEditSubmission(row) && Boolean(row.submissionId);
           const canDeleteApi = row.isFromApi && canDeleteSubmission(row) && Boolean(row.submissionId);
+          // In `user` mode we never expose mock-only shortcuts; only real API rows are actionable.
           const canEditMock =
+            !isUserMode &&
             !row.isFromApi &&
             row.status !== "active" &&
             row.status !== "pending_approval" &&
             row.status !== "approved";
-          const canPublishMock = !row.isFromApi && row.status === "approved";
-          const canDeleteMockRow = !row.isFromApi && row.status !== "pending_approval";
+          const canPublishMock = !isUserMode && !row.isFromApi && row.status === "approved";
+          const canDeleteMockRow =
+            !isUserMode && !row.isFromApi && row.status !== "pending_approval";
           const deleteBusy = deleteSubmitting && deleteTarget?.id === row.id;
 
           const viewHref = `/${locale}/property-details/${row.id}`;
           const editHref =
             row.submissionId
-              ? `/${locale}/agent-dashboard/add-property?submission=${encodeURIComponent(row.submissionId)}`
+              ? `${addPropertyBasePath}?submission=${encodeURIComponent(row.submissionId)}`
               : null;
 
           const items = [
@@ -667,6 +683,8 @@ export function AgentListingsPage() {
     locale,
     router,
     t,
+    isUserMode,
+    addPropertyBasePath,
   ]);
 
   const statusOptions = LISTING_STATUS_FILTERS.map((status) => ({
@@ -800,7 +818,7 @@ export function AgentListingsPage() {
           </p>
         </div>
         <Link
-          href={`/${locale}/agent-dashboard/add-property`}
+          href={addPropertyBasePath}
           onClick={() => {
             dispatch(initializeNewPropertyWizard());
           }}
@@ -833,7 +851,7 @@ export function AgentListingsPage() {
                   </p>
                 </div>
                 <Link
-                  href={`/${locale}/agent-dashboard/add-property?submission=${encodeURIComponent(d.submission_id)}`}
+                  href={`${addPropertyBasePath}?submission=${encodeURIComponent(d.submission_id)}`}
                   className="inline-flex shrink-0 items-center justify-center rounded-lg border border-primary bg-primary px-3 py-1.5 text-size-sm font-medium text-white hover:bg-primary/90"
                 >
                   {t("continueDraft")}

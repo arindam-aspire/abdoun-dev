@@ -25,7 +25,10 @@
     "mySavedSearches": "Mes recherches enregistrees",
     "myRecentlyViewed": "Vus recemment",
     "myAccountSettings": "Parametres du compte",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "myListings": "Mes annonces",
+    "listYourProperty": "Annoncer un bien",
+    "addNewProperty": "Ajouter un bien"
   },
   "home": {
     "heroTitle": "Trouvez votre prochain bien a Abdoun et ailleurs",

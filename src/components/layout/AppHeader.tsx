@@ -9,12 +9,6 @@ import {
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { ProfileModal } from "@/features/profile/components/modals/ProfileModal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import {
-  DialogDescription,
-  DialogFooter,
-  DialogRoot,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { LanguageSelect } from "@/components/ui/language-select";
 import { Toast } from "@/components/ui/toast";
 import { logout } from "@/features/auth/authSlice";
@@ -59,7 +53,6 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
   );
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [isListPropertyModalOpen, setIsListPropertyModalOpen] = useState(false);
   const [isAccountSettingsHover, setIsAccountSettingsHover] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -257,6 +250,26 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
     setIsAccountSettingsHover(false);
     router.push(`/${activeLanguage}/settings/profile`);
   };
+  /**
+   * Header action: "List Your Property".
+   * Visible only to `guest` and `user` (per `app-header.nav.json`).
+   * - Guests are prompted to authenticate.
+   * - Users are routed to their listing management page (`/{locale}/my-listings`),
+   *   which reuses the same listings + add-property wizard as agents.
+   */
+  const handleListPropertyClick = () => {
+    if (!user) {
+      setIsAuthOpen(true);
+      return;
+    }
+    if (user.role === "user") {
+      router.push(`/${activeLanguage}/my-listings`);
+      return;
+    }
+    // Defensive fallback: agents/admins should not see this button at all
+    // (filtered via `canShowListProperty`), but if reached, do nothing destructive.
+  };
+
   const handleLogout = () => {
     if (user) {
       dispatch(clearProfileForUser(user.id));
@@ -402,13 +415,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
           {canShowListProperty ? (
             <button
               type="button"
-              onClick={() => {
-                if (!user) {
-                  setIsAuthOpen(true);
-                  return;
-                }
-                setIsListPropertyModalOpen(true);
-              }}
+              onClick={handleListPropertyClick}
               className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#ffe03a] px-6 text-sm font-semibold text-[#203f5f] shadow-[0_6px_18px_rgba(255,224,58,0.28)] transition hover:brightness-95 shrink-0"
             >
               <PlusCircle className="h-4 w-4" strokeWidth={2} />
@@ -739,11 +746,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                 type="button"
                 onClick={() => {
                   closeMobileMenu();
-                  if (!user) {
-                    setIsAuthOpen(true);
-                    return;
-                  }
-                  setIsListPropertyModalOpen(true);
+                  handleListPropertyClick();
                 }}
                 className="w-full inline-flex h-12 items-center justify-center rounded-xl border-2 border-[var(--brand-accent)] bg-[var(--brand-accent)] text-sm font-semibold text-[var(--brand-secondary)] transition hover:brightness-95"
               >
@@ -790,24 +793,6 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
           duration={1800}
         />
       ) : null}
-      <DialogRoot
-        open={isListPropertyModalOpen}
-        onClose={() => setIsListPropertyModalOpen(false)}
-      >
-        <DialogTitle>{t("nav.listProperty")}</DialogTitle>
-        <DialogDescription>
-          Listing flow will open here as a modal. No page navigation is used.
-        </DialogDescription>
-        <DialogFooter>
-          <button
-            type="button"
-            onClick={() => setIsListPropertyModalOpen(false)}
-            className="inline-flex h-9 items-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-zinc-100"
-          >
-            Close
-          </button>
-        </DialogFooter>
-      </DialogRoot>
     </header>
   );
 }

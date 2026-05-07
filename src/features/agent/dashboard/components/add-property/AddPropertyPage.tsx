@@ -132,7 +132,11 @@ export function AddPropertyPage({ mode = "agent" }: Props) {
   );
 
   const listingsHref =
-    mode === "admin" ? `/${locale}/admin-dashboard/listings` : `/${locale}/agent-dashboard/listings`;
+    mode === "admin"
+      ? `/${locale}/admin-dashboard/listings`
+      : mode === "user"
+        ? `/${locale}/my-listings`
+        : `/${locale}/agent-dashboard/listings`;
 
   useEffect(() => {
     const onDocClickCapture = (e: MouseEvent) => {
@@ -152,6 +156,8 @@ export function AddPropertyPage({ mode = "agent" }: Props) {
       if (nextPath === currentPath) return;
       if (mode === "admin") {
         if (!pathname.includes("/admin-dashboard/add-property")) return;
+      } else if (mode === "user") {
+        if (!pathname.includes("/my-listings/add-property")) return;
       } else {
         if (!pathname.includes("/agent-dashboard/add-property")) return;
       }

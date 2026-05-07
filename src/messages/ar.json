@@ -25,7 +25,10 @@
     "mySavedSearches": "عمليات البحث المحفوظة",
     "myRecentlyViewed": "المشاهدات الأخيرة",
     "myAccountSettings": "إعدادات الحساب",
-    "notifications": "الإشعارات"
+    "notifications": "الإشعارات",
+    "myListings": "عقاراتي",
+    "listYourProperty": "أضف عقارك",
+    "addNewProperty": "إضافة عقار جديد"
   },
   "home": {
     "heroTitle": "ابحث عن عقارك القادم في عبدون وما حولها",

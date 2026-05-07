@@ -25,7 +25,10 @@
     "mySavedSearches": "Mis busquedas guardadas",
     "myRecentlyViewed": "Vistos recientemente",
     "myAccountSettings": "Configuracion de cuenta",
-    "notifications": "Notificaciones"
+    "notifications": "Notificaciones",
+    "myListings": "Mis anuncios",
+    "listYourProperty": "Anuncia tu propiedad",
+    "addNewProperty": "Agregar propiedad"
   },
   "home": {
     "heroTitle": "Encuentra tu proxima propiedad en Abdoun y mas alla",

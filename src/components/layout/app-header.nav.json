@@ -25,6 +25,13 @@
       "publicOnly": true
     },
     {
+      "id": "userListings",
+      "label": "My Listings",
+      "path": "/my-listings",
+      "roles": ["user"],
+      "placement": "profile"
+    },
+    {
       "id": "agentDashboard",
       "label": "Dashboard",
       "path": "/agent-dashboard",
