@@ -13,6 +13,9 @@ export function getAdminRedirectPathForLegacyAgentPortal(
   const listingsPrefix = "agent-dashboard/listings";
   if (rest === listingsPrefix || rest.startsWith(`${listingsPrefix}/`)) {
     const suffix = rest.slice(listingsPrefix.length);
+    if (suffix === "/drafts" || suffix.startsWith("/drafts/")) {
+      return `${prefix}admin-dashboard/listings/drafts`;
+    }
     return `${prefix}admin-dashboard/listings${suffix}`;
   }
 

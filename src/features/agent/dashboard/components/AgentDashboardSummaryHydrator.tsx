@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import {
   fetchAdminManageListingsSidebarTotal,
+  fetchAgentListingsSidebarCounts,
   fetchAgentDashboardSummary,
 } from "@/features/agent/dashboard/agentDashboardSummarySlice";
 import { selectAgentDashboardCachedData, selectCurrentUser } from "@/store/selectors";
@@ -27,6 +28,7 @@ export function AgentDashboardSummaryHydrator() {
     }
 
     if (user?.role !== "agent") return;
+    void dispatch(fetchAgentListingsSidebarCounts());
     if (cached && user.id && dashboardCacheAuthUserId === user.id) return;
     void dispatch(fetchAgentDashboardSummary());
   }, [user?.id, user?.role, cached, dashboardCacheAuthUserId, dispatch]);

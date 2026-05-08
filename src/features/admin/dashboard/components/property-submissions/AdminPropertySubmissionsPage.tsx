@@ -175,7 +175,16 @@ function canShowContinueDraft(row: AdminSubmissionListItem): boolean {
   return !isDeletedRow(row) && (status === "draft" || status === "in_progress");
 }
 
-export function AdminPropertySubmissionsPage() {
+export type AdminPropertySubmissionsSection = "manage" | "drafts";
+
+type AdminPropertySubmissionsPageProps = {
+  section?: AdminPropertySubmissionsSection;
+};
+
+export function AdminPropertySubmissionsPage({
+  section = "manage",
+}: AdminPropertySubmissionsPageProps = {}) {
+  const isDraftsSection = section === "drafts";
   const locale = useLocale() as AppLocale;
   const router = useRouter();
   const pathname = usePathname();
@@ -289,7 +298,12 @@ export function AdminPropertySubmissionsPage() {
     setLoading(true);
     setError(null);
     try {
-      await loadDrafts();
+      if (isDraftsSection) {
+        await loadDrafts();
+      } else {
+        setDrafts([]);
+        setDraftsTotal(0);
+      }
       const res = await listAdminPropertySubmissions({
         page: currentPage,
         pageSize,
@@ -304,7 +318,7 @@ export function AdminPropertySubmissionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, loadDrafts, pageSize, statusFilter]);
+  }, [currentPage, isDraftsSection, loadDrafts, pageSize, statusFilter]);
 
   useEffect(() => {
     void load();
@@ -366,7 +380,7 @@ export function AdminPropertySubmissionsPage() {
     });
   }, [filteredRows, sortConfig]);
 
-  const totalItems = listPagination.total;
+  const totalItems = isDraftsSection ? draftsTotal : listPagination.total;
   const totalPages = Math.max(1, listPagination.totalPages);
   const safePage = Math.min(currentPage, totalPages);
   const paginatedRows = useMemo(() => sortedRows, [sortedRows]);
@@ -733,10 +747,12 @@ export function AdminPropertySubmissionsPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
-            Manage Listings
+            {isDraftsSection ? "Draft Listings" : "Manage Listings"}
           </h1>
           <p className="mt-1 text-size-sm text-charcoal/70">
-            Review agent-submitted property drafts, request changes, or approve them.
+            {isDraftsSection
+              ? "View and continue unpublished draft submissions."
+              : "Review agent-submitted property drafts, request changes, or approve them."}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -753,39 +769,7 @@ export function AdminPropertySubmissionsPage() {
         </div>
       </div>
 
-      {!error && drafts.length > 0 ? (
-        <section className="rounded-2xl border border-amber-200/80 bg-amber-50/50 p-4 md:p-5">
-          <h2 className="text-size-sm fw-semibold text-charcoal">
-            Your draft listings ({draftsTotal || drafts.length})
-          </h2>
-          <p className="mt-1 text-size-sm text-charcoal/70">
-            These submissions are not published yet. Continue editing from the last saved step.
-          </p>
-          <ul className="mt-3 space-y-2">
-            {drafts.map((d) => (
-              <li
-                key={d.submission_id}
-                className="flex flex-col gap-2 rounded-xl border border-subtle bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-charcoal">{d.title?.trim() || "Untitled draft"}</p>
-                  <p className="text-size-xs text-charcoal/60">
-                    {d.status} · Step {d.current_step ?? "—"}{" "}
-                    {d.updated_at ? `· ${fmtDateTime(d.updated_at)}` : null}
-                  </p>
-                </div>
-                <Link
-                  href={`/${locale}/admin-dashboard/add-property?submission=${encodeURIComponent(d.submission_id)}`}
-                  className="inline-flex shrink-0 items-center justify-center rounded-lg border border-primary bg-primary px-3 py-1.5 text-size-sm font-medium text-white hover:bg-primary/90"
-                >
-                  Continue
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
+      {!isDraftsSection ? (
       <Card className="rounded-xl border-subtle">
         <CardHeader className="flex flex-col gap-3 space-y-0 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2">
@@ -881,6 +865,44 @@ export function AdminPropertySubmissionsPage() {
           />
         </CardContent>
       </Card>
+      ) : (
+      <section className="rounded-2xl border border-subtle bg-white p-4 md:p-5">
+        <h2 className="text-size-sm fw-semibold text-charcoal">
+          Your draft listings ({draftsTotal || drafts.length})
+        </h2>
+        <p className="mt-1 text-size-sm text-charcoal/70">
+          These submissions are not published yet. Continue editing from the last saved step.
+        </p>
+        {drafts.length === 0 ? (
+          <div className="mt-4 rounded-xl border border-dashed border-subtle px-4 py-8 text-center text-sm text-charcoal/65">
+            No draft listings found.
+          </div>
+        ) : (
+          <ul className="mt-3 space-y-2">
+            {drafts.map((d) => (
+              <li
+                key={d.submission_id}
+                className="flex flex-col gap-2 rounded-xl border border-subtle bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-charcoal">{d.title?.trim() || "Untitled draft"}</p>
+                  <p className="text-size-xs text-charcoal/60">
+                    {d.status} · Step {d.current_step ?? "—"}{" "}
+                    {d.updated_at ? `· ${fmtDateTime(d.updated_at)}` : null}
+                  </p>
+                </div>
+                <Link
+                  href={`/${locale}/admin-dashboard/add-property?submission=${encodeURIComponent(d.submission_id)}`}
+                  className="inline-flex shrink-0 items-center justify-center rounded-lg border border-primary bg-primary px-3 py-1.5 text-size-sm font-medium text-white hover:bg-primary/90"
+                >
+                  Continue
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+      )}
 
       <DialogRoot
         open={reasonDialog.open}

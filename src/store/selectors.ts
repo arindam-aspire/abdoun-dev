@@ -47,6 +47,48 @@ const selectAdminManageListingsSidebarBadge = (state: RootState): number => {
   return -1;
 };
 
+const selectAdminDraftListingsSidebarBadge = (state: RootState): number => {
+  const s = state.agentDashboardSummary;
+  const uid = state.auth.userId;
+  if (
+    s.adminManageListingsTotalStatus === "succeeded" &&
+    s.adminDraftListingsTotal !== null &&
+    uid != null &&
+    s.adminListingsCountsAuthUserId === uid
+  ) {
+    return s.adminDraftListingsTotal;
+  }
+  return -1;
+};
+
+const selectAgentManageListingsSidebarBadge = (state: RootState): number => {
+  const s = state.agentDashboardSummary;
+  const uid = state.auth.userId;
+  if (
+    s.agentListingsCountsStatus === "succeeded" &&
+    s.agentManageListingsTotal !== null &&
+    uid != null &&
+    s.agentListingsCountsAuthUserId === uid
+  ) {
+    return s.agentManageListingsTotal;
+  }
+  return -1;
+};
+
+const selectAgentDraftListingsSidebarBadge = (state: RootState): number => {
+  const s = state.agentDashboardSummary;
+  const uid = state.auth.userId;
+  if (
+    s.agentListingsCountsStatus === "succeeded" &&
+    s.agentDraftListingsTotal !== null &&
+    uid != null &&
+    s.agentListingsCountsAuthUserId === uid
+  ) {
+    return s.agentDraftListingsTotal;
+  }
+  return -1;
+};
+
 const selectLeadsSidebarBadge = (state: RootState): number => {
   const s = state.agentDashboardSummary;
   const uid = state.auth.userId;
@@ -85,6 +127,9 @@ export const selectSidebarCounts = createSelector(
     selectSavedSearchesItems,
     selectAdminUsersSidebarBadge,
     selectAdminManageListingsSidebarBadge,
+    selectAdminDraftListingsSidebarBadge,
+    selectAgentManageListingsSidebarBadge,
+    selectAgentDraftListingsSidebarBadge,
     selectLeadsSidebarBadge,
   ],
   (
@@ -96,6 +141,9 @@ export const selectSidebarCounts = createSelector(
     savedSearchItems,
     adminUsersSidebarTotal,
     adminManageListingsTotal,
+    adminDraftListingsTotal,
+    agentManageListingsTotal,
+    agentDraftListingsTotal,
     leadsSidebarTotal,
   ): Record<string, number> => {
     const totalProperties = propertySearch.total;
@@ -109,14 +157,17 @@ export const selectSidebarCounts = createSelector(
     // bundle in Redux (`agentDashboardSummary` / `setAgentDashboardCache`), not from search.
     // Admins: `GET /admin/property-submissions` total via `fetchAdminManageListingsSidebarTotal` (-1 hides badge).
     const totalListings = isAgent
-      ? agentSummaryCountsValid
-        ? agentDashboardSummary.totalProperties
-        : -1
+      ? agentManageListingsTotal
       : isAdmin
         ? adminManageListingsTotal
         : agentDashboardSummary.totalProperties > 0
           ? agentDashboardSummary.totalProperties
           : propertySearch.items.length;
+    const totalDraftListings = isAgent
+      ? agentDraftListingsTotal
+      : isAdmin
+        ? adminDraftListingsTotal
+        : -1;
     const totalSavedProperties = favouriteIds.length;
     const totalFavouriteProperties = favouriteIds.length;
     const totalSavedSearches = savedSearchItems.length;
@@ -128,6 +179,7 @@ export const selectSidebarCounts = createSelector(
       totalAgents: isAdmin ? adminAgentsTotal : -1,
       totalProperties,
       totalListings,
+      totalDraftListings,
       totalSavedProperties,
       totalFavouriteProperties,
       totalSavedSearches,

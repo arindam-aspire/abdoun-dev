@@ -15,6 +15,7 @@ import {
   BarChart,
   Search,
   HeartIcon,
+  FileText,
 } from "lucide-react";
 
 export type SidebarRole = "admin" | "agent";
@@ -133,6 +134,15 @@ export const sidebarConfig: SidebarSection[] = [
        icon: List,
        roles: ["admin", "agent"],
        countKey: "totalListings",
+      },
+      {
+       id: "draftListings",
+       label: "Draft Listings",
+       path: "/agent-dashboard/listings/drafts",
+       adminPath: "/admin-dashboard/listings/drafts",
+       icon: FileText,
+       roles: ["admin", "agent"],
+       countKey: "totalDraftListings",
       },
       {
         id: "favouriteProperties",

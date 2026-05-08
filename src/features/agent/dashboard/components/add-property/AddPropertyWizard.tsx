@@ -19,7 +19,10 @@ import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { getApiErrorMessage } from "@/lib/http/apiError";
 import { queueRouteToast } from "@/lib/ui/routeToast";
 import { store } from "@/store";
-import { fetchAdminManageListingsSidebarTotal } from "@/features/agent/dashboard/agentDashboardSummarySlice";
+import {
+  fetchAdminManageListingsSidebarTotal,
+  fetchAgentListingsSidebarCounts,
+} from "@/features/agent/dashboard/agentDashboardSummarySlice";
 import {
   createAndSubmitPropertySubmission,
   createPropertySubmissionDraft,
@@ -209,6 +212,9 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
               }),
             );
           }
+          if (!isAdmin) {
+            void dispatch(fetchAgentListingsSidebarCounts({ force: true }));
+          }
           return true;
         }
 
@@ -238,6 +244,9 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
             }),
           );
         }
+        if (!isAdmin) {
+          void dispatch(fetchAgentListingsSidebarCounts({ force: true }));
+        }
         return true;
       }
       if (!id) {
@@ -263,6 +272,9 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
                 : {}),
             }),
           );
+        }
+        if (!isAdmin) {
+          void dispatch(fetchAgentListingsSidebarCounts({ force: true }));
         }
         return true;
       }
@@ -291,6 +303,9 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
               : {}),
           }),
         );
+      }
+      if (!isAdmin) {
+        void dispatch(fetchAgentListingsSidebarCounts({ force: true }));
       }
       return true;
     } catch (e) {
@@ -487,6 +502,7 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
           }),
         );
         dispatch(resetAddPropertyWizard());
+        void dispatch(fetchAgentListingsSidebarCounts({ force: true }));
         router.push(`${listingsHref}?submitted=1`);
         return;
       }
@@ -534,6 +550,7 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
         }),
       );
       dispatch(resetAddPropertyWizard());
+      void dispatch(fetchAgentListingsSidebarCounts({ force: true }));
       if (wasResubmitFromRejected) {
         router.push(`${listingsHref}?resubmitted=1`);
       } else {

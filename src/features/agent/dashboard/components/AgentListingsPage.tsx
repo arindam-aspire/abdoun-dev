@@ -39,6 +39,7 @@ import { getApiErrorMessage } from "@/lib/http/apiError";
 import { useAppDispatch } from "@/hooks/storeHooks";
 import { useTranslations } from "@/hooks/useTranslations";
 import { initializeNewPropertyWizard } from "@/features/agent/dashboard/components/add-property/addPropertyWizardSlice";
+import { fetchAgentListingsSidebarCounts } from "@/features/agent/dashboard/agentDashboardSummarySlice";
 import { DialogRoot, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import {
   ActionsMenu,
@@ -223,15 +224,20 @@ function mapSortConfigToApiSort(
 }
 
 export type AgentListingsPageMode = "agent" | "user";
+export type AgentListingsSection = "manage" | "drafts";
 
 export interface AgentListingsPageProps {
   /** Render mode. `agent` (default) keeps the existing /agent-dashboard URLs; `user` renders the
    * same data + actions under the public `/my-listings` URL space and disables agent-only mock
    * shortcuts. */
   mode?: AgentListingsPageMode;
+  section?: AgentListingsSection;
 }
 
-export function AgentListingsPage({ mode = "agent" }: AgentListingsPageProps = {}) {
+export function AgentListingsPage({
+  mode = "agent",
+  section = "manage",
+}: AgentListingsPageProps = {}) {
   const dispatch = useAppDispatch();
   const locale = useLocale() as AppLocale;
   const isUserMode = mode === "user";
@@ -243,6 +249,7 @@ export function AgentListingsPage({ mode = "agent" }: AgentListingsPageProps = {
   const searchParams = useSearchParams();
   const t = useTranslations("agentDashboard");
   const tSearch = useTranslations("searchResult");
+  const isDraftsSection = section === "drafts";
   const [listings, setListings] = useState<AgentListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<AgentListing | null>(null);
@@ -342,23 +349,39 @@ export function AgentListingsPage({ mode = "agent" }: AgentListingsPageProps = {
     const apiStatus = mapStatusFilterToApiStatus(statusFilter);
     const sort = mapSortConfigToApiSort(sortConfig);
 
-    Promise.all([
-      fetchAgentProperties({
-        page: currentPage,
-        pageSize,
-        search: debouncedQuery.trim() ? debouncedQuery.trim() : undefined,
-        status: apiStatus,
-        sortBy: sort.sortBy,
-        sortOrder: sort.sortOrder,
-      }),
-      // Drafts stay separate and unchanged.
-      fetchAgentPropertyDrafts({ page: 1, pageSize: 20 }),
-    ])
+    const listingsPromise = fetchAgentProperties({
+      page: currentPage,
+      pageSize,
+      search: debouncedQuery.trim() ? debouncedQuery.trim() : undefined,
+      status: apiStatus,
+      sortBy: sort.sortBy,
+      sortOrder: sort.sortOrder,
+    });
+    const draftsPromise = isDraftsSection
+      ? fetchAgentPropertyDrafts({ page: 1, pageSize: 20 })
+      : Promise.resolve(null);
+
+    Promise.all([listingsPromise, draftsPromise])
       .then(([propertiesRes, draftsRes]) => {
-        setListings(propertiesRes.items.map(mapAgentPropertyItemToAgentListing));
+        const resolvedListings = propertiesRes.items.map(mapAgentPropertyItemToAgentListing);
+        setListings(
+          isDraftsSection
+            ? []
+            : resolvedListings.filter(
+                (row) => (row.submissionStatus?.trim().toLowerCase() ?? "") !== "draft",
+              ),
+        );
         setListPagination(propertiesRes.pagination);
-        setDraftSubmissions(draftsRes.items ?? []);
-        setDraftSubmissionsTotal(draftsRes.pagination.total);
+
+        if (isDraftsSection && draftsRes) {
+          setDraftSubmissions(draftsRes.items ?? []);
+          setDraftSubmissionsTotal(draftsRes.pagination.total);
+        } else {
+          setDraftSubmissions([]);
+          setDraftSubmissionsTotal(0);
+        }
+
+        void dispatch(fetchAgentListingsSidebarCounts({ force: true }));
       })
       .catch((e: unknown) => {
         const message = getApiErrorMessage(e);
@@ -368,11 +391,12 @@ export function AgentListingsPage({ mode = "agent" }: AgentListingsPageProps = {
         setDraftSubmissionsTotal(0);
         setLoadError(message);
         setLoadErrorToast(message);
+        void dispatch(fetchAgentListingsSidebarCounts({ force: true }));
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [currentPage, debouncedQuery, pageSize, sortConfig, statusFilter]);
+  }, [currentPage, debouncedQuery, dispatch, isDraftsSection, pageSize, sortConfig, statusFilter]);
 
   useEffect(() => {
     load();
@@ -396,7 +420,7 @@ export function AgentListingsPage({ mode = "agent" }: AgentListingsPageProps = {
     router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
   }, [searchParams, pathname, router]);
 
-  const totalItems = listPagination.total ?? 0;
+  const totalItems = isDraftsSection ? draftSubmissionsTotal : listPagination.total ?? 0;
   const totalPages = Math.max(1, listPagination.totalPages ?? 1);
   const safePage = Math.min(currentPage, totalPages);
 
@@ -808,14 +832,18 @@ export function AgentListingsPage({ mode = "agent" }: AgentListingsPageProps = {
       <div className="flex items-center justify-between gap-4 px-1">
         <div>
           <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
-            {t("manageListingsTitle")}
+            {isDraftsSection ? "Draft Listings" : t("manageListingsTitle")}
           </h1>
           <p className="mt-1 text-size-sm text-charcoal/70">
-            {t("manageListingsSubtitle")}
+            {isDraftsSection
+              ? "Continue and publish draft listings saved in progress."
+              : t("manageListingsSubtitle")}
           </p>
-          <p className="mt-2 max-w-2xl text-size-xs text-charcoal/55">
-            {t("listingsActionsViewOnlyNote")}
-          </p>
+          {!isDraftsSection ? (
+            <p className="mt-2 max-w-2xl text-size-xs text-charcoal/55">
+              {t("listingsActionsViewOnlyNote")}
+            </p>
+          ) : null}
         </div>
         <Link
           href={addPropertyBasePath}
@@ -829,40 +857,8 @@ export function AgentListingsPage({ mode = "agent" }: AgentListingsPageProps = {
         </Link>
       </div>
 
-      {!loadError && draftSubmissions.length > 0 ? (
-        <section className="rounded-2xl border border-amber-200/80 bg-amber-50/50 p-4 md:p-5">
-          <h2 className="text-size-sm fw-semibold text-charcoal">
-            {t("draftSubmissionsHeading", { count: draftSubmissionsTotal || draftSubmissions.length })}
-          </h2>
-          <p className="mt-1 text-size-sm text-charcoal/70">{t("draftSubmissionsHint")}</p>
-          <ul className="mt-3 space-y-2">
-            {draftSubmissions.map((d) => (
-              <li
-                key={d.submission_id}
-                className="flex flex-col gap-2 rounded-xl border border-subtle bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-charcoal">
-                    {d.title?.trim() || t("draftUntitled")}
-                  </p>
-                  <p className="text-size-xs text-charcoal/60">
-                    {d.status} · {t("draftStepLabel", { step: d.current_step ?? "—" })}{" "}
-                    {d.updated_at ? `· ${formatDate(d.updated_at)}` : null}
-                  </p>
-                </div>
-                <Link
-                  href={`${addPropertyBasePath}?submission=${encodeURIComponent(d.submission_id)}`}
-                  className="inline-flex shrink-0 items-center justify-center rounded-lg border border-primary bg-primary px-3 py-1.5 text-size-sm font-medium text-white hover:bg-primary/90"
-                >
-                  {t("continueDraft")}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      <DataTable
+      {!isDraftsSection ? (
+        <DataTable
         className="rounded-xl border-subtle"
           headerLeft={
             <span className="inline-flex items-center gap-2">
@@ -956,7 +952,45 @@ export function AgentListingsPage({ mode = "agent" }: AgentListingsPageProps = {
               },
             },
           }}
-      />
+        />
+      ) : (
+        <section className="rounded-2xl border border-subtle bg-white p-4 md:p-5">
+          <h2 className="text-size-sm fw-semibold text-charcoal">
+            {t("draftSubmissionsHeading", { count: draftSubmissionsTotal || draftSubmissions.length })}
+          </h2>
+          <p className="mt-1 text-size-sm text-charcoal/70">{t("draftSubmissionsHint")}</p>
+          {draftSubmissions.length === 0 ? (
+            <div className="mt-4 rounded-xl border border-dashed border-subtle px-4 py-8 text-center text-sm text-charcoal/65">
+              No draft listings found.
+            </div>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {draftSubmissions.map((d) => (
+                <li
+                  key={d.submission_id}
+                  className="flex flex-col gap-2 rounded-xl border border-subtle bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-charcoal">
+                      {d.title?.trim() || t("draftUntitled")}
+                    </p>
+                    <p className="text-size-xs text-charcoal/60">
+                      {d.status} · {t("draftStepLabel", { step: d.current_step ?? "—" })}{" "}
+                      {d.updated_at ? `· ${formatDate(d.updated_at)}` : null}
+                    </p>
+                  </div>
+                  <Link
+                    href={`${addPropertyBasePath}?submission=${encodeURIComponent(d.submission_id)}`}
+                    className="inline-flex shrink-0 items-center justify-center rounded-lg border border-primary bg-primary px-3 py-1.5 text-size-sm font-medium text-white hover:bg-primary/90"
+                  >
+                    {t("continueDraft")}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       <DialogRoot
         open={!!deleteTarget}
