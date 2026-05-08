@@ -146,14 +146,24 @@ function canShowReviewActions(row: AdminSubmissionListItem): boolean {
   return getSubmissionStatus(row) === "submitted" && !isDeletedRow(row);
 }
 
+function hasAssignedAgent(row: AdminSubmissionListItem): boolean {
+  if (typeof row.has_assigned_agent === "boolean") return row.has_assigned_agent;
+  if (typeof row.has_assigned_agent === "number") return row.has_assigned_agent === 1;
+  if (typeof row.has_assigned_agent === "string") {
+    const normalized = row.has_assigned_agent.trim().toLowerCase();
+    if (normalized === "true" || normalized === "1" || normalized === "yes") return true;
+    if (normalized === "false" || normalized === "0" || normalized === "no") return false;
+  }
+  return Boolean(row.agent_user_id ?? row.assigned_agent_id);
+}
+
 function canShowAssignAgent(row: AdminSubmissionListItem): boolean {
   const status = getSubmissionStatus(row);
-  const agentId = row.agent_user_id ?? row.assigned_agent_id;
   return (
     Boolean(row.property_id) &&
     !isDeletedRow(row) &&
-    (status === "approved" || status === "verified") &&
-    !agentId
+    (status === "submitted" || status === "approved" || status === "verified") &&
+    !hasAssignedAgent(row)
   );
 }
 
@@ -531,6 +541,8 @@ export function AdminPropertySubmissionsPage({
         render: (row) => {
           const deleted = isDeletedRow(row);
           const canModerate = canShowReviewActions(row);
+          const hasAgentAssigned = hasAssignedAgent(row);
+          const canApprove = canModerate && hasAgentAssigned;
           const busy = actingId === row.submission_id;
           const viewHref = `/${locale}/admin-dashboard/listings/${encodeURIComponent(row.submission_id)}`;
           const canAssign = canShowAssignAgent(row);
@@ -539,7 +551,7 @@ export function AdminPropertySubmissionsPage({
           const canContinue = canShowContinueDraft(row);
 
           const menuItems = [
-            ...(!deleted && canModerate
+            ...(!deleted && canApprove
               ? [
                   {
                     key: "approve",
@@ -565,6 +577,10 @@ export function AdminPropertySubmissionsPage({
                       }
                       },
                     },
+                ]
+              : []),
+            ...(!deleted && canModerate
+              ? [
                   {
                     key: "reject",
                     label: (
@@ -703,16 +719,17 @@ export function AdminPropertySubmissionsPage({
                     hoverClassName: "bg-primary/5",
                     disabled: busy,
                     onSelect: () => {
-                      const a = document.createElement("a");
-                      a.href = viewHref;
-                      a.click();
+                      window.open(viewHref, "_blank", "noopener,noreferrer");
                     },
                   },
                 ]
               : []),
           ];
+          const sortedMenuItems = [...menuItems].sort((a, b) =>
+            String(a.key).localeCompare(String(b.key), undefined, { sensitivity: "base" }),
+          );
 
-          if (menuItems.length === 0) return null;
+          if (sortedMenuItems.length === 0) return null;
 
           return (
             <ActionsMenu
@@ -727,7 +744,7 @@ export function AdminPropertySubmissionsPage({
                   <MoreVertical />
                 </IconButton>
               }
-              items={menuItems}
+              items={sortedMenuItems}
             />
           );
         },

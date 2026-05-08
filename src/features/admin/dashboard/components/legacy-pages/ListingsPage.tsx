@@ -248,6 +248,8 @@ export function ListingsPage() {
         render: (row) => (
           <div className="flex items-center justify-end gap-2">
             <Link
+              target="_blank"
+              rel="noopener noreferrer"
               href={`/${locale}/property-details/${row.id}`}
               className="inline-flex items-center gap-1 rounded-lg border border-subtle bg-surface px-2 py-1.5 text-xs font-medium text-charcoal hover:bg-primary/5"
             >

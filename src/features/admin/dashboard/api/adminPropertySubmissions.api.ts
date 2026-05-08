@@ -25,6 +25,8 @@ export type AdminSubmissionListItem = {
   agent_user_id?: string | null;
   /** Alternate backend field name for assigned agent id. */
   assigned_agent_id?: string | null;
+  /** Backend convenience flag when the property already has an assigned agent. */
+  has_assigned_agent?: boolean | string | number | null;
   /** Numeric id used by `GET /api/v1/properties/{property_hash}` (additive backend field). */
   property_hash?: number | null;
   property_title?: string | null;

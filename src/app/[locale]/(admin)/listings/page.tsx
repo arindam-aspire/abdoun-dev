@@ -1,6 +1,6 @@
-import { ListingsPage } from "@/features/admin/dashboard/components/legacy-pages/ListingsPage";
+import { ManageListingComponent } from "@/features/listings/components/ManageListingComponent";
 
 export default function AdminListingsRoute() {
-  return <ListingsPage />;
+  return <ManageListingComponent userType="admin" />;
 }
 

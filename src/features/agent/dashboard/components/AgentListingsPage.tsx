@@ -572,7 +572,7 @@ export function AgentListingsPage({
               disabled: deleteBusy,
               className: "text-charcoal",
               hoverClassName: "bg-primary/5",
-              onSelect: () => router.push(viewHref),
+              onSelect: () => window.open(viewHref, "_blank", "noopener,noreferrer"),
             },
             ...(row.isFromApi &&
             row.submissionStatus?.toLowerCase() === "rejected" &&
@@ -682,6 +682,9 @@ export function AgentListingsPage({
                 ]
               : []),
           ];
+          const sortedItems = [...items].sort((a, b) =>
+            String(a.key).localeCompare(String(b.key), undefined, { sensitivity: "base" }),
+          );
 
           return (
             <div className="flex items-center justify-end">
@@ -692,7 +695,7 @@ export function AgentListingsPage({
                     <MoreVertical />
                   </IconButton>
                 }
-                items={items}
+                items={sortedItems}
               />
             </div>
           );
@@ -878,7 +881,7 @@ export function AgentListingsPage({
               value: statusFilter,
               onChange: (value) => onStatusChange(String(value ?? "all")),
               options: statusOptions,
-              label: "All",
+              label: "All Status",
               align: "right",
               menuClassName: "w-44",
               buttonClassName:
