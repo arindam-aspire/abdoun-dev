@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import { Bookmark } from "lucide-react";
 import type { AppLocale } from "@/i18n/routing";
@@ -11,11 +11,34 @@ import { selectCurrentUser } from "@/store/selectors";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Toast } from "@/components/ui";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  DEFAULT_PAGINATION_PAGE_SIZE,
+  PAGINATION_PAGE_SIZES,
+  Pagination,
+} from "@/components/ui/Pagination";
 import { useSavedSearches } from "@/features/saved-searches/hooks/useSavedSearches";
 import type { SavedSearchItem } from "@/features/saved-searches/savedSearchesSlice";
 import { SavedSearchList } from "@/features/saved-searches/components/SavedSearchList";
 import type { SavedSearch } from "@/features/saved-searches/types";
+import { listSavedSearchItems } from "@/features/saved-searches/api/savedSearches.api";
 import { cn } from "@/lib/cn";
+
+const PAGE_PARAM = "page";
+const PAGE_SIZE_PARAM = "pageSize";
+
+function getPageFromSearchParams(searchParams: URLSearchParams): number {
+  const page = searchParams.get(PAGE_PARAM);
+  const n = Number.parseInt(page ?? "1", 10);
+  return Number.isFinite(n) && n >= 1 ? n : 1;
+}
+
+function getPageSizeFromSearchParams(searchParams: URLSearchParams): number {
+  const raw = searchParams.get(PAGE_SIZE_PARAM);
+  const n = Number.parseInt(raw ?? String(DEFAULT_PAGINATION_PAGE_SIZE), 10);
+  return PAGINATION_PAGE_SIZES.includes(n as (typeof PAGINATION_PAGE_SIZES)[number])
+    ? n
+    : DEFAULT_PAGINATION_PAGE_SIZE;
+}
 
 function toCamelCase(value: string): string {
   const parts = value
@@ -38,16 +61,19 @@ export type SavedSearchesViewProps = {
 export function SavedSearchesView({ variant = "main" }: SavedSearchesViewProps) {
   const locale = useLocale() as AppLocale;
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isRtl = locale === "ar";
   const t = useTranslations("savedSearches");
   const authUser = useAppSelector(selectCurrentUser);
-  const { items, rename, update, remove, runUrl, load } = useSavedSearches();
+  const { rename, update, remove, runUrl } = useSavedSearches();
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [refetchNonce, setRefetchNonce] = useState(0);
+  const [apiItems, setApiItems] = useState<SavedSearchItem[]>([]);
+  const [apiTotal, setApiTotal] = useState<number | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [pendingRename, setPendingRename] = useState<{ id: string; name: string } | null>(null);
   const [runningId, setRunningId] = useState<string | null>(null);
@@ -56,28 +82,41 @@ export function SavedSearchesView({ variant = "main" }: SavedSearchesViewProps) 
     message: string;
   } | null>(null);
   const pendingDeleteItem =
-    pendingDeleteId != null ? items.find((item) => item.id === pendingDeleteId) : null;
+    pendingDeleteId != null ? apiItems.find((item) => item.id === pendingDeleteId) : null;
+
+  const currentPage = getPageFromSearchParams(searchParams);
+  const pageSize = getPageSizeFromSearchParams(searchParams);
+
+  const totalItems = apiTotal ?? apiItems.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const page = Math.min(currentPage, totalPages);
+  const shouldShowPagination = totalItems > pageSize;
 
   useEffect(() => {
     if (!authUser) return;
     let active = true;
     void (async () => {
-      setIsLoading(true);
-      setLoadError(false);
-      const result = await load(refetchNonce > 0 ? { force: true } : undefined);
-      if (!active) return;
-      if (!result.ok) {
-        setLoadError(true);
-        if (result.message) {
-          setToast({ kind: "error", message: result.message });
+      try {
+        setIsLoading(true);
+        setLoadError(false);
+        const pageData = await listSavedSearchItems({ page: currentPage, pageSize });
+        if (!active) return;
+        setApiItems(pageData.items);
+        setApiTotal(typeof pageData.total === "number" ? pageData.total : null);
+      } catch {
+        if (active) {
+          setApiItems([]);
+          setApiTotal(null);
+          setLoadError(true);
         }
+      } finally {
+        if (active) setIsLoading(false);
       }
-      setIsLoading(false);
     })();
     return () => {
       active = false;
     };
-  }, [authUser, load, refetchNonce]);
+  }, [authUser, currentPage, pageSize, refetchNonce]);
 
   const refetch = useCallback(() => {
     setRefetchNonce((n) => n + 1);
@@ -115,6 +154,7 @@ export function SavedSearchesView({ variant = "main" }: SavedSearchesViewProps) 
     setPendingRename(null);
     setEditingId(null);
     setEditName("");
+    refetch();
   }, [pendingRename, rename]);
 
   const handleDelete = useCallback((id: string) => {
@@ -134,6 +174,7 @@ export function SavedSearchesView({ variant = "main" }: SavedSearchesViewProps) 
     }
     setToast({ kind: "success", message: "Saved search deleted." });
     setPendingDeleteId(null);
+    refetch();
   }, [pendingDeleteId, remove]);
 
   const runSearch = useCallback(
@@ -215,7 +256,7 @@ export function SavedSearchesView({ variant = "main" }: SavedSearchesViewProps) 
     );
   }
 
-  if (items.length === 0) {
+  if (apiItems.length === 0) {
     return (
       <div className={outerClassEmpty} dir={isRtl ? "rtl" : "ltr"}>
         <h1 className="mb-6 text-xl font-semibold text-[var(--color-charcoal)] md:text-2xl">
@@ -240,7 +281,7 @@ export function SavedSearchesView({ variant = "main" }: SavedSearchesViewProps) 
       </h1>
 
       <SavedSearchList
-        items={items}
+        items={apiItems}
         isRtl={isRtl}
         listLabel={t("listLabel")}
         editingId={editingId}
@@ -261,6 +302,27 @@ export function SavedSearchesView({ variant = "main" }: SavedSearchesViewProps) 
           cancel: "Cancel",
         }}
       />
+      {shouldShowPagination ? (
+        <div className="mt-8 border-t border-[var(--border-subtle)] pt-6">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            pageParam={PAGE_PARAM}
+            pageSizeParam={PAGE_SIZE_PARAM}
+            translations={{
+              previous: t("paginationPrevious"),
+              next: t("paginationNext"),
+              page: t("paginationPage"),
+              of: t("paginationOf"),
+              showing: t("paginationShowing"),
+              to: t("paginationTo"),
+              results: t("paginationResults"),
+            }}
+          />
+        </div>
+      ) : null}
       <ConfirmDialog
         open={pendingDeleteId !== null}
         title="Delete Saved Search"

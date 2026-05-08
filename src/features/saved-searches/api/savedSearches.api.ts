@@ -17,6 +17,22 @@ type SavedSearchListData = {
   total?: number;
 };
 
+export type ListSavedSearchItemsParams = {
+  /** 1-based page index */
+  page?: number;
+  /** items per page */
+  pageSize?: number;
+};
+
+export type SavedSearchListPage = {
+  items: SavedSearch[];
+  /**
+   * Total saved searches count (when API supports pagination).
+   * If undefined/null, caller should treat as "unknown" and fall back.
+   */
+  total?: number;
+};
+
 type SavedSearchCreateRequest = {
   name: string;
   search_criteria: Record<string, unknown>;
@@ -50,18 +66,46 @@ const toSavedSearch = (item: SavedSearchApiItem): SavedSearch => ({
 
 let listSavedSearchesInFlight: Promise<SavedSearch[]> | null = null;
 
+export async function listSavedSearchItems(
+  params?: ListSavedSearchItemsParams,
+): Promise<SavedSearchListPage> {
+  const page = params?.page;
+  const pageSize = params?.pageSize;
+  const query =
+    page || pageSize
+      ? {
+          page: page ?? 1,
+          pageSize: pageSize,
+        }
+      : undefined;
+
+  const response = await authApi.get<SavedSearchListData | SavedSearchApiItem[]>(
+    "/saved-searches",
+    query ? { params: query } : undefined,
+  );
+  const data = response.data;
+
+  // Backward compatible: support both [items] and { items: [...], total } shapes.
+  if (Array.isArray(data)) {
+    const items = data.map(toSavedSearch);
+    return { items, total: items.length };
+  }
+
+  const items = Array.isArray(data?.items) ? data.items.map(toSavedSearch) : [];
+  return {
+    items,
+    total: typeof data?.total === "number" ? data.total : undefined,
+  };
+}
+
 export async function listSavedSearches(): Promise<SavedSearch[]> {
   if (listSavedSearchesInFlight) {
     return listSavedSearchesInFlight;
   }
   listSavedSearchesInFlight = (async () => {
     try {
-      const response = await authApi.get<SavedSearchListData | SavedSearchApiItem[]>(
-        "/saved-searches",
-      );
-      const data = response.data;
-      const items = Array.isArray(data) ? data : (data.items ?? []);
-      return items.map(toSavedSearch);
+      const page = await listSavedSearchItems();
+      return page.items;
     } finally {
       listSavedSearchesInFlight = null;
     }

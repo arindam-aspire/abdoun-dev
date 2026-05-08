@@ -51,6 +51,22 @@ type FavoriteListResponseData = {
   total?: number;
 };
 
+export type ListFavoritePropertyItemsParams = {
+  /** 1-based page index */
+  page?: number;
+  /** items per page */
+  pageSize?: number;
+};
+
+export type FavoriteListPage = {
+  items: FavoriteListItem[];
+  /**
+   * Total favorites count (when API supports pagination).
+   * If undefined/null, caller should treat as "unknown" and fall back.
+   */
+  total?: number;
+};
+
 export async function addFavoriteProperty(propertyId: number): Promise<true> {
   const response = await authApi.post<true>("/favorites", {
     property_hash: propertyId,
@@ -71,8 +87,8 @@ export async function bulkAddFavoriteProperties(propertyIds: number[]): Promise<
 }
 
 export async function listFavoriteProperties(): Promise<number[]> {
-  const items = await listFavoritePropertyItems();
-  return items
+  const page = await listFavoritePropertyItems();
+  return page.items
     .map((item) => {
       if (typeof item.property_hash === "number") return item.property_hash;
       if (typeof item.property?.id === "number") return item.property.id;
@@ -81,18 +97,35 @@ export async function listFavoriteProperties(): Promise<number[]> {
     .filter((item): item is number => typeof item === "number");
 }
 
-export async function listFavoritePropertyItems(): Promise<FavoriteListItem[]> {
+export async function listFavoritePropertyItems(
+  params?: ListFavoritePropertyItemsParams,
+): Promise<FavoriteListPage> {
+  const page = params?.page;
+  const pageSize = params?.pageSize;
+  const query =
+    page || pageSize
+      ? {
+          page: page ?? 1,
+          pageSize: pageSize,
+        }
+      : undefined;
+
   const response = await authApi.get<FavoriteListResponseData | number[]>(
     "/favorites",
+    query ? { params: query } : undefined,
   );
   const data = response.data;
 
   // Backward compatible: support both [number] and { items: [...] } shapes.
   if (Array.isArray(data)) {
-    return data
+    const items = data
       .filter((item): item is number => typeof item === "number")
       .map((propertyId) => ({ property_hash: propertyId }));
+    return { items, total: items.length };
   }
 
-  return Array.isArray(data?.items) ? data.items : [];
+  return {
+    items: Array.isArray(data?.items) ? data.items : [],
+    total: typeof data?.total === "number" ? data.total : undefined,
+  };
 }

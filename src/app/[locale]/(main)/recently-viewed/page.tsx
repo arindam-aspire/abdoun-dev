@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { Clock3, Trash2 } from "lucide-react";
 import type { AppLocale } from "@/i18n/routing";
 import { useTranslations } from "@/hooks/useTranslations";
@@ -15,6 +16,7 @@ import {
   removeRecentlyViewedProperty,
 } from "@/features/recent-views/api/recentViews.api";
 import { LoadingScreen } from "@/components/ui";
+import type { PaginationMeta } from "@/lib/api/pagination";
 
 const PAGE_SIZE = 12;
 
@@ -23,32 +25,50 @@ export default function RecentlyViewedPage() {
   const isRtl = locale === "ar";
   const tRecent = useTranslations("recentlyViewed");
   const tSearch = useTranslations("searchResult");
+  const searchParams = useSearchParams();
 
   const [recentListings, setRecentListings] = useState<SearchResultListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    page: 1,
+    pageSize: PAGE_SIZE,
+    total: 0,
+    totalPages: 1,
+    hasNext: false,
+    hasPrevious: false,
+  });
   // const [busyIds, setBusyIds] = useState<Record<number, boolean>>({});
   // const [clearBusy, setClearBusy] = useState(false);
 
-  const loadRecentViews = useCallback(async () => {
+  useEffect(() => {
+    const fromQuery = Number.parseInt(searchParams.get("page") ?? "1", 10);
+    if (Number.isFinite(fromQuery) && fromQuery >= 1) {
+      setPage(fromQuery);
+    } else {
+      setPage(1);
+    }
+  }, [searchParams]);
+
+  const loadRecentViews = useCallback(async (nextPage: number) => {
     setLoading(true);
     try {
-      const listings = await listRecentViewedListings();
-      setRecentListings(listings);
+      const result = await listRecentViewedListings({ page: nextPage, pageSize: PAGE_SIZE });
+      setRecentListings(result.items);
+      setPagination(result.pagination);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    void loadRecentViews();
-  }, [loadRecentViews]);
+    void loadRecentViews(page);
+  }, [loadRecentViews, page]);
 
-  const totalItems = recentListings.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const totalItems = pagination.total;
+  const totalPages = pagination.totalPages;
   const safePage = Math.min(page, totalPages);
-  const start = (safePage - 1) * PAGE_SIZE;
-  const listings = recentListings.slice(start, start + PAGE_SIZE);
+  const listings = recentListings;
 
   // const handleRemove = useCallback(async (propertyId: number) => {
   //   setBusyIds((prev) => ({ ...prev, [propertyId]: true }));

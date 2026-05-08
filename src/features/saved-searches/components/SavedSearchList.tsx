@@ -44,13 +44,11 @@ export function SavedSearchList({
 }: SavedSearchListProps) {
   return (
     <ul className="space-y-3" aria-label={listLabel}>
-      {[...items]
-        .sort((a, b) => b.createdAt - a.createdAt)
-        .map((item) => (
-          <li
-            key={item.id}
-            className="flex flex-col gap-2 rounded-xl border border-[var(--border-subtle)] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-          >
+      {items.map((item) => (
+        <li
+          key={item.id}
+          className="flex flex-col gap-2 rounded-xl border border-[var(--border-subtle)] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+        >
             {editingId === item.id ? (
               <>
                 <input
@@ -120,8 +118,8 @@ export function SavedSearchList({
                 </div>
               </>
             )}
-          </li>
-        ))}
+        </li>
+      ))}
     </ul>
   );
 }

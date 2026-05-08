@@ -1,6 +1,8 @@
 "use client";
 
 import { authApi } from "@/lib/http/clients";
+import { createPaginatedResult, type PaginatedResult } from "@/lib/api/pagination";
+import type { StandardApiResponse } from "@/lib/http/standardApiResponse";
 import type { SearchResultListing } from "@/features/property-search/types";
 
 type RecentViewApiItem = {
@@ -21,14 +23,38 @@ type RecentViewApiItem = {
     baths?: number | null;
     area?: string | null;
     media?: {
-      images?: string[] | null;
+      images?:
+        | Array<
+            | string
+            | {
+                url?: string | null;
+                thumb_url?: string | null;
+              }
+            | null
+            | undefined
+          >
+        | null;
     };
     brokerName?: string | null;
   } | null;
 };
+
 type RecentViewsListData = {
   items?: RecentViewApiItem[] | null;
+  /** Pagination fields (aligned with /properties search endpoints). */
+  total?: number;
+  page?: number;
+  pageSize?: number;
+  /** Legacy inner field; supported until API stops sending it. */
+  data?: RecentViewApiItem[] | null;
 };
+
+function recentViewRows(payload: RecentViewsListData | RecentViewApiItem[]): RecentViewApiItem[] {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload.items)) return payload.items;
+  if (Array.isArray(payload.data)) return payload.data;
+  return [];
+}
 
 function toPrice(value: string | number | null | undefined, currency?: string | null): string {
   if (value == null) return "Price on request";
@@ -72,15 +98,23 @@ function toListing(item: RecentViewApiItem): SearchResultListing | null {
     [property?.areaName, property?.city].filter(Boolean).join(", ") ||
     "Location unavailable";
 
+  const images =
+    property?.media?.images
+      ?.map((image) => {
+        if (typeof image === "string") return image.trim();
+        if (!image) return "";
+        const url = image.url?.trim() ?? "";
+        if (url) return url;
+        return image.thumb_url?.trim() ?? "";
+      })
+      .filter((image) => image.length > 0) ?? [];
+
   return {
     id: propertyHash,
     title: toDisplayText(property?.title ?? null) || "Untitled Property",
     price: toPrice(property?.price, null),
     propertyType: property?.propertyType || "Property",
-    images:
-      property?.media?.images?.filter(
-        (image): image is string => typeof image === "string" && image.length > 0,
-      ) ?? [],
+    images,
     location,
     beds: property?.beds ?? 0,
     baths: property?.baths ?? 0,
@@ -89,19 +123,36 @@ function toListing(item: RecentViewApiItem): SearchResultListing | null {
   };
 }
 
-export async function listRecentViewedListings(): Promise<SearchResultListing[]> {
-  const response = await authApi.get<RecentViewsListData | RecentViewApiItem[]>(
-    "/users/recent-views",
-  );
-  const data = response.data;
-  const items = Array.isArray(data)
-    ? data
-    : Array.isArray(data?.items)
-      ? data.items
-      : [];
-  return items
-    .map(toListing)
-    .filter((item): item is SearchResultListing => item != null);
+export async function listRecentViewedListings(params?: {
+  page?: number;
+  pageSize?: number;
+}): Promise<PaginatedResult<SearchResultListing>> {
+  const response = await authApi.get<
+    | StandardApiResponse<RecentViewsListData | RecentViewApiItem[]>
+    | RecentViewsListData
+    | RecentViewApiItem[]
+  >("/users/recent-views", {
+    params: {
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 10,
+    },
+  });
+
+  const payload = response.data;
+  const data =
+    payload && typeof payload === "object" && "success" in payload
+      ? (payload as StandardApiResponse<RecentViewsListData | RecentViewApiItem[]>).data
+      : payload;
+
+  const rows = recentViewRows(data as RecentViewsListData | RecentViewApiItem[]);
+  const listings = rows.map(toListing).filter((item): item is SearchResultListing => item != null);
+
+  const paginationInput = Array.isArray(data) ? undefined : (data as RecentViewsListData);
+  return createPaginatedResult(listings, paginationInput, {
+    page: params?.page ?? 1,
+    pageSize: params?.pageSize ?? 10,
+    total: paginationInput?.total,
+  });
 }
 
 export async function removeRecentlyViewedProperty(propertyId: number): Promise<boolean> {

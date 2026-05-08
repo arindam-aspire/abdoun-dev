@@ -38,7 +38,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "abdoun-dev-assets-usw2.s3.us-west-2.amazonaws.com",
+        hostname: "abdoun-dev-assets-usw2.s3.us-east-1.amazonaws.com",
         port: "",
         pathname: "/**",
       },

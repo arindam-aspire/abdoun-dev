@@ -6,7 +6,11 @@ import { useLocale } from "next-intl";
 import { Heart } from "lucide-react";
 import type { AppLocale } from "@/i18n/routing";
 import { useTranslations } from "@/hooks/useTranslations";
-import { Pagination } from "@/components/ui/Pagination";
+import {
+  DEFAULT_PAGINATION_PAGE_SIZE,
+  PAGINATION_PAGE_SIZES,
+  Pagination,
+} from "@/components/ui/Pagination";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { SearchResultListing } from "@/features/property-search/types";
 import { useFavourites } from "@/features/favourites/hooks/useFavourites";
@@ -16,13 +20,21 @@ import { useAppSelector } from "@/hooks/storeHooks";
 import { selectCurrentUser } from "@/store/selectors";
 import { cn } from "@/lib/cn";
 
-const PAGE_SIZE = 10;
 const PAGE_PARAM = "page";
+const PAGE_SIZE_PARAM = "pageSize";
 
 function getPageFromSearchParams(searchParams: URLSearchParams): number {
   const page = searchParams.get(PAGE_PARAM);
   const n = parseInt(page ?? "1", 10);
   return Number.isFinite(n) && n >= 1 ? n : 1;
+}
+
+function getPageSizeFromSearchParams(searchParams: URLSearchParams): number {
+  const raw = searchParams.get(PAGE_SIZE_PARAM);
+  const n = parseInt(raw ?? String(DEFAULT_PAGINATION_PAGE_SIZE), 10);
+  return PAGINATION_PAGE_SIZES.includes(n as (typeof PAGINATION_PAGE_SIZES)[number])
+    ? n
+    : DEFAULT_PAGINATION_PAGE_SIZE;
 }
 
 function pickLocalizedText(
@@ -51,9 +63,13 @@ export function SavedPropertiesView({ variant = "main" }: SavedPropertiesViewPro
   const currentUser = useAppSelector(selectCurrentUser);
   const hydratedUserId = useAppSelector((state) => state.favourites.hydratedUserId);
   const [apiListings, setApiListings] = useState<SearchResultListing[]>([]);
+  const [apiTotal, setApiTotal] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [refetchNonce, setRefetchNonce] = useState(0);
+
+  const currentPage = getPageFromSearchParams(searchParams);
+  const pageSize = getPageSizeFromSearchParams(searchParams);
 
   useEffect(() => {
     let active = true;
@@ -62,10 +78,13 @@ export function SavedPropertiesView({ variant = "main" }: SavedPropertiesViewPro
       try {
         setLoadError(false);
         setIsLoading(true);
-        const items = await listFavoritePropertyItems();
+        const page = await listFavoritePropertyItems({
+          page: currentPage,
+          pageSize,
+        });
         if (!active) return;
 
-        const mapped: SearchResultListing[] = items
+        const mapped: SearchResultListing[] = page.items
           .map((item) => {
             const property = item.property;
             const propertyId =
@@ -121,9 +140,11 @@ export function SavedPropertiesView({ variant = "main" }: SavedPropertiesViewPro
           .filter((listing): listing is SearchResultListing => listing != null);
 
         setApiListings(mapped);
+        setApiTotal(typeof page.total === "number" ? page.total : null);
       } catch {
         if (active) {
           setApiListings([]);
+          setApiTotal(null);
           setLoadError(true);
         }
       } finally {
@@ -134,28 +155,27 @@ export function SavedPropertiesView({ variant = "main" }: SavedPropertiesViewPro
     return () => {
       active = false;
     };
-  }, [locale, refetchNonce]);
+  }, [currentPage, locale, pageSize, refetchNonce]);
 
   const refetch = useCallback(() => {
     setRefetchNonce((n) => n + 1);
   }, []);
 
-  const favouriteListings = useMemo(
-    () => {
-      const byId = new Map(apiListings.map((listing) => [listing.id, listing]));
-      return propertyIds
-        .map((id) => byId.get(id))
-        .filter((listing): listing is SearchResultListing => listing != null);
-    },
-    [apiListings, propertyIds],
-  );
+  const isServerPaginated = apiTotal != null;
 
-  const currentPage = getPageFromSearchParams(searchParams);
-  const totalItems = favouriteListings.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const favouriteListings = useMemo(() => {
+    if (isServerPaginated) return apiListings;
+    const byId = new Map(apiListings.map((listing) => [listing.id, listing]));
+    return propertyIds
+      .map((id) => byId.get(id))
+      .filter((listing): listing is SearchResultListing => listing != null);
+  }, [apiListings, isServerPaginated, propertyIds]);
+
+  const totalItems = isServerPaginated ? apiTotal! : favouriteListings.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const page = Math.min(currentPage, totalPages);
-  const start = (page - 1) * PAGE_SIZE;
-  const listings = favouriteListings.slice(start, start + PAGE_SIZE);
+  const listings = favouriteListings;
+  const shouldShowPagination = totalItems > DEFAULT_PAGINATION_PAGE_SIZE;
 
   const cardTranslations = {
     email: tSearch("email"),
@@ -208,7 +228,7 @@ export function SavedPropertiesView({ variant = "main" }: SavedPropertiesViewPro
     );
   }
 
-  if (favouriteListings.length === 0) {
+  if (totalItems === 0) {
     return (
       <div className={outerClassEmpty} dir={isRtl ? "rtl" : "ltr"}>
         <h1 className="mb-6 text-xl font-semibold text-[var(--color-charcoal)] md:text-2xl">
@@ -247,14 +267,15 @@ export function SavedPropertiesView({ variant = "main" }: SavedPropertiesViewPro
           cardTranslations={cardTranslations}
         />
 
-        {totalPages > 1 && (
+        {shouldShowPagination ? (
           <div className="mt-8 border-t border-[var(--border-subtle)] pt-6">
             <Pagination
               currentPage={page}
               totalPages={totalPages}
               totalItems={totalItems}
-              pageSize={PAGE_SIZE}
+              pageSize={pageSize}
               pageParam={PAGE_PARAM}
+              pageSizeParam={PAGE_SIZE_PARAM}
               translations={{
                 previous: tSearch("paginationPrevious"),
                 next: tSearch("paginationNext"),
@@ -266,7 +287,7 @@ export function SavedPropertiesView({ variant = "main" }: SavedPropertiesViewPro
               }}
             />
           </div>
-        )}
+        ) : null}
       </section>
     </div>
   );

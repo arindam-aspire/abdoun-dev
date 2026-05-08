@@ -89,7 +89,7 @@ export function SearchFields({
     if (param === "commercial" || param === "residential") {
       return param;
     }
-    if (param === "lands") {
+    if (param === "lands" || param === "land") {
       return "land";
     }
     return "residential";
