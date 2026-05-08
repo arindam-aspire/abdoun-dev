@@ -32,6 +32,28 @@ import { listFavoriteProperties } from "@/features/favourites/api/favourites.api
 import { listSavedSearches } from "@/features/saved-searches/api/savedSearches.api";
 import { Toast } from "@/components/ui";
 import { consumeRouteToast, ROUTE_TOAST_EVENT, type RouteToastPayload } from "@/lib/ui/routeToast";
+import {
+  archiveNotification,
+  flagNotificationsDesync,
+  mergeNotificationsPage,
+  markNotificationRead,
+  resetNotificationsState,
+  setNotificationsLoading,
+  setPollingFallbackActive,
+  setRealtimeConnected,
+  setReconnectAttempts,
+  setUnreadCount,
+  upsertRealtimeNotification,
+  type NotificationItem,
+} from "@/features/notifications/notificationsSlice";
+import {
+  getNotificationsUnreadCount,
+  listNotifications,
+} from "@/features/notifications/api/notifications.api";
+import {
+  NotificationsRealtime,
+  resolveNotificationsSocketUrl,
+} from "@/features/notifications/realtime/notificationsRealtime";
 
 export function UiProvider({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
@@ -190,6 +212,255 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
       }
     })();
   }, [dispatch, user]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let isMounted = true;
+    let pollingTimer: ReturnType<typeof setInterval> | null = null;
+    let pageRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    let shouldRefreshFirstPage = false;
+    let pollingCycles = 0;
+
+    const stopPolling = () => {
+      if (pollingTimer) {
+        clearInterval(pollingTimer);
+        pollingTimer = null;
+      }
+      dispatch(setPollingFallbackActive(false));
+    };
+
+    const startPolling = () => {
+      if (pollingTimer) return;
+      dispatch(setPollingFallbackActive(true));
+      pollingTimer = setInterval(() => {
+        void (async () => {
+          try {
+            const unreadCountPromise = getNotificationsUnreadCount();
+            const refreshOnThisCycle = shouldRefreshFirstPage || pollingCycles % 3 === 0;
+            pollingCycles += 1;
+            const firstPagePromise = refreshOnThisCycle
+              ? listNotifications({ page: 1, pageSize: 20, includeArchived: false })
+              : Promise.resolve(null);
+            const [unreadCount, firstPage] = await Promise.all([
+              unreadCountPromise,
+              firstPagePromise,
+            ]);
+            if (!isMounted) return;
+            dispatch(setUnreadCount(unreadCount));
+            if (firstPage) {
+              dispatch(
+                mergeNotificationsPage({
+                  items: firstPage.items,
+                  nextCursor: firstPage.nextCursor,
+                  hasMore: firstPage.hasMore,
+                  replace: true,
+                }),
+              );
+              shouldRefreshFirstPage = false;
+            }
+          } catch {
+            // Keep polling alive; no UI disruption on transient failures.
+          }
+        })();
+      }, 12_000);
+    };
+
+    if (!user) {
+      dispatch(resetNotificationsState());
+      return () => {
+        isMounted = false;
+        stopPolling();
+      };
+    }
+
+    const bootstrapFromApi = async () => {
+      dispatch(setNotificationsLoading());
+      try {
+        const [firstPage, unread] = await Promise.all([
+          listNotifications({ page: 1, pageSize: 20, includeArchived: false }),
+          getNotificationsUnreadCount(),
+        ]);
+        if (!isMounted) return;
+        dispatch(
+          mergeNotificationsPage({
+            items: firstPage.items,
+            nextCursor: firstPage.nextCursor,
+            hasMore: firstPage.hasMore,
+            replace: true,
+          }),
+        );
+        dispatch(setUnreadCount(unread));
+      } catch {
+        if (!isMounted) return;
+        dispatch(flagNotificationsDesync());
+      }
+    };
+
+    const normalizeRealtimeNotification = (payload: unknown): NotificationItem | null => {
+      if (!payload || typeof payload !== "object") return null;
+      const source = payload as Record<string, unknown>;
+      const idValue = source.id;
+      if (typeof idValue !== "string" && typeof idValue !== "number") return null;
+      return {
+        id: String(idValue),
+        title: typeof source.title === "string" ? source.title : "",
+        message: typeof source.message === "string" ? source.message : "",
+        actionUrl:
+          typeof source.action_url === "string"
+            ? source.action_url
+            : typeof source.actionUrl === "string"
+              ? source.actionUrl
+              : source.data &&
+                  typeof source.data === "object" &&
+                  typeof (source.data as Record<string, unknown>).action_url === "string"
+                ? ((source.data as Record<string, unknown>).action_url as string)
+                : source.data &&
+                    typeof source.data === "object" &&
+                    typeof (source.data as Record<string, unknown>).actionUrl === "string"
+                  ? ((source.data as Record<string, unknown>).actionUrl as string)
+                  : source.payload &&
+                      typeof source.payload === "object" &&
+                      typeof (source.payload as Record<string, unknown>).action_url ===
+                        "string"
+                    ? ((source.payload as Record<string, unknown>).action_url as string)
+                    : source.payload &&
+                        typeof source.payload === "object" &&
+                        typeof (source.payload as Record<string, unknown>).actionUrl ===
+                          "string"
+                      ? ((source.payload as Record<string, unknown>).actionUrl as string)
+              : null,
+        createdAt:
+          typeof source.created_at === "string"
+            ? source.created_at
+            : new Date().toISOString(),
+        updatedAt: typeof source.updated_at === "string" ? source.updated_at : null,
+        read: Boolean(source.is_read),
+        level:
+          source.level === "success" || source.level === "warning"
+            ? source.level
+            : "info",
+      };
+    };
+
+    const extractIdFromEvent = (payload: unknown): string | null => {
+      if (!payload || typeof payload !== "object") return null;
+      const data = payload as Record<string, unknown>;
+      const idCandidate =
+        data.notification_id ?? data.id ?? (typeof data.notification === "object" ? (data.notification as Record<string, unknown>).id : undefined);
+      if (typeof idCandidate === "string" || typeof idCandidate === "number") return String(idCandidate);
+      return null;
+    };
+
+    const scheduleFirstPageRefresh = () => {
+      shouldRefreshFirstPage = true;
+      if (pageRefreshTimer) return;
+      pageRefreshTimer = setTimeout(() => {
+        pageRefreshTimer = null;
+        void (async () => {
+          try {
+            const firstPage = await listNotifications({
+              page: 1,
+              pageSize: 20,
+              includeArchived: false,
+            });
+            if (!isMounted) return;
+            dispatch(
+              mergeNotificationsPage({
+                items: firstPage.items,
+                nextCursor: firstPage.nextCursor,
+                hasMore: firstPage.hasMore,
+                replace: true,
+              }),
+            );
+            shouldRefreshFirstPage = false;
+          } catch {
+            if (!isMounted) return;
+            dispatch(flagNotificationsDesync());
+          }
+        })();
+      }, 1500);
+    };
+
+    const realtime = new NotificationsRealtime({
+      callbacks: {
+        onOpen: () => {
+          if (!isMounted) return;
+          dispatch(setRealtimeConnected(true));
+          stopPolling();
+          void (async () => {
+            try {
+              const unread = await getNotificationsUnreadCount();
+              if (!isMounted) return;
+              dispatch(setUnreadCount(unread));
+            } catch {
+              // No-op.
+            }
+          })();
+        },
+        onClose: ({ expected }) => {
+          if (!isMounted) return;
+          dispatch(setRealtimeConnected(false));
+          if (!expected) startPolling();
+        },
+        onReconnectAttempt: (attempt) => {
+          if (!isMounted) return;
+          dispatch(setReconnectAttempts(attempt));
+        },
+        onNotificationCreated: (payload) => {
+          if (!isMounted) return;
+          const normalized = normalizeRealtimeNotification(payload);
+          if (!normalized) return;
+          dispatch(upsertRealtimeNotification(normalized));
+          scheduleFirstPageRefresh();
+        },
+        onNotificationRead: (payload) => {
+          if (!isMounted) return;
+          const id = extractIdFromEvent(payload);
+          if (id) dispatch(markNotificationRead({ id }));
+          scheduleFirstPageRefresh();
+        },
+        onNotificationArchived: (payload) => {
+          if (!isMounted) return;
+          const id = extractIdFromEvent(payload);
+          if (id) dispatch(archiveNotification({ id }));
+          scheduleFirstPageRefresh();
+        },
+        onUnreadCount: (count) => {
+          if (!isMounted) return;
+          dispatch(setUnreadCount(count));
+        },
+        onPing: () => {
+          // Keepalive event from backend; no-op.
+        },
+        onSessionInvalid: () => {
+          if (!isMounted) return;
+          forceLocalLogout(dispatch, user.id, DEFAULT_SESSION_EXPIRED_MESSAGE, () =>
+            router.push(`/${locale}/login`),
+          );
+        },
+        onError: () => {
+          if (!isMounted) return;
+          dispatch(flagNotificationsDesync());
+        },
+      },
+      getAccessToken: () => getStoredTokens()?.accessToken ?? null,
+      getSocketUrl: resolveNotificationsSocketUrl,
+      maxRetries: 8,
+    });
+
+    void bootstrapFromApi();
+    realtime.connect();
+
+    return () => {
+      isMounted = false;
+      realtime.disconnect();
+      stopPolling();
+      if (pageRefreshTimer) clearTimeout(pageRefreshTimer);
+      dispatch(setRealtimeConnected(false));
+      dispatch(setReconnectAttempts(0));
+    };
+  }, [dispatch, locale, router, user]);
 
   return (
     <>

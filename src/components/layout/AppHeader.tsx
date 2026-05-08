@@ -26,6 +26,7 @@ import { useLocale } from "next-intl";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { selectNotificationUnreadCount } from "@/features/notifications/notificationsSlice";
 
 const SHRINK_SCROLL_Y = 36;
 const MOBILE_BREAKPOINT = 768;
@@ -46,6 +47,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
   const tCommon = useTranslations("common");
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectCurrentUser);
+  const unreadNotifications = useAppSelector(selectNotificationUnreadCount);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authInitialView, setAuthInitialView] = useState<"email" | "password" | unknown>(
@@ -405,10 +407,15 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
           {user && profileMenuConfig?.showNotifications ? (
             <Link
               href={`/${activeLanguage}/notifications`}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#334155] shadow-sm transition hover:bg-slate-100 shrink-0"
+              className="relative inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#334155] shadow-sm transition hover:bg-slate-100 shrink-0"
               aria-label={tCommon("notifications")}
             >
               <Bell className="h-4.5 w-4.5" strokeWidth={2.1} />
+              {unreadNotifications > 0 ? (
+                <span className="absolute -end-1.5 -top-1.5 inline-flex min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-semibold leading-4 text-white">
+                  {unreadNotifications > 99 ? "99+" : unreadNotifications}
+                </span>
+              ) : null}
             </Link>
           ) : null}
 
