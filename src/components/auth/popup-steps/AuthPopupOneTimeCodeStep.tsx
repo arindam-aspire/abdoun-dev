@@ -49,9 +49,9 @@ export function AuthPopupOneTimeCodeStep({
         <>
           <AuthPopupField
             id="auth-otc-identifier"
-            label={t("emailOrPhone")}
-            placeholder={t("emailOrPhone")}
-            value={otcIdentifier}
+            label={t("emailOrPhoneIncludingCountryCode")}
+            placeholder={t("emailOrPhoneIncludingCountryCode")}
+            value={otcIdentifier} 
             onChange={onChangeOtcIdentifier}
             onFocus={onFocusOtcIdentifier}
             error={otcIdentifierError}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { X, ArrowLeft } from "lucide-react";
 import { DialogRoot } from "@/components/ui/dialog";
@@ -90,6 +90,7 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
   const otcTimer = useOtpTimer(60);
   const [toast, setToast] = useState<{ kind: "info" | "error" | "success"; message: string } | null>(null);
   const [redirectingToForceChange, setRedirectingToForceChange] = useState(false);
+  const handleToastClose = useCallback(() => setToast(null), []);
 
   useEffect(() => {
     if (
@@ -132,6 +133,31 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
       setOtcLoading(false);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (view !== "oneTimeCode") {
+      setOtcIdentifier("");
+      setOtcIdentifierTouched(false);
+      setOtcIdentifierError(undefined);
+      setOtcStep("request");
+      setOtcChallengeId("");
+      setOtcOtp("");
+      setOtcOtpError(null);
+      setOtcDebugOtp(null);
+      setOtcLoading(false);
+    }
+  }, [view]);
+
+  useEffect(() => {
+    if (view !== "forgot") {
+      forgot.actions.resetFlow();
+    }
+  }, [view]);
+
+  useEffect(() => {
+    if (view !== "forgot" || forgot.loading || !forgot.message || !forgot.messageKind) return;
+    setToast({ kind: forgot.messageKind, message: forgot.message });
+  }, [forgot.loading, forgot.message, forgot.messageKind, view]);
 
   useEffect(() => {
     if (open && user) {
@@ -592,7 +618,7 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
       </DialogRoot>
 
       {toast ? (
-        <Toast kind={toast.kind} message={toast.message} onClose={() => setToast(null)} />
+        <Toast kind={toast.kind} message={toast.message} onClose={handleToastClose} duration={7000} />
       ) : null}
     </>
   );

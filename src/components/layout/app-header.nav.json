@@ -39,13 +39,6 @@
       "placement": "header"
     },
     {
-      "id": "agentProperties",
-      "label": "Properties",
-      "path": "/agent-properties",
-      "roles": ["agent"],
-      "placement": "profile"
-    },
-    {
       "id": "adminDashboard",
       "label": "Dashboard",
       "path": "/admin-dashboard",

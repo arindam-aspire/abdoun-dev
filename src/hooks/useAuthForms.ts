@@ -495,11 +495,11 @@ export function useForgotPasswordFlow() {
       await requestForgotPassword({ email: identifier.trim() });
       setChallengeId(identifier.trim());
       setDebugOtp(null);
-      setStatusMessage("info", "If an account exists, OTP has been sent.");
+      setStatusMessage("success", "If an account exists, OTP has been sent.");
       timer.restart(600);
       setStep("otp");
     } catch (error) {
-      setMessage(getApiErrorMessage(error) || "Unable to request OTP.");
+      setStatusMessage("error", getApiErrorMessage(error) || "Unable to request OTP.");
     } finally {
       setLoading(false);
     }
@@ -538,7 +538,7 @@ export function useForgotPasswordFlow() {
       timer.restart(600);
       setStatusMessage("success", "OTP resent successfully.");
     } catch (error) {
-      setMessage(getApiErrorMessage(error) || "Unable to resend OTP.");
+      setStatusMessage("error", getApiErrorMessage(error) || "Unable to resend OTP.");
     } finally {
       setLoading(false);
     }
@@ -568,13 +568,30 @@ export function useForgotPasswordFlow() {
         code: otp.trim(),
         new_password: newPassword,
       });
-      setStatusMessage("success", null);
+      setStatusMessage("success", "Password updated. You can now login.");
       setStep("success");
     } catch (error) {
-      setMessage(getApiErrorMessage(error) || "Unable to reset password.");
+      setStatusMessage("error", getApiErrorMessage(error) || "Unable to reset password.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetFlow = () => {
+    setStep("request");
+    setIdentifier("");
+    setOtp("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setChallengeId("");
+    setResetToken("");
+    setLoading(false);
+    setMessage(null);
+    setMessageKind(null);
+    setErrors({});
+    setTouched({});
+    setDebugOtp(null);
+    timer.restart(60);
   };
 
   return {
@@ -628,6 +645,7 @@ export function useForgotPasswordFlow() {
       resendOtp,
       setPassword,
       validateField,
+      resetFlow,
     },
   };
 }

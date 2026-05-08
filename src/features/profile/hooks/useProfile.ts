@@ -8,7 +8,10 @@ import { useUpdateProfile } from "@/features/profile/hooks/useUpdateProfile";
 
 export interface UseProfileResult {
   profile: ProfileData;
-  saveProfile: (updates: Partial<ProfileData>) => Promise<void>;
+  saveProfile: (
+    updates: Partial<ProfileData>,
+    options?: { onAvatarUploadProgress?: (percent: number) => void },
+  ) => Promise<void>;
   /** Re-fetch GET /auth/me and sync session (e.g. after email/phone OTP verify). */
   refreshProfile: () => Promise<void>;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type KeyboardEventHandler } from "react";
 
 const BUDGET_SUGGESTIONS = [
   "0",
@@ -39,6 +39,40 @@ export function BudgetRangeInputs({
   maxPlaceholder = "400000",
 }: BudgetRangeInputsProps) {
   const [activeField, setActiveField] = useState<"min" | "max" | null>(null);
+
+  const sanitizeBudgetValue = (raw: string): string => raw.replace(/[^\d]/g, "");
+
+  const handleMinChange = (raw: string) => {
+    const next = sanitizeBudgetValue(raw);
+    if (next === "") {
+      onChangeMin("");
+      return;
+    }
+    if (maxBudget !== "" && Number(next) > Number(maxBudget)) {
+      onChangeMin(maxBudget);
+      return;
+    }
+    onChangeMin(next);
+  };
+
+  const handleMaxChange = (raw: string) => {
+    const next = sanitizeBudgetValue(raw);
+    if (next === "") {
+      onChangeMax("");
+      return;
+    }
+    if (minBudget !== "" && Number(next) < Number(minBudget)) {
+      onChangeMax(minBudget);
+      return;
+    }
+    onChangeMax(next);
+  };
+
+  const preventNegativeInput: KeyboardEventHandler<HTMLInputElement> = (event) => {
+    if (event.key === "-" || event.key === "Subtract") {
+      event.preventDefault();
+    }
+  };
 
   const renderSuggestions = (field: "min" | "max") => {
     const currentValue = field === "min" ? minBudget : maxBudget;
@@ -96,7 +130,7 @@ export function BudgetRangeInputs({
 
   return (
     <div
-      className="min-w-[260px] w-full max-w-[min(320px,calc(100vw-2rem))] rounded-2xl border border-subtle bg-white p-3 text-xs shadow-xl ring-1 ring-black/5"
+      className="min-w-[260px] w-full max-w-[min(320px,calc(100vw-2rem))] rounded-xl border border-subtle bg-white p-3 text-xs shadow-xl ring-1 ring-black/5"
       onClick={() => setActiveField(null)}
     >
       <div className="mb-3 grid grid-cols-2 gap-3">
@@ -107,13 +141,16 @@ export function BudgetRangeInputs({
           <input
             type="number"
             value={minBudget}
+            min={0}
+            inputMode="numeric"
+            onKeyDown={preventNegativeInput}
             onFocus={() => setActiveField("min")}
             onChange={(e) => {
-              onChangeMin(e.target.value);
+              handleMinChange(e.target.value);
               setActiveField("min");
             }}
             placeholder="0"
-            className="h-9 w-full rounded-xl border border-subtle px-2 text-size-xs text-charcoal outline-none ring-0 placeholder:text-[rgba(51,51,51,0.45)] focus:border-primary focus:ring-1 focus:ring-[rgba(26,59,92,0.2)]"
+            className="h-9 w-full rounded-lg border border-subtle px-2 text-size-xs text-charcoal outline-none ring-0 placeholder:text-[rgba(51,51,51,0.45)] focus:border-primary focus:ring-1 focus:ring-[rgba(26,59,92,0.2)]"
           />
           {renderSuggestions("min")}
         </div>
@@ -124,13 +161,16 @@ export function BudgetRangeInputs({
           <input
             type="number"
             value={maxBudget}
+            min={0}
+            inputMode="numeric"
+            onKeyDown={preventNegativeInput}
             onFocus={() => setActiveField("max")}
             onChange={(e) => {
-              onChangeMax(e.target.value);
+              handleMaxChange(e.target.value);
               setActiveField("max");
             }}
             placeholder={maxPlaceholder}
-            className="h-9 w-full rounded-xl border border-subtle px-2 text-size-xs text-charcoal outline-none ring-0 placeholder:text-[rgba(51,51,51,0.45)] focus:border-primary focus:ring-1 focus:ring-[rgba(26,59,92,0.2)]"
+            className="h-9 w-full rounded-lg border border-subtle px-2 text-size-xs text-charcoal outline-none ring-0 placeholder:text-[rgba(51,51,51,0.45)] focus:border-primary focus:ring-1 focus:ring-[rgba(26,59,92,0.2)]"
           />
           {renderSuggestions("max")}
         </div>
@@ -139,7 +179,7 @@ export function BudgetRangeInputs({
       <div className="mt-3 flex items-center justify-between gap-3">
         <button
           type="button"
-          className="inline-flex cursor-pointer items-center rounded-full border border-subtle bg-white px-3 py-1.5 text-size-11 fw-semibold uppercase tracking-[0.16em] text-secondary shadow-sm hover:bg-surface"
+          className="inline-flex cursor-pointer items-center rounded-lg border border-subtle bg-white px-3 py-1.5 text-size-11 fw-semibold uppercase tracking-[0.16em] text-secondary shadow-sm hover:bg-surface"
           onClick={(event) => {
             event.stopPropagation();
             onReset();
@@ -150,7 +190,7 @@ export function BudgetRangeInputs({
         </button>
         <button
           type="button"
-          className="inline-flex cursor-pointer items-center rounded-full bg-accent px-4 py-1.5 text-size-11 fw-semibold uppercase tracking-[0.16em] text-secondary shadow-sm hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(253,185,19,0.45)]"
+          className="inline-flex cursor-pointer items-center rounded-lg bg-accent px-4 py-1.5 text-size-11 fw-semibold uppercase tracking-[0.16em] text-secondary shadow-sm hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(253,185,19,0.45)]"
           onClick={(event) => {
             event.stopPropagation();
             onDone();

@@ -219,6 +219,8 @@ export default function AppFooter(): React.JSX.Element {
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href={`/${locale}/terms-and-conditions`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="transition hover:text-white"
             >
               {t("footerTerms")}
@@ -228,6 +230,8 @@ export default function AppFooter(): React.JSX.Element {
             </span>
             <Link
               href={`/${locale}/privacy-policy`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="transition hover:text-white"
             >
               {t("footerPrivacy")}

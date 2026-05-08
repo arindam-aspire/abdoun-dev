@@ -24,16 +24,13 @@ export function AuthPopupForgotStep({
 }: AuthPopupForgotStepProps) {
   return (
     <div className={AUTH_POPUP_STEP_STACK}>
-      {forgot.message ? (
-        <AuthAlert kind={forgot.messageKind ?? "info"} message={forgot.message} />
-      ) : null}
 
       {forgot.step === "request" ? (
         <>
           <AuthPopupField
             id="forgot-identifier"
-            label={t("emailOrPhone")}
-            placeholder={t("emailOrPhone")}
+            label={t("emailOrPhoneIncludingCountryCode")}
+            placeholder={t("emailOrPhoneIncludingCountryCode")}
             value={forgot.fields.identifier}
             onChange={forgot.actions.setIdentifier}
             onFocus={onFocusIdentifier}

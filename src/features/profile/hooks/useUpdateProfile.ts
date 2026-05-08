@@ -14,6 +14,7 @@ import {
   dataUrlToProfileFile,
   deleteProfilePicture,
   uploadProfilePicture,
+  uploadProfilePictureWithProgress,
 } from "@/features/profile/api/profilePicture.api";
 import type { AuthUser } from "@/features/auth/authSlice";
 import type { ProfileData } from "@/types/auth";
@@ -23,7 +24,10 @@ import type { ProfileData } from "@/types/auth";
  * refresh session from GET /auth/me when the server applies changes without OTP.
  */
 export function useUpdateProfile(): {
-  updateProfile: (updates: Partial<ProfileData>) => Promise<void>;
+  updateProfile: (
+    updates: Partial<ProfileData>,
+    options?: { onAvatarUploadProgress?: (percent: number) => void },
+  ) => Promise<void>;
   refreshProfile: () => Promise<void>;
 } {
   const dispatch = useAppDispatch();
@@ -38,7 +42,10 @@ export function useUpdateProfile(): {
   }, [authUser, dispatch]);
 
   const updateProfile = useCallback(
-    async (updates: Partial<ProfileData>) => {
+    async (
+      updates: Partial<ProfileData>,
+      options?: { onAvatarUploadProgress?: (percent: number) => void },
+    ) => {
       if (!authUser) return;
 
       const requestPayload: {
@@ -85,7 +92,11 @@ export function useUpdateProfile(): {
           }
         } else if (raw.startsWith("data:")) {
           const file = await dataUrlToProfileFile(raw);
-          await uploadProfilePicture(file);
+          if (typeof options?.onAvatarUploadProgress === "function") {
+            await uploadProfilePictureWithProgress(file, options.onAvatarUploadProgress);
+          } else {
+            await uploadProfilePicture(file);
+          }
         } else {
           // Legacy or unknown string — still sync from /me
         }

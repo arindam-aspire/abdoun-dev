@@ -168,6 +168,7 @@
     "sendOneTimeLink": "Send one-time link",
     "newHereCreate": "New to Abdoun? <action>Create an account</action>",
     "emailOrPhone": "Email or phone",
+    "emailOrPhoneIncludingCountryCode": "Email or phone (Including country code)",
     "phonePlaceholder": "Phone",
     "sendOtp": "Send OTP",
     "sendingOtp": "Sending OTP...",

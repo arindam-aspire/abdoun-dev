@@ -59,8 +59,8 @@ export function AuthPopupEmailStep({
     <form onSubmit={handleSubmit} className={AUTH_POPUP_STEP_STACK}>
       <AuthPopupField
         id="auth-email-or-phone"
-        label={t("emailOrPhone")}
-        placeholder={t("emailOrPhone")}
+        label={t("emailOrPhoneIncludingCountryCode")}
+        placeholder={t("emailOrPhoneIncludingCountryCode")}
         value={emailIdentifier}
         onChange={onChangeEmailIdentifier}
         onFocus={onFocusEmailIdentifier}

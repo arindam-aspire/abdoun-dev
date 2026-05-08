@@ -36,6 +36,24 @@ export async function uploadProfilePicture(file: File): Promise<void> {
   await putFileToPresignedUrl(data.upload_url, file, contentType);
 }
 
+export async function uploadProfilePictureWithProgress(
+  file: File,
+  onProgress: (percent: number) => void,
+): Promise<void> {
+  const contentType =
+    file.type && file.type.length > 0 ? file.type : "application/octet-stream";
+  const response = await authApi.post<ProfilePictureUploadData>(
+    "/auth/me/profile-picture",
+    {
+      file_name: file.name,
+      content_type: contentType,
+      file_size: file.size,
+    } satisfies ProfilePicturePresignRequest,
+  );
+  const data = response.data;
+  await putFileToPresignedUrl(data.upload_url, file, contentType, onProgress);
+}
+
 export async function deleteProfilePicture(): Promise<void> {
   await authApi.delete("/auth/me/profile-picture");
 }

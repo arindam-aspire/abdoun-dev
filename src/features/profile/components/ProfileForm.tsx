@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { Loader2, Pencil } from "lucide-react";
+import { Camera, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useForm, useWatch } from "react-hook-form";
 import { useTranslations } from "@/hooks/useTranslations";
@@ -35,9 +35,21 @@ import { ProfileFormSkeleton } from "@/features/profile/components/ProfileFormSk
 import { CountryFlagImg } from "@/components/ui/phone-country-code-select";
 import { Toast } from "@/components/ui";
 import type { ToastKind } from "@/components/ui/toast";
+import {
+  DialogDescription,
+  DialogFooter,
+  DialogRoot,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const ACCEPT_IMAGE = "image/jpeg,image/png,image/gif,image/webp";
 const MAX_IMAGE_MB = 4;
+const SUPPORTED_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+]);
 
 /** `next/image` is unreliable for long `data:` URLs; use a plain `<img>` for those. */
 function isDataOrBlobUrl(url: string): boolean {
@@ -166,6 +178,12 @@ function ProfileFormBody({
 
   const { isDirty, isSubmitting, errors, dirtyFields } = formState;
   const [avatarBust, setAvatarBust] = useState(() => Date.now());
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarUploadProgress, setAvatarUploadProgress] = useState(0);
+  const [avatarUploadPreview, setAvatarUploadPreview] = useState<string | null>(null);
+  const [optimisticAvatarUrl, setOptimisticAvatarUrl] = useState<string | null>(null);
+  const [removePhotoConfirmOpen, setRemovePhotoConfirmOpen] = useState(false);
+  const avatarUploadRequestIdRef = useRef(0);
 
   const getIdentityRequestExtras = useCallback((): ProfileRequestExtras | undefined => {
     const fn = (getValues("fullName") ?? "").trim();
@@ -177,6 +195,11 @@ function ProfileFormBody({
   const syncFromProfile = useCallback(() => {
     reset(profileToFormDefaults(profileData.profile));
     setPhotoError(null);
+    setAvatarUploadPreview(null);
+    setOptimisticAvatarUrl(null);
+    setAvatarUploading(false);
+    setAvatarUploadProgress(0);
+    avatarUploadRequestIdRef.current += 1;
   }, [profileData.profile, reset]);
 
   /** Hydrate / re-sync from server when profile updates, unless the user has unsaved edits or identity inline edit. */
@@ -185,9 +208,7 @@ function ProfileFormBody({
     syncFromProfile();
   }, [syncFromProfile, isDirty, editingField]);
 
-  const avatarPreview = useWatch({ control, name: "avatarPreview" });
-  const displayAvatar =
-    avatarPreview ?? profileData.profile.profilePictureUrl ?? null;
+  const displayAvatar = optimisticAvatarUrl ?? profileData.profile.profilePictureUrl ?? null;
 
   const avatarDisplayUrl = useMemo(() => {
     if (!displayAvatar) return null;
@@ -361,28 +382,81 @@ function ProfileFormBody({
   }, [getIdentityRequestExtras, getValues, profileData.profile.phone, t, tPhone, tempPhone]);
 
   const handlePhotoSelect = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       e.target.value = "";
       setPhotoError(null);
       if (!file) return;
-      if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
-        setPhotoError(t("photoTooLarge"));
+      if (!SUPPORTED_IMAGE_TYPES.has(file.type)) {
+        const message = "Unsupported image format. Please choose JPG, PNG, GIF, or WebP.";
+        setPhotoError(message);
+        setToast({ kind: "error", message });
         return;
       }
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        setValue("avatarPreview", dataUrl, { shouldDirty: true });
-      };
-      reader.readAsDataURL(file);
+      if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+        const message = t("photoTooLarge");
+        setPhotoError(message);
+        setToast({ kind: "error", message });
+        return;
+      }
+      const requestId = avatarUploadRequestIdRef.current + 1;
+      avatarUploadRequestIdRef.current = requestId;
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("Failed to read image file."));
+        reader.readAsDataURL(file);
+      }).catch(() => "");
+      if (!dataUrl) {
+        if (avatarUploadRequestIdRef.current === requestId) {
+          const message = t("identityGenericError");
+          setPhotoError(message);
+          setToast({ kind: "error", message });
+        }
+        return;
+      }
+      setAvatarUploadPreview(dataUrl);
+      setAvatarUploading(true);
+      setAvatarUploadProgress(0);
+      setValue("avatarPreview", undefined, { shouldDirty: false });
+      setValue("avatarUrl", "", { shouldDirty: false });
+      try {
+        await profileData.saveProfile(
+          { avatarUrl: dataUrl },
+          {
+            onAvatarUploadProgress: (percent) => {
+              if (avatarUploadRequestIdRef.current !== requestId) return;
+              setAvatarUploadProgress(percent);
+            },
+          },
+        );
+        if (avatarUploadRequestIdRef.current !== requestId) return;
+        setOptimisticAvatarUrl(dataUrl);
+        setAvatarUploadPreview(null);
+        setAvatarUploading(false);
+        setAvatarUploadProgress(100);
+        setAvatarBust(Date.now());
+        setToast({ kind: "success", message: "Profile photo updated successfully." });
+      } catch (err) {
+        if (avatarUploadRequestIdRef.current !== requestId) return;
+        setAvatarUploadPreview(null);
+        setAvatarUploading(false);
+        setAvatarUploadProgress(0);
+        const message = t("identityGenericError");
+        setPhotoError(message);
+        setToast({ kind: "error", message });
+      }
     },
-    [setValue, t],
+    [profileData, setValue, t],
   );
 
   const handleRemovePhoto = useCallback(() => {
     setValue("avatarPreview", undefined, { shouldDirty: true });
     setValue("avatarUrl", "", { shouldDirty: true });
+    setOptimisticAvatarUrl(null);
+    setAvatarUploadPreview(null);
+    setAvatarUploading(false);
+    setAvatarUploadProgress(0);
     setPhotoError(null);
   }, [setValue]);
 
@@ -510,10 +584,18 @@ function ProfileFormBody({
               className={cn(
                 "flex h-28 w-28 overflow-hidden rounded-full border-2 border-zinc-200 bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-700",
                 "ring-2 ring-white dark:ring-zinc-800",
+                avatarUploading && "relative",
               )}
               aria-hidden
             >
-              {avatarDisplayUrl ? (
+              {avatarUploadPreview && avatarUploading ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatarUploadPreview}
+                  alt="Uploading profile preview"
+                  className="h-full w-full object-cover opacity-60"
+                />
+              ) : avatarDisplayUrl ? (
                 isDataOrBlobUrl(avatarDisplayUrl) ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -547,42 +629,53 @@ function ProfileFormBody({
               onChange={handlePhotoSelect}
               aria-label={t("changePhoto")}
             />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isSubmitting || savingProfile}
-              className={cn(
-                "absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-zinc-500 text-white shadow-md",
-                "hover:bg-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-2",
-                "disabled:pointer-events-none disabled:opacity-50",
-                "dark:border-zinc-800 dark:bg-zinc-600 dark:hover:bg-zinc-500",
-              )}
-              aria-label={t("changePhoto")}
-            >
-              <Pencil className="h-4 w-4" strokeWidth={2} />
-            </button>
+            <div className="absolute bottom-0 -right-10 flex flex-row items-center gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isSubmitting || savingProfile || avatarUploading}
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-zinc-500 text-white shadow-md",
+                  "hover:bg-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-2",
+                  "disabled:pointer-events-none disabled:opacity-50",
+                  "dark:border-zinc-800 dark:bg-zinc-600 dark:hover:bg-zinc-500",
+                )}
+                aria-label={t("changePhoto")}
+              >
+                <Camera className="h-4 w-4" strokeWidth={2} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setRemovePhotoConfirmOpen(true)}
+                disabled={isSubmitting || savingProfile || avatarUploading || !avatarDisplayUrl}
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-rose-600 text-white shadow-md",
+                  "hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2",
+                  "disabled:pointer-events-none disabled:opacity-50",
+                  "dark:border-zinc-800 dark:bg-rose-700 dark:hover:bg-rose-600",
+                )}
+                aria-label={t("remove")}
+              >
+                <Trash2 className="h-4 w-4" strokeWidth={2} />
+              </button>
+            </div>
           </div>
           <p className="mt-3 text-center text-xs text-zinc-500 dark:text-zinc-400">
             {t("recommendedSize")}
           </p>
-          {avatarDisplayUrl ? (
-            <button
-              type="button"
-              onClick={handleRemovePhoto}
-              disabled={isSubmitting || savingProfile}
-              className="mt-2 rounded text-xs font-medium text-zinc-500 underline hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:text-zinc-400 dark:hover:text-red-400"
-            >
-              {t("remove")}
-            </button>
+          {avatarUploading ? (
+            <div className="mt-3 w-full max-w-[240px]">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+                <div
+                  className="h-full rounded-full bg-primary transition-[width] duration-150"
+                  style={{ width: `${avatarUploadProgress}%` }}
+                />
+              </div>
+              <p className="mt-1 text-center text-xs text-zinc-600 dark:text-zinc-300">
+                Uploading... {avatarUploadProgress}%
+              </p>
+            </div>
           ) : null}
-          {photoError && (
-            <p
-              className="mt-2 text-center text-xs text-red-600 dark:text-red-400"
-              role="alert"
-            >
-              {photoError}
-            </p>
-          )}
         </div>
 
         <hr className="mb-6 border-zinc-200 dark:border-zinc-700" />
@@ -867,6 +960,41 @@ function ProfileFormBody({
         onOtpSent={() => setPhoneIdentityStatus("pending")}
         onVerified={handlePhoneVerified}
       />
+      <DialogRoot
+        open={removePhotoConfirmOpen}
+        onClose={() => {
+          if (avatarUploading) return;
+          setRemovePhotoConfirmOpen(false);
+        }}
+        className="relative max-w-md"
+      >
+        <DialogTitle>Remove profile photo?</DialogTitle>
+        <DialogDescription className="text-pretty text-sm text-zinc-600">
+          This will remove your current profile photo.
+        </DialogDescription>
+        <DialogFooter className="mt-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setRemovePhotoConfirmOpen(false)}
+            disabled={avatarUploading}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="accent"
+            className="bg-rose-600 text-white hover:bg-rose-700"
+            onClick={() => {
+              handleRemovePhoto();
+              setRemovePhotoConfirmOpen(false);
+            }}
+            disabled={avatarUploading}
+          >
+            Remove
+          </Button>
+        </DialogFooter>
+      </DialogRoot>
       {toast ? (
         <Toast
           kind={toast.kind}

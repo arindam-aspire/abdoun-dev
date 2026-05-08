@@ -63,6 +63,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
     message: string;
   } | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [headerAvatarBust, setHeaderAvatarBust] = useState(() => Date.now());
   const rafRef = useRef<number | null>(null);
   const profileRef = useRef<HTMLDivElement | null>(null);
   const mobileProfileRef = useRef<HTMLDivElement | null>(null);
@@ -165,6 +166,10 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
       .slice(0, 2)
       .map((part) => part[0]?.toUpperCase() ?? "")
       .join("") || "U";
+  const headerAvatarUrl =
+    user?.profilePictureUrl && user.profilePictureUrl.trim().length > 0
+      ? `${user.profilePictureUrl}${user.profilePictureUrl.includes("?") ? "&" : "?"}t=${headerAvatarBust}`
+      : null;
 
   useEffect(() => {
     const syncScrollState = () => {
@@ -245,6 +250,10 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
       document.body.style.overflow = "";
     };
   }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    setHeaderAvatarBust(Date.now());
+  }, [user?.profilePictureUrl]);
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
   const openAccountSettings = () => {
@@ -438,7 +447,16 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                 className="inline-flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-white bg-[#6e8fb7] text-base font-semibold text-white shadow-sm transition hover:brightness-95 cursor-pointer"
                 aria-label="Profile menu"
               >
-                {initials}
+                {headerAvatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={headerAvatarUrl}
+                    alt="Profile"
+                    className="h-full w-full rounded-full object-cover"
+                  />
+                ) : (
+                  initials
+                )}
               </button>
               {isProfileOpen ? (
                 <div
@@ -612,7 +630,16 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                 aria-label="Account menu"
                 aria-expanded={isProfileOpen}
               >
-                {initials}
+                {headerAvatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={headerAvatarUrl}
+                    alt="Profile"
+                    className="h-full w-full rounded-full object-cover"
+                  />
+                ) : (
+                  initials
+                )}
               </button>
               {/* Mobile profile dropdown — same content as desktop */}
               {isProfileOpen ? (
