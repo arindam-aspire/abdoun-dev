@@ -32,7 +32,6 @@ export type SidebarItem = {
 
 /** Admin: these sidebar links open under-development (not wired for admin yet). */
 export const SIDEBAR_ITEM_IDS_ADMIN_UNDER_DEVELOPMENT: ReadonlySet<string> = new Set([
-  "leadsAndInquiries",
   "reportsAndAnalytics",
   "managePreferences",
 ]);
@@ -157,6 +156,7 @@ export const sidebarConfig: SidebarSection[] = [
         id: "leadsAndInquiries",
         label: "Leads and Inquiries",
         path: "/agent-dashboard/leads-and-inquiries",
+        adminPath: "/leads",
         icon: MessageCircle,
         roles: ["admin", "agent"],
         countKey: "leadsThisMonth",

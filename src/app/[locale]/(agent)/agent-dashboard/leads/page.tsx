@@ -1,10 +1,5 @@
-import { redirect } from "next/navigation";
+import { LeadManagementPage } from "@/features/leads/components/LeadManagementPage";
 
-export default async function AgentLeadsRoute({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale } = await params;
-  redirect(`/${locale}/under-development`);
+export default function AgentLeadsRoute() {
+  return <LeadManagementPage mode="agent" />;
 }

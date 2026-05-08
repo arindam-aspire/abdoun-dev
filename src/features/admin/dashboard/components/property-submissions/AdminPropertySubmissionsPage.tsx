@@ -740,13 +740,16 @@ export function AdminPropertySubmissionsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href={`/${locale}/admin-dashboard/add-property`}
-            onClick={() => dispatch(initializeNewPropertyWizard())}
-            className="inline-flex items-center justify-center rounded-xl border border-primary bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary/90"
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => {
+              dispatch(initializeNewPropertyWizard());
+              router.push(`/${locale}/admin-dashboard/add-property`);
+            }}
           >
             Add Property
-          </Link>
+          </Button>
         </div>
       </div>
 

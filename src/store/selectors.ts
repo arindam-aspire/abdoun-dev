@@ -47,6 +47,20 @@ const selectAdminManageListingsSidebarBadge = (state: RootState): number => {
   return -1;
 };
 
+const selectLeadsSidebarBadge = (state: RootState): number => {
+  const s = state.agentDashboardSummary;
+  const uid = state.auth.userId;
+  if (
+    s.leadsSidebarTotalStatus === "succeeded" &&
+    s.leadsSidebarTotal !== null &&
+    uid != null &&
+    s.leadsSidebarCountsAuthUserId === uid
+  ) {
+    return s.leadsSidebarTotal;
+  }
+  return -1;
+};
+
 /** Full dashboard summary from `GET /agents/dashboard/summary` after first fetch (session cache). */
 export function selectAgentDashboardCachedData(
   state: RootState,
@@ -71,6 +85,7 @@ export const selectSidebarCounts = createSelector(
     selectSavedSearchesItems,
     selectAdminUsersSidebarBadge,
     selectAdminManageListingsSidebarBadge,
+    selectLeadsSidebarBadge,
   ],
   (
     adminAgentsTotal,
@@ -81,6 +96,7 @@ export const selectSidebarCounts = createSelector(
     savedSearchItems,
     adminUsersSidebarTotal,
     adminManageListingsTotal,
+    leadsSidebarTotal,
   ): Record<string, number> => {
     const totalProperties = propertySearch.total;
     const isAgent = user?.role === "agent";
@@ -116,8 +132,8 @@ export const selectSidebarCounts = createSelector(
       totalFavouriteProperties,
       totalSavedSearches,
       leadsThisMonth:
-        isAgent && agentSummaryCountsValid
-          ? agentDashboardSummary.leadsThisMonth
+        isAgent || isAdmin
+          ? leadsSidebarTotal
           : -1,
       inquiryVolumeLast7Days:
         isAgent && agentSummaryCountsValid

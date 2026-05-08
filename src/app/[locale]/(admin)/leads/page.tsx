@@ -1,6 +1,6 @@
-import { LeadsPage } from "@/features/admin/dashboard/components/legacy-pages/LeadsPage";
+import { LeadManagementPage } from "@/features/leads/components/LeadManagementPage";
 
 export default function AdminLeadsRoute() {
-  return <LeadsPage />;
+  return <LeadManagementPage mode="admin" />;
 }
 

@@ -480,6 +480,13 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                         {tCommon("myRecentlyViewed")}
                       </Link>
                     ) : null}
+                    <Link
+                      href={`/${activeLanguage}/my-inquiries`}
+                      onClick={() => setIsProfileOpen(false)}
+                      className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                    >
+                      {tCommon("myInquiries")}
+                    </Link>
                     {profileMenuConfig?.showAccountSettings ? (
                       profileMenuConfig.showNotifications ? (
                         <div
@@ -645,6 +652,13 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                         {tCommon("myRecentlyViewed")}
                       </Link>
                     ) : null}
+                    <Link
+                      href={`/${activeLanguage}/my-inquiries`}
+                      onClick={() => setIsProfileOpen(false)}
+                      className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
+                    >
+                      {tCommon("myInquiries")}
+                    </Link>
                     {profileMenuConfig?.showAccountSettings ? (
                       <button
                         type="button"

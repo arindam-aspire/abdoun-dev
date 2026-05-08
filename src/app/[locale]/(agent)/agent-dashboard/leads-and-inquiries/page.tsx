@@ -1,12 +1,5 @@
-import { redirect } from "next/navigation";
+import { LeadManagementPage } from "@/features/leads/components/LeadManagementPage";
 
-type LeadsAndInquiriesRedirectPageProps = {
-  params: Promise<{ locale: string }>;
-};
-
-export default async function LeadsAndInquiriesRedirectPage({
-  params,
-}: LeadsAndInquiriesRedirectPageProps) {
-  const { locale } = await params;
-  redirect(`/${locale}/under-development`);
+export default function LeadsAndInquiriesRedirectPage() {
+  return <LeadManagementPage mode="agent" />;
 }

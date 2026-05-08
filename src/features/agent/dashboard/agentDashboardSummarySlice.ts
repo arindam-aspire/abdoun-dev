@@ -11,6 +11,7 @@ import {
   type AgentPropertyPerformanceParams,
   type AgentPropertyPerformanceResult,
 } from "@/features/agent/dashboard/api/agentDashboard.api";
+import { getAdminLeads, getAgentLeads, getMyLeads } from "@/features/leads/api/leadApiService";
 import { getApiErrorMessage, getThunkRejectedMessage } from "@/lib/http/apiError";
 
 type AgentPropertyPerformanceStatus = "idle" | "loading" | "succeeded" | "failed";
@@ -46,6 +47,11 @@ type AgentDashboardSummaryState = {
   adminManageListingsTotalStatus: "idle" | "loading" | "succeeded" | "failed";
   /** `auth.userId` when `adminManageListingsTotal` was last fetched. */
   adminListingsCountsAuthUserId: string | null;
+  /** Lead totals used for sidebar "Leads and Inquiries" badge. */
+  leadsSidebarTotal: number | null;
+  leadsSidebarTotalStatus: "idle" | "loading" | "succeeded" | "failed";
+  /** `auth.userId` when `leadsSidebarTotal` was last fetched. */
+  leadsSidebarCountsAuthUserId: string | null;
 };
 
 type AgentDashboardSummaryThunkState = {
@@ -76,6 +82,9 @@ const initialState: AgentDashboardSummaryState = {
   adminManageListingsTotal: null,
   adminManageListingsTotalStatus: "idle",
   adminListingsCountsAuthUserId: null,
+  leadsSidebarTotal: null,
+  leadsSidebarTotalStatus: "idle",
+  leadsSidebarCountsAuthUserId: null,
 };
 
 function propertyPerformanceCacheKey(params: AgentPropertyPerformanceParams): string {
@@ -205,6 +214,44 @@ export const fetchAdminManageListingsSidebarTotal = createAsyncThunk<
   },
 );
 
+/**
+ * Loads lead totals for sidebar badges based on current area (`/admin/leads`, `/agent/leads`, `/leads/my`).
+ */
+export const fetchLeadsSidebarTotal = createAsyncThunk<
+  { total: number | null; authUserId: string | null },
+  { mode: "admin" | "agent" | "user"; force?: boolean },
+  { state: AgentDashboardSummaryThunkState }
+>(
+  "agentDashboardSummary/fetchLeadsSidebarTotal",
+  async (arg, thunkApi) => {
+    const authUserId = thunkApi.getState().auth.userId;
+    try {
+      const listFn = arg.mode === "admin" ? getAdminLeads : arg.mode === "agent" ? getAgentLeads : getMyLeads;
+      const data = await listFn({ page: 1, pageSize: 1 });
+      const total = typeof data.total === "number" && Number.isFinite(data.total) ? data.total : null;
+      return { total, authUserId };
+    } catch (error) {
+      return thunkApi.rejectWithValue(getApiErrorMessage(error));
+    }
+  },
+  {
+    condition: (arg, { getState }) => {
+      if (arg.force) return true;
+      const s = getState().agentDashboardSummary;
+      const uid = getState().auth.userId;
+      if (s.leadsSidebarTotalStatus === "loading") return false;
+      if (
+        s.leadsSidebarTotalStatus === "succeeded" &&
+        uid != null &&
+        s.leadsSidebarCountsAuthUserId === uid
+      ) {
+        return false;
+      }
+      return true;
+    },
+  },
+);
+
 const agentDashboardSummarySlice = createSlice({
   name: "agentDashboardSummary",
   initialState,
@@ -266,6 +313,17 @@ const agentDashboardSummarySlice = createSlice({
       })
       .addCase(fetchAdminManageListingsSidebarTotal.rejected, (state) => {
         state.adminManageListingsTotalStatus = "failed";
+      })
+      .addCase(fetchLeadsSidebarTotal.pending, (state) => {
+        state.leadsSidebarTotalStatus = "loading";
+      })
+      .addCase(fetchLeadsSidebarTotal.fulfilled, (state, action) => {
+        state.leadsSidebarTotalStatus = "succeeded";
+        state.leadsSidebarTotal = action.payload.total;
+        state.leadsSidebarCountsAuthUserId = action.payload.authUserId;
+      })
+      .addCase(fetchLeadsSidebarTotal.rejected, (state) => {
+        state.leadsSidebarTotalStatus = "failed";
       });
 
     builder

@@ -19,6 +19,7 @@ import { queueRouteToast } from "@/lib/ui/routeToast";
 import { ADMIN_AGENTS_DASHBOARD_COUNT_PARAMS } from "@/features/admin/dashboard/hooks/useAdminAgentsTotalForDashboard";
 import { fetchAdminAgents } from "@/features/admin/adminAgentsSlice";
 import { fetchAdminUsersSidebarTotal } from "@/features/admin-users/adminUsersSlice";
+import { fetchLeadsSidebarTotal } from "@/features/agent/dashboard/agentDashboardSummarySlice";
 import { selectCurrentUser, selectSidebarCounts } from "@/store/selectors";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { isRtlLocale } from "@/i18n/routing";
@@ -45,9 +46,16 @@ export function Sidebar() {
   const tCommon = useTranslations("common");
   const isRTL = isRtlLocale(locale);
   useEffect(() => {
-    if (user?.role !== "admin" || !user?.id) return;
-    void dispatch(fetchAdminAgents(ADMIN_AGENTS_DASHBOARD_COUNT_PARAMS));
-    void dispatch(fetchAdminUsersSidebarTotal());
+    if (!user?.id) return;
+    if (user.role === "admin") {
+      void dispatch(fetchAdminAgents(ADMIN_AGENTS_DASHBOARD_COUNT_PARAMS));
+      void dispatch(fetchAdminUsersSidebarTotal());
+      void dispatch(fetchLeadsSidebarTotal({ mode: "admin" }));
+      return;
+    }
+    if (user.role === "agent") {
+      void dispatch(fetchLeadsSidebarTotal({ mode: "agent" }));
+    }
   }, [dispatch, user?.id, user?.role]);
 
   if (!isSidebarRole) return null;
