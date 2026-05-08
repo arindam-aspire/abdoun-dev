@@ -5,12 +5,13 @@
 These APIs support lead handling for three actor types:
 - **Registered user**: submits contact-form inquiry from property UI.
 - **Agent**: views and manages assigned leads (status, replies, notes).
-- **Admin**: manages scoped leads for assigned agents (manual creation, reassign, status/close decision).
+- **Admin**: manages all leads (manual creation, reassign, status/close decision).
 
 Flow summary:
 - **Contact-form flow**: `POST /api/v1/leads/contact-form` creates lead with `NEW` + `EMAIL_FORM`.
 - **Agent workflow**: list/detail + progress to `IN_PROGRESS`, then request close.
-- **Admin workflow**: list scoped leads, manual create (`PHONE`/`WHATSAPP`/`MANUAL_ADMIN`), reassign, status updates, close decision.
+- **Admin workflow**: list all leads, manual create (`PHONE`/`WHATSAPP`/`MANUAL_ADMIN`), reassign, status updates, close decision.
+- **Offline lead flow**: `POST /api/v1/leads/manual` lets an agent/admin create an external-communication lead with `NEW` + `OFFLINE_MANUAL`.
 - **Status lifecycle** is controlled by workflow policy and enforced in service layer.
 
 ---
@@ -25,9 +26,9 @@ Flow summary:
   - `admin`
 
 Scope limitations:
-- **Registered user**: only contact-form create action.
+- **Registered user**: contact-form create action and own-lead read/message access.
 - **Agent**: can access only leads where `assigned_agent_id == current_user.id`.
-- **Admin**: can access only leads where assigned agent is actively linked via `admin_agent_assignments`.
+- **Admin**: full access to Lead Management resources unless a route has a narrower business operation.
 
 ---
 
@@ -66,7 +67,7 @@ Source: `app/schemas/lead.py`
 
 | Field | Type | Required | Validation | Notes |
 |---|---|---|---|---|
-| `propertyId` | UUID | Yes | UUID | Property being inquired about |
+| `propertyId` | string / UUID | Yes | Non-empty | Property: UUID string, or numeric `property_hash` (e.g. from listing URL) resolved server-side to internal UUID |
 | `name` | string | Yes | min 2, max 20 | Currently validated but not persisted to lead row |
 | `email` | string | Yes | min 5, max 255 | Format is frontend/business-validated; schema has length constraints |
 | `phoneNumber` | string | Yes | min 8, max 20 | Country-code-aware formatting expected by frontend |
@@ -81,6 +82,19 @@ Source: `app/schemas/lead.py`
 | `source` | string | Yes | `^(PHONE|WHATSAPP|MANUAL_ADMIN)$` | Manual/admin channel |
 | `message` | string | Yes | min 10, max 1000 | Lead message |
 | `contactUserId` | UUID \| null | No | UUID if provided | Optional user link |
+
+### OfflineLeadCreateRequest
+
+| Field | Type | Required | Validation | Notes |
+|---|---|---|---|---|
+| `customerName` | string | Yes | min 1, max 255, non-blank | Offline customer name |
+| `phoneNumber` | string | Yes | min 7, max 50, basic digit validation | Normalized for duplicate checks |
+| `propertyName` | string \| null | Conditional | max 255 | Required when `propertyId` is not provided |
+| `propertyId` | UUID \| null | Conditional | UUID | Optional link to an existing property |
+| `inquiryType` | string | Yes | `BUY`, `RENT`, `SELL`, `OTHER` | Offline inquiry type |
+| `source` | string | Yes | `PHONE`, `WHATSAPP`, `WALK_IN`, `FACEBOOK`, `REFERRAL`, `OTHER` | Offline lead source |
+| `notes` | string \| null | No | max 2000 | Internal offline notes; not client-visible as in-app messages |
+| `assignedAgentId` | UUID \| null | Admin only | UUID | Required for admin-created offline leads; ignored/forbidden for agent-created leads unless equal to self |
 
 ### LeadStatusUpdateRequest
 
@@ -111,12 +125,22 @@ Source: `app/schemas/lead.py`
 
 | Field | Type | Required | Validation | Notes |
 |---|---|---|---|---|
-| `id` | UUID | Yes | UUID | Lead ID |
-| `propertyId` | UUID \| null | No | UUID if present | |
+| `id` | UUID | Yes | UUID | Primary key for APIs and joins (internal id). |
+| `leadNumber` | string | Yes | Unique display reference `LD-YYYY-NNNNNN` | Human-readable lead reference; use for UI labels (not for URL path params — paths remain UUID `{lead_id}`). |
+| `propertyId` | UUID \| null | No | UUID if present | Unchanged; FK to property. |
+| `property` | object \| null | No | See below | Display-only snapshot for lists/detail (title via default/en convention); omit or null if property missing. |
 | `userId` | UUID \| null | No | UUID if present | Requesting user |
+| `user` | object \| null | No | See below | Display-only submitted/contact user summary for UI |
+| `communicationMode` | string \| null | No | `IN_APP` or `EXTERNAL` | Existing inquiry leads use `IN_APP`; offline leads use `EXTERNAL`. |
+| `externalOwner` | object \| null | No | See below | Customer display summary for offline leads. |
+| `externalPropertyName` | string \| null | No | | Offline property name fallback when no `propertyId` is linked. |
+| `createdByAgentId` | UUID \| null | No | UUID if present | Agent who created an offline lead. |
+| `createdByAdminId` | UUID \| null | No | UUID if present | Admin who created an offline lead. |
+| `offlineLead` | object \| null | No | See below | Offline lead details for external/manual lead display. |
 | `status` | string | Yes | lifecycle values | |
 | `source` | string | Yes | source values | |
-| `assignedAgentId` | UUID \| null | No | UUID if present | |
+| `assignedAgentId` | UUID \| null | No | UUID if present | Unchanged agent FK/id |
+| `assignedAgent` | object \| null | No | See below | Display-only agent summary for lead tables/detail |
 | `assignedByAdminId` | UUID \| null | No | UUID if present | |
 | `message` | string \| null | No | | |
 | `lastActivityAt` | datetime \| null | No | ISO timestamp | |
@@ -126,6 +150,56 @@ Source: `app/schemas/lead.py`
 | `createdAt` | datetime | Yes | ISO timestamp | |
 | `updatedAt` | datetime | Yes | ISO timestamp | |
 
+### PropertySummaryResponse (nested under `property`)
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `id` | string | Yes | Property UUID string |
+| `title` | string \| null | No | Resolved via `get_title_description_for_language` default/en fallback |
+| `slug` | string \| null | No | Optional slug derived from title for linking |
+| `thumbnailUrl` | string \| null | No | Single thumbnail URL for lead previews; normalized media primary image thumb first, legacy first image fallback |
+| `propertyHash` | int \| null | No | `properties_normalized.property_hash` — public numeric id for routes such as `/property-details/{propertyHash}` and `GET /api/v1/properties/{property_id}` |
+
+### AssignedAgentSummaryResponse (nested under `assignedAgent`)
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `id` | string | Yes | Agent user UUID string |
+| `fullName` | string \| null | No | From `users.full_name` |
+| `email` | string \| null | No | From `users.email` |
+| `phone` | string \| null | No | From `users.phone_number` |
+
+### LeadUserSummaryResponse (nested under `user`)
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `id` | string | Yes | Submitted/contact user UUID string |
+| `fullName` | string \| null | No | From `users.full_name` |
+| `email` | string \| null | No | From `users.email` |
+| `phone` | string \| null | No | From `users.phone_number` |
+
+### ExternalOwnerSummaryResponse (nested under `externalOwner`)
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `name` | string \| null | No | External owner name |
+| `email` | string \| null | No | External owner email |
+| `phone` | string \| null | No | External owner phone |
+
+### OfflineLeadSummaryResponse (nested under `offlineLead`)
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `customerName` | string \| null | No | Offline customer name |
+| `phoneNumber` | string \| null | No | Offline customer phone |
+| `propertyName` | string \| null | No | Offline property name fallback |
+| `propertyId` | string \| null | No | Linked property UUID when provided |
+| `inquiryType` | string \| null | No | `BUY`, `RENT`, `SELL`, `OTHER` |
+| `source` | string \| null | No | `PHONE`, `WHATSAPP`, `WALK_IN`, `FACEBOOK`, `REFERRAL`, `OTHER` |
+| `notes` | string \| null | No | Internal notes stored on the offline lead |
+| `createdByAgentId` | string \| null | No | Agent creator UUID when agent-created |
+| `createdByAdminId` | string \| null | No | Admin creator UUID when admin-created |
+
 ### LeadListResponse
 
 | Field | Type | Required | Validation | Notes |
@@ -134,6 +208,25 @@ Source: `app/schemas/lead.py`
 | `total` | int | Yes | >= 0 | Total matching rows |
 | `page` | int | Yes | >= 1 | Page index |
 | `pageSize` | int | Yes | >= 1 | Page size |
+| `summary` | object | Yes | See below | Status counts for the same role scope as the list endpoint |
+
+### LeadStatusSummaryResponse (nested under `summary`)
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `total` | int | Yes | Sum of all status counts in the summary scope |
+| `NEW` | int | Yes | Count of `NEW` leads |
+| `IN_PROGRESS` | int | Yes | Count of `IN_PROGRESS` leads |
+| `REQUEST_FOR_CLOSE` | int | Yes | Count of `REQUEST_FOR_CLOSE` leads |
+| `CLOSED` | int | Yes | Count of `CLOSED` leads |
+
+Summary semantics:
+- Scope matches the list endpoint role: admin counts all leads, agent counts assigned leads, registered user counts own leads.
+- The active `status` filter affects `items` and `total`, but does not affect `summary`.
+- The active `source` filter affects `items`, `total`, and `summary`.
+- Pagination does not affect `summary`.
+- Current lead list endpoints do not expose a backend search parameter, so summary counts do not change for frontend-only/local search.
+- Missing statuses are returned with `0`.
 
 ### LeadNoteResponse
 
@@ -238,6 +331,77 @@ Example success:
 }
 ```
 
+### POST /api/v1/leads/manual
+
+**Purpose:** Agent/Admin creates an offline lead where customer communication happens outside the app.  
+**Auth:** Bearer token required.  
+**Allowed Roles:** `agent`, `admin`.  
+**Path Params:** None.  
+**Query Params:** None.  
+**Request Body:** `OfflineLeadCreateRequest`.  
+**Success Response:** `StandardResponse<LeadItemResponse>`.  
+**Error Responses:** `401`, `400` (admin missing assigned agent), `403` (registered user/non-agent-admin), `409` (duplicate active lead), `422`, `500`.
+
+Creation rules:
+- `status = NEW`
+- `source = OFFLINE_MANUAL`
+- `communicationMode = EXTERNAL`
+- agent creation self-assigns (`assignedAgentId = current agent id`)
+- admin creation requires `assignedAgentId` and assigns that selected agent
+- `userId = null`
+- `propertyId` is nullable; when omitted, `externalPropertyName`/`offlineLead.propertyName` is used for display
+- creation is recorded in lead history with reason `Offline lead created`
+- duplicate active offline leads return `409` when phone + property reference match; `CLOSED` duplicates are allowed
+- communication is external: message reads return an empty list and message posts return `400`
+
+Example request:
+
+```json
+{
+  "customerName": "Customer Name",
+  "phoneNumber": "+962799999999",
+  "propertyName": "Villa in Abdoun",
+  "inquiryType": "BUY",
+  "source": "PHONE",
+  "notes": "Customer wants to buy"
+}
+```
+
+Example response data:
+
+```json
+{
+  "leadNumber": "LD-2026-000014",
+  "status": "NEW",
+  "source": "OFFLINE_MANUAL",
+  "communicationMode": "EXTERNAL",
+  "externalOwner": {
+    "name": "Customer Name",
+    "email": null,
+    "phone": "+962799999999"
+  },
+  "externalPropertyName": "Villa in Abdoun",
+  "assignedAgentId": "33333333-3333-3333-3333-333333333333",
+  "createdByAgentId": "33333333-3333-3333-3333-333333333333",
+  "createdByAdminId": null,
+  "offlineLead": {
+    "customerName": "Customer Name",
+    "phoneNumber": "+962799999999",
+    "propertyName": "Villa in Abdoun",
+    "propertyId": null,
+    "inquiryType": "BUY",
+    "source": "PHONE",
+    "notes": "Customer wants to buy",
+    "createdByAgentId": "33333333-3333-3333-3333-333333333333",
+    "createdByAdminId": null
+  },
+  "userId": null,
+  "user": null,
+  "propertyId": null,
+  "property": null
+}
+```
+
 ### GET /api/v1/agent/leads
 
 **Purpose:** Paginated lead list for authenticated agent.  
@@ -248,7 +412,7 @@ Example success:
 **Request Body:** None.  
 **Success Response:** `StandardResponse<LeadListResponse>`.  
 **Error Responses:** `401`, `403`, `422`, `500`.  
-**Frontend Notes:** Only assigned leads are returned.
+**Frontend Notes:** Only assigned leads are returned. `summary` counts assigned leads, ignores `status`, respects `source`, and ignores pagination.
 
 ### GET /api/v1/agent/leads/{lead_id}
 
@@ -272,7 +436,7 @@ Example success:
 **Request Body:** `LeadStatusUpdateRequest`.  
 **Success Response:** `StandardResponse<LeadItemResponse>`.  
 **Error Responses:** `401`, `403`, `404`, `422`, `500`.  
-**Frontend Notes:** Invalid transition currently surfaces as server error (`500`) because workflow `ValueError` is not explicitly mapped to `400` yet. **Needs confirmation** for frontend handling.
+**Frontend Notes:** Invalid transitions return `400`.
 
 ### POST /api/v1/agent/leads/{lead_id}/reply
 
@@ -324,7 +488,7 @@ Example success:
 
 ### GET /api/v1/admin/leads
 
-**Purpose:** Paginated lead list for admin-scoped agents only.  
+**Purpose:** Paginated lead list for admin.  
 **Auth:** Bearer token required.  
 **Allowed Roles:** `admin`.  
 **Path Params:** None.  
@@ -332,7 +496,7 @@ Example success:
 **Request Body:** None.  
 **Success Response:** `StandardResponse<LeadListResponse>`.  
 **Error Responses:** `401`, `403`, `422`, `500`.  
-**Frontend Notes:** Uses `admin_agent_assignments` scope.
+**Frontend Notes:** Admin has full lead-list access. `summary` counts all leads, ignores `status`, respects `source`, and ignores pagination.
 
 ### POST /api/v1/admin/leads
 
@@ -502,9 +666,9 @@ Admin close rule:
 - Pagination/filter wiring:
   - `page`, `pageSize`, optional `status`, `source`
 - Role-based UI gating:
-  - registered user (contact)
-  - agent (assigned leads only)
-  - admin (scoped agent leads only)
+  - registered user (contact and own leads)
+  - agent (assigned leads only, offline lead create)
+  - admin (full lead access)
 
 ---
 
@@ -525,6 +689,7 @@ This section supersedes older role-split guidance where action/resource is the s
 ### Canonical shared endpoints (preferred)
 
 - `POST /api/v1/leads/contact-form`
+- `POST /api/v1/leads/manual`
 - `GET /api/v1/leads/my`
 - `GET /api/v1/leads/{lead_id}`
 - `GET /api/v1/leads/{lead_id}/messages`
@@ -559,12 +724,14 @@ This section supersedes older role-split guidance where action/resource is the s
 
 - `agent`
   - Access limited to assigned leads
+  - Can create self-assigned offline leads through `POST /api/v1/leads/manual`
   - Can read/post messages on assigned leads
   - Can manage notes on assigned leads; update/delete only own notes
   - Can view history for assigned leads
 
 - `admin`
   - Full access to all leads
+  - Can create offline leads through `POST /api/v1/leads/manual` with `assignedAgentId`
   - Can read all messages
   - Can view/add notes
   - Can view all history
@@ -577,3 +744,38 @@ This section supersedes older role-split guidance where action/resource is the s
 - Invalid transition returns `HTTP 400`
 - Permission failure returns `HTTP 403`
 - `CONNECTED` status is not used
+
+### Offline lead flow (2026-05-08)
+
+- `POST /api/v1/leads/manual` is the canonical offline lead creation endpoint for agents and admins.
+- Agent-created offline leads self-assign to the current agent; admin-created offline leads require `assignedAgentId`.
+- Offline leads are stored with `source = OFFLINE_MANUAL`, `communicationMode = EXTERNAL`, `status = NEW`, `userId = null`, and nullable `propertyId`.
+- Customer data is returned as `externalOwner` and `offlineLead`; `externalPropertyName` is the property-name fallback when no property UUID is linked.
+- Duplicate active offline leads return `409` when normalized phone plus property reference match; closed duplicates are allowed.
+- Existing contact-form leads remain `IN_APP` and continue to use the in-app message thread.
+- For `EXTERNAL` leads, `GET /api/v1/leads/{lead_id}/messages` returns an empty list and `POST /api/v1/leads/{lead_id}/messages` returns `400` with `This lead uses external communication.`
+- Closed leads are read-only for status updates, reassignment, notes mutation, and message posting.
+- Offline leads follow the same status lifecycle: `NEW -> IN_PROGRESS -> REQUEST_FOR_CLOSE -> CLOSED`.
+
+### Lead display identifiers and property snapshot (2026-05-06)
+
+- **`id` (UUID)** remains the canonical identifier for API routes (`/leads/{lead_id}`, etc.).
+- **`leadNumber`** (`LD-YYYY-NNNNNN`) is assigned server-side, unique, safe under concurrency via table `lead_number_counters` and PostgreSQL upsert. Migration `0040_lead_display_identifiers` adds `leads.lead_number`, backfills existing rows, and enforces a unique index.
+- **`property`** on list/detail items is a display snapshot `{ id, title, slug?, propertyHash?, thumbnailUrl? }`. **`propertyId`** is unchanged. Title follows existing translation helper default/en behavior (`get_title_description_for_language`); `slug` is a simple derived slug from title when present. **`propertyHash`** is `properties_normalized.property_hash` for frontend routes that expect the numeric public id (e.g. `/property-details/981376612`). **`thumbnailUrl`** is a single preview image URL, not an image/media array.
+
+### Lead list response summary counts (2026-05-08)
+
+- Existing list endpoints include `summary` in the same response; no summary-specific endpoints were added.
+- Applies to `GET /api/v1/admin/leads`, `GET /api/v1/agent/leads`, and `GET /api/v1/leads/my`.
+- `summary` shape is `{ total, NEW, IN_PROGRESS, REQUEST_FOR_CLOSE, CLOSED }`.
+- `summary` uses the same access scope as the list:
+  - admin: all leads
+  - agent: assigned leads
+  - registered user: own leads
+- `summary` ignores the current `status` filter so status cards remain stable while clicking filters.
+- `summary` respects `source` when a source filter is active.
+- `summary` ignores pagination.
+- No backend search parameter exists on these list endpoints today; frontend-local search does not affect backend summary counts.
+- **`assignedAgent`** is a display-only summary `{ id, fullName, email, phone }`; **`assignedAgentId`** remains unchanged.
+- **`user`** is a display-only submitted/contact user summary `{ id, fullName, email, phone }`; **`userId`** remains unchanged.
+- Lead reassignment history is represented in the existing history stream as an unchanged-status row with a reason describing old/new assigned agent ids.

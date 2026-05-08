@@ -42,6 +42,12 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "abdoun-dev-assets-usw2.s3.us-west-2.amazonaws.com",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
 };

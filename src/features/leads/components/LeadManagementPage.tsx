@@ -1,18 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import {
   adminCloseDecision,
-  createAdminLead,
   getAdminLeads,
   getAgentLeads,
   getMyLeads,
   reassignAdminLead,
+  updateAgentLeadStatus,
 } from "@/features/leads/api/leadApiService";
-import { CreateManualLeadModal } from "@/features/leads/components/CreateManualLeadModal";
+import { CreateOfflineLeadModal } from "@/features/leads/components/CreateOfflineLeadModal";
 import { Dropdown } from "@/components/ui/dropdown";
 import { Pagination } from "@/components/ui/Pagination";
 import { DialogRoot } from "@/components/ui/dialog";
@@ -23,11 +23,12 @@ import { cn } from "@/lib/cn";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { AGENT_STATUS, normalizeAgentStatus } from "@/constants/agentStatus";
 import { fetchAdminAgents } from "@/features/admin/adminAgentsSlice";
+import { getLeadSourceLabel } from "@/features/leads/utils/leadDisplay";
 import { ArrowDownUp, Eye, MoreVertical, X } from "lucide-react";
 import type {
-  AdminManualLeadCreatePayload,
   Lead,
   LeadSource,
+  LeadStatusSummary,
   LeadStatus,
 } from "@/types/lead";
 
@@ -57,17 +58,7 @@ function leadStatusClass(status: LeadStatus): string {
 }
 
 function sourceLabel(source: LeadSource | "all"): string {
-  if (source === "all") return "All";
-  if (source === "AGENT_MANUAL") return "Agent Manual";
-  return source
-    .toLowerCase()
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
-function isExternalCommunicationLead(lead: Lead): boolean {
-  return String(lead.communicationMode ?? "").toUpperCase() === "EXTERNAL";
+  return getLeadSourceLabel(source);
 }
 
 function formatDate(value: string | null): string {
@@ -88,6 +79,8 @@ function leadDisplayRef(lead: Pick<Lead, "id" | "leadNumber">): string {
 function propertyDisplayLabel(lead: Lead): string {
   const title = lead.property?.title?.trim();
   if (title) return title;
+  const offline = lead.offlineLead?.propertyName?.trim();
+  if (offline) return offline;
   const externalName = lead.externalPropertyName?.trim();
   if (externalName) return externalName;
   const hash = lead.property?.propertyHash;
@@ -120,6 +113,10 @@ function userDisplayLabel(lead: Lead): string {
   if (name) return name;
   const email = lead.user?.email?.trim();
   if (email) return email;
+  const offlineName = lead.offlineLead?.customerName?.trim();
+  if (offlineName) return offlineName;
+  const offlinePhone = lead.offlineLead?.phoneNumber?.trim();
+  if (offlinePhone) return offlinePhone;
   const extName = lead.externalOwner?.name?.trim();
   if (extName) return extName;
   const extEmail = lead.externalOwner?.email?.trim();
@@ -130,9 +127,9 @@ function userDisplayLabel(lead: Lead): string {
 }
 
 function userHoverText(lead: Lead): string {
-  const name = lead.user?.fullName?.trim() || lead.externalOwner?.name?.trim() || "-";
+  const name = lead.user?.fullName?.trim() || lead.offlineLead?.customerName?.trim() || lead.externalOwner?.name?.trim() || "-";
   const email = lead.user?.email?.trim() || lead.externalOwner?.email?.trim() || "-";
-  const phone = lead.user?.phone?.trim() || lead.externalOwner?.phone?.trim() || "-";
+  const phone = lead.user?.phone?.trim() || lead.offlineLead?.phoneNumber?.trim() || lead.externalOwner?.phone?.trim() || "-";
   const lines = [`Name: ${name}`, `Email: ${email}`, `Phone: ${phone}`];
   return lines.join("\n");
 }
@@ -164,6 +161,14 @@ const LEAD_STATUS_CARDS: Array<{ key: LeadStatus | "all"; label: string }> = [
   { key: "REQUEST_FOR_CLOSE", label: "Request for close" },
   { key: "CLOSED", label: "Closed leads" },
 ];
+
+const EMPTY_SUMMARY: Record<LeadStatus | "all", number> = {
+  all: 0,
+  NEW: 0,
+  IN_PROGRESS: 0,
+  REQUEST_FOR_CLOSE: 0,
+  CLOSED: 0,
+};
 
 function LeadTableSkeleton() {
   return (
@@ -212,44 +217,28 @@ export function LeadManagementPage({ mode }: { mode: Mode }) {
   const [list, setList] = useState<Lead[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [summaryLoading, setSummaryLoading] = useState(false);
-  const [summaryCounts, setSummaryCounts] = useState<Record<LeadStatus | "all", number>>({
-    all: 0,
-    NEW: 0,
-    IN_PROGRESS: 0,
-    REQUEST_FOR_CLOSE: 0,
-    CLOSED: 0,
-  });
+  const [summaryCounts, setSummaryCounts] = useState<Record<LeadStatus | "all", number>>(EMPTY_SUMMARY);
   const [query, setQuery] = useState("");
   const [periodFilter, setPeriodFilter] = useState<PeriodFilterValue>("all");
   const [toast, setToast] = useState<{ kind: "success" | "error"; message: string } | null>(null);
-  const [adminCreateOpen, setAdminCreateOpen] = useState(false);
-  const [manualLeadModalOpen, setManualLeadModalOpen] = useState(false);
+  const [offlineLeadModalOpen, setOfflineLeadModalOpen] = useState(false);
   const [closeTargetLead, setCloseTargetLead] = useState<Lead | null>(null);
+  const [markInProgressTargetLead, setMarkInProgressTargetLead] = useState<Lead | null>(null);
+  const [requestCloseTargetLead, setRequestCloseTargetLead] = useState<Lead | null>(null);
   const [reassignTargetLead, setReassignTargetLead] = useState<Lead | null>(null);
   const [reassignAgentId, setReassignAgentId] = useState("");
   const [sortBy, setSortBy] = useState<"lead" | "property" | "user" | "agent" | "source" | "status" | "lastActivity">(
     "lastActivity",
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  const [adminCreate, setAdminCreate] = useState<AdminManualLeadCreatePayload>({
-    propertyId: "",
-    assignedAgentId: "",
-    source: "PHONE",
-    message: "",
-    contactUserId: null,
-  });
   const { currentItems: adminAgents, loading: adminAgentsLoading } = useAppSelector((state) => state.adminAgents);
-  const summaryFetchRef = useRef<{ key: string | null; inFlight: Promise<void> | null; lastFetchedAt: number }>({
-    key: null,
-    inFlight: null,
-    lastFetchedAt: 0,
-  });
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-  const showAgentManualLeadButton =
+  const showAgentOfflineLeadButton =
     mode === "agent" && !/\/agent-dashboard\/inquiries(\/|$)/.test(pathname ?? "");
+
+  const canShowOfflineLeadButton = mode === "admin" || showAgentOfflineLeadButton;
 
   const updateQuery = useCallback(
     (updates: Record<string, string | null>) => {
@@ -276,6 +265,14 @@ export function LeadManagementPage({ mode }: { mode: Mode }) {
       });
       setList(res.items ?? []);
       setTotal(res.total ?? 0);
+      const summary: LeadStatusSummary | undefined = res.summary;
+      setSummaryCounts({
+        all: summary?.total ?? res.total ?? 0,
+        NEW: summary?.NEW ?? 0,
+        IN_PROGRESS: summary?.IN_PROGRESS ?? 0,
+        REQUEST_FOR_CLOSE: summary?.REQUEST_FOR_CLOSE ?? 0,
+        CLOSED: summary?.CLOSED ?? 0,
+      });
     } catch (error) {
       setToast({ kind: "error", message: getApiErrorMessage(error, "Failed to load leads.") });
     } finally {
@@ -283,87 +280,19 @@ export function LeadManagementPage({ mode }: { mode: Mode }) {
     }
   }, [mode, page, pageSize, status]);
 
-  const loadSummary = useCallback(
-    async ({ force = false }: { force?: boolean } = {}) => {
-      const key = `summary:${mode}`;
-      const now = Date.now();
-      // Avoid duplicate bursts from StrictMode / fast refresh re-runs.
-      if (!force) {
-        const cached = summaryFetchRef.current;
-        const isSameKey = cached.key === key;
-        const isFresh = now - cached.lastFetchedAt < 10_000;
-        if (isSameKey && cached.inFlight) {
-          await cached.inFlight;
-          return;
-        }
-        if (isSameKey && isFresh) {
-          return;
-        }
-      }
-
-      const run = (async () => {
-        setSummaryLoading(true);
-        try {
-          const listFn = mode === "admin" ? getAdminLeads : mode === "agent" ? getAgentLeads : getMyLeads;
-          const [allRes, newRes, inProgressRes, requestForCloseRes, closedRes] = await Promise.all([
-            listFn({ page: 1, pageSize: 1 }),
-            listFn({ page: 1, pageSize: 1, status: "NEW" }),
-            listFn({ page: 1, pageSize: 1, status: "IN_PROGRESS" }),
-            listFn({ page: 1, pageSize: 1, status: "REQUEST_FOR_CLOSE" }),
-            listFn({ page: 1, pageSize: 1, status: "CLOSED" }),
-          ]);
-          setSummaryCounts({
-            all: allRes.total ?? 0,
-            NEW: newRes.total ?? 0,
-            IN_PROGRESS: inProgressRes.total ?? 0,
-            REQUEST_FOR_CLOSE: requestForCloseRes.total ?? 0,
-            CLOSED: closedRes.total ?? 0,
-          });
-          summaryFetchRef.current = { key, inFlight: null, lastFetchedAt: Date.now() };
-        } finally {
-          setSummaryLoading(false);
-        }
-      })();
-
-      summaryFetchRef.current = { key, inFlight: run, lastFetchedAt: summaryFetchRef.current.lastFetchedAt };
-      await run;
-      if (summaryFetchRef.current.inFlight === run) {
-        summaryFetchRef.current.inFlight = null;
-      }
-    },
-    [mode],
-  );
-
   useEffect(() => {
     void load();
   }, [load]);
 
-  useEffect(() => {
-    if (mode === "user") return;
-    void loadSummary();
-  }, [loadSummary, mode]);
-
-  const onAdminCreateLead = async () => {
-    try {
-      await createAdminLead(adminCreate);
-      setAdminCreateOpen(false);
-      setAdminCreate({
-        propertyId: "",
-        assignedAgentId: "",
-        source: "PHONE",
-        message: "",
-        contactUserId: null,
-      });
-      await load();
-      setToast({ kind: "success", message: "Lead created successfully." });
-      await loadSummary({ force: true });
-    } catch (error) {
-      setToast({ kind: "error", message: getApiErrorMessage(error, "Failed to create lead.") });
-    }
-  };
-
   const openLead = (leadId: string) => {
     router.push(leadDetailHref(locale, mode, leadId));
+  };
+
+  const onOpenOfflineLeadModal = async () => {
+    if (mode === "admin") {
+      await dispatch(fetchAdminAgents({ page: 1, pageSize: 100, force: true }));
+    }
+    setOfflineLeadModalOpen(true);
   };
 
   const onOpenReassign = async (lead: Lead) => {
@@ -391,10 +320,34 @@ export function LeadManagementPage({ mode }: { mode: Mode }) {
     try {
       await adminCloseDecision(closeTargetLead.id, { status: "CLOSED" });
       setCloseTargetLead(null);
-      await Promise.all([load(), loadSummary({ force: true })]);
+      await load();
       setToast({ kind: "success", message: "Lead closed successfully." });
     } catch (error) {
       setToast({ kind: "error", message: getApiErrorMessage(error, "Failed to close lead.") });
+    }
+  };
+
+  const onConfirmMarkInProgress = async () => {
+    if (!markInProgressTargetLead) return;
+    try {
+      await updateAgentLeadStatus(markInProgressTargetLead.id, { status: "IN_PROGRESS" });
+      setMarkInProgressTargetLead(null);
+      await load();
+      setToast({ kind: "success", message: "Lead moved to In Progress." });
+    } catch (error) {
+      setToast({ kind: "error", message: getApiErrorMessage(error, "Failed to update lead status.") });
+    }
+  };
+
+  const onConfirmRequestClose = async () => {
+    if (!requestCloseTargetLead) return;
+    try {
+      await updateAgentLeadStatus(requestCloseTargetLead.id, { status: "REQUEST_FOR_CLOSE" });
+      setRequestCloseTargetLead(null);
+      await load();
+      setToast({ kind: "success", message: "Close request submitted." });
+    } catch (error) {
+      setToast({ kind: "error", message: getApiErrorMessage(error, "Failed to request close.") });
     }
   };
 
@@ -419,6 +372,9 @@ export function LeadManagementPage({ mode }: { mode: Mode }) {
         leadDisplayRef(lead),
         propertyDisplayLabel(lead),
         userDisplayLabel(lead),
+        lead.offlineLead?.customerName,
+        lead.offlineLead?.phoneNumber,
+        lead.offlineLead?.propertyName,
         lead.externalOwner?.name,
         lead.externalOwner?.email,
         lead.externalOwner?.phone,
@@ -505,24 +461,17 @@ export function LeadManagementPage({ mode }: { mode: Mode }) {
               : "Review leads, update status, and manage follow-ups."}
           </p>
         </div>
-        {mode === "admin" || showAgentManualLeadButton ? (
+        {canShowOfflineLeadButton ? (
           <div className="flex flex-wrap items-center justify-end gap-3">
-            {showAgentManualLeadButton ? (
-              <Button type="button" variant="primary" onClick={() => setManualLeadModalOpen(true)}>
-                Add New Lead
-              </Button>
-            ) : null}
-            {mode === "admin" ? (
-              <Button type="button" variant="primary" onClick={() => setAdminCreateOpen(true)}>
-                Create Manual Lead
-              </Button>
-            ) : null}
+            <Button type="button" variant="primary" onClick={() => void onOpenOfflineLeadModal()}>
+              Create Offline Lead
+            </Button>
           </div>
         ) : null}
       </div>
 
       {mode !== "user" ? (
-        loading || summaryLoading ? (
+        loading ? (
           <LeadStatusCardsSkeleton />
         ) : (
           <section className="grid gap-4 sm:grid-cols-2 md:grid-cols-5">
@@ -628,7 +577,7 @@ export function LeadManagementPage({ mode }: { mode: Mode }) {
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-        <div className="overflow-x-auto">
+          <div className="overflow-x-auto">
           <table className="w-full min-w-[960px] text-left">
               <thead>
                 <tr className="border-b border-subtle bg-surface text-xs text-charcoal/65">
@@ -722,12 +671,9 @@ export function LeadManagementPage({ mode }: { mode: Mode }) {
                     </td>
                     <td className="px-4 py-3 align-top">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="whitespace-nowrap">{sourceLabel(lead.source)}</span>
-                        {isExternalCommunicationLead(lead) ? (
-                          <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-600">
-                            External
-                          </span>
-                        ) : null}
+                        <span className="inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-indigo-700">
+                          {sourceLabel(lead.source)}
+                        </span>
                       </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap align-top">
@@ -789,6 +735,9 @@ export function LeadManagementPage({ mode }: { mode: Mode }) {
                               : []),
                             ...(mode === "agent"
                               ? [
+                                  ...(isStatus(lead.status, "CLOSED")
+                                    ? []
+                                    : [
                                   ...(isStatus(lead.status, "NEW")
                                     ? [
                                         {
@@ -796,7 +745,7 @@ export function LeadManagementPage({ mode }: { mode: Mode }) {
                                           label: "Mark In Progress",
                                           className: "text-charcoal",
                                           hoverClassName: "bg-primary/5",
-                                          onSelect: () => openLead(lead.id),
+                                          onSelect: () => setMarkInProgressTargetLead(lead),
                                         },
                                       ]
                                     : []),
@@ -807,7 +756,7 @@ export function LeadManagementPage({ mode }: { mode: Mode }) {
                                           label: "Request Close",
                                           className: "text-charcoal",
                                           hoverClassName: "bg-primary/5",
-                                          onSelect: () => openLead(lead.id),
+                                          onSelect: () => setRequestCloseTargetLead(lead),
                                         },
                                       ]
                                     : []),
@@ -821,16 +770,7 @@ export function LeadManagementPage({ mode }: { mode: Mode }) {
                                         },
                                       ]
                                     : []),
-                                  ...(isStatus(lead.status, "CLOSED")
-                                    ? [
-                                        {
-                                          key: "closed",
-                                          label: "Closed",
-                                          disabled: true,
-                                          onSelect: () => {},
-                                        },
-                                      ]
-                                    : []),
+                                    ]),
                                 ]
                               : []),
                           ]}
@@ -873,60 +813,6 @@ export function LeadManagementPage({ mode }: { mode: Mode }) {
         </CardContent>
       </Card>
 
-      <DialogRoot open={adminCreateOpen} onClose={() => setAdminCreateOpen(false)}>
-        <div className="space-y-2">
-          <h2 className="text-size-lg fw-semibold">Create manual lead</h2>
-          <input
-            placeholder="propertyId"
-            title="Property ID"
-            value={adminCreate.propertyId}
-            onChange={(e) => setAdminCreate((prev) => ({ ...prev, propertyId: e.target.value }))}
-            className="h-10 w-full rounded-lg border border-subtle px-3 text-sm"
-          />
-          <input
-            placeholder="assignedAgentId"
-            title="Assigned agent ID"
-            value={adminCreate.assignedAgentId}
-            onChange={(e) => setAdminCreate((prev) => ({ ...prev, assignedAgentId: e.target.value }))}
-            className="h-10 w-full rounded-lg border border-subtle px-3 text-sm"
-          />
-          <Dropdown
-            buttonId="admin-manual-source"
-            label="Source"
-            value={adminCreate.source}
-            options={["PHONE", "WHATSAPP", "MANUAL_ADMIN"].map((s) => ({ value: s, label: s }))}
-            onChange={(v) =>
-              setAdminCreate((prev) => ({
-                ...prev,
-                source: v as AdminManualLeadCreatePayload["source"],
-              }))
-            }
-          />
-          <textarea
-            placeholder="message"
-            value={adminCreate.message}
-            onChange={(e) => setAdminCreate((prev) => ({ ...prev, message: e.target.value }))}
-            rows={3}
-            className="w-full rounded-lg border border-subtle px-3 py-2 text-sm"
-          />
-          <input
-            placeholder="contactUserId (optional)"
-            title="Contact user ID"
-            value={adminCreate.contactUserId ?? ""}
-            onChange={(e) =>
-              setAdminCreate((prev) => ({
-                ...prev,
-                contactUserId: e.target.value.trim() ? e.target.value.trim() : null,
-              }))
-            }
-            className="h-10 w-full rounded-lg border border-subtle px-3 text-sm"
-          />
-          <Button type="button" variant="accent" onClick={onAdminCreateLead}>
-            Create
-          </Button>
-        </div>
-      </DialogRoot>
-
       <DialogRoot open={reassignTargetLead != null} onClose={() => setReassignTargetLead(null)}>
         <div className="space-y-3">
           <h2 className="text-size-lg fw-semibold text-charcoal">Reassign Agent</h2>
@@ -956,14 +842,17 @@ export function LeadManagementPage({ mode }: { mode: Mode }) {
         </div>
       </DialogRoot>
 
-      <CreateManualLeadModal
-        open={manualLeadModalOpen}
-        onClose={() => setManualLeadModalOpen(false)}
+      <CreateOfflineLeadModal
+        open={offlineLeadModalOpen}
+        mode={mode === "admin" ? "admin" : "agent"}
+        onClose={() => setOfflineLeadModalOpen(false)}
         onSuccess={async () => {
           await load();
         }}
         onError={(message) => setToast({ kind: "error", message })}
         onSuccessToast={(message) => setToast({ kind: "success", message })}
+        agentOptions={reassignableAgents}
+        agentsLoading={adminAgentsLoading}
       />
 
       <DialogRoot open={closeTargetLead != null} onClose={() => setCloseTargetLead(null)}>
@@ -980,6 +869,44 @@ export function LeadManagementPage({ mode }: { mode: Mode }) {
             </Button>
             <Button type="button" variant="primary" onClick={onConfirmCloseLead}>
               Yes, Close
+            </Button>
+          </div>
+        </div>
+      </DialogRoot>
+
+      <DialogRoot open={markInProgressTargetLead != null} onClose={() => setMarkInProgressTargetLead(null)}>
+        <div className="space-y-3">
+          <h2 className="text-size-lg fw-semibold text-charcoal">Mark lead as In Progress?</h2>
+          {markInProgressTargetLead ? (
+            <p className="text-size-sm text-charcoal/70">
+              Are you sure you want to mark {leadDisplayRef(markInProgressTargetLead)} as In Progress?
+            </p>
+          ) : null}
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => setMarkInProgressTargetLead(null)}>
+              Cancel
+            </Button>
+            <Button type="button" variant="primary" onClick={onConfirmMarkInProgress}>
+              Yes, Mark In Progress
+            </Button>
+          </div>
+        </div>
+      </DialogRoot>
+
+      <DialogRoot open={requestCloseTargetLead != null} onClose={() => setRequestCloseTargetLead(null)}>
+        <div className="space-y-3">
+          <h2 className="text-size-lg fw-semibold text-charcoal">Request close?</h2>
+          {requestCloseTargetLead ? (
+            <p className="text-size-sm text-charcoal/70">
+              Are you sure you want to request close for {leadDisplayRef(requestCloseTargetLead)}?
+            </p>
+          ) : null}
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => setRequestCloseTargetLead(null)}>
+              Cancel
+            </Button>
+            <Button type="button" variant="primary" onClick={onConfirmRequestClose}>
+              Yes, Request Close
             </Button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 export type LeadStatus = "NEW" | "IN_PROGRESS" | "REQUEST_FOR_CLOSE" | "CLOSED";
 
-export type LeadSource = "EMAIL_FORM" | "PHONE" | "WHATSAPP" | "MANUAL_ADMIN" | "AGENT_MANUAL";
+export type LeadSource = "EMAIL_FORM" | "PHONE" | "WHATSAPP" | "MANUAL_ADMIN" | "OFFLINE_MANUAL";
 
 /** Snapshot from lead APIs for display and linking (no extra property fetch). */
 export interface PropertySummary {
@@ -32,6 +32,18 @@ export type LeadExternalOwner = {
   phone?: string | null;
 };
 
+export interface OfflineLeadSummary {
+  customerName?: string | null;
+  phoneNumber?: string | null;
+  propertyName?: string | null;
+  propertyId?: string | null;
+  inquiryType?: string | null;
+  source?: string | null;
+  notes?: string | null;
+  createdByAgentId?: string | null;
+  createdByAdminId?: string | null;
+}
+
 export interface Lead {
   id: string;
   /** Human-readable reference e.g. LD-2026-000123 */
@@ -44,7 +56,9 @@ export interface Lead {
   communicationMode?: "IN_APP" | "EXTERNAL" | string;
   externalOwner?: LeadExternalOwner | null;
   externalPropertyName?: string | null;
+  offlineLead?: OfflineLeadSummary | null;
   createdByAgentId?: string | null;
+  createdByAdminId?: string | null;
   status: LeadStatus;
   source: LeadSource;
   assignedAgentId: string | null;
@@ -59,11 +73,20 @@ export interface Lead {
   updatedAt: string;
 }
 
+export type LeadStatusSummary = {
+  total: number;
+  NEW: number;
+  IN_PROGRESS: number;
+  REQUEST_FOR_CLOSE: number;
+  CLOSED: number;
+};
+
 export interface LeadListResponse {
   items: Lead[];
   total: number;
   page: number;
   pageSize: number;
+  summary?: LeadStatusSummary;
 }
 
 export interface ContactFormLeadCreatePayload {
@@ -82,13 +105,15 @@ export interface AdminManualLeadCreatePayload {
   contactUserId?: string | null;
 }
 
-/** Agent-created manual owner lead (external communication). POST /leads/manual */
-export interface ManualOwnerLeadCreatePayload {
-  ownerName: string;
-  phoneNumber?: string;
-  email?: string;
-  relatedPropertyName: string;
-  message: string;
+export interface OfflineLeadCreatePayload {
+  customerName: string;
+  phoneNumber: string;
+  propertyName?: string | null;
+  propertyId?: string | null;
+  inquiryType: "BUY" | "RENT" | "SELL" | "OTHER";
+  source: "PHONE" | "WHATSAPP" | "WALK_IN" | "FACEBOOK" | "REFERRAL" | "OTHER";
+  notes?: string | null;
+  assignedAgentId?: string | null;
 }
 
 export interface LeadStatusUpdatePayload {

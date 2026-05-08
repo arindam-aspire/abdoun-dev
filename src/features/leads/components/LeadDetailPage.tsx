@@ -26,23 +26,28 @@ import { selectCurrentUser } from "@/store/selectors";
 import { AGENT_STATUS, normalizeAgentStatus } from "@/constants/agentStatus";
 import { fetchAdminAgents } from "@/features/admin/adminAgentsSlice";
 import {
+  ArrowLeft,
   ArrowRightLeft,
   Building2,
   CalendarDays,
   CheckCheck,
-  CheckCircle2,
   Clock3,
   Info,
-  Mail,
   MessageCircle,
   SendHorizontal,
   UserCog,
   UserPlus,
 } from "lucide-react";
-import type { Lead, LeadHistoryItem, LeadMessage, LeadNote, LeadSource, LeadStatus } from "@/types/lead";
+import type { Lead, LeadHistoryItem, LeadMessage, LeadNote, LeadStatus } from "@/types/lead";
 
 type Mode = "agent" | "admin" | "user";
 type ActivityTab = "conversation" | "notes" | "history";
+
+function leadListHref(locale: string, mode: Mode): string {
+  if (mode === "admin") return `/${locale}/leads`;
+  if (mode === "agent") return `/${locale}/agent-dashboard/leads-and-inquiries`;
+  return `/${locale}/my-inquiries`;
+}
 
 const toArray = <T,>(value: unknown): T[] => (Array.isArray(value) ? value : []);
 
@@ -67,17 +72,34 @@ function TabContentSkeleton({ rows = 4 }: { rows?: number }) {
 
 function SummaryCardSkeleton() {
   return (
-    <div className="rounded-2xl border border-subtle bg-white p-4 shadow-sm">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-7">
-        {Array.from({ length: 7 }, (_, i) => (
-          <div key={i} className="space-y-2 xl:px-2">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-4 w-32" />
-            {i < 3 ? <Skeleton className="h-3 w-28" /> : null}
-          </div>
-        ))}
-      </div>
-    </div>
+    <section className="grid gap-4 sm:grid-cols-2 md:grid-cols-5" aria-busy>
+      {Array.from({ length: 5 }, (_, i) => (
+        <Card key={i} className="rounded-xl border-subtle shadow-sm">
+          <CardContent className="flex flex-col items-center text-center">
+            {i === 0 ? (
+              <>
+                <Skeleton className="h-44 w-full max-w-full rounded-xl" />
+                <Skeleton className="mt-3 h-3 w-16 max-w-full rounded-md" />
+                <Skeleton className="mt-2 h-4 w-[90%] max-w-[12rem] rounded-md" />
+              </>
+            ) : (
+              <>
+                <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+                <Skeleton className="mt-3 h-3 w-20 max-w-full rounded-md" />
+                <Skeleton className="mt-2 h-4 w-[90%] max-w-[11rem] rounded-md" />
+                {i === 1 || i === 2 ? (
+                  <>
+                    <Skeleton className="mt-2 h-3 w-[85%] max-w-[10rem] rounded-md" />
+                    <Skeleton className="mt-1.5 h-3 w-[70%] max-w-[9rem] rounded-md" />
+                  </>
+                ) : null}
+                {i === 3 || i === 4 ? <Skeleton className="mt-1 h-4 w-36 max-w-full rounded-md" /> : null}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </section>
   );
 }
 
@@ -134,6 +156,8 @@ function isExternalCommunicationLead(lead: Lead): boolean {
 function propertyDisplayLabel(lead: Lead): string {
   const title = lead.property?.title?.trim();
   if (title) return title;
+  const offlineName = lead.offlineLead?.propertyName?.trim();
+  if (offlineName) return offlineName;
   const externalName = lead.externalPropertyName?.trim();
   if (externalName) return externalName;
   const hash = lead.property?.propertyHash;
@@ -143,11 +167,6 @@ function propertyDisplayLabel(lead: Lead): string {
   return "External Property";
 }
 
-function leadSourceDisplayLabel(source: LeadSource): string {
-  if (source === "AGENT_MANUAL") return "Agent Manual";
-  return source.replaceAll("_", " ");
-}
-
 function propertyDetailHref(locale: string, lead: Lead): string | null {
   const hash = lead.property?.propertyHash;
   if (hash == null || Number.isNaN(Number(hash))) return null;
@@ -155,12 +174,16 @@ function propertyDetailHref(locale: string, lead: Lead): string | null {
 }
 
 function submittedByLabel(lead: Lead): string {
+  const offlineName = lead.offlineLead?.customerName?.trim();
+  if (offlineName) return offlineName;
+  const extName = lead.externalOwner?.name?.trim();
+  if (extName) return extName;
   const name = lead.user?.fullName?.trim();
   if (name) return name;
   const email = lead.user?.email?.trim();
   if (email) return email;
-  const extName = lead.externalOwner?.name?.trim();
-  if (extName) return extName;
+  const offlinePhone = lead.offlineLead?.phoneNumber?.trim();
+  if (offlinePhone) return offlinePhone;
   const extEmail = lead.externalOwner?.email?.trim();
   if (extEmail) return extEmail;
   const extPhone = lead.externalOwner?.phone?.trim();
@@ -179,8 +202,10 @@ function isReassignmentEvent(item: LeadHistoryItem): boolean {
 function historyPrimaryText(item: LeadHistoryItem): string {
   const from = historyFromStatus(item);
   const to = historyToStatus(item);
+  const reason = item.reason?.toLowerCase() ?? "";
 
   if (isReassignmentEvent(item)) return "Agent reassigned";
+  if (reason.includes("offline lead created")) return "Offline lead created";
   if (from == null && to != null) return `Created as ${statusLabel(to)}`;
   if (from != null && to != null) {
     if (to === "CLOSED") return "Lead closed";
@@ -372,7 +397,7 @@ export function LeadDetailPage({ mode, leadId }: { mode: Mode; leadId: string })
   };
 
   const onReply = async () => {
-    if (!lead || !replyText.trim()) return;
+    if (!lead || isLeadStatus(lead.status, "CLOSED") || !replyText.trim()) return;
     try {
       await postLeadMessage(lead.id, { message: replyText.trim() });
       await refreshMessages();
@@ -384,7 +409,7 @@ export function LeadDetailPage({ mode, leadId }: { mode: Mode; leadId: string })
   };
 
   const onSaveNote = async () => {
-    if (!lead || !noteText.trim()) return;
+    if (!lead || isLeadStatus(lead.status, "CLOSED") || !noteText.trim()) return;
     try {
       if (editingNoteId) {
         const updated = await updateLeadNote(lead.id, editingNoteId, { note: noteText.trim() });
@@ -402,7 +427,7 @@ export function LeadDetailPage({ mode, leadId }: { mode: Mode; leadId: string })
   };
 
   const onDeleteNote = async (noteId: string) => {
-    if (!lead) return;
+    if (!lead || isLeadStatus(lead.status, "CLOSED")) return;
     try {
       await deleteLeadNote(lead.id, noteId);
       setNotes((prev) => prev.filter((n) => n.id !== noteId));
@@ -447,9 +472,13 @@ export function LeadDetailPage({ mode, leadId }: { mode: Mode; leadId: string })
   const assignedAgentEmail = lead?.assignedAgent?.email?.trim() || null;
   const assignedAgentPhone = lead?.assignedAgent?.phone?.trim() || null;
   const submitterName = lead ? submittedByLabel(lead) : "Unknown user";
-  const submitterEmail = lead?.user?.email?.trim() || lead?.externalOwner?.email?.trim() || null;
-  const submitterPhone = lead?.user?.phone?.trim() || lead?.externalOwner?.phone?.trim() || null;
+  const submitterEmail = lead?.externalOwner?.email?.trim() || lead?.user?.email?.trim() || null;
+  const submitterPhone =
+    lead?.offlineLead?.phoneNumber?.trim() || lead?.externalOwner?.phone?.trim() || lead?.user?.phone?.trim() || null;
   const propertyThumbUrl = getPropertyThumbUrl(lead);
+  const hasLinkedProperty = Boolean(lead?.property?.propertyHash != null || lead?.property?.title?.trim());
+  const isClosed = isLeadStatus(lead?.status, "CLOSED");
+  const canMutateNotes = canViewNotes && !isClosed;
 
   const reassignableAgents = useMemo(() => {
     return adminAgents
@@ -492,6 +521,13 @@ export function LeadDetailPage({ mode, leadId }: { mode: Mode; leadId: string })
 
   return (
     <div className="mx-auto w-full max-w-[1440px] space-y-5 px-6 py-6">
+      <Link
+        href={leadListHref(locale, mode)}
+        className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to listings
+      </Link>
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-size-2xl fw-semibold text-charcoal md:text-size-3xl">
@@ -507,9 +543,9 @@ export function LeadDetailPage({ mode, leadId }: { mode: Mode; leadId: string })
               >
                 {statusLabel(lead.status)}
               </span>
-              {isExternalCommunicationLead(lead) ? (
-                <span className="inline-flex rounded-full border border-indigo-200/80 bg-indigo-50/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-800">
-                  External
+              {lead.source === "OFFLINE_MANUAL" ? (
+                <span className="inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
+                  Offline
                 </span>
               ) : null}
             </div>
@@ -519,12 +555,12 @@ export function LeadDetailPage({ mode, leadId }: { mode: Mode; leadId: string })
           {detailLoading ? <StatusActionSkeleton /> : null}
           {!detailLoading && lead && mode === "agent" ? (
             <>
-              {isLeadStatus(lead.status, "NEW") ? (
+                {!isClosed && isLeadStatus(lead.status, "NEW") ? (
                 <Button type="button" variant="outline" onClick={() => onStatusChange("IN_PROGRESS")}>
                   Mark In Progress
                 </Button>
               ) : null}
-              {isLeadStatus(lead.status, "IN_PROGRESS") ? (
+                {!isClosed && isLeadStatus(lead.status, "IN_PROGRESS") ? (
                 <Button type="button" variant="primary" onClick={() => onStatusChange("REQUEST_FOR_CLOSE")}>
                   Request Close
                 </Button>
@@ -534,7 +570,7 @@ export function LeadDetailPage({ mode, leadId }: { mode: Mode; leadId: string })
                   Waiting for Admin
                 </Button>
               ) : null}
-              {isLeadStatus(lead.status, "CLOSED") ? (
+                {isClosed ? (
                 <Button type="button" variant="outline" disabled>
                   Closed
                 </Button>
@@ -561,113 +597,106 @@ export function LeadDetailPage({ mode, leadId }: { mode: Mode; leadId: string })
       {detailLoading ? (
         <SummaryCardSkeleton />
       ) : lead ? (
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[1.6fr_1.35fr_1.35fr_0.72fr_0.72fr_0.84fr_0.84fr]">
-            <div className="xl:border-r xl:border-slate-100 xl:pr-3">
-              <div className="space-y-1.5">
-                <p className="text-[11px] text-charcoal/55">Property</p>
-                <p className="mt-1 text-sm fw-medium text-charcoal">
-                  {(() => {
-                    const label = propertyDisplayLabel(lead);
-                    const href = propertyDetailHref(locale, lead);
-                    return href ? (
-                      <Link
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline fw-medium"
-                      >
-                        {label}
-                      </Link>
-                    ) : (
-                      <span>{label}</span>
-                    );
-                  })()}
-                </p>
-                {propertyThumbUrl ? (
+        <section className="grid gap-4 sm:grid-cols-2 md:grid-cols-5">
+          <Card className="rounded-xl border-subtle shadow-sm transition hover:shadow-md">
+            <CardContent className="flex flex-col items-center text-center">
+              {propertyThumbUrl ? (
+                <div className="relative h-44 w-full overflow-hidden rounded-xl shadow-sm ring-1 ring-black/[0.06]">
                   <Image
                     src={propertyThumbUrl}
                     alt={propertyDisplayLabel(lead)}
-                    className="mt-1.5 h-[72px] w-[120px] rounded-xl object-cover"
-                    width={120}
-                    height={72}
+                    className="object-cover"
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 18vw"
                   />
-                ) : (
-                  <div className="mt-1.5 flex h-[72px] w-[120px] items-center justify-center rounded-xl bg-slate-100 text-charcoal/40">
-                    <Building2 className="h-5 w-5" />
-                  </div>
+                </div>
+              ) : hasLinkedProperty ? (
+                <div className="flex h-44 w-full items-center justify-center rounded-xl bg-slate-100 text-charcoal/40 ring-1 ring-black/[0.04]">
+                  <Building2 className="h-8 w-8" />
+                </div>
+              ) : null}
+              <p
+                className={cn(
+                  "text-size-xs font-medium text-charcoal/70",
+                  propertyThumbUrl || hasLinkedProperty ? "mt-3" : undefined,
                 )}
-              </div>
-            </div>
+              >
+                Property
+              </p>
+              <p className="mt-2 max-w-full break-words text-sm fw-medium text-charcoal">
+                {(() => {
+                  const label = propertyDisplayLabel(lead);
+                  const href = propertyDetailHref(locale, lead);
+                  return href ? (
+                    <Link
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline fw-medium"
+                    >
+                      {label}
+                    </Link>
+                  ) : (
+                    <span>{label}</span>
+                  );
+                })()}
+              </p>
+            </CardContent>
+          </Card>
 
-            <div className="xl:border-r xl:border-slate-100 xl:px-3">
-              <div>
-                <p className="text-[11px] text-charcoal/55">Submitted by</p>
-                <div className="mt-1.5 flex items-start gap-2">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs fw-semibold text-primary">
-                    {getInitials(submitterName, submitterEmail)}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm fw-medium text-charcoal">{submitterName}</p>
-                    {submitterEmail ? <p className="truncate text-xs text-charcoal/70">{submitterEmail}</p> : null}
-                    {submitterPhone ? <p className="truncate text-xs text-charcoal/70">{submitterPhone}</p> : null}
-                  </div>
-                </div>
+          <Card className="rounded-xl border-subtle shadow-sm transition hover:shadow-md">
+            <CardContent className="flex flex-col items-center text-center">
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/12 text-xs fw-semibold text-primary ring-1 ring-primary/20">
+                {getInitials(submitterName, submitterEmail)}
+              </span>
+              <p className="mt-3 text-size-xs font-medium text-charcoal/70">Submitted by</p>
+              <div className="mt-2 w-full min-w-0 space-y-0.5">
+                <p className="break-words text-sm fw-medium text-charcoal">{submitterName}</p>
+                {submitterEmail ? <p className="break-words text-xs text-charcoal/70">{submitterEmail}</p> : null}
+                {submitterPhone ? <p className="break-words text-xs text-charcoal/70">{submitterPhone}</p> : null}
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="xl:border-r xl:border-slate-100 xl:px-3">
-              <div>
-                <p className="text-[11px] text-charcoal/55">Assigned agent</p>
-                <div className="mt-1.5 flex items-start gap-2">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-secondary/10 text-xs fw-semibold text-secondary">
-                    {getInitials(assignedAgentLabel, assignedAgentEmail)}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm fw-medium text-charcoal">{assignedAgentLabel}</p>
-                    {assignedAgentEmail ? <p className="truncate text-xs text-charcoal/70">{assignedAgentEmail}</p> : null}
-                    {assignedAgentPhone ? <p className="truncate text-xs text-charcoal/70">{assignedAgentPhone}</p> : null}
-                  </div>
-                </div>
+          <Card className="rounded-xl border-subtle shadow-sm transition hover:shadow-md">
+            <CardContent className="flex flex-col items-center text-center">
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary/12 text-xs fw-semibold text-secondary ring-1 ring-secondary/20">
+                {getInitials(assignedAgentLabel, assignedAgentEmail)}
+              </span>
+              <p className="mt-3 text-size-xs font-medium text-charcoal/70">Assigned agent</p>
+              <div className="mt-2 w-full min-w-0 space-y-0.5">
+                <p className="break-words text-sm fw-medium text-charcoal">{assignedAgentLabel}</p>
+                {assignedAgentEmail ? <p className="break-words text-xs text-charcoal/70">{assignedAgentEmail}</p> : null}
+                {assignedAgentPhone ? <p className="break-words text-xs text-charcoal/70">{assignedAgentPhone}</p> : null}
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="xl:border-r xl:border-slate-100 xl:px-3">
-              <div>
-                <Mail className="h-4 w-4 text-charcoal/55" />
-                <p className="mt-1.5 text-[11px] text-charcoal/55">Source</p>
-                <p className="mt-0.5 text-sm fw-medium text-charcoal">{leadSourceDisplayLabel(lead.source)}</p>
-              </div>
-            </div>
-            <div className="xl:border-r xl:border-slate-100 xl:px-3">
-              <div>
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                <p className="mt-1.5 text-[11px] text-charcoal/55">Status</p>
-                <span
-                  className={cn(
-                    "mt-0.5 inline-flex rounded-full border px-2 py-1 text-[11px] font-medium",
-                    leadStatusClass(lead.status),
-                  )}
-                >
-                  {statusLabel(lead.status)}
-                </span>
-              </div>
-            </div>
-            <div className="xl:border-r xl:border-slate-100 xl:px-3">
-              <div>
-                <CalendarDays className="h-4 w-4 text-charcoal/55" />
-                <p className="mt-1.5 text-[11px] text-charcoal/55">Created</p>
-                <p className="mt-0.5 text-sm fw-medium text-charcoal">{formatDate(lead.createdAt)}</p>
-              </div>
-            </div>
-            <div className="xl:pl-3">
-              <div>
-                <Clock3 className="h-4 w-4 text-charcoal/55" />
-                <p className="mt-1.5 text-[11px] text-charcoal/55">Last activity</p>
-                <p className="mt-0.5 text-sm fw-medium text-charcoal">{formatDate(lead.lastActivityAt)}</p>
-              </div>
-            </div>
-          </div>
+          <Card className="rounded-xl border-subtle shadow-sm transition hover:shadow-md">
+            <CardContent className="flex flex-col items-center text-center">
+              <span
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/14 ring-1 ring-emerald-500/20"
+                aria-hidden
+              >
+                <CalendarDays className="h-5 w-5 text-secondary" />
+              </span>
+              <p className="mt-3 text-size-xs font-medium text-charcoal/70">Created</p>
+              <p className="mt-2 text-sm fw-semibold text-charcoal">{formatDate(lead.createdAt)}</p>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-xl border-subtle shadow-sm transition hover:shadow-md">
+            <CardContent className="flex flex-col items-center text-center">
+              <span
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/14 ring-1 ring-amber-500/20"
+                aria-hidden
+              >
+                <Clock3 className="h-5 w-5 text-secondary" />
+              </span>
+              <p className="mt-3 text-size-xs font-medium text-charcoal/70">Last activity</p>
+              <p className="mt-2 text-sm fw-semibold text-charcoal">{formatDate(lead.lastActivityAt)}</p>
+            </CardContent>
+          </Card>
         </section>
       ) : (
         <Card className="rounded-2xl border-subtle bg-white shadow-sm">
@@ -712,20 +741,26 @@ export function LeadDetailPage({ mode, leadId }: { mode: Mode; leadId: string })
             {activeTab === "conversation" ? (
               <div className="space-y-2">
                 {lead && isExternalCommunicationLead(lead) ? (
-                  <div className="flex gap-3 rounded-xl border border-sky-200/70 bg-sky-50/60 px-4 py-3 text-sm text-slate-700">
-                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-700/90" aria-hidden />
-                    <p className="leading-relaxed">
-                      Communication for this lead happens externally between the agent and owner. Use internal notes and
-                      status updates to track progress.
-                    </p>
+                  <div className="rounded-xl border border-sky-200/70 bg-sky-50/60 px-4 py-3">
+                    <div className="flex items-start gap-3 text-slate-700">
+                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-700/90" aria-hidden />
+                      <div className="space-y-1">
+                        <p className="text-sm fw-semibold text-slate-800">External Communication</p>
+                        <p className="text-sm leading-relaxed">
+                          This offline lead is managed outside the platform through phone, WhatsApp, walk-ins, or referrals.
+                          Conversation history is not stored in the system.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 ) : null}
-                <ul className="max-h-64 space-y-4 overflow-y-auto rounded-xl border border-subtle bg-surface p-3">
-                  {messagesLoading ? (
-                    <TabContentSkeleton rows={4} />
-                  ) : messagesError ? (
-                    <li className="text-sm text-red-600">{messagesError}</li>
-                  ) : messages.length > 0 ? (
+                {!(lead && isExternalCommunicationLead(lead)) ? (
+                  <ul className="max-h-64 space-y-4 overflow-y-auto rounded-xl border border-subtle bg-surface p-3">
+                    {messagesLoading ? (
+                      <TabContentSkeleton rows={4} />
+                    ) : messagesError ? (
+                      <li className="text-sm text-red-600">{messagesError}</li>
+                    ) : messages.length > 0 ? (
                     messages.map((msg) => {
                       const isMine = currentUser?.id != null && msg.senderUserId === currentUser.id;
                       const senderLabel =
@@ -767,18 +802,12 @@ export function LeadDetailPage({ mode, leadId }: { mode: Mode; leadId: string })
                         </li>
                       );
                     })
-                  ) : lead && isExternalCommunicationLead(lead) ? (
-                    <li className="flex flex-col items-center justify-center gap-2 py-10 text-center">
-                      <MessageCircle className="h-9 w-9 text-charcoal/25" aria-hidden />
-                      <p className="max-w-sm text-sm text-charcoal/60">
-                        No in-app conversation is available for this lead.
-                      </p>
-                    </li>
-                  ) : (
-                    <li className="text-sm text-charcoal/60">No messages yet.</li>
-                  )}
-                </ul>
-                {canReply ? (
+                    ) : (
+                      <li className="text-sm text-charcoal/60">No messages yet.</li>
+                    )}
+                  </ul>
+                ) : null}
+                {canReply && !isClosed ? (
                   <div className="flex items-end gap-2">
                     <textarea
                       value={replyText}
@@ -810,8 +839,9 @@ export function LeadDetailPage({ mode, leadId }: { mode: Mode; leadId: string })
                   placeholder="Add an internal note"
                   rows={2}
                   className="w-full rounded-lg border border-subtle px-3 py-2 text-sm"
+                  disabled={!canMutateNotes}
                 />
-                <Button type="button" variant="outline" onClick={onSaveNote} disabled={!noteText.trim()}>
+                <Button type="button" variant="outline" onClick={onSaveNote} disabled={!canMutateNotes || !noteText.trim()}>
                   {editingNoteId ? "Update note" : "Add note"}
                 </Button>
                 <ul className="space-y-2">
@@ -823,7 +853,7 @@ export function LeadDetailPage({ mode, leadId }: { mode: Mode; leadId: string })
                     notes.map((n) => (
                       <li key={n.id} className="rounded border border-subtle p-2 text-sm">
                         <p>{n.note}</p>
-                        {canEditOwnNotes && n.authorUserId === currentUser?.id ? (
+                        {canMutateNotes && canEditOwnNotes && n.authorUserId === currentUser?.id ? (
                           <div className="mt-2 flex gap-2">
                             <Button
                               type="button"
@@ -844,7 +874,9 @@ export function LeadDetailPage({ mode, leadId }: { mode: Mode; leadId: string })
                       </li>
                     ))
                   ) : (
-                    <li className="text-sm text-charcoal/60">No notes yet.</li>
+                    <li className="text-sm text-charcoal/60">
+                      No internal notes yet. Add follow-up notes, customer updates, or meeting summaries here.
+                    </li>
                   )}
                 </ul>
               </div>

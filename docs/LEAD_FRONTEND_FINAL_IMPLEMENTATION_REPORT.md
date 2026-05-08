@@ -1,3 +1,58 @@
+## Offline lead property selector ranking and submit fix
+
+### Submit flow fix
+
+- Confirmed submit is not blocked by property loading states.
+- `Create Offline Lead` remains disabled only during actual submit (`submitting`).
+- Payload mapping is now explicit and safe:
+  - `propertyName = selectedProperty?.title ?? propertySearchText.trim()`
+  - `propertyId` is included only when a UUID-backed `selectedProperty.propertyId` is available.
+- Manual typed fallback remains supported and never sends typed text as `propertyId`.
+
+### Loading state fix
+
+- Property loading states are request-id guarded and reset reliably:
+  - `propertyLoading` represents first-page fetch only.
+  - `propertyLoadingMore` represents next-page fetch only.
+- Stale responses cannot overwrite latest query results.
+- The latest active request always clears loading flags in `finally`, preventing stuck `Loading more...`.
+
+### Frontend ranking behavior
+
+- Added token-based frontend ranking for the active query using:
+  - title
+  - reference number
+  - property hash/id text
+  - city
+  - area
+  - location string
+- Ranking boosts include:
+  - exact title match
+  - title starts-with and title contains full query
+  - all query tokens found in title
+  - per-token matches in title, reference/hash/id, and city/area/location
+- Results are sorted by descending score, then alphabetic title.
+
+### Cache and query reset behavior
+
+- Cache key remains `normalizedQuery|page`.
+- Repeated query+page lookups use cache and avoid duplicate requests.
+- On query change:
+  - page resets to 1
+  - options reset
+  - `hasMore` resets
+  - highlighted index resets
+  - old query results are not mixed into new query results.
+
+### Manual fallback confirmation
+
+- If no property is selected and user types custom property text, submit sends `propertyName` only.
+- This preserves offline lead creation for unknown/non-catalog properties.
+
+### Validation results
+
+- `npx eslint "src/features/leads/components/CreateOfflineLeadModal.tsx" "src/features/leads/api/leadApiService.ts" "src/types/lead.ts"` -> passed
+- `npm run build` -> passed
 # Lead Frontend Final Implementation Report
 
 ## Scope Confirmation
@@ -233,6 +288,240 @@
 - `npx eslint "src/types/lead.ts" "src/features/leads/api/leadApiService.ts" "src/features/leads/components/LeadManagementPage.tsx"` -> passed
 - `npm run build` -> passed
 
+## Offline lead flow frontend replacement
+
+### Shared modal and role-driven behavior
+
+- Replaced old manual-owner UI with one shared `CreateOfflineLeadModal` (`src/features/leads/components/CreateOfflineLeadModal.tsx`) used by both admin and agent flows.
+- Replaced separate admin manual-create dialog in `LeadManagementPage` with the same shared modal.
+- Admin and agent both use one API method (`createOfflineLead`) and one endpoint (`POST /leads/manual`), with role differences handled by backend identity.
+- Role-driven UI in shared modal:
+  - admin sees and must select assigned agent
+  - agent does not see assigned-agent input
+
+### Backend alignment and duplicate handling
+
+- Types updated in `src/types/lead.ts` for offline contract:
+  - `OfflineLeadCreatePayload`
+  - `OfflineLeadSummary`
+  - `Lead.offlineLead`
+  - `Lead.createdByAdminId`
+  - `LeadSource` includes `OFFLINE_MANUAL`
+- API updated in `src/features/leads/api/leadApiService.ts`:
+  - replaced `createManualOwnerLead` with `createOfflineLead`
+  - preserved `unwrapItemResponse` envelope handling
+- 409 duplicate handling added in `CreateOfflineLeadModal` with clean UX message:
+  - `A lead already exists for this customer and property.`
+
+### List and detail rendering behavior
+
+- `LeadManagementPage` now uses offline-friendly labels and search:
+  - source label/badge shows `Offline` for `OFFLINE_MANUAL`
+  - user/property fallbacks include `offlineLead.customerName`, `offlineLead.phoneNumber`, `offlineLead.propertyName`
+  - search includes offline lead fields without breaking existing filtering/pagination
+- `LeadDetailPage` keeps current polished layout and only adapts offline rendering:
+  - source label shows `Offline`
+  - summary/header badges include `Offline Lead` and `External Communication`
+  - submitted-by and property fallbacks use `offlineLead` fields before legacy external fallbacks
+  - external communication banner wording updated for offline channels
+
+### Closed read-only UI
+
+- For `CLOSED` leads, frontend now visually enforces read-only mutation controls:
+  - reply composer hidden/disabled
+  - note create/edit/delete actions disabled/hidden
+  - status/reassign actions remain hidden/disabled as before
+  - subtle `Closed Lead` badge displayed in header
+- Viewing details/history remains available.
+
+### Validation results
+
+- `npx eslint "src/features/leads/components/CreateOfflineLeadModal.tsx" "src/features/leads/components/LeadManagementPage.tsx" "src/features/leads/components/LeadDetailPage.tsx" "src/features/leads/api/leadApiService.ts" "src/types/lead.ts"` -> passed
+- `npm run build` -> passed
+
+## Offline lead final stabilization pass
+
+### Terminology and source consistency
+
+- Completed lead-module terminology sweep so UI strings use Offline Lead wording.
+- Added shared source label helper `src/features/leads/utils/leadDisplay.ts` and reused it across list, detail, and offline-create modal.
+- Source mapping is now consistent:
+  - `OFFLINE_MANUAL` (and legacy `AGENT_MANUAL` compatibility) -> `Offline`
+  - `EMAIL_FORM` -> `Email`
+  - `PHONE` -> `Phone`
+  - `WHATSAPP` -> `WhatsApp`
+  - `FACEBOOK` -> `Facebook`
+  - `REFERRAL` -> `Referral`
+  - `WALK_IN` -> `Walk-in`
+
+### Badge and header stabilization
+
+- Removed duplicate offline semantics in list rows:
+  - source now rendered as a single source chip
+  - external communication rendered as a separate communication chip
+- Lead detail header badge hierarchy stabilized:
+  - one status chip
+  - one source chip (`Offline` where applicable)
+  - one communication chip (`External Communication`)
+  - closed badge remains as read-only indicator for closed leads
+
+### Closed-state and action leak audit
+
+- Confirmed CLOSED row action menus in lead list show only `View` (no reassign/status action entries for closed leads).
+- Detail page CLOSED behavior enforces read-only mutation controls:
+  - no status action buttons for mutation
+  - no reassign action
+  - no reply composer
+  - note create disabled
+  - note edit/delete hidden
+- View/read operations (detail/history/notes viewing) remain available.
+
+### Offline fallbacks and conversation UX refinement
+
+- Detail fallback priority aligned for offline leads:
+  - customer: `offlineLead.customerName` -> `externalOwner.name` -> `user.fullName`
+  - phone: `offlineLead.phoneNumber` -> `externalOwner.phone` -> `user.phone`
+  - property: `property.title` -> `offlineLead.propertyName` -> `externalPropertyName`
+- Property rendering for free-text-only offline leads avoids unnecessary placeholder tile when no linked property snapshot exists.
+- External conversation section refined to a compact CRM info panel with title + concise explanation and collapsed unused empty-thread area.
+- Notes empty state copy improved for offline tracking context.
+
+### Search, filters, and refresh behavior
+
+- Local search coverage confirmed for offline fields:
+  - customer name
+  - phone
+  - offline property name
+  - assigned agent
+  - lead number
+- Existing status filters/cards/pagination behavior preserved.
+- Offline create success flow remains efficient:
+  - close modal
+  - success toast
+  - single list refresh
+  - no duplicate summary count storms
+
+### Validation results
+
+- `npx eslint "src/features/leads/components/CreateOfflineLeadModal.tsx" "src/features/leads/components/LeadManagementPage.tsx" "src/features/leads/components/LeadDetailPage.tsx" "src/features/leads/api/leadApiService.ts" "src/types/lead.ts" "src/features/leads/utils/leadDisplay.ts"` -> passed
+- `npm run build` -> passed
+
+## Offline lead property selector refinement
+
+### Property selector behavior
+
+- Replaced separate `Property Name` + `Property ID` fields in `CreateOfflineLeadModal` with one searchable `Property` selector input.
+- Added debounced (300ms) property lookup with minimum 2 characters.
+- Selector shows loading state, no-results state, and option rows with:
+  - property title
+  - property hash/reference (when available)
+  - location (when available)
+- Added clear action to reset selected property and typed query.
+
+### Selected property payload mapping
+
+- When a property is selected:
+  - `payload.propertyId` uses selected property id
+  - `payload.propertyName` uses selected property title (display fallback)
+- When no property is selected and user types free text:
+  - `payload.propertyId` is omitted
+  - `payload.propertyName` uses typed value
+- Random text is never sent as `propertyId`.
+
+### Manual fallback behavior and validation
+
+- Validation enforces property requirement with fallback:
+  - valid when selected `propertyId` exists OR typed `propertyName` is non-empty
+  - error shown as `Property is required.` when both are missing
+- Existing offline create behavior remains unchanged:
+  - admin assignment requirement
+  - duplicate `409` user-friendly error message
+  - success toast + modal close + single list refresh
+
+### Validation results
+
+- `npx eslint "src/features/leads/components/CreateOfflineLeadModal.tsx" "src/features/leads/api/leadApiService.ts" "src/types/lead.ts"` -> passed
+- `npm run build` -> passed
+
+## Offline lead property selector infinite scroll optimization
+
+### Published property source used
+
+- Property suggestions now use the same published listing source as public property search:
+  - `GET /properties` via `publicApi` in `searchLeadProperties`.
+- No draft/admin-only endpoints were introduced.
+- Offline lead create API contract remains unchanged (`POST /leads/manual`).
+
+### Debounce, cache, and duplicate-call prevention
+
+- Selector search now uses:
+  - `pageSize = 10`
+  - debounce `350ms`
+  - empty-query focus suggestions and 2+ char typed search behavior.
+- Added in-modal session cache by `query|page` key to avoid refetching identical pages.
+- Added in-flight key tracking to prevent duplicate parallel requests for the same page/query.
+- Added stale request guarding so only latest request result is applied during fast typing.
+
+### Infinite scroll / load more behavior
+
+- Property dropdown now tracks paging state (`propertyPage`, `propertyHasMore`) and supports incremental loading with a `Load more` control.
+- Additional pages append to existing options and are deduplicated by property id.
+- Loading-more state is displayed (`Loading more...`) and stops when `hasMore` is false.
+
+### Manual fallback behavior
+
+- Selected property submit mapping:
+  - `propertyId = selectedProperty.id`
+  - `propertyName = selectedProperty.title`
+- Manual typed fallback (no selection):
+  - submit uses typed `propertyName` only
+  - no random/manual text is sent as `propertyId`
+- Validation remains:
+  - `Property is required.` when neither selected property nor typed value exists.
+
+### Validation results
+
+- `npx eslint "src/features/leads/components/CreateOfflineLeadModal.tsx" "src/features/leads/api/leadApiService.ts" "src/types/lead.ts"` -> passed
+- `npm run build` -> passed
+
+## Offline lead property suggestion dropdown polish
+
+### Dropdown behavior
+
+- Polished the property suggestion dropdown in `CreateOfflineLeadModal` to open directly under the input with `absolute` positioning and `z-[60]`.
+- Kept debounced search at 300ms with trimmed query and minimum 2-character threshold.
+- Added complete dropdown states:
+  - `Searching properties...`
+  - matching option list (title + `#propertyHash` + location when available)
+  - no results guidance: `No properties found. Press Enter to use typed property name.`
+  - error fallback: `Unable to load properties. You can still type property name manually.`
+- Added outside-click close behavior and ensured dropdown closes on selection, `Escape`, and `Tab`.
+
+### Keyboard support
+
+- Added keyboard navigation for property input:
+  - `ArrowDown` / `ArrowUp` cycles highlighted option
+  - `Enter` selects highlighted option when present
+  - `Enter` with no highlighted option keeps typed manual property name
+  - `Escape` closes dropdown
+  - `Tab` keeps normal focus flow and closes dropdown
+- Highlighted option uses subtle blue background for clear focus indication.
+
+### Manual fallback and payload behavior
+
+- Selected property flow remains:
+  - `propertyId = selectedProperty.id`
+  - `propertyName = selectedProperty.title`
+- Manual typed flow remains:
+  - submit with manual `propertyName` only
+  - no typed text is sent as `propertyId`
+- Validation still enforces: selected `propertyId` OR typed `propertyName` is required.
+
+### Validation results
+
+- `npx eslint "src/features/leads/components/CreateOfflineLeadModal.tsx" "src/features/leads/api/leadApiService.ts" "src/types/lead.ts"` -> passed
+- `npm run build` -> passed
+
 ## Lead table and detail page UI alignment
 
 ### Files changed (this increment)
@@ -305,7 +594,7 @@
   - search input (UI-only; no backend contract changes)
   - status dropdown
   - source dropdown
-  - admin-only `Create Manual Lead` action button
+  - admin-only `Create Offline Lead` action button
 - Preserved existing table behavior:
   - clickable lead number navigation
   - Open button navigation
@@ -636,7 +925,7 @@
   - if same mode summary call is already in flight, reuse it
   - if same mode summary was fetched very recently, skip refetch
 - Summary force-refresh now happens only for status-changing actions in list:
-  - `Create Manual Lead`
+  - `Create Offline Lead`
   - `Close Lead`
 - No forced summary refresh after non-status actions:
   - reassign (already optimized earlier)
@@ -958,40 +1247,69 @@
 - `npx eslint "src/features/leads/api/leadApiService.ts" "src/features/leads/components/LeadDetailPage.tsx" "src/types/lead.ts"` -> passed
 - `npm run build` -> passed
 
-## Manual owner / external communication lead frontend integration
+## Offline lead / external communication lead frontend integration
 
 ### Modal behavior
 
-- Added `src/features/leads/components/CreateManualLeadModal.tsx`: agent-facing modal to create manual owner leads with validated fields (`ownerName`, optional `phoneNumber` / `email` with at least one contact, `relatedPropertyName`, `message`), responsive 2-column grid, slate-bordered inputs, min-height ~120px message area, Cancel (outline) + Create lead (primary) with in-button spinner while submitting, `noValidate` (no browser default validation).
-- Agent lead list header (`LeadManagementPage` `mode="agent"`, routes under `/agent-dashboard/leads` and `/agent-dashboard/leads-and-inquiries`, not the standalone `/agent-dashboard/inquiries` page): primary **Add New Lead** opens the modal (same button family as existing primary actions; not a floating action).
-- API: `createManualOwnerLead()` in `leadApiService.ts` posts to `/leads/manual` with `unwrapItemResponse` fallback; types in `ManualOwnerLeadCreatePayload` / `Lead`.
+- Added shared `src/features/leads/components/CreateOfflineLeadModal.tsx` for admin + agent create flow with role-driven fields and one implementation.
+- Agent/admin lead list headers use **Create Offline Lead** (single shared modal; no duplicate admin/agent modal implementations).
+- API uses `createOfflineLead()` in `leadApiService.ts` posting to `/leads/manual` with `unwrapItemResponse` envelope support.
 - On success: modal closes, success toast, **`load()` only** for the current list (no `loadSummary({ force: true })` burst).
 
 ### External communication UX (detail)
 
 - `communicationMode === "EXTERNAL"` drives behavior only in the UI layer (no status/workflow changes).
-- Header: subtle **External** pill next to status; summary **Source** shows **Agent Manual** when `source` is `AGENT_MANUAL`.
-- **Submitted by** uses `externalOwner` name / email / phone when no registered `user`; avoids showing UUIDs in that block.
-- **Property** uses `externalPropertyName` when there is no listing snapshot; link only when `property.propertyHash` exists; image remains placeholder unless real property media exists on the payload.
-- **Conversation** tab: informational sky/slate banner explaining external communication; empty thread shows a calm placeholder (no harsh empty state); reply composer and send control are **not rendered** for external leads (not disabled inputs). Admin never had reply; agent/user lose composer only for external.
+- Header badges show **Offline Lead** and **External Communication** for offline records.
+- **Submitted by** uses offline customer data first (`offlineLead.customerName` / `offlineLead.phoneNumber`) with existing external fallbacks and no raw UUID display.
+- **Property** uses linked property title first, then `offlineLead.propertyName`, then external fallbacks.
+- **Conversation** tab wording now explicitly references offline channels (phone/WhatsApp/walk-in) and keeps composer hidden for EXTERNAL leads.
 
 ### List rendering behavior
 
-- `LeadSource` extended with `AGENT_MANUAL`; `Lead` extended with `communicationMode`, `externalOwner`, `externalPropertyName`, `createdByAgentId` (all optional for backward compatibility).
-- User column: fallback chain `user` → `externalOwner` → label **External Owner** (no user id snippets in display).
-- Property column: `property.title` → `externalPropertyName` → **External Property**; search includes external owner fields and external property name.
-- Source column: **Agent Manual** label; compact **External** pill when `communicationMode` is external (no extra table column).
+- `LeadSource` now supports `OFFLINE_MANUAL`; `Lead` includes `offlineLead` and `createdByAdminId` while keeping compatibility fields (`communicationMode`, `externalOwner`, `externalPropertyName`).
+- User column fallback includes offline customer (`offlineLead.customerName` / `offlineLead.phoneNumber`) before external owner label fallback.
+- Property column fallback includes `offlineLead.propertyName`.
+- Source column shows **Offline** badge for `OFFLINE_MANUAL`, alongside existing subtle **External** communication badge.
+- Search now includes `offlineLead.customerName`, `offlineLead.phoneNumber`, and `offlineLead.propertyName`.
 
 ### Preserved workflows
 
-- Status rules and admin/agent actions unchanged; internal notes and audit history unchanged in behavior; registered-user inquiry pages and in-app conversation for `IN_APP` leads unchanged.
+- Status rules and role actions remain unchanged; existing inquiry/contact-form `IN_APP` flow remains untouched.
+- Closed leads are visually read-only for note mutations, reply composer, status actions, and reassign actions while keeping detail/history visibility.
 - Sidebar counts remain driven by existing list totals from the API (no FE hardcoding of manual buckets).
 
 ### Follow-up (backend recommendation)
 
-- Expose optional `property.previewImage` (or similar) on the lead property serializer so external/manual rows can show a real thumbnail when a listing exists, without extra frontend fetches.
+- Expose optional `property.previewImage` (or similar) on the lead serializer so offline rows can show a real thumbnail when linked, without extra frontend fetches.
 
 ### Validation results
 
-- `npx eslint "src/types/lead.ts" "src/features/leads/api/leadApiService.ts" "src/features/leads/components/LeadManagementPage.tsx" "src/features/leads/components/LeadDetailPage.tsx" "src/features/leads/components/CreateManualLeadModal.tsx"` -> passed
+- `npx eslint "src/types/lead.ts" "src/features/leads/api/leadApiService.ts" "src/features/leads/components/LeadManagementPage.tsx" "src/features/leads/components/LeadDetailPage.tsx" "src/features/leads/components/CreateOfflineLeadModal.tsx"` -> passed
+- `npm run build` -> passed
+
+## Lead list response summary counts frontend integration
+
+### Removed old multi-count calls
+
+- Removed the previous summary loader from `src/features/leads/components/LeadManagementPage.tsx` that made multiple list requests (`pageSize=1` + status variants) to compute cards.
+- Deleted duplicate summary effect/state (`loadSummary`, `summaryLoading`, summary in-flight cache) so only one list-fetch effect remains.
+
+### Now uses summary from list response
+
+- Added `LeadStatusSummary` and optional `summary?: LeadStatusSummary` to `src/types/lead.ts` `LeadListResponse`.
+- Updated list APIs in `src/features/leads/api/leadApiService.ts` (`getAdminLeads`, `getAgentLeads`, `getMyLeads`) to normalize and return `summary` from existing API payload:
+  - Uses backend-provided `response.summary` when present.
+  - Fallback: `total` from response + zeroes for status buckets (no extra count requests).
+- Updated `LeadManagementPage` to set summary cards from the same single list response used for rows.
+
+### Expected network behavior
+
+- Admin/agent/user leads pages now fetch one list request per filter/page change.
+- No additional count requests are made to `/admin/leads`, `/agent/leads`, or `/leads/my` for summary cards.
+- Clicking a status card updates filter + list request once; cards read backend `summary` from that response, keeping counts stable.
+- Offline (`OFFLINE_MANUAL` / `EXTERNAL`) leads remain included naturally via backend summary; after offline lead creation, one list refresh updates both table and cards.
+
+### Validation results
+
+- `npx eslint "src/types/lead.ts" "src/features/leads/api/leadApiService.ts" "src/features/leads/components/LeadManagementPage.tsx"` -> passed
 - `npm run build` -> passed
