@@ -216,7 +216,7 @@ export function useSignupFlow(locale: string) {
       const emailVal = email.trim();
       setChallengeId(emailVal);
       setDebugOtp(null);
-      timer.restart(600);
+      timer.restart(60);
       setStatusMessage("success", "OTP sent successfully.");
       setScreen("otp");
     } catch (error) {
@@ -262,7 +262,7 @@ export function useSignupFlow(locale: string) {
     try {
       await resendConfirmation({ email: challengeId });
       setDebugOtp(null);
-      timer.restart(600);
+      timer.restart(60);
       setStatusMessage("success", "OTP resent successfully.");
     } catch (error) {
       setMessage(getApiErrorMessage(error) || "Failed to resend OTP.");
@@ -496,7 +496,7 @@ export function useForgotPasswordFlow() {
       setChallengeId(identifier.trim());
       setDebugOtp(null);
       setStatusMessage("success", "If an account exists, OTP has been sent.");
-      timer.restart(600);
+      timer.restart(60);
       setStep("otp");
     } catch (error) {
       setStatusMessage("error", getApiErrorMessage(error) || "Unable to request OTP.");
@@ -535,7 +535,7 @@ export function useForgotPasswordFlow() {
     try {
       await requestForgotPassword({ email: challengeId });
       setDebugOtp(null);
-      timer.restart(600);
+      timer.restart(60);
       setStatusMessage("success", "OTP resent successfully.");
     } catch (error) {
       setStatusMessage("error", getApiErrorMessage(error) || "Unable to resend OTP.");
