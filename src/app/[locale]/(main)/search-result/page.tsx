@@ -1,49 +1,19 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "@/hooks/useTranslations";
 import type { AppLocale } from "@/i18n/routing";
-import { JORDAN_CITIES_WITH_AREAS } from "@/lib/constants/jordanCities";
-import { getAreasByCityName } from "@/lib/constants/jordanCities";
 import { useLocale } from "next-intl";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import {
+  fetchLocationTaxonomyIfNeeded,
+  selectJordanCitiesWithAreas,
+} from "@/features/location-taxonomy/locationTaxonomySlice";
+import { buildSearchResultPageTitle } from "@/features/location-taxonomy/locationTaxonomyMappers";
 import { StickySearchWrapper } from "@/components/ui/StickySearchWrapper";
 import { SearchFields } from "@/features/property-search/components/SearchFields";
 import { SearchResults } from "@/features/property-search/components/SearchResults";
-
-function getPageTitle(
-  t: (key: string, values?: Record<string, string>) => string,
-  searchParams: URLSearchParams,
-): string {
-  const cityParam = searchParams.get("city")?.trim();
-  const locationsParam = searchParams.get("locations");
-  if (!cityParam && !locationsParam) {
-    return t("propertiesInAmman");
-  }
-  const city = JORDAN_CITIES_WITH_AREAS.find(
-    (c) => c.name.toLowerCase() === (cityParam ?? "").toLowerCase(),
-  )?.name;
-  const areas: string[] = locationsParam
-    ? locationsParam
-        .split(",")
-        .map((p) => p.trim())
-        .filter(Boolean)
-    : [];
-  const cityAreas = city ? getAreasByCityName(city) : [];
-  const selectedAreas = areas.filter((a) =>
-    cityAreas.some((opt) => opt.toLowerCase() === a.toLowerCase()),
-  );
-  if (selectedAreas.length > 0 && city) {
-    const location =
-      selectedAreas.length <= 2
-        ? `${city} - ${selectedAreas.join(", ")}`
-        : `${city} - ${selectedAreas[0]}, ${t("areasMoreLabel", { count: String(selectedAreas.length - 1) })}`;
-    return t("propertiesInLocation", { location });
-  }
-  if (city) {
-    return t("propertiesInLocation", { location: city });
-  }
-  return t("propertiesInAmman");
-}
 
 export default function SearchResultPage() {
   const searchParams = useSearchParams();
@@ -51,7 +21,17 @@ export default function SearchResultPage() {
   const tSaved = useTranslations("savedSearches");
   const language = useLocale() as AppLocale;
   const isRtl = language === "ar";
-  const pageTitle = getPageTitle(t, searchParams);
+  const dispatch = useAppDispatch();
+  const citiesJordan = useAppSelector(selectJordanCitiesWithAreas);
+
+  useEffect(() => {
+    void dispatch(fetchLocationTaxonomyIfNeeded());
+  }, [dispatch]);
+
+  const pageTitle = useMemo(
+    () => buildSearchResultPageTitle(t, searchParams, citiesJordan),
+    [t, searchParams, citiesJordan],
+  );
   const source = searchParams.get("source");
   const activeSavedSearchId =
     source === "saved-search" ? searchParams.get("savedSearchId") : null;

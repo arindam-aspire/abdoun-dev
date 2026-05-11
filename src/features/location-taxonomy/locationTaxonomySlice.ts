@@ -1,9 +1,10 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, createSelector } from "@reduxjs/toolkit";
 import type { RootState } from "@/store";
 import {
   fetchLocationTaxonomy,
   type LocationTaxonomyCity,
-} from "@/features/agent/dashboard/api/taxonomy.api";
+} from "@/features/location-taxonomy/api/locationTaxonomy.api";
+import { mapTaxonomyCitiesToJordanShape } from "@/features/location-taxonomy/locationTaxonomyMappers";
 
 type LocationTaxonomyState = {
   cities: LocationTaxonomyCity[];
@@ -38,7 +39,8 @@ export const fetchLocationTaxonomyIfNeeded = createAsyncThunk<
     condition: (_, { getState }) => {
       const s = getState().locationTaxonomy;
       if (s.inFlight) return false;
-      if (s.status === "succeeded" && s.cities.length > 0) return false;
+      /** Treat any successful response (including empty `[]`) as cached — avoids refetch storms. */
+      if (s.status === "succeeded") return false;
       return true;
     },
   },
@@ -83,15 +85,21 @@ export default locationTaxonomySlice.reducer;
 
 export const selectLocationTaxonomyState = (state: RootState) => state.locationTaxonomy;
 export const selectLocationTaxonomyCities = (state: RootState) => state.locationTaxonomy.cities;
+export const selectLocationTaxonomyStatus = (state: RootState) => state.locationTaxonomy.status;
+export const selectLocationTaxonomyError = (state: RootState) => state.locationTaxonomy.error;
+
+export const selectJordanCitiesWithAreas = createSelector(
+  [selectLocationTaxonomyCities],
+  (cities) => mapTaxonomyCitiesToJordanShape(cities),
+);
 
 /**
  * Flatten all taxonomy areas into a unique, sorted list for "service area" selection.
  * Falls back to an empty list when taxonomy is not loaded.
  */
-export const selectServiceAreaOptions = (state: RootState) => {
-  const areas = state.locationTaxonomy.cities.flatMap((c) => c.areas?.map((a) => a.name) ?? []);
+export const selectServiceAreaOptions = createSelector([selectLocationTaxonomyCities], (cities) => {
+  const areas = cities.flatMap((c) => c.areas?.map((a) => a.name) ?? []);
   const unique = Array.from(new Set(areas.map((a) => (a ?? "").trim()).filter(Boolean)));
   unique.sort((a, b) => a.localeCompare(b));
   return unique.map((name) => ({ value: name, label: name }));
-};
-
+});

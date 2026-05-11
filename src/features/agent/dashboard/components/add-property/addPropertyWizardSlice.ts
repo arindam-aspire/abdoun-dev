@@ -1,3 +1,4 @@
+import type { LocationTaxonomyCity } from "@/features/location-taxonomy/api/locationTaxonomy.api";
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "@/store";
 import {
@@ -428,8 +429,18 @@ const addPropertyWizardSlice = createSlice({
       wizardMode: state.wizardMode,
     }),
     /** Merged `payload` from PATCH / POST without changing `activeStep` (partial merge). */
-    mergeServerPayloadAfterPatch(state, action: PayloadAction<Record<string, unknown>>) {
-      applyPatchResponsePayloadToWizard(state, action.payload);
+    mergeServerPayloadAfterPatch(
+      state,
+      action: PayloadAction<{
+        patch: Record<string, unknown>;
+        locationTaxonomyCities: LocationTaxonomyCity[];
+      }>,
+    ) {
+      applyPatchResponsePayloadToWizard(
+        state,
+        action.payload.patch,
+        action.payload.locationTaxonomyCities,
+      );
       state.dirty = false;
     },
     setStepProgressFromServer(
@@ -511,20 +522,22 @@ export const selectAddPropertyWizardMode = (state: RootState) => state.addProper
  * with empty sections marked complete.
  */
 export function selectAddPropertyStepCompletionMap(state: RootState): Record<string, boolean> {
-  return computeLocalStepCompletion(state.addPropertyWizard);
+  return computeLocalStepCompletion(state.addPropertyWizard, state.locationTaxonomy.cities);
 }
 
 /**
  * 0…8: consecutive “last completed” count from the same local completion map as the stepper.
  */
 export function selectAddPropertyLastCompletedStepDisplay(state: RootState): number {
-  return computeConsecutiveLastCompletedFromCompletion(computeLocalStepCompletion(state.addPropertyWizard));
+  return computeConsecutiveLastCompletedFromCompletion(
+    computeLocalStepCompletion(state.addPropertyWizard, state.locationTaxonomy.cities),
+  );
 }
 
 /** Whether the current step’s required fields are satisfied (for Next button state, etc.). */
 export function selectAddPropertyCurrentStepComplete(state: RootState): boolean {
   const w = state.addPropertyWizard;
-  const c = computeLocalStepCompletion(w);
+  const c = computeLocalStepCompletion(w, state.locationTaxonomy.cities);
   const key = UI_STEP_ID_TO_COMPLETION_KEY[w.activeStep];
   return Boolean(c[key]);
 }

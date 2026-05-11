@@ -1,78 +1,38 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import type { LocationTaxonomyCity } from "@/features/location-taxonomy/api/locationTaxonomy.api";
 import {
-  fetchLocationTaxonomy,
-  type LocationTaxonomyCity,
-} from "@/features/agent/dashboard/api/taxonomy.api";
-
-let cached: LocationTaxonomyCity[] | null = null;
-let inFlight: Promise<LocationTaxonomyCity[]> | null = null;
-
-async function loadLocationTaxonomy(force: boolean): Promise<LocationTaxonomyCity[]> {
-  if (!force && cached) {
-    return cached;
-  }
-  if (!force && inFlight) {
-    return inFlight;
-  }
-  if (force) {
-    cached = null;
-  }
-
-  inFlight = fetchLocationTaxonomy()
-    .then((data) => {
-      cached = data;
-      return data;
-    })
-    .finally(() => {
-      inFlight = null;
-    });
-
-  return inFlight;
-}
+  fetchLocationTaxonomyIfNeeded,
+  resetLocationTaxonomy,
+  selectLocationTaxonomyCities,
+  selectLocationTaxonomyError,
+  selectLocationTaxonomyStatus,
+} from "@/features/location-taxonomy/locationTaxonomySlice";
 
 export function useLocationTaxonomy() {
-  const [cities, setCities] = useState<LocationTaxonomyCity[]>(() => cached ?? []);
-  const [loading, setLoading] = useState(() => !cached);
-  const [failed, setFailed] = useState(false);
+  const dispatch = useAppDispatch();
+  const cities = useAppSelector(selectLocationTaxonomyCities) as LocationTaxonomyCity[];
+  const status = useAppSelector(selectLocationTaxonomyStatus);
+  const failed = useAppSelector(selectLocationTaxonomyError);
 
   useEffect(() => {
-    let cancelled = false;
+    void dispatch(fetchLocationTaxonomyIfNeeded());
+  }, [dispatch]);
 
-    void loadLocationTaxonomy(false)
-      .then((data) => {
-        if (cancelled) return;
-        setCities(data ?? []);
-        setFailed(false);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCities([]);
-          setFailed(true);
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const loading =
+    status === "loading" || (status === "idle" && cities.length === 0 && !failed);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await loadLocationTaxonomy(true);
-      setCities(data ?? []);
-      setFailed(false);
-    } catch {
-      setCities([]);
-      setFailed(true);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    dispatch(resetLocationTaxonomy());
+    await dispatch(fetchLocationTaxonomyIfNeeded());
+  }, [dispatch]);
 
-  return { cities, loading, error: failed, refresh };
+  return {
+    cities,
+    loading,
+    error: status === "failed",
+    refresh,
+  };
 }

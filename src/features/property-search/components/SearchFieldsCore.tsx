@@ -17,15 +17,16 @@ import { useLocale } from "next-intl";
 import type { CategoryKey, SearchFieldsProps, StatusTabKey } from "@/features/property-search/types";
 import { routing } from "@/i18n/routing";
 import {
-  getAreasByCityName,
-  JORDAN_CITIES_WITH_AREAS,
-} from "@/lib/constants/jordanCities";
-import {
   CATEGORY_OPTIONS,
   CATEGORY_TO_PROPERTY_TYPES,
   STATUS_TABS,
 } from "@/features/property-search/types";
-import { useAppSelector } from "@/hooks/storeHooks";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import {
+  fetchLocationTaxonomyIfNeeded,
+  selectJordanCitiesWithAreas,
+} from "@/features/location-taxonomy/locationTaxonomySlice";
+import { getAreasByCityNameFromJordanShape } from "@/features/location-taxonomy/locationTaxonomyMappers";
 import { selectCurrentUser } from "@/store/selectors";
 import { AuthPopup } from "@/features/auth/components/modals/AuthPopup";
 import { SaveSearchModal } from "@/features/saved-searches/components/modals/SaveSearchModal";
@@ -60,6 +61,14 @@ import {
 } from "./searchFieldsUiConstants";
 
 export type { SearchFieldsProps, SearchFieldsTranslations } from "@/features/property-search/types";
+
+function areStringArraysEqual(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
 
 export function SearchFields({
   translations: t,
@@ -104,25 +113,6 @@ export function SearchFields({
       if (match) return match;
     }
     return "";
-  };
-
-  const getInitialCity = (): string => {
-    const param = searchParams.get("city");
-    if (!param) return "";
-    const found = JORDAN_CITIES_WITH_AREAS.find(
-      (c) => c.name.toLowerCase() === param.trim().toLowerCase(),
-    );
-    return found ? found.name : "";
-  };
-
-  const getInitialAreas = (): string[] => {
-    const locationsParam = searchParams.get("locations");
-    if (!locationsParam) return [];
-    const initialCity = getInitialCity();
-    if (!initialCity) return [];
-    const cityAreas = getAreasByCityName(initialCity);
-    const parts = locationsParam.split(",").map((p) => p.trim().toLowerCase());
-    return cityAreas.filter((area) => parts.includes(area.toLowerCase()));
   };
 
   const getInitialBudgetMin = (): string => {
@@ -192,10 +182,8 @@ export function SearchFields({
   const [propertyType, setPropertyType] = useState<string>(() =>
     getInitialPropertyType(getInitialCategory()),
   );
-  const [city, setCity] = useState<string>(() => getInitialCity());
-  const [selectedAreas, setSelectedAreas] = useState<string[]>(() =>
-    getInitialAreas(),
-  );
+  const [city, setCity] = useState<string>("");
+  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [budgetMin, setBudgetMin] = useState(() => getInitialBudgetMin());
   const [budgetMax, setBudgetMax] = useState(() => getInitialBudgetMax());
   const [categoryOpen, setCategoryOpen] = useState(false);
@@ -321,6 +309,33 @@ export function SearchFields({
   queryParams.delete("savedSearchId");
   queryParams.delete("savedSearchName");
   const queryString = queryParams.toString();
+
+  const dispatch = useAppDispatch();
+  const citiesJordan = useAppSelector(selectJordanCitiesWithAreas);
+
+  useEffect(() => {
+    void dispatch(fetchLocationTaxonomyIfNeeded());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (citiesJordan.length === 0) return;
+    const param = searchParams.get("city")?.trim() ?? "";
+    if (!param) return;
+    const found = citiesJordan.find((c) => c.name.toLowerCase() === param.toLowerCase());
+    const canon = found?.name ?? "";
+    setCity((prev) => (prev === canon ? prev : canon));
+    const locationsParam = searchParams.get("locations");
+    if (!canon || !locationsParam) {
+      setSelectedAreas((prev) => (prev.length === 0 ? prev : []));
+      return;
+    }
+    const cityAreas = getAreasByCityNameFromJordanShape(citiesJordan, canon);
+    const parts = locationsParam.split(",").map((p) => p.trim().toLowerCase());
+    const nextAreas = cityAreas.filter((area) => parts.includes(area.toLowerCase()));
+    setSelectedAreas((prev) =>
+      areStringArraysEqual(prev, nextAreas) ? prev : nextAreas,
+    );
+  }, [searchParams, citiesJordan]);
 
   const closeAllAdvancedDropdowns = () => {
     setAdvFurnitureOpen(false);
@@ -566,7 +581,7 @@ export function SearchFields({
     } => option !== null,
   );
 
-  const areaOptions = city ? getAreasByCityName(city) : [];
+  const areaOptions = city ? getAreasByCityNameFromJordanShape(citiesJordan, city) : [];
 
   const formatBudgetLabel = () => {
     if (!budgetMin && !budgetMax) return t.budgetPlaceholder;
@@ -663,6 +678,13 @@ export function SearchFields({
       amenityList.push("electricityNearby");
     if (amenityList.length > 0) params.set("amenities", amenityList.join(","));
     const query = params.toString();
+    const currentQuery = searchParams.toString();
+    if (query === currentQuery) {
+      if (shouldStripSavedSearchMeta) {
+        stripSavedSearchMetaOnNextSyncRef.current = false;
+      }
+      return;
+    }
     router.replace(query ? `${pathname}?${query}` : pathname, {
       scroll: false,
     });
@@ -742,6 +764,7 @@ export function SearchFields({
     sourceParam,
     savedSearchIdParam,
     savedSearchNameParam,
+    searchParams,
     pathname,
     router,
   ]);
@@ -1042,7 +1065,7 @@ export function SearchFields({
               >
                 {t.cityPlaceholder}
               </button>
-              {JORDAN_CITIES_WITH_AREAS.map((cityOption) => (
+              {citiesJordan.map((cityOption) => (
                 <button
                   key={cityOption.id}
                   type="button"

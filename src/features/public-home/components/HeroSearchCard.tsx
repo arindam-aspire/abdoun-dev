@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { ChevronDown } from "lucide-react";
@@ -17,7 +17,12 @@ import {
 } from "@/features/public-home/components/PropertyTypeSelect";
 import { HeroCitySelect } from "@/features/public-home/components/HeroCitySelect";
 import { HeroAreaSelect } from "@/features/public-home/components/HeroAreaSelect";
-import { getAreasByCityName } from "@/lib/constants/jordanCities";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import { getAreasByCityNameFromJordanShape } from "@/features/location-taxonomy/locationTaxonomyMappers";
+import {
+  fetchLocationTaxonomyIfNeeded,
+  selectJordanCitiesWithAreas,
+} from "@/features/location-taxonomy/locationTaxonomySlice";
 
 export interface HeroSearchCardProps {
   translations: HeroTranslations;
@@ -67,6 +72,15 @@ export function HeroSearchCard({
   isRtl,
 }: HeroSearchCardProps) {
   type HeroDropdownKey = "type" | "city" | "area" | "budget";
+  const dispatch = useAppDispatch();
+  const citiesJordan = useAppSelector(selectJordanCitiesWithAreas);
+  useEffect(() => {
+    void dispatch(fetchLocationTaxonomyIfNeeded());
+  }, [dispatch]);
+  const cityOptions = useMemo(
+    () => citiesJordan.map((c) => ({ id: c.id, name: c.name })),
+    [citiesJordan],
+  );
   const router = useRouter();
   const locale = useLocale();
   const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<
@@ -85,7 +99,7 @@ export function HeroSearchCard({
   const budgetTriggerRef = useRef<HTMLButtonElement>(null);
   const propertyType = selectedPropertyTypes[activeCategoryTab];
 
-  const areaOptions = selectedCity ? getAreasByCityName(selectedCity) : [];
+  const areaOptions = selectedCity ? getAreasByCityNameFromJordanShape(citiesJordan, selectedCity) : [];
   const toggleDropdown = (key: HeroDropdownKey) => {
     setOpenDropdown((current) => (current === key ? null : key));
   };
@@ -197,6 +211,7 @@ export function HeroSearchCard({
               setSelectedAreas([]);
             }}
             isRtl={isRtl}
+            cities={cityOptions}
           />
 
           <HeroAreaSelect

@@ -1,3 +1,4 @@
+import type { LocationTaxonomyCity } from "@/features/location-taxonomy/api/locationTaxonomy.api";
 import type { AddPropertyWizardState } from "../components/add-property/addPropertyWizardSlice";
 import type { AddPropertyStepId } from "../components/add-property/addPropertyWizard.types";
 import { ADD_PROPERTY_STEP_ORDER } from "../components/add-property/addPropertyWizard.types";
@@ -13,6 +14,7 @@ export function canNavigateToStepIndex(
   targetIndex: number,
   currentIndex: number,
   w: AddPropertyWizardState,
+  taxonomyCities: LocationTaxonomyCity[] = [],
 ): boolean {
   if (targetIndex < 0 || targetIndex >= ADD_PROPERTY_STEP_ORDER.length) {
     return false;
@@ -23,7 +25,7 @@ export function canNavigateToStepIndex(
   if (targetIndex < currentIndex) {
     return true;
   }
-  const completion = computeLocalStepCompletion(w);
+  const completion = computeLocalStepCompletion(w, taxonomyCities);
   for (let j = 0; j < targetIndex; j++) {
     const id = ADD_PROPERTY_STEP_ORDER[j]!;
     const key = UI_STEP_ID_TO_COMPLETION_KEY[id];
@@ -40,8 +42,9 @@ export function canNavigateToStepIndex(
 export function getValidationErrorBeforeLeavingStep(
   step: AddPropertyStepId,
   w: AddPropertyWizardState,
+  taxonomyCities: LocationTaxonomyCity[] = [],
 ): string | null {
-  const c = computeLocalStepCompletion(w);
+  const c = computeLocalStepCompletion(w, taxonomyCities);
   const key = UI_STEP_ID_TO_COMPLETION_KEY[step];
   if (c[key]) {
     return null;

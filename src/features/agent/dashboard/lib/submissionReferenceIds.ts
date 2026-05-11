@@ -2,7 +2,8 @@
  * Maps UI selections to backend integer IDs. Align these with your Abdoun API seed data
  * (property categories, types, cities, areas, features). Env vars override defaults.
  */
-import { getCityByName, JORDAN_CITIES_WITH_AREAS } from "@/lib/constants/jordanCities";
+import type { LocationTaxonomyCity } from "@/features/location-taxonomy/api/locationTaxonomy.api";
+import { getCityAndAreaIdsFromTaxonomy, resolveCityNameFromTaxonomy } from "@/features/location-taxonomy/locationTaxonomyMappers";
 import type { Category } from "../components/add-property/addPropertyWizard.types";
 
 function numEnv(key: string, fallback: number): number {
@@ -80,42 +81,38 @@ export function getPropertyTypeSlugFromTypeId(
   return "";
 }
 
-/** Best-effort city name from stored `city_id` (mirrors env-based IDs in `getCityAndAreaIds`). */
-export function getCityNameForSubmissionCityId(cityId: number | undefined | null): string {
-  if (cityId == null || !Number.isFinite(cityId)) return "";
-  for (const city of JORDAN_CITIES_WITH_AREAS) {
-    const id = numEnv(`NEXT_PUBLIC_SUBMISSION_CITY_ID_${city.id.toUpperCase()}`, DEFAULT_CITY_ID);
-    if (id === cityId) return city.name;
-  }
-  return "";
+/** Best-effort city name from stored `city_id` using loaded location taxonomy. */
+export function getCityNameForSubmissionCityId(
+  cityId: number | undefined | null,
+  taxonomyCities: LocationTaxonomyCity[] = [],
+): string {
+  return resolveCityNameFromTaxonomy(cityId, taxonomyCities);
 }
 
-/**
- * Area names from `area_id` are resolved in {@link LocationStep} once location taxonomy loads.
- * This stub remains so synchronous GET hydration does not depend on async taxonomy.
- */
 export function getAreaNamesForSubmissionAreaId(
-  _cityName: string,
-  _areaId: number | undefined | null,
+  cityName: string,
+  areaId: number | undefined | null,
+  taxonomyCities: LocationTaxonomyCity[] = [],
 ): string[] {
-  return [];
+  const city = taxonomyCities.find((c) => c.name.trim().toLowerCase() === cityName.trim().toLowerCase());
+  if (!city || areaId == null || !Number.isFinite(areaId)) return [];
+  const match = (city.areas ?? []).find((a) => a.id === areaId);
+  return match?.name ? [match.name] : [];
 }
 
 export function getCityAndAreaIds(
   cityName: string,
   areaNames: string[],
+  taxonomyCities: LocationTaxonomyCity[] = [],
 ): { city_id: number; area_id: number } {
-  const city = getCityByName(cityName);
+  const city = taxonomyCities.find((c) => c.name.trim().toLowerCase() === cityName.trim().toLowerCase());
   const areaName = areaNames[0]?.trim() ?? "";
   if (city) {
     const key = `${city.name}|${areaName}`;
     const areaId = AREA_OVERRIDES[key];
     if (typeof areaId === "number") {
-      return {
-        city_id: numEnv(`NEXT_PUBLIC_SUBMISSION_CITY_ID_${city.id.toUpperCase()}`, DEFAULT_CITY_ID),
-        area_id: areaId,
-      };
+      return { city_id: city.id, area_id: areaId };
     }
   }
-  return { city_id: DEFAULT_CITY_ID, area_id: DEFAULT_AREA_ID };
+  return getCityAndAreaIdsFromTaxonomy(taxonomyCities, cityName, areaNames, DEFAULT_CITY_ID, DEFAULT_AREA_ID);
 }

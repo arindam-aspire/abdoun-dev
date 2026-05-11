@@ -1,46 +1,20 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "@/hooks/useTranslations";
 import type { AppLocale } from "@/i18n/routing";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import {
+  fetchLocationTaxonomyIfNeeded,
+  selectJordanCitiesWithAreas,
+} from "@/features/location-taxonomy/locationTaxonomySlice";
+import { buildSearchResultPageTitle } from "@/features/location-taxonomy/locationTaxonomyMappers";
 import { SearchFields } from "@/features/property-search/components/SearchFields";
 import { AdminSearchResults } from "./AdminSearchResults";
-import { JORDAN_CITIES_WITH_AREAS, getAreasByCityName } from "@/lib/constants/jordanCities";
 
 export interface AdminSearchResultMainProps {
   language: AppLocale;
-}
-
-function getPageTitle(
-  t: (key: string, values?: Record<string, string>) => string,
-  searchParams: URLSearchParams,
-): string {
-  const exclusiveParam = searchParams.get("exclusive");
-  if (exclusiveParam === "1" || exclusiveParam === "true") {
-    return t("exclusivePropertiesTitle");
-  }
-  const cityParam = searchParams.get("city")?.trim();
-  const locationsParam = searchParams.get("locations");
-  if (!cityParam && !locationsParam) {
-    return t("propertiesInAmman");
-  }
-  const city = JORDAN_CITIES_WITH_AREAS.find(
-    (c) => c.name.toLowerCase() === (cityParam ?? "").toLowerCase(),
-  )?.name;
-  const areas: string[] = locationsParam ? locationsParam.split(",").map((p) => p.trim()).filter(Boolean) : [];
-  const cityAreas = city ? getAreasByCityName(city) : [];
-  const selectedAreas = areas.filter((a) => cityAreas.some((opt) => opt.toLowerCase() === a.toLowerCase()));
-  if (selectedAreas.length > 0 && city) {
-    const location =
-      selectedAreas.length <= 2
-        ? `${city} - ${selectedAreas.join(", ")}`
-        : `${city} - ${selectedAreas[0]}, ${t("areasMoreLabel", { count: String(selectedAreas.length - 1) })}`;
-    return t("propertiesInLocation", { location });
-  }
-  if (city) {
-    return t("propertiesInLocation", { location: city });
-  }
-  return t("propertiesInAmman");
 }
 
 export function AdminSearchResultMain({ language }: AdminSearchResultMainProps) {
@@ -48,7 +22,17 @@ export function AdminSearchResultMain({ language }: AdminSearchResultMainProps) 
   const t = useTranslations("searchResult");
   const tSaved = useTranslations("savedSearches");
   const isRtl = language === "ar";
-  const pageTitle = getPageTitle(t, searchParams);
+  const dispatch = useAppDispatch();
+  const citiesJordan = useAppSelector(selectJordanCitiesWithAreas);
+
+  useEffect(() => {
+    void dispatch(fetchLocationTaxonomyIfNeeded());
+  }, [dispatch]);
+
+  const pageTitle = useMemo(
+    () => buildSearchResultPageTitle(t, searchParams, citiesJordan),
+    [t, searchParams, citiesJordan],
+  );
 
   return (
     <section dir={isRtl ? "rtl" : "ltr"}>

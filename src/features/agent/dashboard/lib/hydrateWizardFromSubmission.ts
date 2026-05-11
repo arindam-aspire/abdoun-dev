@@ -1,3 +1,4 @@
+import type { LocationTaxonomyCity } from "@/features/location-taxonomy/api/locationTaxonomy.api";
 import type { ApiSubmissionStep, GetSubmissionResult } from "../api/propertySubmissions.api";
 import type { AddPropertyWizardState, AddPropertyWorkflowStatus } from "../components/add-property/addPropertyWizardSlice";
 import { createEmptyAddPropertyWizardState } from "../components/add-property/addPropertyWizardSlice";
@@ -46,7 +47,10 @@ function uiStepFromApiCurrentStep(currentStep: number | undefined | null): AddPr
 /**
  * Builds full wizard Redux state from a GET submission response so drafts resume correctly.
  */
-export function wizardStateFromApiSubmission(sub: GetSubmissionResult): AddPropertyWizardState {
+export function wizardStateFromApiSubmission(
+  sub: GetSubmissionResult,
+  locationTaxonomyCities: LocationTaxonomyCity[] = [],
+): AddPropertyWizardState {
   const base = createEmptyAddPropertyWizardState();
   const payload = sub.payload ?? {};
 
@@ -67,7 +71,7 @@ export function wizardStateFromApiSubmission(sub: GetSubmissionResult): AddPrope
       ? sub.last_completed_step
       : null;
 
-  applySubmissionPayloadToWizardState(base, payload);
+  applySubmissionPayloadToWizardState(base, payload, locationTaxonomyCities);
 
   if (base.owners.length === 0) {
     base.owners = [createOwner(1)];

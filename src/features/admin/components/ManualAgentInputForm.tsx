@@ -6,19 +6,12 @@ import { ChevronDown } from "lucide-react";
 import { Button, Input, PhoneNumberInputField } from "@/components/ui";
 import { HeroDropdown } from "@/features/public-home/components/HeroDropdown";
 import { cn } from "@/lib/cn";
-import { JORDAN_CITIES_WITH_AREAS } from "@/lib/constants/jordanCities";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import {
   fetchLocationTaxonomyIfNeeded,
   selectLocationTaxonomyState,
   selectServiceAreaOptions,
 } from "@/features/location-taxonomy/locationTaxonomySlice";
-
-const FALLBACK_SERVICE_AREA_OPTIONS = Array.from(
-  new Set(JORDAN_CITIES_WITH_AREAS.flatMap((city) => city.areas)),
-)
-  .sort((a, b) => a.localeCompare(b))
-  .map((area) => ({ value: area, label: area }));
 
 export interface ManualAgentInputFormProps {
   fullName: string;
@@ -65,7 +58,7 @@ export function ManualAgentInputForm({
 }: ManualAgentInputFormProps) {
   const dispatch = useAppDispatch();
   const taxonomy = useAppSelector(selectLocationTaxonomyState);
-  const serviceAreaOptionsFromStore = useAppSelector(selectServiceAreaOptions);
+  const serviceAreaOptions = useAppSelector(selectServiceAreaOptions);
   const [isServiceAreaOpen, setIsServiceAreaOpen] = useState(false);
   const [serviceAreaQuery, setServiceAreaQuery] = useState("");
   const serviceAreaTriggerRef = useRef<HTMLButtonElement>(null);
@@ -81,12 +74,6 @@ export function ManualAgentInputForm({
       setServiceAreaQuery("");
     }
   }, [isServiceAreaOpen, serviceAreaQuery]);
-
-  const serviceAreaOptions = useMemo(() => {
-    return serviceAreaOptionsFromStore.length
-      ? serviceAreaOptionsFromStore
-      : FALLBACK_SERVICE_AREA_OPTIONS;
-  }, [serviceAreaOptionsFromStore]);
 
   const filteredServiceAreaOptions = useMemo(() => {
     const q = serviceAreaQuery.trim().toLowerCase();

@@ -35,9 +35,10 @@ import type {
   StatusTabKey,
 } from "@/features/property-search/types";
 import {
-  JORDAN_CITIES_WITH_AREAS,
-  getAreasByCityName,
-} from "@/lib/constants/jordanCities";
+  getAreasByCityNameFromTaxonomy,
+  mapTaxonomyCitiesToJordanShape,
+} from "@/features/location-taxonomy/locationTaxonomyMappers";
+import { useLocationTaxonomy } from "../../hooks/useLocationTaxonomy";
 import { addListing } from "@/features/agent/api/mocks/agentDashboardMockService";
 import type { PropertyType } from "@/types/agent";
 import LocationPicker from "@/components/map/LocationPicker";
@@ -198,6 +199,11 @@ export function AddPropertyForm() {
   const locale = useLocale() as AppLocale;
   const router = useRouter();
   const t = useTranslations("agentDashboard");
+  const { cities: taxonomyCities } = useLocationTaxonomy();
+  const jordanCitiesShape = useMemo(
+    () => mapTaxonomyCitiesToJordanShape(taxonomyCities),
+    [taxonomyCities],
+  );
 
   const [listingPurpose, setListingPurpose] = useState<StatusTabKey>("buy");
   const [category, setCategory] = useState<CategoryKey>("residential");
@@ -597,12 +603,12 @@ export function AddPropertyForm() {
     t,
   ]);
 
-  const cityOptions = JORDAN_CITIES_WITH_AREAS.map((c) => ({
+  const cityOptions = jordanCitiesShape.map((c) => ({
     value: c.name,
     label: c.name,
   }));
   const areaOptions = city
-    ? getAreasByCityName(city).map((a) => ({ value: a, label: a }))
+    ? getAreasByCityNameFromTaxonomy(taxonomyCities, city).map((a) => ({ value: a, label: a }))
     : [];
   const propertyTypeOptions = CATEGORY_TO_PROPERTY_TYPES[category].map(
     (pt) => ({ value: pt, label: pt }),

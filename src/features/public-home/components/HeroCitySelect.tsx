@@ -2,7 +2,6 @@
 
 import { useRef } from "react";
 import { HeroDropdown } from "@/features/public-home/components/HeroDropdown";
-import { JORDAN_CITIES_WITH_AREAS } from "@/lib/constants/jordanCities";
 import { cn } from "@/lib/cn";
 import { ChevronDown } from "lucide-react";
 
@@ -33,7 +32,7 @@ export function HeroCitySelect({
   cities,
 }: HeroCitySelectProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const cityOptions: CityOption[] = cities?.length ? cities : JORDAN_CITIES_WITH_AREAS;
+  const cityOptions: CityOption[] = cities ?? [];
 
   const handleSelect = (cityName: string) => {
     onChange(cityName);

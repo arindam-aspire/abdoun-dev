@@ -1,4 +1,5 @@
 import { parsePhoneNumberFromString } from "libphonenumber-js";
+import type { LocationTaxonomyCity } from "@/features/location-taxonomy/api/locationTaxonomy.api";
 import type { AddPropertyWizardState } from "../components/add-property/addPropertyWizardSlice";
 import {
   createOwner,
@@ -83,9 +84,19 @@ function parseMediaRows(rows: unknown): MediaFileRef[] {
  * Mutates wizard state from API `payload` keys that are present (GET or PATCH merged shape).
  * Does not touch `activeStep`, `submissionId`, or other navigation / meta fields.
  */
+function readFiniteId(v: unknown): number | undefined {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && v.trim()) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : undefined;
+  }
+  return undefined;
+}
+
 export function applySubmissionPayloadToWizardState(
   state: AddPropertyWizardState,
   payload: Record<string, unknown>,
+  locationTaxonomyCities: LocationTaxonomyCity[] = [],
 ): void {
   if (payload.basic_information != null) {
     const bi = asRecord(payload.basic_information) ?? {};
@@ -119,13 +130,11 @@ export function applySubmissionPayloadToWizardState(
 
   if (payload.location != null) {
     const loc = asRecord(payload.location) ?? {};
-    const cityId =
-      typeof loc.city_id === "number" && Number.isFinite(loc.city_id) ? loc.city_id : undefined;
-    const areaId =
-      typeof loc.area_id === "number" && Number.isFinite(loc.area_id) ? loc.area_id : undefined;
+    const cityId = readFiniteId(loc.city_id);
+    const areaId = readFiniteId(loc.area_id);
     state.cityId = cityId ?? null;
     state.areaId = areaId ?? null;
-    const cityName = getCityNameForSubmissionCityId(cityId);
+    const cityName = getCityNameForSubmissionCityId(cityId, locationTaxonomyCities);
     if (cityName) {
       state.city = cityName;
     }
@@ -133,7 +142,7 @@ export function applySubmissionPayloadToWizardState(
       state.address = readStr(loc, "address");
     }
     if (cityName) {
-      const resolved = getAreaNamesForSubmissionAreaId(cityName, areaId);
+      const resolved = getAreaNamesForSubmissionAreaId(cityName, areaId, locationTaxonomyCities);
       if (resolved.length > 0) {
         state.selectedAreas = resolved;
       }
@@ -285,9 +294,10 @@ export function applySubmissionPayloadToWizardState(
 export function mergeSubmissionPayloadIntoWizardState(
   state: AddPropertyWizardState,
   payload: Record<string, unknown> | undefined | null,
+  locationTaxonomyCities: LocationTaxonomyCity[] = [],
 ): void {
   if (!payload || typeof payload !== "object") return;
-  applySubmissionPayloadToWizardState(state, payload);
+  applySubmissionPayloadToWizardState(state, payload, locationTaxonomyCities);
   if (state.owners.length === 0) {
     state.owners = [createOwner(1)];
   }
@@ -301,35 +311,48 @@ export function mergeSubmissionPayloadIntoWizardState(
 export function applyPatchResponsePayloadToWizard(
   state: AddPropertyWizardState,
   payload: Record<string, unknown> | undefined | null,
+  locationTaxonomyCities: LocationTaxonomyCity[] = [],
 ): void {
   if (!payload || typeof payload !== "object") return;
 
   if ("basic_information" in payload) {
     if (payload.basic_information != null) {
       const slice = { basic_information: payload.basic_information };
-      applySubmissionPayloadToWizardState(state, slice);
+      applySubmissionPayloadToWizardState(state, slice, locationTaxonomyCities);
     }
   }
   if ("location" in payload && payload.location != null) {
-    applySubmissionPayloadToWizardState(state, { location: payload.location });
+    applySubmissionPayloadToWizardState(state, { location: payload.location }, locationTaxonomyCities);
   }
   if ("owner_information" in payload && payload.owner_information != null) {
-    applySubmissionPayloadToWizardState(state, { owner_information: payload.owner_information });
+    applySubmissionPayloadToWizardState(
+      state,
+      { owner_information: payload.owner_information },
+      locationTaxonomyCities,
+    );
   }
   if ("property_details" in payload && payload.property_details != null) {
-    applySubmissionPayloadToWizardState(state, { property_details: payload.property_details });
+    applySubmissionPayloadToWizardState(
+      state,
+      { property_details: payload.property_details },
+      locationTaxonomyCities,
+    );
   }
   if ("pricing" in payload && payload.pricing != null) {
-    applySubmissionPayloadToWizardState(state, { pricing: payload.pricing });
+    applySubmissionPayloadToWizardState(state, { pricing: payload.pricing }, locationTaxonomyCities);
   }
   if ("amenities" in payload && payload.amenities != null) {
-    applySubmissionPayloadToWizardState(state, { amenities: payload.amenities });
+    applySubmissionPayloadToWizardState(state, { amenities: payload.amenities }, locationTaxonomyCities);
   }
   if ("media_documents" in payload && payload.media_documents != null) {
-    applySubmissionPayloadToWizardState(state, { media_documents: payload.media_documents });
+    applySubmissionPayloadToWizardState(
+      state,
+      { media_documents: payload.media_documents },
+      locationTaxonomyCities,
+    );
   }
   if ("review_submit" in payload && payload.review_submit != null) {
-    applySubmissionPayloadToWizardState(state, { review_submit: payload.review_submit });
+    applySubmissionPayloadToWizardState(state, { review_submit: payload.review_submit }, locationTaxonomyCities);
   }
 
   if (state.owners.length === 0) {

@@ -1,4 +1,5 @@
-import { JORDAN_CITIES_WITH_AREAS, type JordanCityWithAreas } from "@/lib/constants/jordanCities";
+import type { LocationTaxonomyCity } from "@/features/location-taxonomy/api/locationTaxonomy.api";
+import { cityAreaLabelFromLocationPayload } from "@/features/location-taxonomy/locationTaxonomyMappers";
 import type { DetailedProperty } from "@/features/property-details/types";
 
 function toRecord(v: unknown): Record<string, unknown> | null {
@@ -32,26 +33,6 @@ function fmtPrice(price: unknown, currency: unknown): string {
   if (p == null) return "—";
   const formatted = new Intl.NumberFormat("en-JO", { style: "decimal" }).format(p);
   return `${formatted} ${c}`;
-}
-
-function cityAreaLabel(cityId: unknown, areaId: unknown): string | null {
-  const cId = str(cityId);
-  const aId = str(areaId);
-  if (!cId && !aId) return null;
-
-  const city: JordanCityWithAreas | undefined = cId
-    ? JORDAN_CITIES_WITH_AREAS.find((c) => c.id === cId)
-    : undefined;
-
-  const normalizedArea = aId?.toLowerCase() ?? null;
-  const areaName =
-    city && normalizedArea
-      ? city.areas.find((a) => a.toLowerCase() === normalizedArea) ?? null
-      : null;
-
-  const cityName = city?.name ?? null;
-  if (cityName && areaName) return `${areaName}, ${cityName}`;
-  return areaName ?? cityName ?? null;
 }
 
 function getAmenityLabels(payload: Record<string, unknown>): string[] {
@@ -96,6 +77,7 @@ export type SubmissionPayloadToDetailedPropertyInput = {
 
 export function submissionPayloadToDetailedProperty(
   input: SubmissionPayloadToDetailedPropertyInput,
+  locationTaxonomyCities: LocationTaxonomyCity[] = [],
 ): DetailedProperty {
   const payload = input.payload ?? {};
   const bi = toRecord(payload.basic_information) ?? {};
@@ -111,7 +93,9 @@ export function submissionPayloadToDetailedProperty(
     "Property submission";
 
   const locationLabel =
-    cityAreaLabel(loc.city_id, loc.area_id) ??
+    cityAreaLabelFromLocationPayload(loc.city_id, loc.area_id, {
+      taxonomyCities: locationTaxonomyCities,
+    }) ??
     str(loc.address) ??
     str(loc.location_label) ??
     "Jordan";

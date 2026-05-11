@@ -1,3 +1,4 @@
+import type { LocationTaxonomyCity } from "@/features/location-taxonomy/api/locationTaxonomy.api";
 import type { AddPropertyWizardState } from "../components/add-property/addPropertyWizardSlice";
 import type { AddPropertyStepId } from "../components/add-property/addPropertyWizard.types";
 import { getCategoryId, getCityAndAreaIds, getTypeId } from "./submissionReferenceIds";
@@ -57,6 +58,7 @@ export function isMediaStepSatisfied(w: AddPropertyWizardState): boolean {
  */
 export function computeLocalStepCompletion(
   w: AddPropertyWizardState,
+  taxonomyCities: LocationTaxonomyCity[] = [],
 ): Record<StepCompletionKey, boolean> {
   const hasPersistedTypeId = w.typeId != null && w.typeId > 0;
   const typeResolvedBySlug =
@@ -68,7 +70,7 @@ export function computeLocalStepCompletion(
     getCategoryId(w.category) > 0 &&
     (typeResolvedBySlug || hasPersistedTypeId);
 
-  const { city_id, area_id } = getCityAndAreaIds(w.city, w.selectedAreas);
+  const { city_id, area_id } = getCityAndAreaIds(w.city, w.selectedAreas, taxonomyCities);
   const effCityId = w.cityId ?? city_id;
   const effAreaId = w.areaId ?? area_id;
   const hasAreaSelection =
@@ -130,6 +132,9 @@ export function computeConsecutiveLastCompletedFromCompletion(
  * `true` if at least one wizard step passes {@link computeLocalStepCompletion} (user has
  * completed at least one full section). Used to avoid silent “empty” draft saves.
  */
-export function hasAnyLocalStepComplete(w: AddPropertyWizardState): boolean {
-  return Object.values(computeLocalStepCompletion(w)).some(Boolean);
+export function hasAnyLocalStepComplete(
+  w: AddPropertyWizardState,
+  taxonomyCities: LocationTaxonomyCity[] = [],
+): boolean {
+  return Object.values(computeLocalStepCompletion(w, taxonomyCities)).some(Boolean);
 }

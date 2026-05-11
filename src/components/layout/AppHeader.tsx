@@ -88,6 +88,14 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
   const profileMenuConfig = user
     ? APP_HEADER_CONFIG.profileMenu[user.role]
     : null;
+  const normalizedUserRole = user?.role?.toLowerCase();
+  const inquiriesPath =
+    normalizedUserRole === "agent"
+      ? "/agent-dashboard/leads-and-inquiries"
+      : normalizedUserRole === "admin"
+        ? "/leads"
+        : "/my-inquiries";
+  const inquiriesHref = `/${activeLanguage}${inquiriesPath}`;
   const firstName =
     user?.name?.split(" ").find(Boolean) ?? tCommon("myProfile");
   const path = pathname ?? "";
@@ -506,7 +514,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                       </Link>
                     ) : null}
                     <Link
-                      href={`/${activeLanguage}/my-inquiries`}
+                      href={inquiriesHref}
                       onClick={() => setIsProfileOpen(false)}
                       className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
                     >
@@ -687,7 +695,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
                       </Link>
                     ) : null}
                     <Link
-                      href={`/${activeLanguage}/my-inquiries`}
+                      href={inquiriesHref}
                       onClick={() => setIsProfileOpen(false)}
                       className="block rounded-lg px-3 py-2.5 text-size-sm text-zinc-700 hover:bg-zinc-100 hover:underline cursor-pointer"
                     >

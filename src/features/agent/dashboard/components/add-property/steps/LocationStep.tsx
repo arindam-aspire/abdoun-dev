@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { HeroAreaSelect } from "@/features/public-home/components/HeroAreaSelect";
 import { HeroCitySelect } from "@/features/public-home/components/HeroCitySelect";
-import { getAreasByCityName } from "@/lib/constants/jordanCities";
+import { getAreasByCityNameFromTaxonomy } from "@/features/location-taxonomy/locationTaxonomyMappers";
 import type { AppLocale } from "@/i18n/routing";
 import { useLocationTaxonomy } from "../../../hooks/useLocationTaxonomy";
 
@@ -67,8 +67,9 @@ export function LocationStep() {
     if (!city) return [];
     const fromApi = cities.find((c) => c.name === city)?.areas ?? [];
     const names = fromApi.map((a) => a.name).filter(Boolean);
-    return names.length ? names : getAreasByCityName(city);
-  }, [city, cities]);
+    if (names.length) return names;
+    return getAreasByCityNameFromTaxonomy(taxonomyCities, city);
+  }, [city, cities, taxonomyCities]);
 
   const toggleDropdown = (key: Exclude<LocationDropdownKey, null>) => {
     setOpenDropdown((current) => (current === key ? null : key));

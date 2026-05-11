@@ -23,6 +23,7 @@ import {
   fetchAdminManageListingsSidebarTotal,
   fetchAgentListingsSidebarCounts,
 } from "@/features/agent/dashboard/agentDashboardSummarySlice";
+import { fetchLocationTaxonomyIfNeeded } from "@/features/location-taxonomy/locationTaxonomySlice";
 import {
   createAndSubmitPropertySubmission,
   createPropertySubmissionDraft,
@@ -138,6 +139,7 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
 
       if (wantNew) {
         dispatch(initializeNewPropertyWizard());
+        void dispatch(fetchLocationTaxonomyIfNeeded());
         if (!cancelled) {
           router.replace(pathname, { scroll: false });
         }
@@ -148,15 +150,21 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
       if (explicitId) {
         setInitLoading(true);
         try {
+          await dispatch(fetchLocationTaxonomyIfNeeded());
+        } catch {
+          // Continue rehydration even if taxonomy fails; location step can retry.
+        }
+        const taxonomy = store.getState().locationTaxonomy.cities;
+        try {
           if (isAdmin) {
             // Admin drafts are stored per-user in the standard submissions table.
             const sub = await getPropertySubmission(explicitId);
             if (cancelled) return;
-            dispatch(rehydrateAddPropertyWizard(wizardStateFromApiSubmission(sub)));
+            dispatch(rehydrateAddPropertyWizard(wizardStateFromApiSubmission(sub, taxonomy)));
           } else {
             const sub = await getPropertySubmission(explicitId);
             if (cancelled) return;
-            dispatch(rehydrateAddPropertyWizard(wizardStateFromApiSubmission(sub)));
+            dispatch(rehydrateAddPropertyWizard(wizardStateFromApiSubmission(sub, taxonomy)));
           }
           // `rehydrateAddPropertyWizard` preserves `wizardMode`, so no re-assert is needed here.
         } catch (e) {
@@ -180,9 +188,11 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
   }, [dispatch, isAdmin, pathname, router, searchParams, showToast]);
 
   const saveDraftToServer = useCallback(async (): Promise<boolean> => {
-    const s = store.getState().addPropertyWizard;
+    const root = store.getState();
+    const s = root.addPropertyWizard;
+    const taxonomy = root.locationTaxonomy.cities;
     const id = s.submissionId;
-    const payload = buildFullReduxPayload(s);
+    const payload = buildFullReduxPayload(s, taxonomy);
     const currentStep = getCurrentStepIndex1Based(s);
     try {
       if (isAdmin) {
@@ -198,7 +208,10 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
             }),
           );
           if (result.payload != null && typeof result.payload === "object") {
-            dispatch(mergeServerPayloadAfterPatch(result.payload as Record<string, unknown>));
+            dispatch(mergeServerPayloadAfterPatch({
+              patch: result.payload as Record<string, unknown>,
+              locationTaxonomyCities: store.getState().locationTaxonomy.cities,
+            }));
           }
           if (result.step_completion !== undefined || result.last_completed_step !== undefined) {
             dispatch(
@@ -230,7 +243,10 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
           }),
         );
         if (result.payload != null && typeof result.payload === "object") {
-          dispatch(mergeServerPayloadAfterPatch(result.payload as Record<string, unknown>));
+          dispatch(mergeServerPayloadAfterPatch({
+              patch: result.payload as Record<string, unknown>,
+              locationTaxonomyCities: store.getState().locationTaxonomy.cities,
+            }));
         }
         if (result.step_completion !== undefined || result.last_completed_step !== undefined) {
           dispatch(
@@ -259,7 +275,10 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
           }),
         );
         if (result.payload != null && typeof result.payload === "object") {
-          dispatch(mergeServerPayloadAfterPatch(result.payload as Record<string, unknown>));
+          dispatch(mergeServerPayloadAfterPatch({
+              patch: result.payload as Record<string, unknown>,
+              locationTaxonomyCities: store.getState().locationTaxonomy.cities,
+            }));
         }
         if (result.step_completion !== undefined || result.last_completed_step !== undefined) {
           dispatch(
@@ -290,7 +309,10 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
         }),
       );
       if (result.payload != null && typeof result.payload === "object") {
-        dispatch(mergeServerPayloadAfterPatch(result.payload as Record<string, unknown>));
+        dispatch(mergeServerPayloadAfterPatch({
+              patch: result.payload as Record<string, unknown>,
+              locationTaxonomyCities: store.getState().locationTaxonomy.cities,
+            }));
       }
       if (result.step_completion !== undefined || result.last_completed_step !== undefined) {
         dispatch(
@@ -355,7 +377,7 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
       return;
     }
     const s = store.getState().addPropertyWizard;
-    if (!hasAnyLocalStepComplete(s)) {
+    if (!hasAnyLocalStepComplete(s, store.getState().locationTaxonomy.cities)) {
       setLeaveModal({ open: false, href: null });
       setEmptyDraftDialog({ open: true, context: { kind: "leave", href } });
       return;
@@ -410,7 +432,7 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
       return;
     }
     const s = store.getState().addPropertyWizard;
-    if (!hasAnyLocalStepComplete(s)) {
+    if (!hasAnyLocalStepComplete(s, store.getState().locationTaxonomy.cities)) {
       setEmptyDraftDialog({ open: true, context: { kind: "inline" } });
       return;
     }
@@ -426,7 +448,11 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
     if (currentStepIndex < ADD_PROPERTY_STEP_ORDER.length - 1) {
       if (!initLoading) {
         const s = store.getState().addPropertyWizard;
-        const err = getValidationErrorBeforeLeavingStep(s.activeStep, s);
+        const err = getValidationErrorBeforeLeavingStep(
+          s.activeStep,
+          s,
+          store.getState().locationTaxonomy.cities,
+        );
         if (err) {
           showToast("error", err);
           return;
@@ -445,7 +471,7 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
     setSaving(true);
     try {
       const s = store.getState().addPropertyWizard;
-      const fullPayload = buildFullReduxPayload(s);
+      const fullPayload = buildFullReduxPayload(s, store.getState().locationTaxonomy.cities);
       const subId = s.submissionId;
 
       if (isAdmin) {
@@ -471,7 +497,10 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
             }),
           );
           if (patchResult.payload != null && typeof patchResult.payload === "object") {
-            dispatch(mergeServerPayloadAfterPatch(patchResult.payload as Record<string, unknown>));
+            dispatch(mergeServerPayloadAfterPatch({
+            patch: patchResult.payload as Record<string, unknown>,
+            locationTaxonomyCities: store.getState().locationTaxonomy.cities,
+          }));
           }
         }
 
@@ -523,7 +552,10 @@ export const AddPropertyWizard = forwardRef<AddPropertyWizardNavigateHandle>(
           }),
         );
         if (patchResult.payload != null && typeof patchResult.payload === "object") {
-          dispatch(mergeServerPayloadAfterPatch(patchResult.payload as Record<string, unknown>));
+          dispatch(mergeServerPayloadAfterPatch({
+            patch: patchResult.payload as Record<string, unknown>,
+            locationTaxonomyCities: store.getState().locationTaxonomy.cities,
+          }));
         }
         if (
           patchResult.step_completion !== undefined ||

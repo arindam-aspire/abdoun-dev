@@ -25,6 +25,11 @@ import { PropertyVirtualTour } from "@/features/property-details/components/Prop
 import { PropertyDetailsDocumentsTab, type PropertyDocumentSection } from "@/features/property-details/components/PropertyDetailsDocumentsTab";
 import { usePropertyDetailsTabs } from "@/features/property-details/hooks/usePropertyDetailsTabs";
 import { useSession } from "@/features/auth/hooks/useSession";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import {
+  fetchLocationTaxonomyIfNeeded,
+  selectLocationTaxonomyCities,
+} from "@/features/location-taxonomy/locationTaxonomySlice";
 
 type Props = { submissionId: string };
 
@@ -39,6 +44,8 @@ function payloadTitle(payload: Record<string, unknown>): string {
 
 export function AdminPropertySubmissionDetailPage({ submissionId }: Props) {
   const locale = useLocale() as AppLocale;
+  const dispatch = useAppDispatch();
+  const taxonomyCities = useAppSelector(selectLocationTaxonomyCities);
   const tabPanelRef = useRef<HTMLDivElement | null>(null);
   const isRtl = locale === "ar";
   const { role } = useSession();
@@ -64,6 +71,10 @@ export function AdminPropertySubmissionDetailPage({ submissionId }: Props) {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    void dispatch(fetchLocationTaxonomyIfNeeded());
+  }, [dispatch]);
+
   const isPrivilegedUser = role === "admin" || role === "agent";
   const canShowLocationTab = isPrivilegedUser;
   const canShowDocumentsTab = isPrivilegedUser;
@@ -75,14 +86,17 @@ export function AdminPropertySubmissionDetailPage({ submissionId }: Props) {
 
   const adapted = useMemo(() => {
     if (!data) return null;
-    return submissionPayloadToDetailedProperty({
-      submissionId: data.submission_id,
-      status: data.status,
-      payload: data.payload,
-      propertyReferenceNumber: null,
-      submittedByName: null,
-    });
-  }, [data]);
+    return submissionPayloadToDetailedProperty(
+      {
+        submissionId: data.submission_id,
+        status: data.status,
+        payload: data.payload,
+        propertyReferenceNumber: null,
+        submittedByName: null,
+      },
+      taxonomyCities,
+    );
+  }, [data, taxonomyCities]);
 
   const overview = useMemo(() => {
     const payload = data?.payload ?? {};

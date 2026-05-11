@@ -49,21 +49,14 @@
       "id": "adminProperties",
       "label": "Properties",
       "path": "/properties",
-      "roles": ["admin"],
+      "roles": [""],
       "placement": "profile"
     },
     {
       "id": "adminAgents",
       "label": "Agents",
       "path": "/agents",
-      "roles": ["admin"],
-      "placement": "profile"
-    },
-    {
-      "id": "adminPropertySubmissions",
-      "label": "Listing submissions",
-      "path": "/property-submissions",
-      "roles": ["admin"],
+      "roles": [""],
       "placement": "profile"
     }
   ],

@@ -26,6 +26,7 @@ import {
 } from "./AddPropertyWizard";
 import { canNavigateToStepIndex } from "@/features/agent/dashboard/lib/addPropertyStepValidation";
 import { UI_STEP_ID_TO_COMPLETION_KEY } from "@/features/agent/dashboard/lib/localStepCompletion";
+import { selectLocationTaxonomyCities } from "@/features/location-taxonomy/locationTaxonomySlice";
 import { Alert, AlertDescription } from "@/components/ui";
 import { Toast } from "@/components/ui/toast";
 import {
@@ -112,6 +113,7 @@ export function AddPropertyPage({ mode = "agent" }: Props) {
   const stepCompletionMap = useAppSelector(selectAddPropertyStepCompletionMap);
   const lastCompletedDisplay = useAppSelector(selectAddPropertyLastCompletedStepDisplay);
   const wizard = useAppSelector(selectAddPropertyWizard);
+  const taxonomyCities = useAppSelector(selectLocationTaxonomyCities);
   const [navToast, setNavToast] = useState<{ message: string } | null>(null);
 
   useEffect(() => {
@@ -120,7 +122,7 @@ export function AddPropertyPage({ mode = "agent" }: Props) {
 
   const trySetActiveStep = useCallback(
     (stepId: (typeof STEP_ITEMS)[number]["id"], targetIndex: number) => {
-      if (!canNavigateToStepIndex(targetIndex, activeStepIndex, wizard)) {
+      if (!canNavigateToStepIndex(targetIndex, activeStepIndex, wizard, taxonomyCities)) {
         setNavToast({
           message: "Please complete the previous steps before jumping ahead.",
         });
@@ -128,7 +130,7 @@ export function AddPropertyPage({ mode = "agent" }: Props) {
       }
       dispatch(setActiveStep(stepId));
     },
-    [activeStepIndex, dispatch, wizard],
+    [activeStepIndex, dispatch, wizard, taxonomyCities],
   );
 
   const listingsHref =

@@ -1,3 +1,4 @@
+import type { LocationTaxonomyCity } from "@/features/location-taxonomy/api/locationTaxonomy.api";
 import { compactE164ForStorage } from "@/lib/phone";
 import type { AddPropertyWizardState } from "../components/add-property/addPropertyWizardSlice";
 import {
@@ -49,6 +50,7 @@ export function uiStepToApiStep(ui: AddPropertyStepId): ApiSubmissionStep {
 export function buildStepData(
   step: AddPropertyStepId,
   state: AddPropertyWizardState,
+  taxonomyCities: LocationTaxonomyCity[] = [],
 ): Record<string, unknown> {
   switch (step) {
     case "basic-information":
@@ -60,7 +62,7 @@ export function buildStepData(
         description: state.description,
       };
     case "location": {
-      const { city_id, area_id } = getCityAndAreaIds(state.city, state.selectedAreas);
+      const { city_id, area_id } = getCityAndAreaIds(state.city, state.selectedAreas, taxonomyCities);
       return {
         city_id: state.cityId ?? city_id,
         area_id: state.areaId ?? area_id,
@@ -179,15 +181,16 @@ export function getCurrentStepIndex1Based(state: AddPropertyWizardState): number
  */
 export function buildFullReduxPayload(
   state: AddPropertyWizardState,
+  taxonomyCities: LocationTaxonomyCity[] = [],
 ): Record<string, unknown> {
   return {
-    basic_information: buildStepData("basic-information", state),
-    location: buildStepData("location", state),
-    owner_information: buildStepData("owner-information", state),
-    property_details: buildStepData("property-details", state),
-    pricing: buildStepData("pricing", state),
-    amenities: buildStepData("features-amenities", state),
-    media_documents: buildStepData("media-documents", state),
-    review_submit: buildStepData("review-submit", state),
+    basic_information: buildStepData("basic-information", state, taxonomyCities),
+    location: buildStepData("location", state, taxonomyCities),
+    owner_information: buildStepData("owner-information", state, taxonomyCities),
+    property_details: buildStepData("property-details", state, taxonomyCities),
+    pricing: buildStepData("pricing", state, taxonomyCities),
+    amenities: buildStepData("features-amenities", state, taxonomyCities),
+    media_documents: buildStepData("media-documents", state, taxonomyCities),
+    review_submit: buildStepData("review-submit", state, taxonomyCities),
   };
 }

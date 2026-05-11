@@ -1,18 +1,18 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { User, Phone, MapPin, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui";
 import { AuthPopupField } from "@/components/auth/AuthPopupField";
 import { HeroDropdown } from "@/features/public-home/components/HeroDropdown";
 import { useTranslations } from "@/hooks/useTranslations";
+import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
+import {
+  fetchLocationTaxonomyIfNeeded,
+  selectServiceAreaOptions,
+} from "@/features/location-taxonomy/locationTaxonomySlice";
 import { cn } from "@/lib/cn";
 import { getPhoneValidationError } from "@/lib/phoneValidation";
-import { JORDAN_CITIES_WITH_AREAS } from "@/lib/constants/jordanCities";
-
-const SERVICE_AREA_OPTIONS = Array.from(new Set(JORDAN_CITIES_WITH_AREAS.flatMap((city) => city.areas))).sort(
-  (firstArea, secondArea) => firstArea.localeCompare(secondArea),
-);
 
 export interface AgentInviteFormPayload {
   name: string;
@@ -29,6 +29,12 @@ interface AgentInviteFormProps {
 
 export function AgentInviteForm({ email, onSubmit, error, success }: AgentInviteFormProps) {
   const t = useTranslations("agentAuth");
+  const dispatch = useAppDispatch();
+  const serviceAreaOptions = useAppSelector(selectServiceAreaOptions);
+
+  useEffect(() => {
+    void dispatch(fetchLocationTaxonomyIfNeeded());
+  }, [dispatch]);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [serviceArea, setServiceArea] = useState<string[]>([]);
@@ -179,11 +185,12 @@ export function AgentInviteForm({ email, onSubmit, error, success }: AgentInvite
             anchorRef={serviceAreaTriggerRef}
           >
             <div className="max-h-64 w-full overflow-y-auto rounded-xl border border-zinc-200 bg-white p-2 shadow-lg">
-              {SERVICE_AREA_OPTIONS.map((option) => {
+              {serviceAreaOptions.map((opt) => {
+                const option = opt.label;
                 const isSelected = serviceArea.includes(option);
                 return (
                   <label
-                    key={option}
+                    key={opt.value}
                     className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-size-sm hover:bg-zinc-50"
                   >
                     <input
