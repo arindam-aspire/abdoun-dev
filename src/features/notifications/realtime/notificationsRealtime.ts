@@ -178,15 +178,17 @@ export class NotificationsRealtime {
 }
 
 export const resolveNotificationsSocketUrl = (): string | null => {
-  const direct = process.env.NEXT_PUBLIC_NOTIFICATIONS_WS_URL;
-  if (direct) return direct;
-
   const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!apiBase) return null;
-
   try {
     const parsed = new URL(apiBase);
-    const wsProtocol = parsed.protocol === "https:" ? "wss:" : "ws:";
+    const isHttps = parsed.protocol === "https:";
+    // If HTTPS, prefer explicit WS URL from env
+    if (isHttps) {
+      return process.env.NEXT_PUBLIC_NOTIFICATIONS_WS_URL || null;
+    }
+    // Otherwise derive from API base
+    const wsProtocol = "ws:";
     return `${wsProtocol}//${parsed.host}/ws/notifications`;
   } catch {
     return null;
