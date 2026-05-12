@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Archive, Bell, CircleAlert, CircleCheckBig, Info, Trash2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { NotificationItem } from "@/features/notifications/notificationsSlice";
+import { getNotificationEventPresentation } from "@/features/notifications/normalizeNotification";
 
 type NotificationLevel = "info" | "success" | "warning";
 
@@ -71,6 +72,8 @@ export function NotificationLists({
       <ul className="space-y-3" aria-label="Archived notifications list">
         {archivedNotifications.map((item) => {
           const Icon = levelIcon(item.level);
+          const safeTitle = typeof item.title === "string" ? item.title : "";
+          const safeMessage = typeof item.message === "string" ? item.message : "";
           return (
             <li key={item.id} className="rounded-xl border border-subtle bg-zinc-50/60 p-4">
               <div className="flex items-start justify-between gap-3">
@@ -86,8 +89,8 @@ export function NotificationLists({
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-charcoal">{item.title}</p>
-                    <p className="mt-1 text-sm text-zinc-600">{item.message}</p>
+                    <p className="text-sm font-semibold text-charcoal">{safeTitle}</p>
+                    <p className="mt-1 text-sm text-zinc-600">{safeMessage}</p>
                     <p className="mt-2 text-xs text-zinc-500">{item.time}</p>
                   </div>
                 </div>
@@ -95,7 +98,7 @@ export function NotificationLists({
                   type="button"
                   onClick={() => onUnarchiveClick(item.id)}
                   className="inline-flex items-center gap-1 rounded-md border border-emerald-200 px-2.5 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
-                  aria-label={`Unarchive notification ${item.title}`}
+                  aria-label={`Unarchive notification ${safeTitle || item.id}`}
                 >
                   <Archive className="h-3.5 w-3.5" />
                   <span>Unarchive</span>
@@ -115,12 +118,19 @@ export function NotificationLists({
       <ul className="space-y-3" aria-label="Notifications list">
         {notifications.map((item) => {
           const Icon = levelIcon(item.level);
+          const eventPresentation = getNotificationEventPresentation(item.eventType);
+          const safeTitle = typeof item.title === "string" ? item.title : "";
+          const safeMessage = typeof item.message === "string" ? item.message : "";
           return (
             <li
               key={item.id}
               className={cn(
                 "rounded-xl border transition",
                 item.read ? "border-subtle bg-white" : "border-blue-200 bg-blue-50/50",
+                eventPresentation.kind === "system" && "border-violet-200 bg-violet-50/30",
+                eventPresentation.kind === "lead-updated" && item.read && "border-zinc-200/90",
+                !item.read && eventPresentation.kind === "lead-created" &&
+                  "border-emerald-400 bg-emerald-50/45 shadow-sm shadow-emerald-100/60",
               )}
             >
               <div
@@ -148,8 +158,15 @@ export function NotificationLists({
                       <Icon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-charcoal">{item.title}</p>
-                      <p className="mt-1 text-sm text-zinc-600">{item.message}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-semibold text-charcoal">{safeTitle}</p>
+                        {eventPresentation.showSystemBadge ? (
+                          <span className="inline-flex shrink-0 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-800">
+                            System
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-1 text-sm text-zinc-600">{safeMessage}</p>
                       <p className="mt-2 text-xs text-zinc-500">{item.time}</p>
                     </div>
                   </div>
@@ -164,7 +181,7 @@ export function NotificationLists({
                         onArchiveClick(item);
                       }}
                       className="inline-flex items-center gap-1 rounded-md border border-amber-300 px-2 py-1 text-xs text-amber-800 transition hover:bg-amber-100"
-                      aria-label={`Archive notification ${item.title}`}
+                      aria-label={`Archive notification ${safeTitle || item.id}`}
                     >
                       <Archive className="h-3.5 w-3.5" />
                       <span>Archive</span>
@@ -176,7 +193,7 @@ export function NotificationLists({
                         onDeleteClick(item);
                       }}
                       className="inline-flex items-center gap-1 rounded-md border border-rose-200 px-2 py-1 text-xs text-rose-700 transition hover:bg-rose-50"
-                      aria-label={`Delete notification ${item.title}`}
+                      aria-label={`Delete notification ${safeTitle || item.id}`}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                       <span>Delete</span>

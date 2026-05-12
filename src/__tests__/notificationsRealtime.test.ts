@@ -128,6 +128,46 @@ describe("NotificationsRealtime", () => {
     expect(onPing).toHaveBeenCalledTimes(1);
   });
 
+  it("treats legacy root notification objects as notification.created", () => {
+    const onCreated = jest.fn();
+    const onUnreadCount = jest.fn();
+    const realtime = new NotificationsRealtime({
+      callbacks: {
+        onOpen: jest.fn(),
+        onClose: jest.fn(),
+        onReconnectAttempt: jest.fn(),
+        onNotificationCreated: onCreated,
+        onNotificationRead: jest.fn(),
+        onNotificationArchived: jest.fn(),
+        onUnreadCount,
+        onPing: jest.fn(),
+        onSessionInvalid: jest.fn(),
+        onError: jest.fn(),
+      },
+      getAccessToken: () => "abc",
+      getSocketUrl: () => "ws://localhost:8000/ws/notifications",
+    });
+
+    realtime.connect();
+    const ws = sockets[0];
+    ws.onmessage?.({
+      data: JSON.stringify({
+        id: "legacy-1",
+        title: "Ping",
+        message: "You have mail",
+        unread_count: 4,
+      }),
+    });
+
+    expect(onUnreadCount).toHaveBeenCalledWith(4);
+    expect(onCreated).toHaveBeenCalledWith({
+      id: "legacy-1",
+      title: "Ping",
+      message: "You have mail",
+      unread_count: 4,
+    });
+  });
+
   it("reconnects with backoff after unexpected disconnect", () => {
     const onReconnectAttempt = jest.fn();
     const realtime = new NotificationsRealtime({

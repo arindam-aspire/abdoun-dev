@@ -2,11 +2,19 @@
 
 import { authApi } from "@/lib/http/clients";
 import type { NotificationItem, NotificationLevel } from "@/features/notifications/notificationsSlice";
+import {
+  levelFromEventType,
+  normalizeNotification,
+  normalizeNotificationActionUrl,
+} from "@/features/notifications/normalizeNotification";
 
 type NotificationApiItem = {
   id: string | number;
   title?: string | null;
   message?: string | null;
+  event_type?: string | null;
+  eventType?: string | null;
+  metadata?: unknown;
   action_url?: string | null;
   actionUrl?: string | null;
   data?: {
@@ -72,42 +80,49 @@ type UnreadCountEnvelope = {
   unreadCount?: number | null;
 };
 
-const normalizeLevel = (level?: string | null): NotificationLevel => {
-  if (level === "success" || level === "warning") return level;
-  return "info";
-};
+const toNotificationItem = (raw: NotificationApiItem): NotificationItem => {
+  const canonical = normalizeNotification(raw as unknown);
+  const eventTypeForLevel =
+    canonical?.eventType ??
+    (typeof raw.event_type === "string" ? raw.event_type : null) ??
+    (typeof raw.eventType === "string" ? raw.eventType : null) ??
+    null;
+  const level =
+    raw.level === "success" || raw.level === "warning"
+      ? raw.level
+      : levelFromEventType(eventTypeForLevel, raw.level);
 
-const normalizeActionUrl = (url?: string | null): string | null => {
-  if (!url) return null;
-  if (url === "/favorites") return "/favourites";
-  if (url === "favorites") return "favourites";
-  return url;
-};
+  const actionFromCanonical = canonical?.actionUrl ?? null;
+  const actionFallback =
+    raw.action_url ??
+    raw.actionUrl ??
+    raw.data?.action_url ??
+    raw.data?.actionUrl ??
+    raw.data?.url ??
+    raw.data?.link ??
+    raw.payload?.action_url ??
+    raw.payload?.actionUrl ??
+    raw.payload?.url ??
+    raw.payload?.link ??
+    null;
 
-const toNotificationItem = (raw: NotificationApiItem): NotificationItem => ({
-  id: String(raw.id),
-  title: raw.title ?? "",
-  message: raw.message ?? "",
-  actionUrl:
-    normalizeActionUrl(
-      raw.action_url ??
-        raw.actionUrl ??
-        raw.data?.action_url ??
-        raw.data?.actionUrl ??
-        raw.data?.url ??
-        raw.data?.link ??
-        raw.payload?.action_url ??
-        raw.payload?.actionUrl ??
-        raw.payload?.url ??
-        raw.payload?.link ??
-        null,
-    ),
-  createdAt: raw.created_at ?? raw.createdAt ?? new Date().toISOString(),
-  archivedAt: raw.archived_at ?? raw.archivedAt ?? null,
-  updatedAt: raw.updated_at ?? raw.updatedAt ?? null,
-  read: Boolean(raw.is_read ?? raw.isRead),
-  level: normalizeLevel(raw.level),
-});
+  const metadata =
+    canonical && Object.keys(canonical.metadata).length > 0 ? canonical.metadata : undefined;
+
+  return {
+    id: String(raw.id),
+    title: canonical?.title ?? raw.title ?? "",
+    message: canonical?.message ?? raw.message ?? "",
+    actionUrl: normalizeNotificationActionUrl(actionFromCanonical ?? actionFallback),
+    eventType: canonical?.eventType ?? eventTypeForLevel,
+    metadata,
+    createdAt: raw.created_at ?? raw.createdAt ?? new Date().toISOString(),
+    archivedAt: raw.archived_at ?? raw.archivedAt ?? null,
+    updatedAt: raw.updated_at ?? raw.updatedAt ?? null,
+    read: Boolean(raw.is_read ?? raw.isRead),
+    level,
+  };
+};
 
 export async function listNotifications(params?: {
   page?: number;

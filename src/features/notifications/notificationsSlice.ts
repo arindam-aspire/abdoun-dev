@@ -8,6 +8,9 @@ export type NotificationItem = {
   title: string;
   message: string;
   actionUrl?: string | null;
+  /** Optional backend routing hint (snake_case `event_type` normalized here). */
+  eventType?: string | null;
+  metadata?: Record<string, unknown>;
   archivedAt?: string | null;
   createdAt: string;
   updatedAt?: string | null;

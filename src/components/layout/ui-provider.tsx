@@ -44,7 +44,6 @@ import {
   setReconnectAttempts,
   setUnreadCount,
   upsertRealtimeNotification,
-  type NotificationItem,
 } from "@/features/notifications/notificationsSlice";
 import {
   getNotificationsUnreadCount,
@@ -54,6 +53,7 @@ import {
   NotificationsRealtime,
   resolveNotificationsSocketUrl,
 } from "@/features/notifications/realtime/notificationsRealtime";
+import { notificationItemFromPayload } from "@/features/notifications/normalizeNotification";
 
 export function UiProvider({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
@@ -297,52 +297,6 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    const normalizeRealtimeNotification = (payload: unknown): NotificationItem | null => {
-      if (!payload || typeof payload !== "object") return null;
-      const source = payload as Record<string, unknown>;
-      const idValue = source.id;
-      if (typeof idValue !== "string" && typeof idValue !== "number") return null;
-      return {
-        id: String(idValue),
-        title: typeof source.title === "string" ? source.title : "",
-        message: typeof source.message === "string" ? source.message : "",
-        actionUrl:
-          typeof source.action_url === "string"
-            ? source.action_url
-            : typeof source.actionUrl === "string"
-              ? source.actionUrl
-              : source.data &&
-                  typeof source.data === "object" &&
-                  typeof (source.data as Record<string, unknown>).action_url === "string"
-                ? ((source.data as Record<string, unknown>).action_url as string)
-                : source.data &&
-                    typeof source.data === "object" &&
-                    typeof (source.data as Record<string, unknown>).actionUrl === "string"
-                  ? ((source.data as Record<string, unknown>).actionUrl as string)
-                  : source.payload &&
-                      typeof source.payload === "object" &&
-                      typeof (source.payload as Record<string, unknown>).action_url ===
-                        "string"
-                    ? ((source.payload as Record<string, unknown>).action_url as string)
-                    : source.payload &&
-                        typeof source.payload === "object" &&
-                        typeof (source.payload as Record<string, unknown>).actionUrl ===
-                          "string"
-                      ? ((source.payload as Record<string, unknown>).actionUrl as string)
-              : null,
-        createdAt:
-          typeof source.created_at === "string"
-            ? source.created_at
-            : new Date().toISOString(),
-        updatedAt: typeof source.updated_at === "string" ? source.updated_at : null,
-        read: Boolean(source.is_read),
-        level:
-          source.level === "success" || source.level === "warning"
-            ? source.level
-            : "info",
-      };
-    };
-
     const extractIdFromEvent = (payload: unknown): string | null => {
       if (!payload || typeof payload !== "object") return null;
       const data = payload as Record<string, unknown>;
@@ -409,9 +363,9 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
         },
         onNotificationCreated: (payload) => {
           if (!isMounted) return;
-          const normalized = normalizeRealtimeNotification(payload);
-          if (!normalized) return;
-          dispatch(upsertRealtimeNotification(normalized));
+          const item = notificationItemFromPayload(payload);
+          if (!item) return;
+          dispatch(upsertRealtimeNotification(item));
           scheduleFirstPageRefresh();
         },
         onNotificationRead: (payload) => {

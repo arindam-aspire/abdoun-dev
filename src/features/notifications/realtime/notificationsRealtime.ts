@@ -28,8 +28,47 @@ type MessagePayload = {
   data?: Record<string, unknown>;
   payload?: Record<string, unknown>;
   unread_count?: number;
+  unreadCount?: number;
   notification?: unknown;
+  id?: string | number;
+  title?: unknown;
+  message?: unknown;
+  version?: number | string;
 };
+
+function extractUnreadCountFromMessage(parsed: Record<string, unknown>, eventData: Record<string, unknown>): number | undefined {
+  const candidates: unknown[] = [
+    parsed.unread_count,
+    parsed.unreadCount,
+    eventData.unread_count,
+    eventData.unreadCount,
+  ];
+  const nested = parsed.notification;
+  if (nested && typeof nested === "object" && !Array.isArray(nested)) {
+    const n = nested as Record<string, unknown>;
+    candidates.push(n.unread_count, n.unreadCount);
+  }
+  for (const value of candidates) {
+    if (typeof value === "number" && Number.isFinite(value)) return Math.max(0, Math.floor(value));
+  }
+  return undefined;
+}
+
+function looksLikeLegacyRootNotification(parsed: Record<string, unknown>): boolean {
+  const routingKey = `${parsed.type ?? parsed.event ?? ""}`.trim();
+  if (routingKey.length > 0) return false;
+  const id = parsed.id;
+  if (typeof id !== "string" && typeof id !== "number") return false;
+  return (
+    "title" in parsed ||
+    "message" in parsed ||
+    "event_type" in parsed ||
+    "eventType" in parsed ||
+    "action_url" in parsed ||
+    "actionUrl" in parsed ||
+    "metadata" in parsed
+  );
+}
 
 export class NotificationsRealtime {
   private readonly callbacks: RealtimeCallbacks;
@@ -90,7 +129,9 @@ export class NotificationsRealtime {
     this.socket.onmessage = (event) => {
       try {
         const parsed = JSON.parse(event.data) as MessagePayload;
-        const type = parsed.type ?? parsed.event ?? "";
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return;
+
+        const type = `${parsed.type ?? parsed.event ?? ""}`.trim();
         const eventData =
           (parsed.data as Record<string, unknown> | undefined) ??
           (parsed.payload as Record<string, unknown> | undefined) ??
@@ -102,12 +143,7 @@ export class NotificationsRealtime {
         }
         if (type === "ping") this.callbacks.onPing();
 
-        const unreadCount =
-          typeof parsed.unread_count === "number"
-            ? parsed.unread_count
-            : typeof eventData.unread_count === "number"
-              ? eventData.unread_count
-              : undefined;
+        const unreadCount = extractUnreadCountFromMessage(parsed as Record<string, unknown>, eventData);
         if (typeof unreadCount === "number") this.callbacks.onUnreadCount(unreadCount);
 
         if (type === "notification.created") {
@@ -123,6 +159,12 @@ export class NotificationsRealtime {
           return;
         }
         if (type === "unread_count.updated" && typeof unreadCount === "number") return;
+
+        // Legacy: bare notification object at root (no routing `type` / `event`), e.g. { id, title, message, unread_count }.
+        if (looksLikeLegacyRootNotification(parsed as Record<string, unknown>)) {
+          this.callbacks.onNotificationCreated(parsed);
+          return;
+        }
       } catch (error) {
         this.callbacks.onError(error);
       }
