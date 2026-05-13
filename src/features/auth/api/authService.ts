@@ -1,7 +1,15 @@
 "use client";
 
 import { enrichWithPhoneParts } from "@/lib/auth/enrichSessionUser";
-import { LocalStorageTokenStore } from "@/lib/auth/adapters/localStorageTokenStore";
+import {
+  setRefreshModeInActiveVault,
+  persistAccessTokenToVault,
+  persistTokensToVault,
+  setAuthUsernameInActiveVault,
+  setSubIdInActiveVault,
+} from "@/lib/auth/adapters/vaultTokenStore";
+import { authTokenWarn } from "@/lib/auth/authTokenLog";
+import { normalizeAuthTokens } from "@/lib/auth/tokenValidation";
 import { authApi, publicApi } from "@/lib/http/clients";
 
 export type AuthTokens = {
@@ -14,6 +22,7 @@ export type AuthTokens = {
 
 export type LoginWithPasswordApiData = AuthTokens & {
   requires_password_set?: boolean | null;
+  remember_me_cookie?: boolean | null;
 };
 
 export type AuthUser = {
@@ -100,10 +109,12 @@ export type ResendConfirmationPayload = {
 export type LoginWithPasswordPayload = {
   username: string;
   password: string;
+  /** Sent to the API as `rememberMe` (boolean). */
+  rememberMe?: boolean;
 };
 
 export type RefreshTokenPayload = {
-  refresh_token: string;
+  refresh_token?: string;
   username?: string;
 };
 
@@ -143,9 +154,6 @@ type OtpRequestResponse = {
 
 type OtpVerifyResponse = AuthTokens;
 
-const AUTH_USERNAME_STORAGE_KEY = "authUsername";
-const tokenStore = new LocalStorageTokenStore();
-
 function decodeJwtSubject(token: string): string | null {
   try {
     const parts = token.split(".");
@@ -163,28 +171,55 @@ function decodeJwtSubject(token: string): string | null {
   }
 }
 
-/** Persist access/refresh tokens to localStorage (for refresh and auth API). */
-export function persistTokens(tokens: AuthTokens): void {
+export type PersistTokensOptions = {
+  /**
+   * When true, tokens and refresh metadata use localStorage and survive browser restart.
+   * When false, sessionStorage is used (cleared when the browser session ends).
+   * Defaults to false (matches typical “remember me” unchecked UX).
+   */
+  rememberMe?: boolean;
+  cookieRefreshMode?: boolean;
+};
+
+/** Persist access/refresh tokens for the auth client (vault-aware). */
+export function persistTokens(tokens: AuthTokens, options?: PersistTokensOptions): void {
   const accessToken = tokens.access_token;
   const refreshToken = tokens.refresh_token ?? null;
-  if (!accessToken || !refreshToken) return;
-  tokenStore.setTokens({ accessToken, refreshToken });
-
-  // Additionally store subId derived from the access token without changing other keys.
-  if (typeof window !== "undefined") {
-    const sub = decodeJwtSubject(accessToken);
-    if (sub) {
-      window.localStorage.setItem("subId", sub);
+  if (!accessToken) {
+    authTokenWarn("persistTokens:missing-wire-tokens", {
+      hasAccess: !!accessToken,
+      hasRefresh: !!refreshToken,
+    });
+    return;
+  }
+  const rememberMe = options?.rememberMe ?? false;
+  const cookieRefreshMode = options?.cookieRefreshMode === true;
+  if (!refreshToken) {
+    // rememberMe=true may rely on backend refresh cookie and omit refresh_token.
+    persistAccessTokenToVault(accessToken, rememberMe);
+    setRefreshModeInActiveVault("cookie", rememberMe);
+  } else {
+    const pair = normalizeAuthTokens({ accessToken, refreshToken });
+    if (!pair) {
+      authTokenWarn("persistTokens:normalize-failed");
+      return;
     }
+    persistTokensToVault(pair, rememberMe);
+    setRefreshModeInActiveVault(cookieRefreshMode ? "cookie" : "token", rememberMe);
+  }
+
+  const sub = decodeJwtSubject(accessToken);
+  if (sub) {
+    setSubIdInActiveVault(sub, rememberMe);
   }
 }
 
-/** Persist username for refresh token requests. */
-export function setAuthUsername(username: string): void {
+/** Persist username for refresh-related API payloads (same vault as tokens). */
+export function setAuthUsername(username: string, rememberMe?: boolean): void {
   if (typeof window === "undefined") return;
   const trimmed = username.trim();
   if (!trimmed) return;
-  window.localStorage.setItem(AUTH_USERNAME_STORAGE_KEY, trimmed);
+  setAuthUsernameInActiveVault(trimmed, rememberMe ?? false);
 }
 
 export type LoginWithPasswordResult = {
@@ -196,13 +231,18 @@ export type LoginWithPasswordResult = {
 export async function loginWithPasswordAndPersist(
   username: string,
   password: string,
+  rememberMe = false,
 ): Promise<LoginWithPasswordResult> {
   const data = await loginWithPassword({
     username: username.trim(),
     password,
+    rememberMe: rememberMe === true,
   });
-  persistTokens(data);
-  setAuthUsername(username.trim());
+  persistTokens(data, {
+    rememberMe,
+    cookieRefreshMode: data.remember_me_cookie === true && !data.refresh_token,
+  });
+  setAuthUsername(username.trim(), rememberMe);
   const me = await getCurrentUser();
   const sessionUser = toSessionUserForProfile(me);
   return {
@@ -238,11 +278,44 @@ export async function resendConfirmation(
 export async function loginWithPassword(
   payload: LoginWithPasswordPayload,
 ): Promise<LoginWithPasswordApiData> {
-  const response = await publicApi.post<LoginWithPasswordApiData>(
-    "/auth/login/password",
-    payload,
-  );
+  const response = await publicApi.post<LoginWithPasswordApiData>("/auth/login/password", {
+    username: payload.username.trim(),
+    password: payload.password,
+    rememberMe: payload.rememberMe === true,
+  });
   return response.data;
+}
+
+/** Exact `detail` from `POST /auth/login/password` when the account is not confirmed. */
+export const PASSWORD_LOGIN_UNCONFIRMED_403_DETAIL =
+  "User is not confirmed. Please verify your account using the confirmation code.";
+
+function detailStringFromResponseData(data: unknown): string | null {
+  if (!data || typeof data !== "object") return null;
+  const detail = (data as { detail?: unknown }).detail;
+  if (typeof detail === "string") return detail.trim();
+  if (Array.isArray(detail)) {
+    const first = detail[0];
+    if (first && typeof first === "object" && "msg" in first) {
+      const m = (first as { msg?: unknown }).msg;
+      if (typeof m === "string") return m.trim();
+    }
+  }
+  return null;
+}
+
+/** True when login failed with 403 because the user must confirm email (OTP flow). */
+export function isPasswordLoginUnconfirmed403(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const response = (error as { response?: { status?: number; data?: unknown } }).response;
+  if (!response || response.status !== 403) return false;
+  const text = detailStringFromResponseData(response.data);
+  if (!text) return false;
+  return (
+    text === PASSWORD_LOGIN_UNCONFIRMED_403_DETAIL ||
+    (/not confirmed/i.test(text) &&
+      /confirmation code|verify your account/i.test(text))
+  );
 }
 
 export async function refreshToken(

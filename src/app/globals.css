@@ -116,6 +116,11 @@ html[lang="ar"] body {
 
 @utility fill-accent { fill: var(--brand-accent); }
 
-button {
-  @apply cursor-pointer
+/* Default pointer for interactive buttons; disabled must not inherit pointer (matches design-system Button). */
+button:enabled {
+  @apply cursor-pointer;
+}
+
+button:disabled {
+  @apply cursor-not-allowed;
 }

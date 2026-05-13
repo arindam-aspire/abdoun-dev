@@ -18,7 +18,7 @@ export function LoadingButton({
   return (
     <Button
       {...rest}
-      disabled={disabled ?? loading}
+      disabled={Boolean(loading) || disabled === true}
     >
       {loading ? (
         <span className="inline-flex items-center justify-center gap-2">

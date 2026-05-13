@@ -5,6 +5,14 @@ export const AUTH_USER_COOKIE_NAME = "abdoun_user";
 
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
+export type PersistAuthSessionOptions = {
+  /**
+   * When false, sets session cookies (cleared when the browser session ends).
+   * When true, uses a bounded max-age (same-site, not HttpOnly — profile snapshot only).
+   */
+  persistent?: boolean;
+};
+
 function getCookieValue(name: string): string | null {
   if (typeof document === "undefined") return null;
 
@@ -20,7 +28,7 @@ function isValidRole(role: string): role is UserRole {
   return role === "user" || role === "agent" || role === "admin";
 }
 
-export function persistAuthSession(user: AuthUser): void {
+export function persistAuthSession(user: AuthUser, options?: PersistAuthSessionOptions): void {
   if (typeof document === "undefined") return;
 
   const role = encodeURIComponent(user.role);
@@ -37,7 +45,10 @@ export function persistAuthSession(user: AuthUser): void {
       requiresPasswordSet: user.requiresPasswordSet ?? null,
     }),
   );
-  const baseAttributes = `path=/; max-age=${COOKIE_MAX_AGE_SECONDS}; samesite=lax`;
+  const persistent = options?.persistent !== false;
+  const baseAttributes = persistent
+    ? `path=/; max-age=${COOKIE_MAX_AGE_SECONDS}; samesite=lax`
+    : "path=/; samesite=lax";
 
   document.cookie = `${AUTH_ROLE_COOKIE_NAME}=${role}; ${baseAttributes}`;
   document.cookie = `${AUTH_USER_COOKIE_NAME}=${payload}; ${baseAttributes}`;

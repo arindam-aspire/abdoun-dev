@@ -4,13 +4,18 @@ import { BudgetRangeInputs } from "@/features/public-home/components/BudgetRange
 import { HeroDropdown } from "@/features/public-home/components/HeroDropdown";
 import { cn } from "@/lib/cn";
 import {
+  isMinMaxSqmPairAllowedForQuery,
+  sanitizeSqmDigitsInput,
+  validateMinMaxSqmPair,
+} from "@/features/property-search/utils/areaFilterInput";
+import {
   ChevronDown,
   CircleMinus,
   MoreHorizontal,
   CirclePlus,
   BookmarkPlus,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
@@ -146,12 +151,12 @@ export function SearchFields({
       floorLevel: get("floorLevel"),
       parking: get("parking"),
       propertyAge: get("propertyAge"),
-      minArea: get("minArea"),
-      maxArea: get("maxArea"),
+      minArea: sanitizeSqmDigitsInput(get("minArea")),
+      maxArea: sanitizeSqmDigitsInput(get("maxArea")),
       bedrooms: get("bedrooms"),
       rooms: get("rooms"),
-      minPlotArea: get("minPlotArea"),
-      maxPlotArea: get("maxPlotArea"),
+      minPlotArea: sanitizeSqmDigitsInput(get("minPlotArea")),
+      maxPlotArea: sanitizeSqmDigitsInput(get("maxPlotArea")),
       governorate: get("governorate"),
       directorate: get("directorate"),
       village: get("village"),
@@ -408,6 +413,14 @@ export function SearchFields({
   const showPropertyAge =
     category === "residential" || category === "commercial";
   const showPlotAreaRange = category === "land";
+  const residentialAreaSqmValidation = useMemo(
+    () => validateMinMaxSqmPair(minArea, maxArea, t.areaMinMustBeLessOrEqualMax),
+    [minArea, maxArea, t.areaMinMustBeLessOrEqualMax],
+  );
+  const plotSqmValidation = useMemo(
+    () => validateMinMaxSqmPair(minPlotArea, maxPlotArea, t.plotMinMustBeLessOrEqualMax),
+    [minPlotArea, maxPlotArea, t.plotMinMustBeLessOrEqualMax],
+  );
   const showGovernorate = category === "land";
   const showDirectorate = category === "land";
   const showVillage = category === "land";
@@ -636,14 +649,16 @@ export function SearchFields({
     if (showFloorLevel && floorLevel) params.set("floorLevel", floorLevel);
     if (showParking && parking) params.set("parking", parking);
     if (showPropertyAge && propertyAge) params.set("propertyAge", propertyAge);
-    if (showAreaRange && minArea.trim()) params.set("minArea", minArea.trim());
-    if (showAreaRange && maxArea.trim()) params.set("maxArea", maxArea.trim());
+    if (showAreaRange && isMinMaxSqmPairAllowedForQuery(minArea, maxArea)) {
+      if (minArea.trim()) params.set("minArea", minArea.trim());
+      if (maxArea.trim()) params.set("maxArea", maxArea.trim());
+    }
     if (showBedrooms && bedrooms) params.set("bedrooms", bedrooms);
     if (showRooms && rooms) params.set("rooms", rooms);
-    if (showPlotAreaRange && minPlotArea.trim())
-      params.set("minPlotArea", minPlotArea.trim());
-    if (showPlotAreaRange && maxPlotArea.trim())
-      params.set("maxPlotArea", maxPlotArea.trim());
+    if (showPlotAreaRange && isMinMaxSqmPairAllowedForQuery(minPlotArea, maxPlotArea)) {
+      if (minPlotArea.trim()) params.set("minPlotArea", minPlotArea.trim());
+      if (maxPlotArea.trim()) params.set("maxPlotArea", maxPlotArea.trim());
+    }
     if (showGovernorate && governorate.trim())
       params.set("governorate", governorate.trim());
     if (showDirectorate && directorate.trim())
@@ -1803,11 +1818,19 @@ export function SearchFields({
                     <input
                       type="text"
                       inputMode="numeric"
+                      pattern="[0-9]*"
+                      autoComplete="off"
                       placeholder={t.minArea}
                       title={t.minArea}
                       value={minArea}
-                      onChange={(e) => setMinArea(e.target.value)}
-                      className="h-11 w-full rounded-xl border-2 border-subtle bg-surface/60 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:border-secondary focus:outline-none"
+                      onChange={(e) => setMinArea(sanitizeSqmDigitsInput(e.target.value))}
+                      aria-invalid={Boolean(residentialAreaSqmValidation.pairError)}
+                      className={cn(
+                        "h-11 w-full rounded-xl border-2 bg-surface/60 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:outline-none",
+                        residentialAreaSqmValidation.pairError
+                          ? "border-red-600 focus:border-red-600"
+                          : "border-subtle focus:border-secondary",
+                      )}
                     />
                   </div>
                   <div className="min-w-0" dir={isRtl ? "rtl" : "ltr"}>
@@ -1817,13 +1840,31 @@ export function SearchFields({
                     <input
                       type="text"
                       inputMode="numeric"
+                      pattern="[0-9]*"
+                      autoComplete="off"
                       placeholder={t.maxArea}
                       title={t.maxArea}
                       value={maxArea}
-                      onChange={(e) => setMaxArea(e.target.value)}
-                      className="h-11 w-full rounded-xl border-2 border-subtle bg-surface/60 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:border-secondary focus:outline-none"
+                      onChange={(e) => setMaxArea(sanitizeSqmDigitsInput(e.target.value))}
+                      aria-invalid={Boolean(residentialAreaSqmValidation.pairError)}
+                      className={cn(
+                        "h-11 w-full rounded-xl border-2 bg-surface/60 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:outline-none",
+                        residentialAreaSqmValidation.pairError
+                          ? "border-red-600 focus:border-red-600"
+                          : "border-subtle focus:border-secondary",
+                      )}
                     />
                   </div>
+                  {residentialAreaSqmValidation.pairError ? (
+                    <div
+                      className="col-span-full min-w-0 sm:col-span-2 lg:col-span-4"
+                      role="alert"
+                    >
+                      <p className="text-size-xs text-red-600">
+                        {residentialAreaSqmValidation.pairError}
+                      </p>
+                    </div>
+                  ) : null}
                 </>
               )}
 
@@ -1931,11 +1972,19 @@ export function SearchFields({
                     <input
                       type="text"
                       inputMode="numeric"
+                      pattern="[0-9]*"
+                      autoComplete="off"
                       placeholder={t.minPlotArea}
                       title={t.minPlotArea}
                       value={minPlotArea}
-                      onChange={(e) => setMinPlotArea(e.target.value)}
-                      className="h-11 w-full rounded-xl border-2 border-subtle bg-surface/60 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:border-secondary focus:outline-none"
+                      onChange={(e) => setMinPlotArea(sanitizeSqmDigitsInput(e.target.value))}
+                      aria-invalid={Boolean(plotSqmValidation.pairError)}
+                      className={cn(
+                        "h-11 w-full rounded-xl border-2 bg-surface/60 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:outline-none",
+                        plotSqmValidation.pairError
+                          ? "border-red-600 focus:border-red-600"
+                          : "border-subtle focus:border-secondary",
+                      )}
                     />
                   </div>
                   <div className="min-w-0" dir={isRtl ? "rtl" : "ltr"}>
@@ -1945,13 +1994,29 @@ export function SearchFields({
                     <input
                       type="text"
                       inputMode="numeric"
+                      pattern="[0-9]*"
+                      autoComplete="off"
                       placeholder={t.maxPlotArea}
                       title={t.maxPlotArea}
                       value={maxPlotArea}
-                      onChange={(e) => setMaxPlotArea(e.target.value)}
-                      className="h-11 w-full rounded-xl border-2 border-subtle bg-surface/60 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:border-secondary focus:outline-none"
+                      onChange={(e) => setMaxPlotArea(sanitizeSqmDigitsInput(e.target.value))}
+                      aria-invalid={Boolean(plotSqmValidation.pairError)}
+                      className={cn(
+                        "h-11 w-full rounded-xl border-2 bg-surface/60 px-3 text-size-sm text-charcoal placeholder:text-charcoal/50 focus:outline-none",
+                        plotSqmValidation.pairError
+                          ? "border-red-600 focus:border-red-600"
+                          : "border-subtle focus:border-secondary",
+                      )}
                     />
                   </div>
+                  {plotSqmValidation.pairError ? (
+                    <div
+                      className="col-span-full min-w-0 sm:col-span-2 lg:col-span-4"
+                      role="alert"
+                    >
+                      <p className="text-size-xs text-red-600">{plotSqmValidation.pairError}</p>
+                    </div>
+                  ) : null}
                 </>
               )}
 

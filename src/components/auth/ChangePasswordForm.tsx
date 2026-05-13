@@ -8,6 +8,7 @@ import { LoadingButton } from "@/components/ui";
 
 type PasswordChecks = {
   minLength: boolean;
+  maxLength: boolean;
   upper: boolean;
   lower: boolean;
   number: boolean;
@@ -19,6 +20,7 @@ const CHANGE_PASSWORD_POLICY_REGION_ID = "change-password-new-policy";
 function validatePassword(password: string): PasswordChecks {
   return {
     minLength: password.length >= 8,
+    maxLength: password.length <= 20,
     upper: /[A-Z]/.test(password),
     lower: /[a-z]/.test(password),
     number: /\d/.test(password),

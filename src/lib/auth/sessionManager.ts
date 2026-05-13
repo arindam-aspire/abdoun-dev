@@ -3,14 +3,14 @@
  * Guards and header use this instead of raw cookie/token access.
  */
 import type { AuthUser } from "@/features/auth/authSlice";
-import { LocalStorageTokenStore } from "@/lib/auth/adapters/localStorageTokenStore";
+import { browserVaultTokenStore, resolveTokenVault } from "@/lib/auth/adapters/vaultTokenStore";
 import {
   clearAuthSession,
   persistAuthSession,
   readAuthSessionFromBrowser,
 } from "@/lib/auth/sessionCookies";
 
-const tokenStore = new LocalStorageTokenStore();
+const tokenStore = browserVaultTokenStore;
 
 export type Session = {
   user: AuthUser;
@@ -38,8 +38,13 @@ export function getCurrentSession(): Session | null {
 export function persistSession(session: {
   user: AuthUser;
   tokens?: { accessToken: string; refreshToken: string } | null;
+  /** When set, overrides inferred cookie persistence from the active token vault. */
+  rememberMe?: boolean;
 }): void {
-  persistAuthSession(session.user);
+  const vaultKind = resolveTokenVault();
+  const persistent =
+    session.rememberMe !== undefined ? session.rememberMe : vaultKind !== "session";
+  persistAuthSession(session.user, { persistent });
   if (session.tokens) {
     tokenStore.setTokens(session.tokens);
   }
@@ -58,4 +63,9 @@ export function clearSession(): void {
  */
 export function getStoredTokens(): { accessToken: string; refreshToken: string } | null {
   return tokenStore.getTokens();
+}
+
+/** Access token from the vault only — same source as `authApi` interceptors. */
+export function getStoredAccessToken(): string | null {
+  return tokenStore.getAccessToken();
 }

@@ -182,7 +182,9 @@
     "termsAndConditions": "Conditions generales",
     "and": "et",
     "privacyPolicy": "Politique de confidentialite",
-    "alreadyHaveAccountLogin": "Vous avez deja un compte ? Connexion"
+    "alreadyHaveAccountLogin": "Vous avez deja un compte ? Connexion",
+    "rememberMe": "Se souvenir de moi sur cet appareil",
+    "signInTermsPrefix": "En vous connectant, vous acceptez"
   },
   "agentAuth": {
     "inviteTitle": "Accepter l'invitation",
@@ -511,10 +513,11 @@
     "passwordStrengthMedium": "Moyen",
     "passwordStrengthStrong": "Fort",
     "passwordRuleMinLength": "Au moins 8 caractères",
+    "passwordRuleMaxLength": "Au plus 20 caractères",
     "passwordRuleUpper": "Une majuscule",
     "passwordRuleLower": "Une minuscule",
     "passwordRuleNumber": "Un chiffre",
-    "passwordRuleSymbol": "Un caractère spécial",
+    "passwordRuleSymbol": "Un caractère spécial (le tiret bas _ ne compte pas)",
     "passwordHintImprove": "Ajoutez {items} pour renforcer le mot de passe.",
     "passwordPolicyShowDetails": "Afficher les détails des exigences",
     "passwordPolicyHideDetails": "Masquer les détails des exigences",
@@ -684,6 +687,8 @@
     "rooms": "Pièces",
     "minPlotArea": "Surface terrain min.",
     "maxPlotArea": "Surface terrain max.",
+    "areaMinMustBeLessOrEqualMax": "La surface minimale doit être inférieure ou égale à la surface maximale.",
+    "plotMinMustBeLessOrEqualMax": "La surface minimale du terrain doit être inférieure ou égale à la surface maximale du terrain.",
     "allRooms": "Toutes les pièces",
     "allBaths": "Toutes les salles de bain",
     "allParking": "Tous les parkings",

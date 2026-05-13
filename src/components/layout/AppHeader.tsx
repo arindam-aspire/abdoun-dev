@@ -11,14 +11,12 @@ import { ProfileModal } from "@/features/profile/components/modals/ProfileModal"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { LanguageSelect } from "@/components/ui/language-select";
 import { Toast } from "@/components/ui/toast";
-import { logout } from "@/features/auth/authSlice";
-import { clearProfileForUser } from "@/features/profile/profileSlice";
-import { clearAuthSession } from "@/lib/auth/sessionCookies";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { useSidebar } from "@/hooks/useSidebar";
 import { useTranslations } from "@/hooks/useTranslations";
 import type { AppLocale } from "@/i18n/routing";
 import { performClientLogout } from "@/lib/auth/logoutClient";
+import { queueRouteToast } from "@/lib/ui/routeToast";
 import { cn } from "@/lib/cn";
 import { selectCurrentUser } from "@/store/selectors";
 import { Bell, Menu, PanelLeftClose, PanelLeftOpen, X, PlusCircle } from "lucide-react";
@@ -50,9 +48,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
   const unreadNotifications = useAppSelector(selectNotificationUnreadCount);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [authInitialView, setAuthInitialView] = useState<"email" | "password" | unknown>(
-    "email",
-  );
+  const [authInitialView, setAuthInitialView] = useState<AuthPopupView | undefined>("email");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isAccountSettingsHover, setIsAccountSettingsHover] = useState(false);
@@ -210,16 +206,26 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
     };
   }, []);
 
-  // Open auth popup for "Agent login" when URL has openAuth=agent (e.g. from agent-invite)
+  // Deep-link auth popup: agent email login, forgot password, or signup from marketing URLs
   useEffect(() => {
-    if (searchParams.get("openAuth") === "agent") {
+    const mode = searchParams.get("openAuth");
+    if (mode === "agent") {
       setAuthInitialView("email");
       setIsAuthOpen(true);
-      const params = new URLSearchParams(searchParams.toString());
-      params.delete("openAuth");
-      const q = params.toString();
-      router.replace(pathname + (q ? `?${q}` : ""));
+    } else if (mode === "forgot") {
+      setAuthInitialView("forgot");
+      setIsAuthOpen(true);
+    } else if (mode === "signup") {
+      setAuthInitialView("signup");
+      setIsAuthOpen(true);
+    } else {
+      return;
     }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("openAuth");
+    const q = params.toString();
+    router.replace(pathname + (q ? `?${q}` : ""));
   }, [pathname, router, searchParams]);
 
   useEffect(() => {
@@ -289,17 +295,6 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
     // (filtered via `canShowListProperty`), but if reached, do nothing destructive.
   };
 
-  const handleLogout = () => {
-    if (user) {
-      dispatch(clearProfileForUser(user.id));
-    }
-    clearAuthSession();
-    dispatch(logout());
-    setIsProfileOpen(false);
-    setMobileMenuOpen(false);
-    router.replace(`/${activeLanguage}`);
-  };
-
   const handleConfirmLogout = async () => {
     if (!user || isLoggingOut) return;
 
@@ -309,10 +304,8 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
       setIsLogoutConfirmOpen(false);
       setIsProfileOpen(false);
       setMobileMenuOpen(false);
-      setToast({ kind: "success", message: tCommon("logoutSuccess") });
-      window.setTimeout(() => {
-        router.replace(`/${activeLanguage}`);
-      }, 300);
+      queueRouteToast({ kind: "success", message: tCommon("logoutSuccess") });
+      router.replace(`/${activeLanguage}`);
     } catch {
       setToast({ kind: "error", message: tCommon("logoutError") });
     } finally {
@@ -820,7 +813,7 @@ export function AppHeader({ language, showPublicLinks }: AppHeaderProps = {}) {
           setAuthInitialView(undefined);
         }}
         locale={activeLanguage}
-        initialView={authInitialView as AuthPopupView}
+        initialView={authInitialView}
       />
       <ProfileModal
         open={isProfileModalOpen}

@@ -22,6 +22,7 @@ export function useLogin(): {
   loginAndPersist: (
     username: string,
     password: string,
+    rememberMe?: boolean,
   ) => Promise<LoginWithPasswordResult>;
   /** Persists user to session (cookies) and dispatches login. */
   persistSessionAndLogin: (
@@ -34,8 +35,9 @@ export function useLogin(): {
     async (
       username: string,
       password: string,
+      rememberMe = false,
     ): Promise<LoginWithPasswordResult> => {
-      return loginWithPasswordAndPersist(username.trim(), password);
+      return loginWithPasswordAndPersist(username.trim(), password, rememberMe);
     },
     [],
   );

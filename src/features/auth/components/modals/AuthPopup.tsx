@@ -1,14 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { X, ArrowLeft } from "lucide-react";
 import { DialogRoot } from "@/components/ui/dialog";
 import { useAppSelector } from "@/hooks/storeHooks";
 import { useLogin } from "@/features/auth/hooks/useLogin";
 import { AuthPopupSection } from "@/components/auth";
-import { LoadingScreen, Toast } from "@/components/ui";
+import { LoadingScreen } from "@/components/ui";
 import {
+  AuthPopupConfirmEmailStep,
   AuthPopupEmailStep,
   AuthPopupForgotStep,
   AuthPopupLandingStep,
@@ -23,8 +24,11 @@ import {
   MOCK_AGENT_CREDENTIALS,
 } from "@/types/auth";
 import {
+  confirmSignup,
+  isPasswordLoginUnconfirmed403,
   persistTokens,
   requestOtpLogin,
+  resendConfirmation,
   setAuthUsername,
   toSessionUserForProfile,
   verifyOtpLogin,
@@ -32,11 +36,21 @@ import {
 import { getCurrentUserDeduped } from "@/lib/auth/currentUserRequest";
 import { getApiErrorMessage } from "@/lib/http/apiError";
 import { BrandLogo } from "@/components/layout/brand-logo";
-import { queueRouteToast } from "@/lib/ui/routeToast";
+import { clearAuthApiToasts, showAuthApiToast } from "@/lib/ui/authApiToast";
+import {
+  ACCOUNT_TEMPORARILY_LOCKED_TOAST,
+  classifyPasswordLoginFailure,
+} from "@/features/auth/utils/passwordLoginFailure";
+import { useLoginLockoutCountdown } from "@/features/auth/hooks/useLoginLockoutCountdown";
+import {
+  AUTH_API_TOAST_MESSAGES,
+  authSignedInToastMessage,
+} from "@/features/auth/constants/authApiToastMessages";
 
 export type AuthPopupView =
   | "landing"
   | "email"
+  | "confirmEmail"
   | "oneTimeCode"
   | "signup"
   | "forgot";
@@ -65,7 +79,9 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
   const user = useAppSelector(selectCurrentUser);
   const t = useTranslations("auth");
   const signup = useSignupFlow(locale);
-  const forgot = useForgotPasswordFlow();
+  const forgot = useForgotPasswordFlow({
+    onResetSuccess: () => setView("email"),
+  });
   const isRTL = locale === "ar";
 
   const [view, setView] = useState<AuthPopupView>("landing");
@@ -77,6 +93,7 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
   const [emailError, setEmailError] = useState<string | undefined>(undefined);
   const [passwordError, setPasswordError] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const [otcIdentifier, setOtcIdentifier] = useState("");
   const [otcIdentifierTouched, setOtcIdentifierTouched] = useState(false);
@@ -88,9 +105,22 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
   const [otcDebugOtp, setOtcDebugOtp] = useState<string | null>(null);
   const [otcLoading, setOtcLoading] = useState(false);
   const otcTimer = useOtpTimer(60);
-  const [toast, setToast] = useState<{ kind: "info" | "error" | "success"; message: string } | null>(null);
   const [redirectingToForceChange, setRedirectingToForceChange] = useState(false);
-  const handleToastClose = useCallback(() => setToast(null), []);
+
+  const loginLockout = useLoginLockoutCountdown();
+
+  const [confirmEmailFlow, setConfirmEmailFlow] = useState<{
+    email: string;
+    password: string;
+    rememberMe: boolean;
+  } | null>(null);
+  const [confirmOtp, setConfirmOtp] = useState("");
+  const [confirmEmailLoading, setConfirmEmailLoading] = useState(false);
+  const confirmEmailTimer = useOtpTimer(60);
+  const loginEmailAttemptIdRef = useRef(0);
+  const loginPasswordSubmitInFlightRef = useRef(false);
+  const confirmVerifyInFlightRef = useRef(false);
+  const confirmResendInFlightRef = useRef(false);
 
   useEffect(() => {
     if (
@@ -121,7 +151,8 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
       setEmailError(undefined);
       setPasswordError(undefined);
       setLoading(false);
-      setToast(null);
+      setRememberMe(false);
+      clearAuthApiToasts();
       setOtcIdentifier("");
       setOtcIdentifierTouched(false);
       setOtcIdentifierError(undefined);
@@ -131,8 +162,19 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
       setOtcOtpError(null);
       setOtcDebugOtp(null);
       setOtcLoading(false);
+      signup.actions.resetSignupFlow();
+      setConfirmEmailFlow(null);
+      setConfirmOtp("");
+      setConfirmEmailLoading(false);
+      loginLockout.clearLockout();
     }
   }, [open]);
+
+  useEffect(() => {
+    if (view === "confirmEmail" && !confirmEmailFlow) {
+      setView("email");
+    }
+  }, [view, confirmEmailFlow]);
 
   useEffect(() => {
     if (view !== "oneTimeCode") {
@@ -149,15 +191,15 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
   }, [view]);
 
   useEffect(() => {
+    clearAuthApiToasts();
+    if (view !== "signup") {
+      signup.actions.resetSignupFlow();
+    }
     if (view !== "forgot") {
       forgot.actions.resetFlow();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable flow resetters; avoid action identity churn.
   }, [view]);
-
-  useEffect(() => {
-    if (view !== "forgot" || forgot.loading || !forgot.message || !forgot.messageKind) return;
-    setToast({ kind: forgot.messageKind, message: forgot.message });
-  }, [forgot.loading, forgot.message, forgot.messageKind, view]);
 
   useEffect(() => {
     if (open && user) {
@@ -179,6 +221,7 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
 
   const runSocial = async (provider: "google" | "facebook" | "apple") => {
     setLoading(true);
+    clearAuthApiToasts();
     try {
       await new Promise((r) => setTimeout(r, 800));
       if (provider === "facebook") {
@@ -190,13 +233,116 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
         email: `${provider}.user@mock.abdoun`,
       });
     } catch (error) {
-      setToast({ kind: "error", message: getApiErrorMessage(error) });
+      showAuthApiToast({
+        kind: "error",
+        message: getApiErrorMessage(error) || AUTH_API_TOAST_MESSAGES.popupSocialLoginErrorFallback,
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  async function completePasswordLoginSession(
+    trimmedIdentifier: string,
+    pwd: string,
+    remember: boolean,
+  ) {
+    if (trimmedIdentifier.includes("@")) {
+      const normalizedEmail = trimmedIdentifier.toLowerCase();
+      try {
+        if (
+          normalizedEmail === MOCK_AGENT_CREDENTIALS.email.toLowerCase() &&
+          pwd === MOCK_AGENT_CREDENTIALS.password
+        ) {
+          const { sessionUser, requiresPasswordSet } = await loginAndPersist(
+            trimmedIdentifier,
+            pwd,
+            remember,
+          );
+
+          if (requiresPasswordSet) {
+            setRedirectingToForceChange(true);
+            router.push(`/${locale}/force-change-password`);
+            return;
+          }
+
+          const withRole = { ...sessionUser, role: "agent" as const };
+          persistSessionAndLogin(withRole);
+          showAuthApiToast({
+            kind: "success",
+            message: AUTH_API_TOAST_MESSAGES.loginSignedInAsAgent,
+          });
+          onClose();
+          router.push(`/${locale}/agent-dashboard`);
+          return;
+        }
+      } catch {
+        // Not agent; try admin.
+      }
+      try {
+        if (
+          normalizedEmail === MOCK_ADMIN_CREDENTIALS.email.toLowerCase() &&
+          pwd === MOCK_ADMIN_CREDENTIALS.password
+        ) {
+          const { sessionUser, requiresPasswordSet } = await loginAndPersist(
+            trimmedIdentifier,
+            pwd,
+            remember,
+          );
+
+          if (requiresPasswordSet) {
+            setRedirectingToForceChange(true);
+            router.push(`/${locale}/force-change-password`);
+            return;
+          }
+
+          const withRole = { ...sessionUser, role: "admin" as const };
+          persistSessionAndLogin(withRole);
+          showAuthApiToast({
+            kind: "success",
+            message: AUTH_API_TOAST_MESSAGES.loginSignedInAsAdmin,
+          });
+          onClose();
+          router.push(`/${locale}/admin-dashboard`);
+          return;
+        }
+      } catch {
+        // Fall back to regular login.
+      }
+    }
+
+    const { sessionUser, requiresPasswordSet } = await loginAndPersist(
+      trimmedIdentifier,
+      pwd,
+      remember,
+    );
+
+    if (requiresPasswordSet) {
+      setRedirectingToForceChange(true);
+      router.push(`/${locale}/force-change-password`);
+      return;
+    }
+
+    persistSessionAndLogin(sessionUser);
+    showAuthApiToast({
+      kind: "success",
+      message: authSignedInToastMessage(
+        sessionUser.role === "admin" ? "admin" : sessionUser.role === "agent" ? "agent" : "user",
+      ),
+    });
+    onClose();
+
+    if (sessionUser.role === "admin") {
+      router.push(`/${locale}/admin-dashboard`);
+    } else if (sessionUser.role === "agent") {
+      router.push(`/${locale}/agent-dashboard`);
+    } else {
+      router.push(`/${locale}`);
+    }
+  }
+
   const runEmailLogin = async () => {
+    if (loading || loginPasswordSubmitInFlightRef.current || loginLockout.isLockedOut) return;
     setEmailIdentifierTouched(true);
     setPasswordTouched(true);
     const trimmedIdentifier = emailIdentifier.trim();
@@ -211,98 +357,162 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
     setPasswordError(nextPasswordError);
     if (nextEmailError || nextPasswordError) return;
 
+    loginPasswordSubmitInFlightRef.current = true;
+    const loginAttemptId = ++loginEmailAttemptIdRef.current;
     setLoading(true);
+    clearAuthApiToasts();
     try {
-      if (trimmedIdentifier.includes("@")) {
-        const normalizedEmail = trimmedIdentifier.toLowerCase();
-        try {
-          if (
-            normalizedEmail === MOCK_AGENT_CREDENTIALS.email.toLowerCase() &&
-            password === MOCK_AGENT_CREDENTIALS.password
-          ) {
-            const { sessionUser, requiresPasswordSet } = await loginAndPersist(
-              trimmedIdentifier,
-              password,
-            );
-
-            if (requiresPasswordSet) {
-              setRedirectingToForceChange(true);
-              router.push(`/${locale}/force-change-password`);
-              return;
-            }
-
-            const withRole = { ...sessionUser, role: "agent" as const };
-            persistSessionAndLogin(withRole);
-            queueRouteToast({ kind: "success", message: "Logged in as agent." });
-            onClose();
-            router.push(`/${locale}/agent-dashboard`);
-            return;
+      await completePasswordLoginSession(trimmedIdentifier, password, rememberMe);
+      loginLockout.clearLockout();
+      setEmailIdentifier("");
+      setPassword("");
+      setEmailError(undefined);
+      setPasswordError(undefined);
+      setEmailIdentifierTouched(false);
+      setPasswordTouched(false);
+      setRememberMe(false);
+    } catch (error) {
+      if (isPasswordLoginUnconfirmed403(error)) {
+        if (!EMAIL_REGEX.test(trimmedIdentifier)) {
+          if (loginAttemptId === loginEmailAttemptIdRef.current) {
+            showAuthApiToast({
+              kind: "error",
+              message: AUTH_API_TOAST_MESSAGES.loginUnconfirmedPhoneNotSupported,
+            });
           }
-        } catch {
-          // Not agent; try admin.
+          return;
         }
+
+        const emailForResend = trimmedIdentifier.toLowerCase();
         try {
-          if (
-            normalizedEmail === MOCK_ADMIN_CREDENTIALS.email.toLowerCase() &&
-            password === MOCK_ADMIN_CREDENTIALS.password
-          ) {
-            const { sessionUser, requiresPasswordSet } = await loginAndPersist(
-              trimmedIdentifier,
-              password,
-            );
-
-            if (requiresPasswordSet) {
-              setRedirectingToForceChange(true);
-              router.push(`/${locale}/force-change-password`);
-              return;
-            }
-
-            const withRole = { ...sessionUser, role: "admin" as const };
-            persistSessionAndLogin(withRole);
-            queueRouteToast({ kind: "success", message: "Logged in as admin." });
-            onClose();
-            router.push(`/${locale}/admin-dashboard`);
-            return;
-          }
-        } catch {
-          // Fall back to regular login.
+          await resendConfirmation({ email: emailForResend });
+          if (loginAttemptId !== loginEmailAttemptIdRef.current) return;
+          setConfirmEmailFlow({ email: emailForResend, password, rememberMe });
+          setConfirmOtp("");
+          confirmEmailTimer.restart(60);
+          setView("confirmEmail");
+          window.setTimeout(() => {
+            showAuthApiToast({
+              kind: "success",
+              message: AUTH_API_TOAST_MESSAGES.signupVerificationSent,
+            });
+          }, 0);
+        } catch (resendErr) {
+          if (loginAttemptId !== loginEmailAttemptIdRef.current) return;
+          showAuthApiToast({
+            kind: "error",
+            message:
+              getApiErrorMessage(resendErr) ||
+              AUTH_API_TOAST_MESSAGES.signupResendCodeErrorFallback,
+          });
         }
-      }
-
-      const { sessionUser, requiresPasswordSet } = await loginAndPersist(
-        trimmedIdentifier,
-        password,
-      );
-
-      if (requiresPasswordSet) {
-        setRedirectingToForceChange(true);
-        router.push(`/${locale}/force-change-password`);
         return;
       }
 
-      persistSessionAndLogin(sessionUser);
-      queueRouteToast({
-        kind: "success",
-        message:
-          sessionUser.role === "admin"
-            ? "Logged in as admin."
-            : sessionUser.role === "agent"
-              ? "Logged in as agent."
-              : "Logged in successfully.",
-      });
-      onClose();
-
-      if (sessionUser.role === "admin") {
-        router.push(`/${locale}/admin-dashboard`);
-      } else if (sessionUser.role === "agent") {
-        router.push(`/${locale}/agent-dashboard`);
-      } else {
-        router.push(`/${locale}`);
+      const outcome = classifyPasswordLoginFailure(error);
+      if (outcome.kind === "account_temporarily_locked") {
+        showAuthApiToast({ kind: "error", message: ACCOUNT_TEMPORARILY_LOCKED_TOAST });
+        loginLockout.beginLockout(outcome.lockUntilMs);
+      } else if (outcome.kind === "invalid_credentials") {
+        showAuthApiToast({ kind: "error", message: outcome.toastMessage });
+      } else if (outcome.kind === "server_error") {
+        showAuthApiToast({
+          kind: "error",
+          message: outcome.toastMessage || AUTH_API_TOAST_MESSAGES.loginErrorFallback,
+        });
+      } else if (outcome.kind === "unconfirmed") {
+        showAuthApiToast({
+          kind: "error",
+          message: getApiErrorMessage(error) || AUTH_API_TOAST_MESSAGES.loginErrorFallback,
+        });
       }
-    } catch (error) {
-      setToast({ kind: "error", message: getApiErrorMessage(error) });
     } finally {
-      setLoading(false);
+      loginPasswordSubmitInFlightRef.current = false;
+      if (loginAttemptId === loginEmailAttemptIdRef.current) {
+        setLoading(false);
+      }
+    }
+  };
+
+  const runConfirmEmailVerify = async () => {
+    if (!confirmEmailFlow) return;
+    if (confirmVerifyInFlightRef.current) return;
+    const otpValue = confirmOtp.replace(/\s/g, "");
+    if (!/^\d{6}$/.test(otpValue)) {
+      showAuthApiToast({
+        kind: "error",
+        message: AUTH_API_TOAST_MESSAGES.otpCodeFormatInvalid,
+      });
+      return;
+    }
+    confirmVerifyInFlightRef.current = true;
+    setConfirmEmailLoading(true);
+    clearAuthApiToasts();
+    try {
+      try {
+        await confirmSignup({ email: confirmEmailFlow.email, code: otpValue });
+      } catch (error) {
+        showAuthApiToast({
+          kind: "error",
+          message: getApiErrorMessage(error) || AUTH_API_TOAST_MESSAGES.verifyOtpInvalidFallback,
+        });
+        return;
+      }
+      try {
+        await completePasswordLoginSession(
+          confirmEmailFlow.email,
+          confirmEmailFlow.password,
+          confirmEmailFlow.rememberMe,
+        );
+        loginLockout.clearLockout();
+      } catch (error) {
+        const outcome = classifyPasswordLoginFailure(error);
+        if (outcome.kind === "account_temporarily_locked") {
+          showAuthApiToast({ kind: "error", message: ACCOUNT_TEMPORARILY_LOCKED_TOAST });
+          loginLockout.beginLockout(outcome.lockUntilMs);
+        } else if (outcome.kind === "invalid_credentials") {
+          showAuthApiToast({ kind: "error", message: outcome.toastMessage });
+        } else if (outcome.kind === "server_error") {
+          showAuthApiToast({
+            kind: "error",
+            message: outcome.toastMessage || AUTH_API_TOAST_MESSAGES.loginErrorFallback,
+          });
+        } else if (outcome.kind === "unconfirmed") {
+          showAuthApiToast({
+            kind: "error",
+            message: getApiErrorMessage(error) || AUTH_API_TOAST_MESSAGES.loginErrorFallback,
+          });
+        }
+      }
+    } finally {
+      setConfirmEmailLoading(false);
+      confirmVerifyInFlightRef.current = false;
+    }
+  };
+
+  const runResendConfirmEmailOtp = async () => {
+    if (!confirmEmailFlow) return;
+    if (confirmResendInFlightRef.current) return;
+    confirmResendInFlightRef.current = true;
+    setConfirmEmailLoading(true);
+    clearAuthApiToasts();
+    try {
+      await resendConfirmation({ email: confirmEmailFlow.email });
+      confirmEmailTimer.restart(60);
+      setConfirmOtp("");
+      showAuthApiToast({
+        kind: "success",
+        message: AUTH_API_TOAST_MESSAGES.signupResendCodeSuccess,
+      });
+    } catch (error) {
+      showAuthApiToast({
+        kind: "error",
+        message:
+          getApiErrorMessage(error) || AUTH_API_TOAST_MESSAGES.signupResendCodeErrorFallback,
+      });
+    } finally {
+      setConfirmEmailLoading(false);
+      confirmResendInFlightRef.current = false;
     }
   };
 
@@ -336,15 +546,19 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
     if (nextError) return;
 
     setOtcLoading(true);
+    clearAuthApiToasts();
     try {
       const { session, otp } = await requestOtpLogin({ username: trimmedIdentifier });
       setOtcChallengeId(session);
       setOtcDebugOtp(otp ?? null);
-      setToast({ kind: "success", message: "One-time code sent." });
+      showAuthApiToast({ kind: "success", message: AUTH_API_TOAST_MESSAGES.popupOtpSendSuccess });
       otcTimer.restart(60);
       setOtcStep("otp");
     } catch (error) {
-      setToast({ kind: "error", message: getApiErrorMessage(error) });
+      showAuthApiToast({
+        kind: "error",
+        message: getApiErrorMessage(error) || AUTH_API_TOAST_MESSAGES.popupOtpSendErrorFallback,
+      });
     } finally {
       setOtcLoading(false);
     }
@@ -368,6 +582,7 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
       return;
     }
     setOtcLoading(true);
+    clearAuthApiToasts();
     setOtcOtpError(null);
     try {
       const tokens = await verifyOtpLogin({
@@ -375,8 +590,8 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
         code: otpValue,
         session: otcChallengeId,
       });
-      persistTokens(tokens);
-      setAuthUsername(otcIdentifier.trim());
+      persistTokens(tokens, { rememberMe: false });
+      setAuthUsername(otcIdentifier.trim(), false);
       const me = await getCurrentUserDeduped();
       if (me.requires_password_set) {
         onClose();
@@ -385,14 +600,11 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
       }
       const sessionUser = toSessionUserForProfile(me);
       persistSessionAndLogin(sessionUser);
-      queueRouteToast({
+      showAuthApiToast({
         kind: "success",
-        message:
-          sessionUser.role === "admin"
-            ? "Logged in as admin."
-            : sessionUser.role === "agent"
-              ? "Logged in as agent."
-              : "Logged in successfully.",
+        message: authSignedInToastMessage(
+          sessionUser.role === "admin" ? "admin" : sessionUser.role === "agent" ? "agent" : "user",
+        ),
       });
       onClose();
 
@@ -404,9 +616,10 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
         router.push(`/${locale}`);
       }
     } catch (error) {
-      const errMsg = getApiErrorMessage(error);
-      setOtcOtpError(errMsg);
-      setToast({ kind: "error", message: errMsg });
+      showAuthApiToast({
+        kind: "error",
+        message: getApiErrorMessage(error) || AUTH_API_TOAST_MESSAGES.verifyOtpInvalidFallback,
+      });
     } finally {
       setOtcLoading(false);
     }
@@ -414,6 +627,7 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
 
   const runResendOtc = async () => {
     setOtcLoading(true);
+    clearAuthApiToasts();
     try {
       const { session, otp } = await requestOtpLogin({
         username: otcIdentifier.trim(),
@@ -423,15 +637,25 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
       setOtcOtp("");
       setOtcOtpError(null);
       otcTimer.restart(60);
-      setToast({ kind: "success", message: "Code resent." });
+      showAuthApiToast({ kind: "success", message: AUTH_API_TOAST_MESSAGES.popupOtpResendSuccess });
     } catch (error) {
-      setToast({ kind: "error", message: getApiErrorMessage(error) });
+      showAuthApiToast({
+        kind: "error",
+        message: getApiErrorMessage(error) || AUTH_API_TOAST_MESSAGES.popupOtpResendErrorFallback,
+      });
     } finally {
       setOtcLoading(false);
     }
   };
 
   const handleBack = () => {
+    if (view === "confirmEmail") {
+      setConfirmEmailFlow(null);
+      setConfirmOtp("");
+      setPassword("");
+      setView("email");
+      return;
+    }
     if (view === "signup" && signup.screen !== "landing") {
       signup.actions.goLanding();
       return;
@@ -441,6 +665,8 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
       setOtcOtpError(null);
       return;
     }
+    setConfirmEmailFlow(null);
+    setConfirmOtp("");
     setView("landing");
   };
 
@@ -495,7 +721,11 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
           </div>
 
           <h2 className="mb-3 mt-6 text-center text-[1.85rem] font-semibold leading-[1.15] tracking-[-0.02em] text-slate-900">
-            {view === "signup" ? t("signupLandingTitle") : t("loginTitle")}
+            {view === "signup"
+              ? t("signupLandingTitle")
+              : view === "confirmEmail"
+                ? t("verifyAccountTitle")
+                : t("loginTitle")}
           </h2>
 
           <AuthPopupSection className="mt-2">
@@ -504,7 +734,11 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
                 t={t}
                 loading={loading}
                 onSocial={runSocial}
-                onGoEmail={() => setView("email")}
+                onGoEmail={() => {
+                  setConfirmEmailFlow(null);
+                  setConfirmOtp("");
+                  setView("email");
+                }}
                 onGoOneTimeCode={() => setView("oneTimeCode")}
                 onGoSignup={() => {
                   signup.actions.goLanding();
@@ -516,12 +750,17 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
             {view === "email" ? (
               <AuthPopupEmailStep
                 t={t}
+                locale={locale}
                 loading={loading}
+                loginDisabledByLock={loginLockout.isLockedOut}
+                lockCountdownLabel={loginLockout.countdownLabel}
                 showPassword={showPassword}
                 emailIdentifier={emailIdentifier}
                 password={password}
                 emailError={emailError}
                 passwordError={passwordError}
+                rememberMe={rememberMe}
+                onRememberMeChange={setRememberMe}
                 onChangeEmailIdentifier={(value) => {
                   setEmailIdentifier(value);
                   if (emailIdentifierTouched) {
@@ -543,13 +782,37 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
                 onFocusEmailIdentifier={validateEmailIdentifier}
                 onFocusPassword={validateEmailPassword}
                 onTogglePasswordVisibility={() => setShowPassword((prev) => !prev)}
-                onForgotPassword={() => setView("forgot")}
+                onForgotPassword={() => {
+                  setConfirmEmailFlow(null);
+                  setConfirmOtp("");
+                  setView("forgot");
+                }}
                 onSubmit={runEmailLogin}
-                onGoOneTimeCode={() => setView("oneTimeCode")}
+                onGoOneTimeCode={() => {
+                  setConfirmEmailFlow(null);
+                  setConfirmOtp("");
+                  setView("oneTimeCode");
+                }}
                 onGoSignup={() => {
+                  setConfirmEmailFlow(null);
+                  setConfirmOtp("");
                   signup.actions.goLanding();
                   setView("signup");
                 }}
+              />
+            ) : null}
+
+            {view === "confirmEmail" && confirmEmailFlow ? (
+              <AuthPopupConfirmEmailStep
+                t={t}
+                email={confirmEmailFlow.email}
+                otp={confirmOtp}
+                secondsLeft={confirmEmailTimer.secondsLeft}
+                canResend={confirmEmailTimer.canResend}
+                loading={confirmEmailLoading}
+                onChangeOtp={setConfirmOtp}
+                onVerify={runConfirmEmailVerify}
+                onResend={runResendConfirmEmailOtp}
               />
             ) : null}
 
@@ -597,10 +860,6 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
                 onTogglePasswordVisibility={() => setShowPassword((prev) => !prev)}
                 onSocial={runSocial}
                 onBackToLogin={() => setView("landing")}
-                onFocusFullName={() => signup.actions.validateField("fullName")}
-                onFocusEmail={() => signup.actions.validateField("email")}
-                onFocusPhone={() => signup.actions.validateField("phone")}
-                onFocusPassword={() => signup.actions.validateField("password")}
               />
             ) : null}
 
@@ -617,9 +876,6 @@ export function AuthPopup({ open, locale, onClose, initialView }: AuthPopupProps
         </div>
       </DialogRoot>
 
-      {toast ? (
-        <Toast kind={toast.kind} message={toast.message} onClose={handleToastClose} duration={7000} />
-      ) : null}
     </>
   );
 }

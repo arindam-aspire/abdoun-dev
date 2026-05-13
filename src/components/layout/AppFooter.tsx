@@ -84,26 +84,24 @@ export default function AppFooter(): React.JSX.Element {
               Contact
             </h3>
             <div className="space-y-4 text-base text-white/75">
-              <a
-                href="tel:+96260000000"
+              <div
                 className={cn(
-                  "flex items-center gap-3 transition hover:text-white",
+                  "flex items-center gap-3",
                   isArabic && "flex-row-reverse justify-end",
                 )}
               >
                 <Phone className="h-6 w-6 shrink-0 text-white/85" />
                 <span>+962-6-0000000</span>
-              </a>
-              <a
-                href="mailto:daboug2025@gmail.com"
+              </div>
+              <div
                 className={cn(
-                  "flex items-center gap-3 transition hover:text-white",
+                  "flex items-center gap-3",
                   isArabic && "flex-row-reverse justify-end",
                 )}
               >
                 <Mail className="h-6 w-6 shrink-0 text-white/85" />
                 <span className="break-all">daboug2025@gmail.com</span>
-              </a>
+              </div>
               <div
                 className={cn(
                   "flex items-center gap-3",

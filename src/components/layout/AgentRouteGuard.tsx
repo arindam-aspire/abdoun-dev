@@ -50,6 +50,20 @@ export function AgentRouteGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (role !== "agent") return null;
+  if (role !== "agent") {
+    return (
+      <GuardRedirectScreen
+        logo={
+          <BrandLogo
+            locale={locale}
+            priority
+            imageClassName="h-12 sm:h-14"
+            ariaLabel="Back to home"
+          />
+        }
+        description="Signing you out and redirecting."
+      />
+    );
+  }
   return <>{children}</>;
 }

@@ -1,5 +1,5 @@
 import { Button, LoadingButton } from "@/components/ui";
-import { AuthPopupField, OTPVerificationBlock, PasswordPolicyHelper, AuthAlert } from "@/components/auth";
+import { AuthPopupField, OTPVerificationBlock, PasswordPolicyHelper } from "@/components/auth";
 import {
   AUTH_POPUP_PRIMARY_BUTTON,
   AUTH_POPUP_STEP_STACK,
@@ -103,13 +103,6 @@ export function AuthPopupForgotStep({
             {forgot.loading ? "Updating..." : "Set New Password"}
           </Button>
         </>
-      ) : null}
-
-      {forgot.step === "success" ? (
-        <AuthAlert
-          kind="success"
-          message="Password updated. You can now login."
-        />
       ) : null}
     </div>
   );

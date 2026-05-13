@@ -5,7 +5,10 @@ import axios, {
   type InternalAxiosRequestConfig,
   type RawAxiosRequestHeaders,
 } from "axios";
-import type { AuthService, LogoutHandler, TokenStore } from "@/lib/auth/ports";
+import type { AuthTokens, AuthService, LogoutHandler, TokenStore } from "@/lib/auth/ports";
+import { authTokenLog, authTokenWarn } from "@/lib/auth/authTokenLog";
+import { normalizeAuthTokens, revalidateAuthTokens } from "@/lib/auth/tokenValidation";
+import { resolveBearerAuthHeaders } from "@/lib/http/authHeader";
 import { peelV1EnvelopeForAxios } from "@/lib/http/standardEnvelope";
 
 type ResolveHeaders = (
@@ -58,8 +61,15 @@ const appendHeaders = (
   });
 };
 
-const isUnauthorized = (error: AxiosError): boolean =>
-  error.response?.status === 401;
+const NOT_AUTHENTICATED_DETAIL = "Not authenticated";
+
+/** 401, or 403 with the same auth semantics some backends use for stale/missing bearer tokens. */
+function shouldAttemptTokenRefresh(error: AxiosError): boolean {
+  const status = error.response?.status;
+  if (status === 401) return true;
+  if (status === 403 && getResponseDetail(error) === NOT_AUTHENTICATED_DETAIL) return true;
+  return false;
+}
 
 const SESSION_EXPIRED_MESSAGE = "Invalid or expired token";
 
@@ -75,6 +85,36 @@ function getResponseDetail(error: unknown): string | undefined {
 function isInvalidOrExpiredToken(error: unknown): boolean {
   const detail = getResponseDetail(error);
   return detail === SESSION_EXPIRED_MESSAGE || detail?.includes(SESSION_EXPIRED_MESSAGE) === true;
+}
+
+/** Network drop or server overload — one safe refresh retry is allowed. */
+function isTransientRefreshFailure(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false;
+  if (!error.response) return true;
+  const status = error.response.status;
+  return status === 408 || status === 429 || status === 503 || status >= 500;
+}
+
+async function getValidatedTokensFromStore(tokenStore: TokenStore): Promise<AuthTokens | null> {
+  const raw = await tokenStore.getTokens();
+  const once = normalizeAuthTokens(raw);
+  return revalidateAuthTokens(once);
+}
+
+async function getRefreshContext(tokenStore: TokenStore): Promise<{
+  mode: "token" | "cookie";
+  refreshToken: string | null;
+}> {
+  const refreshTokenRaw = await Promise.resolve(tokenStore.getRefreshToken());
+  const refreshMode = await Promise.resolve(tokenStore.getRefreshMode());
+  const refreshToken =
+    typeof refreshTokenRaw === "string" && refreshTokenRaw.trim().length > 0
+      ? refreshTokenRaw.trim()
+      : null;
+  if (refreshMode === "cookie") {
+    return { mode: "cookie", refreshToken: null };
+  }
+  return { mode: refreshToken ? "token" : "cookie", refreshToken };
 }
 
 export const AUTH_SESSION_EXPIRED_EVENT = "auth:session-expired" as const;
@@ -95,6 +135,7 @@ export const createClient = (options: CreateClientOptions): AxiosInstance => {
   const client = axios.create({
     baseURL: options.baseURL,
     headers: options.defaultHeaders,
+    withCredentials: true,
   });
 
   if (!options.withAuth) {
@@ -133,7 +174,7 @@ export const createClient = (options: CreateClientOptions): AxiosInstance => {
     if (!isHandlingLogout) {
       isHandlingLogout = true;
       try {
-        const tokens = await tokenStore.getTokens();
+        const tokens = await getValidatedTokensFromStore(tokenStore);
         try {
           await authService.logout(tokens?.refreshToken ?? null);
         } catch {
@@ -154,9 +195,13 @@ export const createClient = (options: CreateClientOptions): AxiosInstance => {
 
     appendHeaders(headers, await options.resolveHeaders?.(config));
 
-    const tokens = await tokenStore.getTokens();
-    if (tokens?.accessToken) {
-      headers.set("Authorization", `Bearer ${tokens.accessToken}`);
+    const bearer = await resolveBearerAuthHeaders(tokenStore);
+    if ("Authorization" in bearer) {
+      headers.set("Authorization", bearer.Authorization);
+    } else if (typeof window !== "undefined") {
+      const method = String(config.method ?? "get").toUpperCase();
+      const url = `${config.baseURL ?? ""}${config.url ?? ""}`;
+      console.error("Access token missing before API request", { method, url });
     }
 
     config.headers = headers;
@@ -169,7 +214,7 @@ export const createClient = (options: CreateClientOptions): AxiosInstance => {
       return response;
     },
     async (error: AxiosError) => {
-      if (!isUnauthorized(error) || !error.config) {
+      if (!shouldAttemptTokenRefresh(error) || !error.config) {
         throw error;
       }
 
@@ -183,7 +228,9 @@ export const createClient = (options: CreateClientOptions): AxiosInstance => {
           queue.push({
             resolve: (accessToken) => {
               const headers = AxiosHeaders.from(originalRequest.headers);
-              headers.set("Authorization", `Bearer ${accessToken}`);
+              if (accessToken) {
+                headers.set("Authorization", `Bearer ${accessToken}`);
+              }
               originalRequest.headers = headers;
               resolve(client.request(originalRequest));
             },
@@ -195,26 +242,104 @@ export const createClient = (options: CreateClientOptions): AxiosInstance => {
       originalRequest._retry = true;
       isRefreshing = true;
 
+      let currentTokens: AuthTokens | null = null;
       try {
-        const currentTokens = await tokenStore.getTokens();
-        if (!currentTokens?.refreshToken) {
-          throw error;
+        currentTokens = await getValidatedTokensFromStore(tokenStore);
+        const refreshCtx = await getRefreshContext(tokenStore);
+
+        let nextTokens: AuthTokens;
+        try {
+          authTokenLog("http.refresh.attempt", { phase: "primary" });
+          const first = await authService.refresh(refreshCtx.refreshToken);
+          const accessToken = typeof first.accessToken === "string" ? first.accessToken.trim() : "";
+          const refreshToken =
+            typeof first.refreshToken === "string" ? first.refreshToken.trim() : "";
+          if (!accessToken) {
+            throw new Error("Refresh response missing valid tokens");
+          }
+          if (refreshToken) {
+            nextTokens = { accessToken, refreshToken };
+            await tokenStore.setTokens(nextTokens);
+            await tokenStore.setRefreshMode("token");
+          } else {
+            await tokenStore.setAccessToken(accessToken);
+            await tokenStore.setRefreshMode("cookie");
+            nextTokens = {
+              accessToken,
+              refreshToken: refreshCtx.refreshToken ?? currentTokens?.refreshToken ?? "",
+            };
+          }
+        } catch (firstErr) {
+          if (isTransientRefreshFailure(firstErr)) {
+            authTokenLog("http.refresh.attempt", { phase: "retry-transient" });
+            const second = await authService.refresh(refreshCtx.refreshToken);
+            const accessToken = typeof second.accessToken === "string" ? second.accessToken.trim() : "";
+            const refreshToken =
+              typeof second.refreshToken === "string" ? second.refreshToken.trim() : "";
+            if (!accessToken) {
+              throw new Error("Refresh retry returned invalid tokens");
+            }
+            if (refreshToken) {
+              nextTokens = { accessToken, refreshToken };
+              await tokenStore.setTokens(nextTokens);
+              await tokenStore.setRefreshMode("token");
+            } else {
+              await tokenStore.setAccessToken(accessToken);
+              await tokenStore.setRefreshMode("cookie");
+              nextTokens = {
+                accessToken,
+                refreshToken: refreshCtx.refreshToken ?? currentTokens?.refreshToken ?? "",
+              };
+            }
+          } else {
+            throw firstErr;
+          }
         }
 
-        const nextTokens = await authService.refresh(currentTokens.refreshToken);
-        await tokenStore.setTokens(nextTokens);
         flushQueue(null, nextTokens.accessToken);
 
         const headers = AxiosHeaders.from(originalRequest.headers);
-        headers.set("Authorization", `Bearer ${nextTokens.accessToken}`);
+        const postRefresh = await resolveBearerAuthHeaders(tokenStore);
+        if ("Authorization" in postRefresh) {
+          headers.set("Authorization", postRefresh.Authorization);
+        }
         originalRequest.headers = headers;
 
         return client.request(originalRequest);
       } catch (refreshError) {
         flushQueue(refreshError);
         const message =
-          getResponseDetail(refreshError) ?? (refreshError instanceof Error ? refreshError.message : "Session expired");
+          getResponseDetail(refreshError) ??
+          (refreshError instanceof Error ? refreshError.message : "Session expired");
         if (isInvalidOrExpiredToken(refreshError)) {
+          const rechecked = await getValidatedTokensFromStore(tokenStore);
+          const priorRefresh = currentTokens?.refreshToken ?? null;
+          authTokenLog("http.refresh.recheck-storage", {
+            changedRefresh:
+              !!rechecked?.refreshToken && !!priorRefresh && rechecked.refreshToken !== priorRefresh,
+          });
+          if (rechecked?.refreshToken && priorRefresh && rechecked.refreshToken !== priorRefresh) {
+            try {
+              authTokenLog("http.refresh.attempt", { phase: "recheck-different-refresh" });
+              const recovered = await authService.refresh(rechecked.refreshToken);
+              const normRec = revalidateAuthTokens(normalizeAuthTokens(recovered));
+              if (normRec) {
+                await tokenStore.setTokens(normRec);
+                flushQueue(null, normRec.accessToken);
+                const headers = AxiosHeaders.from(originalRequest.headers);
+                const postRecheck = await resolveBearerAuthHeaders(tokenStore);
+                if ("Authorization" in postRecheck) {
+                  headers.set("Authorization", postRecheck.Authorization);
+                }
+                originalRequest.headers = headers;
+                return client.request(originalRequest);
+              }
+            } catch (recheckErr) {
+              authTokenWarn("http.refresh.recheck-retry-failed", {
+                detail: getResponseDetail(recheckErr),
+              });
+            }
+          }
           runForceLocalLogout(tokenStore, message);
           throw refreshError;
         }

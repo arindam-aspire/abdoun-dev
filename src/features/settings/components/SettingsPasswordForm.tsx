@@ -11,6 +11,7 @@ import { cn } from "@/lib/cn";
 
 type PasswordChecks = {
   minLength: boolean;
+  maxLength: boolean;
   upper: boolean;
   lower: boolean;
   number: boolean;
@@ -20,6 +21,7 @@ type PasswordChecks = {
 function validatePasswordStrength(password: string): PasswordChecks {
   return {
     minLength: password.length >= 8,
+    maxLength: password.length <= 20,
     upper: /[A-Z]/.test(password),
     lower: /[a-z]/.test(password),
     number: /\d/.test(password),

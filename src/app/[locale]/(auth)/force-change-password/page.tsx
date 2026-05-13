@@ -13,6 +13,8 @@ import { queueRouteToast } from "@/lib/ui/routeToast";
 import { selectCurrentUser } from "@/store/selectors";
 import { setPasswordAfterLogin, toSessionUserForProfile } from "@/features/auth/api/auth.api";
 import { getCurrentUserDeduped } from "@/lib/auth/currentUserRequest";
+import { getStoredTokens } from "@/lib/auth/sessionManager";
+import { isPersistentTokenVault } from "@/lib/auth/adapters/vaultTokenStore";
 
 export default function ForceChangePasswordPage() {
   const [ready, setReady] = useState(false);
@@ -32,9 +34,8 @@ export default function ForceChangePasswordPage() {
         // If no tokens at all, redirect to login. Otherwise allow page even if
         // profile user is not yet hydrated.
         if (typeof window !== "undefined") {
-          const accessToken = window.localStorage.getItem("accessToken");
-          const refreshToken = window.localStorage.getItem("refreshToken");
-          if (!accessToken || !refreshToken) {
+          const tokens = getStoredTokens();
+          if (!tokens?.accessToken || !tokens?.refreshToken) {
             router.push(`/${locale}`);
             return;
           }
@@ -85,7 +86,7 @@ export default function ForceChangePasswordPage() {
 
             const me = await getCurrentUserDeduped({ force: true });
             const sessionUser = toSessionUserForProfile(me);
-            persistAuthSession(sessionUser);
+            persistAuthSession(sessionUser, { persistent: isPersistentTokenVault() });
             dispatch(login(sessionUser));
             queueRouteToast({ kind: "success", message: "Password updated successfully." });
 

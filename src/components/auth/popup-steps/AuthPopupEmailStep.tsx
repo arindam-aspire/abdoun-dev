@@ -1,4 +1,5 @@
 import { Eye, EyeOff, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import { Button, LoadingButton } from "@/components/ui";
 import { AuthPopupField } from "@/components/auth";
 import {
@@ -15,7 +16,11 @@ import type { useTranslations } from "@/hooks/useTranslations";
 
 interface AuthPopupEmailStepProps {
   t: ReturnType<typeof useTranslations>;
+  locale: string;
   loading: boolean;
+  /** When true, password login is blocked until server lock expires (optional countdown). */
+  loginDisabledByLock?: boolean;
+  lockCountdownLabel?: string | null;
   showPassword: boolean;
   emailIdentifier: string;
   password: string;
@@ -30,11 +35,16 @@ interface AuthPopupEmailStepProps {
   onSubmit: () => void;
   onGoOneTimeCode: () => void;
   onGoSignup: () => void;
+  rememberMe: boolean;
+  onRememberMeChange: (value: boolean) => void;
 }
 
 export function AuthPopupEmailStep({
   t,
+  locale,
   loading,
+  loginDisabledByLock = false,
+  lockCountdownLabel,
   showPassword,
   emailIdentifier,
   password,
@@ -49,9 +59,12 @@ export function AuthPopupEmailStep({
   onSubmit,
   onGoOneTimeCode,
   onGoSignup,
+  rememberMe,
+  onRememberMeChange,
 }: AuthPopupEmailStepProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (loginDisabledByLock) return;
     onSubmit();
   };
 
@@ -65,6 +78,7 @@ export function AuthPopupEmailStep({
         onChange={onChangeEmailIdentifier}
         onFocus={onFocusEmailIdentifier}
         error={emailError}
+        disabled={loading}
       />
       <AuthPopupField
         id="auth-password"
@@ -75,10 +89,12 @@ export function AuthPopupEmailStep({
         onChange={onChangePassword}
         onFocus={onFocusPassword}
         error={passwordError}
+        disabled={loading}
         rightAdornment={(
           <button
             type="button"
-            className="cursor-pointer text-zinc-500 hover:text-zinc-700"
+            disabled={loading}
+            className="cursor-pointer text-zinc-500 hover:text-zinc-700 disabled:pointer-events-none disabled:opacity-40"
             onClick={onTogglePasswordVisibility}
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
@@ -90,20 +106,59 @@ export function AuthPopupEmailStep({
           </button>
         )}
       />
-      <button
-        type="button"
-        className={AUTH_POPUP_TEXT_LINK}
-        onClick={onForgotPassword}
-      >
-        {t("forgotPassword")}
-      </button>
+      <div className="flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <label className="flex min-w-0 cursor-pointer items-center gap-2.5 text-sm text-slate-700 select-none">
+          <input
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => onRememberMeChange(e.target.checked)}
+            disabled={loading}
+          />
+          <span className="truncate">{t("rememberMe")}</span>
+        </label>
+        <button
+          type="button"
+          className={`shrink-0 ${AUTH_POPUP_TEXT_LINK}`}
+          onClick={onForgotPassword}
+        >
+          {t("forgotPassword")}
+        </button>
+      </div>
       <LoadingButton
         type="submit"
         className={AUTH_POPUP_PRIMARY_BUTTON}
         loading={loading}
+        disabled={loginDisabledByLock}
       >
         {t("logIn")}
       </LoadingButton>
+
+      {lockCountdownLabel ? (
+        <p className="text-center text-xs font-medium text-amber-800" role="status">
+          {lockCountdownLabel}
+        </p>
+      ) : null}
+
+      <p className="px-1 text-center text-xs leading-6 text-slate-600">
+        {t("signInTermsPrefix")}{" "}
+        <Link
+          href={`/${locale}/terms`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-slate-600 underline decoration-slate-600 underline-offset-2 hover:text-slate-900 hover:decoration-slate-900"
+        >
+          {t("termsAndConditions")}
+        </Link>{" "}
+        {t("and")}{" "}
+        <Link
+          href={`/${locale}/privacy`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-slate-600 underline decoration-slate-600 underline-offset-2 hover:text-slate-900 hover:decoration-slate-900"
+        >
+          {t("privacyPolicy")}
+        </Link>
+      </p>
 
       <div className={AUTH_POPUP_DIVIDER}>
         {t("or")}

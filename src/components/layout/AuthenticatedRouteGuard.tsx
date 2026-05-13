@@ -54,7 +54,21 @@ export function AuthenticatedRouteGuard({
     );
   }
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <GuardRedirectScreen
+        logo={
+          <BrandLogo
+            locale={locale}
+            priority
+            imageClassName="h-12 sm:h-14"
+            ariaLabel="Back to home"
+          />
+        }
+        description="Signing you out and redirecting."
+      />
+    );
+  }
   return <>{children}</>;
 }
 

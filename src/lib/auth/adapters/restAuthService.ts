@@ -1,6 +1,7 @@
 import axios, { type AxiosInstance } from "axios";
 import type { AuthService, AuthTokens } from "@/lib/auth/ports";
 import { peelV1EnvelopePayload } from "@/lib/http/standardEnvelope";
+import { getSubIdFromActiveVault } from "@/lib/auth/adapters/vaultTokenStore";
 
 type RestAuthServiceOptions = {
   baseURL: string;
@@ -17,9 +18,6 @@ type RefreshResponse = {
   expires_in?: number;
 };
 
-const AUTH_USERNAME_STORAGE_KEY = "authUsername";
-const AUTH_SUBID_STORAGE_KEY = "subId";
-
 export class RestAuthService implements AuthService {
   private readonly client: AxiosInstance;
   private readonly refreshPath: string;
@@ -30,27 +28,30 @@ export class RestAuthService implements AuthService {
       options.client ??
       axios.create({
         baseURL: options.baseURL,
+        withCredentials: true,
       });
     this.refreshPath = options.refreshPath ?? "/auth/refresh";
     this.logoutPath = options.logoutPath ?? "/auth/logout";
   }
 
-  async refresh(refreshToken: string): Promise<AuthTokens> {
+  async refresh(refreshToken?: string | null): Promise<AuthTokens> {
     const subId =
-      typeof window !== "undefined"
-        ? window.localStorage.getItem(AUTH_SUBID_STORAGE_KEY)
-        : null;
+      typeof window !== "undefined" ? getSubIdFromActiveVault() : null;
 
-    const response = await this.client.post<unknown>(this.refreshPath, {
-      refresh_token: refreshToken,
-      username: subId || undefined,
-    });
+    const payload =
+      refreshToken && refreshToken.trim().length > 0
+        ? {
+            refresh_token: refreshToken,
+            username: subId || undefined,
+          }
+        : {};
+    const response = await this.client.post<unknown>(this.refreshPath, payload);
 
     const peeled = peelV1EnvelopePayload(response.data) as RefreshResponse;
 
     return {
       accessToken: peeled.access_token,
-      refreshToken: peeled.refresh_token ?? refreshToken,
+      refreshToken: peeled.refresh_token ?? refreshToken ?? "",
     };
   }
 

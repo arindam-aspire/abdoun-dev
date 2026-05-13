@@ -46,6 +46,8 @@ export interface SearchFieldsTranslations {
   rooms: string;
   minPlotArea: string;
   maxPlotArea: string;
+  areaMinMustBeLessOrEqualMax: string;
+  plotMinMustBeLessOrEqualMax: string;
   allRooms: string;
   allBaths: string;
   allParking: string;

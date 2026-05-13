@@ -25,6 +25,7 @@ export type PasswordPolicyHelperProps = {
 
 const RULE_KEYS: { key: keyof PasswordPolicyChecks; labelKey: string }[] = [
   { key: "minLength", labelKey: "passwordRuleMinLength" },
+  { key: "maxLength", labelKey: "passwordRuleMaxLength" },
   { key: "upper", labelKey: "passwordRuleUpper" },
   { key: "lower", labelKey: "passwordRuleLower" },
   { key: "number", labelKey: "passwordRuleNumber" },

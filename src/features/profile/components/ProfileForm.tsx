@@ -167,7 +167,8 @@ function ProfileFormBody({
     setValue,
     getValues,
   } = useForm<ProfileFormValues>({
-    mode: "onTouched",
+    mode: "onChange",
+    reValidateMode: "onChange",
     defaultValues: {
       fullName: "",
       email: "",
@@ -693,6 +694,7 @@ function ProfileFormBody({
                 fullNameField.onChange(e);
                 setPhotoError(null);
               }}
+              onBlur={fullNameField.onBlur}
               placeholder={t("namePlaceholder")}
               autoComplete="name"
               disabled={isSubmitting || savingProfile}

@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { isValidPhoneNumber } from "libphonenumber-js";
 import { useAppDispatch } from "@/hooks/storeHooks";
 import { login } from "@/features/auth/authSlice";
-import { persistAuthSession } from "@/lib/auth/sessionCookies";
+import { persistSession } from "@/lib/auth/sessionManager";
 import { getApiErrorMessage } from "@/lib/http/apiError";
-import { queueRouteToast } from "@/lib/ui/routeToast";
+import { clearAuthApiToasts, showAuthApiToast } from "@/lib/ui/authApiToast";
 import type { SocialProvider } from "@/types/auth";
 import {
   confirmForgotPassword,
@@ -18,9 +18,23 @@ import {
   signup as apiSignup,
 } from "@/features/auth/api/auth.api";
 import { AxiosError } from "axios";
+import { getPasswordPolicyChecks } from "@/components/auth/passwordPolicyShared";
+import { AUTH_API_TOAST_MESSAGES } from "@/features/auth/constants/authApiToastMessages";
+import { useLoginLockoutCountdown } from "@/features/auth/hooks/useLoginLockoutCountdown";
+import {
+  ACCOUNT_TEMPORARILY_LOCKED_TOAST,
+  classifyPasswordLoginFailure,
+} from "@/features/auth/utils/passwordLoginFailure";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-type FlowMessageKind = "info" | "error" | "success";
+
+export type SignupManualFormValues = {
+  fullName: string;
+  email: string;
+  phone: string;
+  password: string;
+};
+const FULL_NAME_ALLOWED_REGEX = /^[A-Za-z\s]+$/;
 
 function isEmailOrPhone(value: string) {
   const trimmed = value.trim();
@@ -35,16 +49,6 @@ function isEmailOrPhone(value: string) {
   }
 
   return isValidPhoneNumber(cleaned, "JO");
-}
-
-function validatePassword(password: string) {
-  return {
-    minLength: password.length >= 8,
-    upper: /[A-Z]/.test(password),
-    lower: /[a-z]/.test(password),
-    number: /\d/.test(password),
-    symbol: /[!@#$%^&*(),.?\":{}|<>]/.test(password),
-  };
 }
 
 export function useOtpTimer(initialSeconds = 60) {
@@ -79,12 +83,28 @@ export function useSignupFlow(locale: string) {
   const [debugOtp, setDebugOtp] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [message, setMessage] = useState<string | null>(null);
-  const [messageKind, setMessageKind] = useState<FlowMessageKind | null>(null);
+  /** Email that returned 409 so the UI can block resubmit until the user changes it (no inline API copy). */
+  const [accountExistsEmail, setAccountExistsEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [signupGeneration, setSignupGeneration] = useState(0);
   const timer = useOtpTimer(60);
+  const manualSignupSubmitRef = useRef(false);
+  const verifySignupSubmitRef = useRef(false);
+  const signupRedirectDispatchedRef = useRef(false);
+  const mountedRef = useRef(true);
+  /** Password for post-OTP login; cleared from visible state after signup API for UX, but still required for `loginWithPasswordAndPersist`. */
+  const signupPasswordForOtpRef = useRef("");
 
-  const passwordChecks = useMemo(() => validatePassword(password), [password]);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      manualSignupSubmitRef.current = false;
+      verifySignupSubmitRef.current = false;
+      setLoading(false);
+    };
+  }, []);
+
   const setFieldError = (key: string, error?: string) => {
     setErrors((prev) => {
       if (!error && !prev[key]) return prev;
@@ -94,29 +114,63 @@ export function useSignupFlow(locale: string) {
       return next;
     });
   };
-  const setStatusMessage = (kind: FlowMessageKind, nextMessage: string | null) => {
-    setMessage(nextMessage);
-    setMessageKind(nextMessage ? kind : null);
+  const validateFullName = (value: string) => {
+    const message =
+      "Name must contain at least 2 alphabetic characters and only letters are allowed.";
+    const trimmed = value.trim();
+    if (!trimmed) return message;
+    if (!FULL_NAME_ALLOWED_REGEX.test(value)) return message;
+    const letterCount = (value.match(/[A-Za-z]/g) ?? []).length;
+    if (letterCount < 2) return message;
+    return undefined;
   };
-
-  const validateFullName = (value: string) =>
-    value.trim() ? undefined : "Full name is required.";
   const validateEmail = (value: string) =>
     EMAIL_REGEX.test(value.trim()) ? undefined : "Enter a valid email.";
   const validatePhone = (value: string) =>
     value.trim() && isValidPhoneNumber(value.trim()) ? undefined : "Enter a valid phone.";
-  const validatePasswordField = (value: string) =>
-    Object.values(validatePassword(value)).every(Boolean)
+  const validatePasswordField = (value: string) => {
+    if (value.length > 20) {
+      return "Password must be at most 20 characters.";
+    }
+    return Object.values(getPasswordPolicyChecks(value)).every(Boolean)
       ? undefined
       : "Password does not meet policy.";
+  };
   const validateOtp = (value: string) =>
     /^\d{6}$/.test(value.trim()) ? undefined : "Enter a valid 6-digit OTP.";
+
+  const resetSignupFlow = useCallback(
+    (options?: { preservePostAuthRedirectGuard?: boolean }) => {
+      setScreen("landing");
+      setFullName("");
+      setEmail("");
+      setPhone("");
+      setPassword("");
+      setOtp("");
+      setChallengeId("");
+      setDebugOtp(null);
+      setErrors({});
+      setTouched({});
+      setAccountExistsEmail(null);
+      setLoading(false);
+      manualSignupSubmitRef.current = false;
+      verifySignupSubmitRef.current = false;
+      signupPasswordForOtpRef.current = "";
+      if (!options?.preservePostAuthRedirectGuard) {
+        signupRedirectDispatchedRef.current = false;
+      }
+      timer.restart(60);
+      setSignupGeneration((g) => g + 1);
+    },
+    [timer],
+  );
 
   const goManual = () => {
     setScreen("manual");
     setErrors({});
     setTouched({});
-    setStatusMessage("info", null);
+    setAccountExistsEmail(null);
+    clearAuthApiToasts();
   };
 
   const validateField = (
@@ -140,7 +194,7 @@ export function useSignupFlow(locale: string) {
 
   const signupWithProvider = async (provider: SocialProvider) => {
     setLoading(true);
-    setStatusMessage("info", null);
+    clearAuthApiToasts();
     try {
       await new Promise((r) => setTimeout(r, 800));
       if (provider === "facebook") {
@@ -157,76 +211,80 @@ export function useSignupFlow(locale: string) {
       );
       router.push(`/${locale}`);
     } catch (error) {
-      setMessage(getApiErrorMessage(error) || "Social signup failed.");
+      if (!mountedRef.current) return;
+      showAuthApiToast({
+        kind: "error",
+        message: getApiErrorMessage(error) || AUTH_API_TOAST_MESSAGES.signupSocialErrorFallback,
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const submitManualSignup = async () => {
-    setTouched((prev) => ({
-      ...prev,
-      fullName: true,
-      email: true,
-      phone: true,
-      password: true,
-    }));
-
-    const nextErrors: Record<string, string> = {};
-    const fullNameError = validateFullName(fullName);
-    const emailError = validateEmail(email);
-    const phoneError = validatePhone(phone);
-    const passwordError = validatePasswordField(password);
-
-    if (fullNameError) nextErrors.fullName = fullNameError;
-    if (emailError) nextErrors.email = emailError;
-    if (phoneError) nextErrors.phone = phoneError;
-    if (passwordError) nextErrors.password = passwordError;
-
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
-
+  const submitManualSignup = async (values: SignupManualFormValues) => {
+    if (manualSignupSubmitRef.current) return;
+    manualSignupSubmitRef.current = true;
     setLoading(true);
-    setStatusMessage("info", null);
 
     try {
+      clearAuthApiToasts();
+      setErrors({});
+      setAccountExistsEmail(null);
+
       try {
         await apiSignup({
-          full_name: fullName.trim(),
-          email: email.trim(),
-          phone_number: phone.trim(),
-          password,
+          full_name: values.fullName.trim(),
+          email: values.email.trim(),
+          phone_number: values.phone.trim(),
+          password: values.password,
         });
       } catch (err) {
         const axiosError = err as AxiosError<{ detail?: string }>;
         if (axiosError?.response?.status === 409) {
-          const message =
-            typeof axiosError.response?.data?.detail === "string"
-              ? axiosError.response.data.detail
-              : getApiErrorMessage(axiosError) || "Account already exists. Please log in.";
-          setMessage(message);
-          setMessageKind("error");
-          queueRouteToast({ kind: "error", message });
-          router.push(`/${locale}`);
+          const emailVal = values.email.trim();
+          setAccountExistsEmail(emailVal);
+          showAuthApiToast({
+            kind: "error",
+            message: AUTH_API_TOAST_MESSAGES.signupAccountExists,
+          });
           return;
         }
         throw err;
       }
 
-      const emailVal = email.trim();
+      if (!mountedRef.current) return;
+
+      const emailVal = values.email.trim();
+      setEmail(emailVal);
       setChallengeId(emailVal);
+      signupPasswordForOtpRef.current = values.password;
       setDebugOtp(null);
       timer.restart(60);
-      setStatusMessage("success", "OTP sent successfully.");
+      setPassword("");
+      setFullName("");
+      setPhone("");
+      setErrors({});
+      setTouched({});
+      setAccountExistsEmail(null);
       setScreen("otp");
+      showAuthApiToast({
+        kind: "success",
+        message: AUTH_API_TOAST_MESSAGES.signupVerificationSent,
+      });
     } catch (error) {
-      setMessage(getApiErrorMessage(error) || "Unable to sign up.");
+      if (!mountedRef.current) return;
+      showAuthApiToast({
+        kind: "error",
+        message: getApiErrorMessage(error) || AUTH_API_TOAST_MESSAGES.signupGenericErrorFallback,
+      });
     } finally {
       setLoading(false);
+      manualSignupSubmitRef.current = false;
     }
   };
 
   const verifySignupOtp = async () => {
+    if (verifySignupSubmitRef.current || signupRedirectDispatchedRef.current) return;
     setTouched((prev) => ({ ...prev, otp: true }));
     const otpError = validateOtp(otp);
     if (otpError) {
@@ -234,48 +292,76 @@ export function useSignupFlow(locale: string) {
       return;
     }
 
+    verifySignupSubmitRef.current = true;
     setLoading(true);
     setErrors({});
-    setStatusMessage("info", null);
+    clearAuthApiToasts();
 
     try {
       await confirmSignup({ email: challengeId, code: otp.trim() });
-      const { sessionUser } = await loginWithPasswordAndPersist(email.trim(), password);
-      persistAuthSession(sessionUser);
+      if (!mountedRef.current) return;
+      const { sessionUser } = await loginWithPasswordAndPersist(
+        challengeId.trim(),
+        signupPasswordForOtpRef.current,
+        true,
+      );
+      if (!mountedRef.current) return;
+      persistSession({ user: sessionUser });
       dispatch(login(sessionUser));
-      setStatusMessage("success", "Signup completed. Redirecting...");
-      queueRouteToast({ kind: "success", message: "Signup completed successfully." });
-      router.push(`/${locale}`);
+      showAuthApiToast({ kind: "success", message: AUTH_API_TOAST_MESSAGES.signupCompleteWelcome });
+
+      if (signupRedirectDispatchedRef.current) return;
+      signupRedirectDispatchedRef.current = true;
+
+      resetSignupFlow({ preservePostAuthRedirectGuard: true });
+
+      if (mountedRef.current) {
+        router.push(`/${locale}`);
+      }
     } catch (error) {
-      const errMsg = getApiErrorMessage(error) || "Invalid OTP.";
-      setErrors({ otp: errMsg });
-      setStatusMessage("error", errMsg);
+      if (!mountedRef.current) return;
+      showAuthApiToast({
+        kind: "error",
+        message: getApiErrorMessage(error) || AUTH_API_TOAST_MESSAGES.verifyOtpInvalidFallback,
+      });
     } finally {
       setLoading(false);
+      verifySignupSubmitRef.current = false;
     }
   };
 
   const resendSignupOtp = async () => {
     setLoading(true);
-    setStatusMessage("info", null);
+    clearAuthApiToasts();
 
     try {
       await resendConfirmation({ email: challengeId });
+      if (!mountedRef.current) return;
       setDebugOtp(null);
       timer.restart(60);
-      setStatusMessage("success", "OTP resent successfully.");
+      showAuthApiToast({ kind: "success", message: AUTH_API_TOAST_MESSAGES.signupResendCodeSuccess });
     } catch (error) {
-      setMessage(getApiErrorMessage(error) || "Failed to resend OTP.");
+      if (!mountedRef.current) return;
+      showAuthApiToast({
+        kind: "error",
+        message: getApiErrorMessage(error) || AUTH_API_TOAST_MESSAGES.signupResendCodeErrorFallback,
+      });
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
+  };
+
+  const clearSignupAccountConflict = () => {
+    setAccountExistsEmail(null);
   };
 
   return {
     screen,
     loading,
-    message,
-    messageKind,
+    signupGeneration,
+    accountExistsEmail,
     errors,
     fields: {
       fullName,
@@ -284,7 +370,6 @@ export function useSignupFlow(locale: string) {
       password,
       otp,
     },
-    passwordChecks,
     debugOtp,
     timer,
     actions: {
@@ -324,7 +409,9 @@ export function useSignupFlow(locale: string) {
       verifySignupOtp,
       resendSignupOtp,
       validateField,
-      goLanding: () => setScreen("landing"),
+      resetSignupFlow,
+      goLanding: resetSignupFlow,
+      clearSignupAccountConflict,
     },
   };
 }
@@ -332,13 +419,17 @@ export function useSignupFlow(locale: string) {
 export function useLoginFlow(locale: string) {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const lockout = useLoginLockoutCountdown();
   const [tab, setTab] = useState<"manual" | "social">("manual");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submitInFlightRef = useRef(false);
 
   const submitManualLogin = async () => {
+    if (submitInFlightRef.current || loading || lockout.isLockedOut) return;
     if (!isEmailOrPhone(identifier)) {
       setError("Enter a valid email or phone.");
       return;
@@ -348,14 +439,25 @@ export function useLoginFlow(locale: string) {
       return;
     }
 
+    submitInFlightRef.current = true;
     setLoading(true);
     setError(null);
+    clearAuthApiToasts();
 
     try {
-      const { sessionUser } = await loginWithPasswordAndPersist(identifier, password);
-      persistAuthSession(sessionUser);
+      const { sessionUser, requiresPasswordSet } = await loginWithPasswordAndPersist(
+        identifier,
+        password,
+        rememberMe,
+      );
+      persistSession({ user: sessionUser });
       dispatch(login(sessionUser));
-      queueRouteToast({ kind: "success", message: "Logged in successfully." });
+      lockout.clearLockout();
+      if (requiresPasswordSet) {
+        router.push(`/${locale}/force-change-password`);
+        return;
+      }
+      showAuthApiToast({ kind: "success", message: AUTH_API_TOAST_MESSAGES.loginSignedInSuccess });
 
       if (sessionUser.role === "admin") {
         router.push(`/${locale}/admin-dashboard`);
@@ -364,16 +466,37 @@ export function useLoginFlow(locale: string) {
       } else {
         router.push(`/${locale}`);
       }
+      setIdentifier("");
+      setPassword("");
+      setRememberMe(false);
     } catch (err) {
-      setError(getApiErrorMessage(err) || "Login failed.");
+      const outcome = classifyPasswordLoginFailure(err);
+      if (outcome.kind === "unconfirmed") {
+        showAuthApiToast({
+          kind: "error",
+          message: getApiErrorMessage(err) || AUTH_API_TOAST_MESSAGES.loginErrorFallback,
+        });
+      } else if (outcome.kind === "account_temporarily_locked") {
+        showAuthApiToast({ kind: "error", message: ACCOUNT_TEMPORARILY_LOCKED_TOAST });
+        lockout.beginLockout(outcome.lockUntilMs);
+      } else if (outcome.kind === "invalid_credentials") {
+        showAuthApiToast({ kind: "error", message: outcome.toastMessage });
+      } else if (outcome.kind === "server_error") {
+        showAuthApiToast({
+          kind: "error",
+          message: outcome.toastMessage || AUTH_API_TOAST_MESSAGES.loginErrorFallback,
+        });
+      }
     } finally {
       setLoading(false);
+      submitInFlightRef.current = false;
     }
   };
 
   const submitSocialLogin = async (provider: SocialProvider) => {
     setLoading(true);
     setError(null);
+    clearAuthApiToasts();
     try {
       await new Promise((r) => setTimeout(r, 800));
       if (provider === "facebook") {
@@ -390,7 +513,10 @@ export function useLoginFlow(locale: string) {
       );
       router.push(`/${locale}`);
     } catch (err) {
-      setError(getApiErrorMessage(err) || "Social login failed.");
+      showAuthApiToast({
+        kind: "error",
+        message: getApiErrorMessage(err) || AUTH_API_TOAST_MESSAGES.loginSocialProviderErrorFallback,
+      });
     } finally {
       setLoading(false);
     }
@@ -400,19 +526,28 @@ export function useLoginFlow(locale: string) {
     tab,
     loading,
     error,
+    rememberMe,
+    loginLockedOut: lockout.isLockedOut,
+    loginLockCountdownLabel: lockout.countdownLabel,
     fields: { identifier, password },
     actions: {
       setTab,
       setIdentifier,
       setPassword,
+      setRememberMe,
       submitManualLogin,
       submitSocialLogin,
     },
   };
 }
 
-export function useForgotPasswordFlow() {
-  const [step, setStep] = useState<"request" | "otp" | "reset" | "success">("request");
+export type UseForgotPasswordFlowOptions = {
+  /** Called after password reset succeeds (e.g. return user to sign-in). */
+  onResetSuccess?: () => void;
+};
+
+export function useForgotPasswordFlow(options?: UseForgotPasswordFlowOptions) {
+  const [step, setStep] = useState<"request" | "otp" | "reset">("request");
   const [identifier, setIdentifier] = useState("");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -420,14 +555,12 @@ export function useForgotPasswordFlow() {
   const [challengeId, setChallengeId] = useState("");
   const [resetToken, setResetToken] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [messageKind, setMessageKind] = useState<FlowMessageKind | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [debugOtp, setDebugOtp] = useState<string | null>(null);
   const timer = useOtpTimer(60);
 
-  const passwordChecks = useMemo(() => validatePassword(newPassword), [newPassword]);
+  const passwordChecks = useMemo(() => getPasswordPolicyChecks(newPassword), [newPassword]);
   const setFieldError = (key: string, error?: string) => {
     setErrors((prev) => {
       if (!error && !prev[key]) return prev;
@@ -437,15 +570,11 @@ export function useForgotPasswordFlow() {
       return next;
     });
   };
-  const setStatusMessage = (kind: FlowMessageKind, nextMessage: string | null) => {
-    setMessage(nextMessage);
-    setMessageKind(nextMessage ? kind : null);
-  };
 
   const validateIdentifier = (value: string) =>
     isEmailOrPhone(value) ? undefined : "Enter a valid email or phone.";
   const validateNewPassword = (value: string) =>
-    Object.values(validatePassword(value)).every(Boolean)
+    Object.values(getPasswordPolicyChecks(value)).every(Boolean)
       ? undefined
       : "Password does not meet policy.";
   const validateConfirmPassword = (newPwd: string, confirmPwd: string) =>
@@ -489,17 +618,23 @@ export function useForgotPasswordFlow() {
     if (Object.keys(nextErrors).length > 0) return;
 
     setLoading(true);
-    setStatusMessage("info", null);
+    clearAuthApiToasts();
 
     try {
       await requestForgotPassword({ email: identifier.trim() });
       setChallengeId(identifier.trim());
       setDebugOtp(null);
-      setStatusMessage("success", "If an account exists, OTP has been sent.");
       timer.restart(60);
       setStep("otp");
+      showAuthApiToast({
+        kind: "success",
+        message: AUTH_API_TOAST_MESSAGES.forgotRequestSentInfo,
+      });
     } catch (error) {
-      setStatusMessage("error", getApiErrorMessage(error) || "Unable to request OTP.");
+      showAuthApiToast({
+        kind: "error",
+        message: getApiErrorMessage(error) || AUTH_API_TOAST_MESSAGES.forgotRequestErrorFallback,
+      });
     } finally {
       setLoading(false);
     }
@@ -514,16 +649,21 @@ export function useForgotPasswordFlow() {
     }
 
     setLoading(true);
+    clearAuthApiToasts();
     setErrors({});
-    setStatusMessage("info", null);
 
     try {
       setResetToken(challengeId);
       setStep("reset");
+      showAuthApiToast({
+        kind: "success",
+        message: AUTH_API_TOAST_MESSAGES.forgotOtpAccepted,
+      });
     } catch (error) {
-      const errMsg = getApiErrorMessage(error) || "Invalid OTP.";
-      setErrors({ otp: errMsg });
-      setStatusMessage("error", errMsg);
+      showAuthApiToast({
+        kind: "error",
+        message: getApiErrorMessage(error) || AUTH_API_TOAST_MESSAGES.forgotOtpVerifyErrorFallback,
+      });
     } finally {
       setLoading(false);
     }
@@ -531,14 +671,17 @@ export function useForgotPasswordFlow() {
 
   const resendOtp = async () => {
     setLoading(true);
-    setStatusMessage("info", null);
+    clearAuthApiToasts();
     try {
       await requestForgotPassword({ email: challengeId });
       setDebugOtp(null);
       timer.restart(60);
-      setStatusMessage("success", "OTP resent successfully.");
+      showAuthApiToast({ kind: "success", message: AUTH_API_TOAST_MESSAGES.forgotResendSuccess });
     } catch (error) {
-      setStatusMessage("error", getApiErrorMessage(error) || "Unable to resend OTP.");
+      showAuthApiToast({
+        kind: "error",
+        message: getApiErrorMessage(error) || AUTH_API_TOAST_MESSAGES.forgotResendErrorFallback,
+      });
     } finally {
       setLoading(false);
     }
@@ -560,7 +703,7 @@ export function useForgotPasswordFlow() {
     if (Object.keys(nextErrors).length > 0) return;
 
     setLoading(true);
-    setStatusMessage("info", null);
+    clearAuthApiToasts();
 
     try {
       await confirmForgotPassword({
@@ -568,10 +711,16 @@ export function useForgotPasswordFlow() {
         code: otp.trim(),
         new_password: newPassword,
       });
-      setStatusMessage("success", "Password updated. You can now login.");
-      setStep("success");
+      showAuthApiToast({
+        kind: "success",
+        message: AUTH_API_TOAST_MESSAGES.forgotPasswordUpdatedSuccess,
+      });
+      options?.onResetSuccess?.();
     } catch (error) {
-      setStatusMessage("error", getApiErrorMessage(error) || "Unable to reset password.");
+      showAuthApiToast({
+        kind: "error",
+        message: getApiErrorMessage(error) || AUTH_API_TOAST_MESSAGES.forgotPasswordUpdateErrorFallback,
+      });
     } finally {
       setLoading(false);
     }
@@ -586,8 +735,6 @@ export function useForgotPasswordFlow() {
     setChallengeId("");
     setResetToken("");
     setLoading(false);
-    setMessage(null);
-    setMessageKind(null);
     setErrors({});
     setTouched({});
     setDebugOtp(null);
@@ -597,8 +744,6 @@ export function useForgotPasswordFlow() {
   return {
     step,
     loading,
-    message,
-    messageKind,
     errors,
     debugOtp,
     timer,

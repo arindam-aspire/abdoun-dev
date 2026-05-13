@@ -182,7 +182,9 @@
     "termsAndConditions": "Terminos y condiciones",
     "and": "y",
     "privacyPolicy": "Politica de privacidad",
-    "alreadyHaveAccountLogin": "Ya tienes cuenta? Inicia sesion"
+    "alreadyHaveAccountLogin": "Ya tienes cuenta? Inicia sesion",
+    "rememberMe": "Recordarme en este dispositivo",
+    "signInTermsPrefix": "Al iniciar sesión aceptas"
   },
   "agentAuth": {
     "inviteTitle": "Aceptar invitacion",
@@ -511,10 +513,11 @@
     "passwordStrengthMedium": "Media",
     "passwordStrengthStrong": "Fuerte",
     "passwordRuleMinLength": "Al menos 8 caracteres",
+    "passwordRuleMaxLength": "Como máximo 20 caracteres",
     "passwordRuleUpper": "Una letra mayúscula",
     "passwordRuleLower": "Una letra minúscula",
     "passwordRuleNumber": "Un número",
-    "passwordRuleSymbol": "Un carácter especial",
+    "passwordRuleSymbol": "Un carácter especial (el guion bajo _ no cuenta)",
     "passwordHintImprove": "Añade {items} para reforzar la contraseña.",
     "passwordPolicyShowDetails": "Mostrar detalles de los requisitos",
     "passwordPolicyHideDetails": "Ocultar detalles de los requisitos",
@@ -684,6 +687,8 @@
     "rooms": "Habitaciones",
     "minPlotArea": "Área mínima de parcela",
     "maxPlotArea": "Área máxima de parcela",
+    "areaMinMustBeLessOrEqualMax": "El área mínima debe ser menor o igual que el área máxima.",
+    "plotMinMustBeLessOrEqualMax": "El área mínima de la parcela debe ser menor o igual que el área máxima de la parcela.",
     "allRooms": "Todas las habitaciones",
     "allBaths": "Todos los baños",
     "allParking": "Todo el aparcamiento",

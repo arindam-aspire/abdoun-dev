@@ -13,6 +13,16 @@ export function queueRouteToast(toast: RouteToastPayload): void {
   window.dispatchEvent(new Event(ROUTE_TOAST_EVENT));
 }
 
+/** Removes a queued route toast before the next navigation or retry (avoids stale messages). */
+export function clearPendingRouteToast(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(ROUTE_TOAST_STORAGE_KEY);
+  } catch {
+    // ignore quota / private mode
+  }
+}
+
 export function consumeRouteToast(): RouteToastPayload | null {
   if (typeof window === "undefined") return null;
 

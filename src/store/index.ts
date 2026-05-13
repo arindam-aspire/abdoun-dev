@@ -1,4 +1,4 @@
-import { configureStore } from "@reduxjs/toolkit";
+import { combineReducers, configureStore, createAction } from "@reduxjs/toolkit";
 import type { Middleware } from "@reduxjs/toolkit";
 import { login } from "@/features/auth/authSlice";
 import profileReducer, { setProfileUser } from "@/features/profile/profileSlice";
@@ -36,26 +36,40 @@ const profileUserSyncMiddleware: Middleware =
     return result;
   };
 
+const appReducer = combineReducers({
+  ui: uiReducer,
+  auth: authReducer,
+  profile: profileReducer,
+  favourites: favouritesReducer,
+  compare: compareReducer,
+  savedSearches: savedSearchesReducer,
+  adminAgents: adminAgentsReducer,
+  adminUsers: adminUsersReducer,
+  propertySearch: propertySearchReducer,
+  propertyDetails: propertyDetailsReducer,
+  exclusiveProperties: exclusivePropertiesReducer,
+  agentDashboardSummary: agentDashboardSummaryReducer,
+  adminUserGrowthTrends: adminUserGrowthTrendsReducer,
+  adminDashboardSummary: adminDashboardSummaryReducer,
+  addPropertyWizard: addPropertyWizardReducer,
+  locationTaxonomy: locationTaxonomyReducer,
+  notifications: notificationsReducer,
+});
+
+export const resetAppState = createAction("app/resetState");
+
+const rootReducer: typeof appReducer = (state, action) => {
+  if (resetAppState.match(action)) {
+    // Preserve visual preferences while dropping all authenticated/session-derived data.
+    const preservedUi = state?.ui ? { ...state.ui } : undefined;
+    const next = appReducer(undefined, { type: "@@INIT" });
+    return preservedUi ? { ...next, ui: preservedUi } : next;
+  }
+  return appReducer(state, action);
+};
+
 export const store = configureStore({
-  reducer: {
-    ui: uiReducer,
-    auth: authReducer,
-    profile: profileReducer,
-    favourites: favouritesReducer,
-    compare: compareReducer,
-    savedSearches: savedSearchesReducer,
-    adminAgents: adminAgentsReducer,
-    adminUsers: adminUsersReducer,
-    propertySearch: propertySearchReducer,
-    propertyDetails: propertyDetailsReducer,
-    exclusiveProperties: exclusivePropertiesReducer,
-    agentDashboardSummary: agentDashboardSummaryReducer,
-    adminUserGrowthTrends: adminUserGrowthTrendsReducer,
-    adminDashboardSummary: adminDashboardSummaryReducer,
-    addPropertyWizard: addPropertyWizardReducer,
-    locationTaxonomy: locationTaxonomyReducer,
-    notifications: notificationsReducer,
-  },
+  reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(profileUserSyncMiddleware),
 });

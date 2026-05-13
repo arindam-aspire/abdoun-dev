@@ -9,6 +9,7 @@ jest.mock("@/lib/auth/sessionCookies", () => ({
 describe("sessionManager", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    window.sessionStorage.clear();
     jest.clearAllMocks();
   });
 

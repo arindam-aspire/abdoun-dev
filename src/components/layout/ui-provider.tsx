@@ -21,6 +21,7 @@ import { login } from "@/features/auth/authSlice";
 import {
   clearSession,
   getCurrentSession,
+  getStoredAccessToken,
   getStoredTokens,
   persistSession,
 } from "@/lib/auth/sessionManager";
@@ -135,8 +136,8 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
   }, [dispatch, user, router, locale]);
 
   useEffect(() => {
-    const loginPath = `/${locale}/login`;
-    setClientLogoutNavigate((path) => router.push(path || loginPath));
+    const fallbackPath = `/${locale}`;
+    setClientLogoutNavigate((path) => router.push(path || fallbackPath));
     return () => setClientLogoutNavigate(null);
   }, [router, locale]);
 
@@ -145,7 +146,7 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
     const handler = (e: CustomEvent<{ message: string }>) => {
       void e;
       forceLocalLogout(dispatch, user?.id, DEFAULT_SESSION_EXPIRED_MESSAGE, () =>
-        router.push(`/${locale}/login`),
+        router.push(`/${locale}`),
       );
     };
     window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, handler as EventListener);
@@ -390,7 +391,7 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
         onSessionInvalid: () => {
           if (!isMounted) return;
           forceLocalLogout(dispatch, user.id, DEFAULT_SESSION_EXPIRED_MESSAGE, () =>
-            router.push(`/${locale}/login`),
+            router.push(`/${locale}`),
           );
         },
         onError: () => {
@@ -398,7 +399,7 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
           dispatch(flagNotificationsDesync());
         },
       },
-      getAccessToken: () => getStoredTokens()?.accessToken ?? null,
+      getAccessToken: () => getStoredAccessToken(),
       getSocketUrl: resolveNotificationsSocketUrl,
       maxRetries: 8,
     });
@@ -420,7 +421,7 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
     <>
       {children}
       {toast ? (
-        <Toast kind={toast.kind} message={toast.message} onClose={() => setToast(null)} />
+        <Toast kind={toast.kind} message={toast.message} onClose={() => setToast(null)} duration={6000} />
       ) : null}
     </>
   );

@@ -2,7 +2,10 @@
 
 import type { AxiosInstance, RawAxiosRequestHeaders } from "axios";
 import { BrowserLogoutHandler } from "@/lib/auth/adapters/browserLogoutHandler";
-import { LocalStorageTokenStore } from "@/lib/auth/adapters/localStorageTokenStore";
+import {
+  browserVaultTokenStore,
+  VaultTokenStore,
+} from "@/lib/auth/adapters/vaultTokenStore";
 import { RestAuthService } from "@/lib/auth/adapters/restAuthService";
 import { createClient } from "@/lib/http/createClient";
 
@@ -26,10 +29,13 @@ export const createHttpClients = (
 ): HttpClients => {
   const baseURL = options.baseURL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
-  const tokenStore = new LocalStorageTokenStore({
-    accessTokenKey: options.accessTokenKey,
-    refreshTokenKey: options.refreshTokenKey,
-  });
+  const tokenStore =
+    options.accessTokenKey !== undefined || options.refreshTokenKey !== undefined
+      ? new VaultTokenStore({
+          accessTokenKey: options.accessTokenKey,
+          refreshTokenKey: options.refreshTokenKey,
+        })
+      : browserVaultTokenStore;
 
   const authService = new RestAuthService({
     baseURL,

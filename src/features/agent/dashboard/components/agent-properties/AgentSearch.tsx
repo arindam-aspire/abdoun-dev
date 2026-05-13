@@ -68,6 +68,8 @@ export function AgentSearch({ language }: AgentSearchProps) {
               rooms: t("rooms"),
               minPlotArea: t("minPlotArea"),
               maxPlotArea: t("maxPlotArea"),
+              areaMinMustBeLessOrEqualMax: t("areaMinMustBeLessOrEqualMax"),
+              plotMinMustBeLessOrEqualMax: t("plotMinMustBeLessOrEqualMax"),
               allRooms: t("allRooms"),
               allBaths: t("allBaths"),
               allParking: t("allParking"),

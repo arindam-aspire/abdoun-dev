@@ -2,23 +2,24 @@ import { renderHook, act } from "@testing-library/react";
 
 const dispatchMock = jest.fn();
 const persistSessionMock = jest.fn();
-const loginActionMock = jest.fn((payload) => ({ type: "auth/login", payload }));
+const loginActionMock = jest.fn((payload: unknown) => ({ type: "auth/login", payload }));
 
 jest.mock("@/hooks/storeHooks", () => ({
   useAppDispatch: () => dispatchMock,
 }));
 
 jest.mock("@/lib/auth/sessionManager", () => ({
-  persistSession: (...args) => persistSessionMock(...args),
+  persistSession: (...args: unknown[]) => persistSessionMock(...args),
 }));
 
 jest.mock("@/features/auth/authSlice", () => ({
-  login: (payload) => loginActionMock(payload),
+  login: (payload: unknown) => loginActionMock(payload),
 }));
 
 const loginWithPasswordAndPersistMock = jest.fn();
 jest.mock("@/features/auth/api/auth.api", () => ({
-  loginWithPasswordAndPersist: (...args) => loginWithPasswordAndPersistMock(...args),
+  loginWithPasswordAndPersist: (...args: unknown[]) =>
+    loginWithPasswordAndPersistMock(...args),
 }));
 
 import { useLogin } from "@/features/auth/hooks/useLogin";
@@ -43,7 +44,7 @@ describe("useLogin", () => {
       await result.current.loginAndPersist("  user  ", "pw");
     });
 
-    expect(loginWithPasswordAndPersistMock).toHaveBeenCalledWith("user", "pw");
+    expect(loginWithPasswordAndPersistMock).toHaveBeenCalledWith("user", "pw", false);
   });
 
   it("persistSessionAndLogin persists session and dispatches login", () => {
