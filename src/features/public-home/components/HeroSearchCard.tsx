@@ -261,7 +261,7 @@ export function HeroSearchCard({
               }}
               align={isRtl ? "right" : "left"}
               anchorRef={budgetTriggerRef}
-              portaled={false}
+              minPanelWidth={300}
             >
               <BudgetRangeInputs
                 minBudget={minBudget}

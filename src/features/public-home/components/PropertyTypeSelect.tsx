@@ -59,7 +59,7 @@ export function PropertyTypeSelect({
         onClose={onClose}
         align={isRtl ? "right" : "left"}
         anchorRef={triggerRef}
-        portaled={false}
+        minPanelWidth={256}
         closeOnSelect
       >
         <div className="w-64 rounded-2xl border border-subtle bg-white p-2 text-size-sm shadow-xl ring-1 ring-black/5">
