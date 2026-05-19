@@ -15,7 +15,7 @@ import { PropertyInsightsSidebar } from "./PropertyInsightsSidebar";
 import { PropertyNeighborhood } from "./PropertyNeighborhood";
 import { PropertyDetailsPriceCard } from "./PropertyDetailsPriceCard";
 import { PropertyDetailsTabBar } from "./PropertyDetailsTabBar";
-import { LoadingScreen } from "@/components/ui/loading-screen";
+import { PropertyDetailsSkeleton } from "@/features/property-details/components/PropertyDetailsSkeleton";
 import type { PropertyDetailsTabKey } from "./PropertyDetailsTabBar";
 import { useBackendTranslation } from "@/hooks/useBackendTranslation";
 import { useSession } from "@/features/auth/hooks/useSession";
@@ -42,7 +42,8 @@ export function PropertyDetailsMain({
   const isRtl = language === "ar";
   const { role } = useSession();
   const { tBackend } = useBackendTranslation();
-  const { item, loading, error, resolvedPropertyId } = usePropertyDetails(propertyId);
+  const { item, error, resolvedPropertyId, isPropertyLoading, propertyNotFound } =
+    usePropertyDetails(propertyId);
 
   const property = useMemo(
     () => (item ? toDetailedProperty(item, tBackend) : null),
@@ -146,14 +147,15 @@ export function PropertyDetailsMain({
     );
   }
 
-  if (loading) {
+  if (isPropertyLoading) {
+    return <PropertyDetailsSkeleton isRtl={isRtl} />;
+  }
+
+  if (propertyNotFound) {
     return (
-      <div className="container mx-auto px-4 py-10 md:px-8">
-        <LoadingScreen
-          title="Loading property details"
-          description="Please wait while we fetch property information."
-        />
-      </div>
+      <section className="container mx-auto px-4 py-10 text-sm text-(--color-charcoal)/70 md:px-8">
+        Property not found.
+      </section>
     );
   }
 
@@ -166,11 +168,7 @@ export function PropertyDetailsMain({
   }
 
   if (!displayProperty) {
-    return (
-      <section className="container mx-auto px-4 py-10 text-sm text-(--color-charcoal)/70 md:px-8">
-        Property not found.
-      </section>
-    );
+    return <PropertyDetailsSkeleton isRtl={isRtl} />;
   }
 
   return (

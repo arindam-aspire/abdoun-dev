@@ -8,6 +8,7 @@ import axios, {
 import type { AuthTokens, AuthService, LogoutHandler, TokenStore } from "@/lib/auth/ports";
 import { authTokenLog, authTokenWarn } from "@/lib/auth/authTokenLog";
 import { normalizeAuthTokens, revalidateAuthTokens } from "@/lib/auth/tokenValidation";
+import { isAuthHydrationComplete } from "@/lib/auth/authHydration";
 import { resolveBearerAuthHeaders } from "@/lib/http/authHeader";
 import { peelV1EnvelopeForAxios } from "@/lib/http/standardEnvelope";
 
@@ -198,7 +199,7 @@ export const createClient = (options: CreateClientOptions): AxiosInstance => {
     const bearer = await resolveBearerAuthHeaders(tokenStore);
     if ("Authorization" in bearer) {
       headers.set("Authorization", bearer.Authorization);
-    } else if (typeof window !== "undefined") {
+    } else if (typeof window !== "undefined" && isAuthHydrationComplete()) {
       const method = String(config.method ?? "get").toUpperCase();
       const url = `${config.baseURL ?? ""}${config.url ?? ""}`;
       console.error("Access token missing before API request", { method, url });

@@ -5,7 +5,7 @@ const fetchPropertyDetailsMock = jest.fn((id: number) => ({ type: "pd/fetch", pa
 
 jest.mock("@/hooks/storeHooks", () => ({
   useAppDispatch: () => dispatchMock,
-  useAppSelector: (selector: any) =>
+  useAppSelector: (selector: (state: unknown) => unknown) =>
     selector({
       propertyDetails: {
         item: null,
@@ -28,10 +28,12 @@ describe("usePropertyDetails", () => {
     fetchPropertyDetailsMock.mockClear();
   });
 
-  it("parses id and dispatches fetch", () => {
-    renderHook(() => usePropertyDetails("12"));
+  it("parses id and dispatches fetch without requiring auth", () => {
+    const { result } = renderHook(() => usePropertyDetails("12"));
     expect(fetchPropertyDetailsMock).toHaveBeenCalledWith(12);
     expect(dispatchMock).toHaveBeenCalledWith({ type: "pd/fetch", payload: 12 });
+    expect(result.current.resolvedPropertyId).toBe(12);
+    expect(result.current.isPropertyLoading).toBe(true);
   });
 
   it("does not dispatch for invalid id", () => {
@@ -39,4 +41,3 @@ describe("usePropertyDetails", () => {
     expect(dispatchMock).not.toHaveBeenCalled();
   });
 });
-

@@ -32,8 +32,7 @@ export function ExclusivePropertiesSection({
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
   const displayedProperties = properties;
-  const showSkeletonState =
-    status === "idle" || loading || (status === "failed" && Boolean(error));
+  const showSkeletonState = status === "idle" || loading;
 
   const shouldUseCarousel =
     useCarouselOnOverflow && displayedProperties.length > 4;
@@ -193,7 +192,18 @@ export function ExclusivePropertiesSection({
           </div>
         )}
 
-        {!showSkeletonState && displayedProperties.length === 0 && (
+        {!showSkeletonState && status === "failed" && error ? (
+          <p
+            className={`mt-4 text-sm text-red-600 ${isRtl ? "text-right" : "text-left"}`}
+            role="alert"
+          >
+            {error}
+          </p>
+        ) : null}
+
+        {!showSkeletonState &&
+          status !== "failed" &&
+          displayedProperties.length === 0 && (
           <p
             className={`mt-4 text-sm text-zinc-500 ${isRtl ? "text-right" : "text-left"}`}
           >

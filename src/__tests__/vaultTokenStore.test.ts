@@ -5,6 +5,8 @@ import {
   peekTokenVaultFromPairs,
   persistAccessTokenToVault,
   persistTokensToVault,
+  purgeOrphanedEphemeralTokens,
+  reconcileAuthStorageOnLoad,
   resolveTokenVault,
 } from "@/lib/auth/adapters/vaultTokenStore";
 
@@ -15,8 +17,8 @@ describe("peekTokenVaultFromPairs", () => {
     expect(peekTokenVaultFromPairs("1", access, access)).toBe("local");
   });
 
-  it("prefers session when both storages have pairs and marker is off", () => {
-    expect(peekTokenVaultFromPairs(null, access, access)).toBe("session");
+  it("prefers local when both storages have pairs and marker is off", () => {
+    expect(peekTokenVaultFromPairs(null, access, access)).toBe("local");
   });
 
   it("uses session when only session has a pair", () => {
@@ -49,12 +51,14 @@ describe("resolveTokenVault", () => {
     expect(resolveTokenVault()).toBe("local");
   });
 
-  it("clears orphan marker when only session has tokens", () => {
+  it("migrates legacy session tokens to local and clears orphan marker", () => {
     window.localStorage.setItem(AUTH_TOKEN_PERSIST_MARKER_KEY, "1");
     window.sessionStorage.setItem("accessToken", "a");
     window.sessionStorage.setItem("refreshToken", "r");
-    expect(resolveTokenVault()).toBe("session");
+    expect(resolveTokenVault()).toBe("local");
+    expect(window.localStorage.getItem("accessToken")).toBe("a");
     expect(window.localStorage.getItem(AUTH_TOKEN_PERSIST_MARKER_KEY)).toBeNull();
+    expect(window.sessionStorage.getItem("accessToken")).toBeNull();
   });
 
   it("keeps local vault for remember-me access-only mode", () => {
@@ -71,11 +75,13 @@ describe("remember-me storage modes", () => {
     window.sessionStorage.clear();
   });
 
-  it("stores access+refresh pair with token mode", () => {
+  it("stores access+refresh pair in localStorage without persist marker", () => {
     persistTokensToVault(access, false);
-    expect(window.sessionStorage.getItem("accessToken")).toBe("a");
-    expect(window.sessionStorage.getItem("refreshToken")).toBe("r");
-    expect(window.sessionStorage.getItem(AUTH_REFRESH_MODE_KEY)).toBe("token");
+    expect(window.localStorage.getItem(AUTH_TOKEN_PERSIST_MARKER_KEY)).toBeNull();
+    expect(window.localStorage.getItem("accessToken")).toBe("a");
+    expect(window.localStorage.getItem("refreshToken")).toBe("r");
+    expect(window.localStorage.getItem(AUTH_REFRESH_MODE_KEY)).toBe("token");
+    expect(window.sessionStorage.getItem("accessToken")).toBeNull();
   });
 
   it("stores access-only with cookie mode for remember-me", () => {
@@ -91,5 +97,18 @@ describe("remember-me storage modes", () => {
     clearAllVaultTokenStorage();
     expect(window.localStorage.getItem(AUTH_REFRESH_MODE_KEY)).toBeNull();
     expect(window.sessionStorage.getItem(AUTH_REFRESH_MODE_KEY)).toBeNull();
+  });
+
+  it("does not purge ephemeral tokens during reconcile (login race)", () => {
+    persistTokensToVault(access, false);
+    reconcileAuthStorageOnLoad();
+    expect(window.localStorage.getItem("accessToken")).toBe("a");
+    expect(window.localStorage.getItem("refreshToken")).toBe("r");
+  });
+
+  it("purges ephemeral tokens only when session cookies are absent", () => {
+    persistTokensToVault(access, false);
+    purgeOrphanedEphemeralTokens();
+    expect(window.localStorage.getItem("accessToken")).toBeNull();
   });
 });

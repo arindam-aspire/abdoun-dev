@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { AppImage } from "@/components/ui/AppImage";
 import { useLocale } from "next-intl";
 import {
   BedDouble,
@@ -155,7 +155,7 @@ export function SearchResultListCard({
       >
         <div className="absolute inset-0">
           {images[0] && (
-            <Image
+            <AppImage
               src={images[currentImageIndex] ?? images[0]}
               alt={listing.title}
               fill

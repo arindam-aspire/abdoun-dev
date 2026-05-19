@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
-import Image from "next/image";
+import { AppImage } from "@/components/ui/AppImage";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import {
@@ -133,12 +133,12 @@ export function PropertyCardNew({
   const currentUserRole = signedInUser?.role?.toLowerCase();
   const canViewOwnerDetails =
     currentUserRole === "agent" || currentUserRole === "admin";
-  const safeImages =
-    images.length > 0
-      ? images
-      : [
-          "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg?auto=compress&cs=tinysrgb&w=1200",
-        ];
+  const FALLBACK_CARD_IMAGE =
+    "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg?auto=compress&cs=tinysrgb&w=1200";
+  const safeImages = images.filter(
+    (url): url is string => typeof url === "string" && url.trim().length > 0,
+  );
+  const resolvedImages = safeImages.length > 0 ? safeImages : [FALLBACK_CARD_IMAGE];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
@@ -147,7 +147,7 @@ export function PropertyCardNew({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isImageTransitioning, setIsImageTransitioning] = useState(false);
   const imageTransitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const totalImages = safeImages.length;
+  const totalImages = resolvedImages.length;
   const canNavigateImages = showImageNavigation ?? totalImages > 1;
   const ownerEntries =
     owners
@@ -231,8 +231,8 @@ export function PropertyCardNew({
     >
       <div className="relative overflow-hidden rounded-t-xl">
         <div className="relative h-0 w-full pb-[67%]">
-          <Image
-            src={safeImages[currentImageIndex] ?? safeImages[0]}
+          <AppImage
+            src={resolvedImages[currentImageIndex] ?? resolvedImages[0]}
             alt={imageAlt ?? title}
             fill
             sizes={imageSizes}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { isRtlLocale } from "@/i18n/routing";
 import { useLocale } from "next-intl";
@@ -17,18 +17,12 @@ import {
   hydrateSavedSearches,
 } from "@/features/saved-searches/savedSearchesSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
-import { login } from "@/features/auth/authSlice";
 import {
-  clearSession,
-  getCurrentSession,
-  getStoredAccessToken,
-  getStoredTokens,
-  persistSession,
-} from "@/lib/auth/sessionManager";
+  purgeOrphanedEphemeralTokens,
+  reconcileAuthStorageOnLoad,
+} from "@/lib/auth/adapters/vaultTokenStore";
+import { getStoredAccessToken } from "@/lib/auth/sessionManager";
 import { selectCurrentUser } from "@/store/selectors";
-import { enrichWithPhoneParts } from "@/lib/auth/enrichSessionUser";
-import { toSessionUserForProfile } from "@/features/auth/api/auth.api";
-import { getCurrentUserDeduped } from "@/lib/auth/currentUserRequest";
 import { listFavoriteProperties } from "@/features/favourites/api/favourites.api";
 import { listSavedSearches } from "@/features/saved-searches/api/savedSearches.api";
 import { Toast } from "@/components/ui";
@@ -55,6 +49,16 @@ import {
   resolveNotificationsSocketUrl,
 } from "@/features/notifications/realtime/notificationsRealtime";
 import { notificationItemFromPayload } from "@/features/notifications/normalizeNotification";
+import {
+  isAuthHydrationComplete,
+  markAuthHydrationComplete,
+} from "@/lib/auth/authHydration";
+import {
+  resolveAuthBootstrapPhase,
+  restoreSessionFromCookiesOnly,
+  startAuthProfileEnrichment,
+} from "@/lib/auth/runAuthBootstrap";
+import { AuthHydrationProvider } from "@/features/auth/context/AuthHydrationContext";
 
 export function UiProvider({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
@@ -64,6 +68,8 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
   const locale = useLocale();
   const user = useAppSelector(selectCurrentUser);
   const [toast, setToast] = useState<RouteToastPayload | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const authHydrationFinishedRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -79,60 +85,55 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    if (isAuthHydrationComplete()) {
+      authHydrationFinishedRef.current = true;
+      setIsAuthLoading(false);
+      return;
+    }
+
+    if (authHydrationFinishedRef.current) return;
+
+    let cancelled = false;
+    const finishAuthHydration = () => {
+      if (authHydrationFinishedRef.current) return;
+      authHydrationFinishedRef.current = true;
+      markAuthHydrationComplete();
+      setIsAuthLoading(false);
+    };
+
+    reconcileAuthStorageOnLoad();
+    purgeOrphanedEphemeralTokens();
+
+    const onForceChangePassword = () => {
+      router.push(`/${locale}/force-change-password`);
+    };
+
     if (user) {
       if (user.requiresPasswordSet) {
-        router.push(`/${locale}/force-change-password`);
+        onForceChangePassword();
       }
-      return;
+      finishAuthHydration();
+      return () => {
+        cancelled = true;
+      };
     }
 
-    const session = getCurrentSession();
-    if (session?.user) {
-      const tokens = session.tokens ?? getStoredTokens();
-      if (tokens) {
-        void (async () => {
-          try {
-            const me = await getCurrentUserDeduped();
-            if (me.requires_password_set) {
-              clearSession();
-              router.push(`/${locale}/force-change-password`);
-              return;
-            }
-            const sessionUser = toSessionUserForProfile(me);
-            persistSession({ user: sessionUser });
-            dispatch(login(sessionUser));
-          } catch {
-            dispatch(login(enrichWithPhoneParts(session.user)));
-          }
-        })();
-      } else {
-        dispatch(login(enrichWithPhoneParts(session.user)));
-      }
-      return;
+    const phase = resolveAuthBootstrapPhase(false);
+
+    if (phase.kind === "needs_refresh") {
+      restoreSessionFromCookiesOnly(dispatch);
+      finishAuthHydration();
+      return () => {
+        cancelled = true;
+      };
     }
 
-    const tokens = session?.tokens ?? getStoredTokens();
-    if (!tokens) return;
-
-    void (async () => {
-      try {
-        const me = await getCurrentUserDeduped();
-
-        if (me.requires_password_set) {
-          clearSession();
-          router.push(`/${locale}/force-change-password`);
-          return;
-        }
-
-        const sessionUser = toSessionUserForProfile(me);
-        persistSession({ user: sessionUser });
-        dispatch(login(sessionUser));
-      } catch {
-        // Tokens are invalid/expired and refresh failed (or backend unavailable).
-        // Keep UI unauthenticated and clear cookies to prevent stale "logged in" role.
-        clearSession();
-      }
-    })();
+    finishAuthHydration();
+    startAuthProfileEnrichment(dispatch, onForceChangePassword);
+    return () => {
+      cancelled = true;
+    };
   }, [dispatch, user, router, locale]);
 
   useEffect(() => {
@@ -418,12 +419,12 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
   }, [dispatch, locale, router, user]);
 
   return (
-    <>
+    <AuthHydrationProvider isAuthLoading={isAuthLoading}>
       {children}
       {toast ? (
         <Toast kind={toast.kind} message={toast.message} onClose={() => setToast(null)} duration={6000} />
       ) : null}
-    </>
+    </AuthHydrationProvider>
   );
 }
 

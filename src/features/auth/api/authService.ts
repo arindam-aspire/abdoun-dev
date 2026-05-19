@@ -25,6 +25,10 @@ export type LoginWithPasswordApiData = AuthTokens & {
   remember_me_cookie?: boolean | null;
 };
 
+export type RefreshTokenApiData = AuthTokens & {
+  remember_me_cookie?: boolean | null;
+};
+
 export type AuthUser = {
   id: string;
   email: string;
@@ -173,9 +177,9 @@ function decodeJwtSubject(token: string): string | null {
 
 export type PersistTokensOptions = {
   /**
-   * When true, tokens and refresh metadata use localStorage and survive browser restart.
-   * When false, sessionStorage is used (cleared when the browser session ends).
-   * Defaults to false (matches typical “remember me” unchecked UX).
+   * When true, sets the persist marker so tokens survive browser restart.
+   * When false, tokens still use localStorage (shared across tabs) but are cleared on the
+   * next visit if session cookies are gone. Defaults to false.
    */
   rememberMe?: boolean;
   cookieRefreshMode?: boolean;
@@ -320,8 +324,8 @@ export function isPasswordLoginUnconfirmed403(error: unknown): boolean {
 
 export async function refreshToken(
   payload: RefreshTokenPayload,
-): Promise<AuthTokens> {
-  const response = await publicApi.post<AuthTokens>("/auth/refresh", payload);
+): Promise<RefreshTokenApiData> {
+  const response = await publicApi.post<RefreshTokenApiData>("/auth/refresh", payload);
   return response.data;
 }
 

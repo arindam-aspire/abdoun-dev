@@ -39,6 +39,9 @@ const propertyDetailsSlice = createSlice({
       .addCase(fetchPropertyDetails.pending, (state, action) => {
         state.loading = true;
         state.error = null;
+        if (state.currentId !== action.meta.arg) {
+          state.item = null;
+        }
         state.currentId = action.meta.arg;
       })
       .addCase(fetchPropertyDetails.fulfilled, (state, action) => {

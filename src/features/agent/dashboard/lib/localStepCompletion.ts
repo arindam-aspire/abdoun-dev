@@ -1,7 +1,11 @@
 import type { LocationTaxonomyCity } from "@/features/location-taxonomy/api/locationTaxonomy.api";
 import type { AddPropertyWizardState } from "../components/add-property/addPropertyWizardSlice";
 import type { AddPropertyStepId } from "../components/add-property/addPropertyWizard.types";
-import { getCategoryId, getCityAndAreaIds, getTypeId } from "./submissionReferenceIds";
+import {
+  getCategoryId,
+  getTypeId,
+  resolveLocationIdsForPayload,
+} from "./submissionReferenceIds";
 
 /**
  * API keys in backend `step_completion` / strict validation order (consecutive prefix for last-completed).
@@ -70,13 +74,8 @@ export function computeLocalStepCompletion(
     getCategoryId(w.category) > 0 &&
     (typeResolvedBySlug || hasPersistedTypeId);
 
-  const { city_id, area_id } = getCityAndAreaIds(w.city, w.selectedAreas, taxonomyCities);
-  const effCityId = w.cityId ?? city_id;
-  const effAreaId = w.areaId ?? area_id;
-  const hasAreaSelection =
-    w.selectedAreas.length > 0 || (w.areaId != null && w.areaId > 0);
-  const hasRealLocation = w.city.trim() !== "" && hasAreaSelection;
-  const location = hasRealLocation && effCityId > 0 && effAreaId > 0;
+  const locationIds = resolveLocationIdsForPayload(w, taxonomyCities);
+  const location = locationIds != null && locationIds.city_id > 0 && locationIds.area_id > 0;
 
   const owners = w.owners;
   const owner_information =

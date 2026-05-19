@@ -1,10 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FileText, UploadCloud, X } from "lucide-react";
+import { FileText, Loader2, UploadCloud, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Toast } from "@/components/ui/toast";
+import { AppImage } from "@/components/ui/AppImage";
 import { getApiErrorMessage } from "@/lib/http/apiError";
+import { useRestoredMediaPreviews } from "@/features/agent/dashboard/hooks/useRestoredMediaPreviews";
+import { displayMediaFileName } from "@/features/agent/dashboard/lib/mediaFileRefUtils";
 import { uploadPropertyFile } from "@/features/agent/dashboard/lib/submissionFileUpload";
+import {
+  deleteMediaPreviewCache,
+  putMediaPreviewCache,
+} from "@/lib/media/mediaPreviewCache";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { CardSection, FieldLabel, FormField, wizardFieldClassName } from "../AddPropertyStepLayout";
 import {
@@ -84,20 +92,88 @@ export function MediaDocumentsStep() {
   const canEdit = useAppSelector(selectAddPropertyIsEditable);
   const canUpload = canEdit && (Boolean(submissionId) || Boolean(draftClientId));
   const [pending, setPending] = useState<PendingPreview[]>([]);
+  const [mediaUploading, setMediaUploading] = useState(false);
   const [docUploading, setDocUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ kind: "success" | "error"; message: string } | null>(null);
+  /** In-session blob preview + original file name; API `url` is private S3, not `<img src>`. */
+  const localPreviewByUrlRef = useRef<Record<string, { blobUrl: string; fileName: string }>>({});
+  const [, setPreviewEpoch] = useState(0);
+  /** Canonical URLs where private S3 GET failed and no local/cache preview exists. */
+  const [previewUnavailableUrls, setPreviewUnavailableUrls] = useState<Set<string>>(() => new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
+
+  const showErrorToast = (message: string) => {
+    setToast({ kind: "error", message });
+  };
+
+  const getDisplaySrc = (storedUrl: string) =>
+    localPreviewByUrlRef.current[storedUrl]?.blobUrl ?? storedUrl;
+
+  const getMediaDisplayName = (storedUrl: string, fileName: string) => {
+    const local = localPreviewByUrlRef.current[storedUrl]?.fileName;
+    return displayMediaFileName(fileName, storedUrl, local);
+  };
+
+  const retainLocalPreview = (storedUrl: string, blobUrl: string, fileName: string) => {
+    localPreviewByUrlRef.current[storedUrl] = { blobUrl, fileName };
+    setPreviewUnavailableUrls((prev) => {
+      if (!prev.has(storedUrl)) return prev;
+      const next = new Set(prev);
+      next.delete(storedUrl);
+      return next;
+    });
+    setPreviewEpoch((n) => n + 1);
+  };
+
+  const releaseLocalPreview = (storedUrl: string) => {
+    const entry = localPreviewByUrlRef.current[storedUrl];
+    if (entry?.blobUrl) URL.revokeObjectURL(entry.blobUrl);
+    delete localPreviewByUrlRef.current[storedUrl];
+    void deleteMediaPreviewCache(storedUrl);
+  };
+
+  useRestoredMediaPreviews(
+    [...mediaImages, ...mediaVideos],
+    (storedUrl, blobUrl, fileName) => {
+      if (localPreviewByUrlRef.current[storedUrl]) return;
+      retainLocalPreview(storedUrl, blobUrl, fileName);
+    },
+  );
+
+  const markPreviewUnavailable = (storedUrl: string) => {
+    if (localPreviewByUrlRef.current[storedUrl]) return;
+    setPreviewUnavailableUrls((prev) => {
+      if (prev.has(storedUrl)) return prev;
+      const next = new Set(prev);
+      next.add(storedUrl);
+      return next;
+    });
+  };
 
   useEffect(() => {
     return () => {
       pending.forEach((item) => URL.revokeObjectURL(item.url));
+      Object.values(localPreviewByUrlRef.current).forEach((entry) =>
+        URL.revokeObjectURL(entry.blobUrl),
+      );
+      localPreviewByUrlRef.current = {};
     };
   }, [pending]);
 
+  const removePendingPreview = (id: string) => {
+    setPending((current) => {
+      const item = current.find((x) => x.id === id);
+      if (item) URL.revokeObjectURL(item.url);
+      return current.filter((x) => x.id !== id);
+    });
+  };
+
   const uploadMediaBatch = async (files: File[]) => {
     if (!canEdit || !canUpload) {
-      if (!canUpload) setError("Upload is not available. Save a draft or try again.");
+      if (!canUpload) {
+        showErrorToast("Upload is not available. Save a draft or try again.");
+      }
       return;
     }
 
@@ -153,10 +229,10 @@ export function MediaDocumentsStep() {
     }
 
     if (rejected.length) {
-      setError(rejected.slice(0, 3).join("\n") + (rejected.length > 3 ? `\n+${rejected.length - 3} more` : ""));
+      const rejectionMessage =
+        rejected.slice(0, 3).join(" ") + (rejected.length > 3 ? ` (+${rejected.length - 3} more)` : "");
+      showErrorToast(rejectionMessage);
       if (!validFiles.length) return;
-    } else {
-      setError(null);
     }
 
     const nextPending: PendingPreview[] = validFiles.map((file) => ({
@@ -166,35 +242,37 @@ export function MediaDocumentsStep() {
       kind: /\.(mp4|mov|avi)$/.test(file.name.toLowerCase()) ? "video" : "image",
     }));
     setPending((c) => [...c, ...nextPending]);
+    setMediaUploading(true);
 
     try {
-      for (const file of validFiles) {
+      for (const preview of nextPending) {
+        const { file } = preview;
         const isVideo = /\.(mp4|mov|avi)$/.test(file.name.toLowerCase());
         const context = isVideo ? "property_media_video" : "property_media_image";
-        const row: MediaFileRef = submissionId
-          ? await uploadPropertyFile({ submissionId, file, context })
-          : await uploadPropertyFile({ draftClientId, file, context });
-        if (isVideo) {
-          dispatch(addMediaVideo(row));
-        } else {
-          dispatch(addMediaImage(row));
+        try {
+          const row: MediaFileRef = submissionId
+            ? await uploadPropertyFile({ submissionId, file, context })
+            : await uploadPropertyFile({ draftClientId, file, context });
+          retainLocalPreview(row.url, preview.url, file.name);
+          void putMediaPreviewCache(row.url, file, file.name);
+          setPending((current) => current.filter((x) => x.id !== preview.id));
+          if (isVideo) {
+            dispatch(addMediaVideo(row));
+          } else {
+            dispatch(addMediaImage(row));
+          }
+        } catch (e) {
+          removePendingPreview(preview.id);
+          showErrorToast(
+            `${file.name}: ${getApiErrorMessage(
+              e,
+              "Upload failed. Please check file type, storage access, or try again.",
+            )}`,
+          );
         }
       }
-    } catch (e) {
-      setError(
-        getApiErrorMessage(
-          e,
-          "Upload failed. Please check file type, storage access, or try again.",
-        ),
-      );
     } finally {
-      setPending((current) => {
-        nextPending.forEach((p) => {
-          const still = current.find((x) => x.id === p.id);
-          if (still) URL.revokeObjectURL(still.url);
-        });
-        return current.filter((c) => !nextPending.some((p) => p.id === c.id));
-      });
+      setMediaUploading(false);
     }
   };
 
@@ -211,16 +289,22 @@ export function MediaDocumentsStep() {
   };
 
   const removeUploadedImage = (index: number) => {
+    const removed = mediaImages[index];
+    if (removed?.url) releaseLocalPreview(removed.url);
     dispatch(setMediaImages(mediaImages.filter((_, i) => i !== index)));
   };
 
   const removeUploadedVideo = (index: number) => {
+    const removed = mediaVideos[index];
+    if (removed?.url) releaseLocalPreview(removed.url);
     dispatch(setMediaVideos(mediaVideos.filter((_, i) => i !== index)));
   };
 
   const addDocuments = async (files: FileList | null) => {
     if (!canEdit || !canUpload) {
-      if (files && !canUpload) setError("Upload is not available. Save a draft or try again.");
+      if (files && !canUpload) {
+        showErrorToast("Upload is not available. Save a draft or try again.");
+      }
       return;
     }
     if (!files) return;
@@ -236,26 +320,28 @@ export function MediaDocumentsStep() {
         if (!f.name.toLowerCase().endsWith(".pdf")) return `${f.name}: documents must be PDF.`;
         return `${f.name}: document must be ≤ ${DOCUMENT_MAX_SIZE_MB}MB (selected ${prettyMb(f.size)}).`;
       });
-      setError(reasons.join("\n") + (rejected.length > 3 ? `\n+${rejected.length - 3} more` : ""));
-    } else {
-      setError(null);
+      showErrorToast(
+        reasons.join(" ") + (rejected.length > 3 ? ` (+${rejected.length - 3} more)` : ""),
+      );
     }
     if (accepted.length === 0) return;
     setDocUploading(true);
     try {
       for (const file of accepted) {
-        const row = submissionId
-          ? await uploadPropertyFile({ submissionId, file, context: "property_document" })
-          : await uploadPropertyFile({ draftClientId, file, context: "property_document" });
-        dispatch(addPropertyListingDocument(row));
+        try {
+          const row = submissionId
+            ? await uploadPropertyFile({ submissionId, file, context: "property_document" })
+            : await uploadPropertyFile({ draftClientId, file, context: "property_document" });
+          dispatch(addPropertyListingDocument(row));
+        } catch (e) {
+          showErrorToast(
+            `${file.name}: ${getApiErrorMessage(
+              e,
+              "Upload failed. Please check file type, storage access, or try again.",
+            )}`,
+          );
+        }
       }
-    } catch (e) {
-      setError(
-        getApiErrorMessage(
-          e,
-          "Upload failed. Please check file type, storage access, or try again.",
-        ),
-      );
     } finally {
       setDocUploading(false);
     }
@@ -272,11 +358,6 @@ export function MediaDocumentsStep() {
       required
       readOnlyForm={!canEdit}
     >
-      {error ? (
-        <p className="mb-3 text-size-sm text-red-600" role="alert">
-          {error}
-        </p>
-      ) : null}
       <div className="space-y-7">
         <div
           className="rounded-[20px] border-2 border-dashed border-[#cfd8e5] bg-[#fbfdff] px-6 py-10 text-center"
@@ -296,10 +377,14 @@ export function MediaDocumentsStep() {
               addMediaFiles(event.target.files);
               event.target.value = "";
             }}
-            disabled={!canUpload}
+            disabled={!canUpload || mediaUploading}
           />
           <div className="mx-auto mb-5 flex h-10 w-10 items-center justify-center rounded-full border border-[#d8e1ee] bg-white text-[#3a5268]">
-            <UploadCloud className="h-5 w-5" />
+            {mediaUploading ? (
+              <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+            ) : (
+              <UploadCloud className="h-5 w-5" />
+            )}
           </div>
           <p className="text-[27px] fw-medium text-[#2f3a47]">Choose a file or drag & drop it here</p>
           <p className="mt-2 text-size-sm text-[#8a97a8]">JPG, JPEG, PNG, WEBP, MP4, MOV, AVI formats, up to 50MB</p>
@@ -307,10 +392,10 @@ export function MediaDocumentsStep() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={!canUpload}
+            disabled={!canUpload || mediaUploading}
             className="mt-5 inline-flex h-11 min-w-44 items-center justify-center rounded-xl border border-[#c8d3e2] bg-white px-6 text-base fw-medium text-[#2a4a67] shadow-sm transition-colors hover:bg-[#f7faff] disabled:opacity-50"
           >
-            Browse File
+            {mediaUploading ? "Uploading…" : "Browse File"}
           </button>
 
           {pending.length > 0 || mediaImages.length > 0 || mediaVideos.length > 0 ? (
@@ -318,49 +403,123 @@ export function MediaDocumentsStep() {
               <h3 className="mt-7 text-size-xl fw-semibold text-[#24415c]">Media Preview</h3>
               <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
                 {pending.map((item) => (
-                  <div key={item.id} className="relative overflow-hidden rounded-xl border border-[#d3dce9] bg-[#eef2f7]">
+                  <div
+                    key={item.id}
+                    className="relative overflow-hidden rounded-xl border border-[#d3dce9] bg-[#eef2f7]"
+                  >
                     {item.kind === "video" ? (
-                      <video src={item.url} className="h-28 w-full object-cover" controls />
+                      <video
+                        src={item.url}
+                        className="h-28 w-full object-cover opacity-60"
+                        muted
+                        playsInline
+                        preload="metadata"
+                      />
                     ) : (
-                      <img src={item.url} alt={item.file.name} className="h-28 w-full object-cover" />
+                      <img
+                        src={item.url}
+                        alt={item.file.name}
+                        className="h-28 w-full object-cover opacity-60"
+                      />
                     )}
-                    <p className="truncate px-1 text-[10px] text-[#64748b]">Uploading…</p>
-                  </div>
-                ))}
-                {mediaVideos.map((item, index) => (
-                  <div
-                    key={`v-${item.url}-${index}`}
-                    className="relative overflow-hidden rounded-xl border border-[#d3dce9] bg-[#eef2f7]"
-                  >
-                    <div className="flex h-28 w-full items-center justify-center text-size-xs text-[#64748b]">
-                      {item.file_name}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/35 px-2 text-white">
+                      <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
+                      <p className="text-center text-[10px] fw-medium">Uploading…</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeUploadedVideo(index)}
-                      className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/80 bg-black/45 text-white"
-                      aria-label="Remove"
+                    <p
+                      className="truncate border-t border-[#d3dce9] bg-white/95 px-2 py-1 text-[10px] text-[#64748b]"
+                      title={item.file.name}
                     >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+                      {item.file.name}
+                    </p>
                   </div>
                 ))}
-                {mediaImages.map((item, index) => (
-                  <div
-                    key={`i-${item.url}-${index}`}
-                    className="relative overflow-hidden rounded-xl border border-[#d3dce9] bg-[#eef2f7]"
-                  >
-                    <p className="line-clamp-2 p-2 text-size-xs text-[#475569]">{item.file_name}</p>
-                    <button
-                      type="button"
-                      onClick={() => removeUploadedImage(index)}
-                      className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/80 bg-black/45 text-white"
-                      aria-label="Remove"
+                {mediaVideos.map((item, index) => {
+                  const videoSrc = getDisplaySrc(item.url);
+                  const isLocalPreview = videoSrc !== item.url;
+                  const mediaName = getMediaDisplayName(item.url, item.file_name);
+                  const showUnavailable = !isLocalPreview && previewUnavailableUrls.has(item.url);
+                  return (
+                    <div
+                      key={`v-${item.url}-${index}`}
+                      className="relative overflow-hidden rounded-xl border border-[#d3dce9] bg-[#eef2f7]"
                     >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))}
+                      {showUnavailable ? (
+                        <div className="flex h-28 w-full flex-col items-center justify-center gap-1 bg-[#e8edf3] px-2 text-center text-[10px] text-[#64748b]">
+                          <FileText className="h-5 w-5 shrink-0 opacity-60" aria-hidden />
+                          <span>Preview unavailable</span>
+                        </div>
+                      ) : (
+                        <video
+                          src={videoSrc}
+                          className="h-28 w-full object-cover"
+                          muted
+                          playsInline
+                          preload="metadata"
+                          onError={() => markPreviewUnavailable(item.url)}
+                        />
+                      )}
+                      <p className="truncate px-2 py-1 text-[10px] text-[#64748b]" title={mediaName}>
+                        {mediaName}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => removeUploadedVideo(index)}
+                        className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/80 bg-black/45 text-white"
+                        aria-label="Remove"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+                {mediaImages.map((item, index) => {
+                  const imageSrc = getDisplaySrc(item.url);
+                  const isLocalPreview = imageSrc !== item.url;
+                  const mediaName = getMediaDisplayName(item.url, item.file_name);
+                  const showUnavailable = !isLocalPreview && previewUnavailableUrls.has(item.url);
+                  return (
+                    <div
+                      key={`i-${item.url}-${index}`}
+                      className="relative overflow-hidden rounded-xl border border-[#d3dce9] bg-[#eef2f7]"
+                    >
+                      <div className="relative h-28 w-full bg-[#eef2f7]">
+                        {showUnavailable ? (
+                          <div className="flex h-28 w-full flex-col items-center justify-center gap-1 bg-[#e8edf3] px-2 text-center text-[10px] text-[#64748b]">
+                            <FileText className="h-5 w-5 shrink-0 opacity-60" aria-hidden />
+                            <span>Preview unavailable</span>
+                          </div>
+                        ) : isLocalPreview ? (
+                          <img
+                            src={imageSrc}
+                            alt={mediaName}
+                            className="h-28 w-full object-cover"
+                          />
+                        ) : (
+                          <AppImage
+                            src={item.url}
+                            alt={mediaName}
+                            fill
+                            sizes="(min-width: 768px) 20vw, 50vw"
+                            className="object-cover"
+                            onError={() => markPreviewUnavailable(item.url)}
+                          />
+                        )}
+                      </div>
+                      <p className="truncate px-2 py-1 text-[10px] text-[#64748b]" title={mediaName}>
+                        {mediaName}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => removeUploadedImage(index)}
+                        className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/80 bg-black/45 text-white"
+                        aria-label="Remove"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : null}
@@ -479,6 +638,15 @@ export function MediaDocumentsStep() {
           </div>
         </div>
       </div>
+
+      {toast ? (
+        <Toast
+          kind={toast.kind}
+          message={toast.message}
+          duration={toast.kind === "error" ? 6000 : 4000}
+          onClose={() => setToast(null)}
+        />
+      ) : null}
     </CardSection>
   );
 }

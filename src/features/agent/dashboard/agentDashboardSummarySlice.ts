@@ -14,6 +14,21 @@ import {
 } from "@/features/agent/dashboard/api/agentDashboard.api";
 import { getAdminLeads, getAgentLeads, getMyLeads } from "@/features/leads/api/leadApiService";
 import { getApiErrorMessage, getThunkRejectedMessage } from "@/lib/http/apiError";
+import type { PaginatedResult } from "@/lib/api/pagination";
+
+/** Draft sidebar count fetch — pageSize > 1 so item count can correct a low API `total`. */
+const DRAFT_SIDEBAR_COUNT_PAGE_SIZE = 10;
+
+function resolveDraftSidebarTotal<T>(result: PaginatedResult<T>): number | null {
+  const { items, pagination } = result;
+  if (items.length === 0) return 0;
+  const apiTotal = pagination.total;
+  if (!Number.isFinite(apiTotal)) return null;
+  if (items.length < pagination.pageSize) {
+    return Math.max(apiTotal, items.length);
+  }
+  return apiTotal;
+}
 
 type AgentPropertyPerformanceStatus = "idle" | "loading" | "succeeded" | "failed";
 
@@ -200,7 +215,7 @@ export const fetchAdminManageListingsSidebarTotal = createAsyncThunk<
     try {
       const [data, drafts] = await Promise.all([
         fetchAgentProperties({ page: 1, pageSize: 1 }),
-        fetchAgentPropertyDrafts({ page: 1, pageSize: 1 }),
+        fetchAgentPropertyDrafts({ page: 1, pageSize: DRAFT_SIDEBAR_COUNT_PAGE_SIZE }),
       ]);
       const resolved =
         typeof data.pagination.total === "number" && Number.isFinite(data.pagination.total)
@@ -208,12 +223,7 @@ export const fetchAdminManageListingsSidebarTotal = createAsyncThunk<
           : data.items.length === 0
             ? 0
             : null;
-      const draftTotal =
-        typeof drafts.pagination.total === "number" && Number.isFinite(drafts.pagination.total)
-          ? drafts.pagination.total
-          : drafts.items.length === 0
-            ? 0
-            : null;
+      const draftTotal = resolveDraftSidebarTotal(drafts);
       return { total: resolved, draftTotal, authUserId };
     } catch (error) {
       return thunkApi.rejectWithValue(getApiErrorMessage(error));
@@ -251,7 +261,7 @@ export const fetchAgentListingsSidebarCounts = createAsyncThunk<
     try {
       const [data, drafts] = await Promise.all([
         fetchAgentProperties({ page: 1, pageSize: 1, include_drafts: false }),
-        fetchAgentPropertyDrafts({ page: 1, pageSize: 1 }),
+        fetchAgentPropertyDrafts({ page: 1, pageSize: DRAFT_SIDEBAR_COUNT_PAGE_SIZE }),
       ]);
       const resolved =
         typeof data.pagination.total === "number" && Number.isFinite(data.pagination.total)
@@ -259,12 +269,7 @@ export const fetchAgentListingsSidebarCounts = createAsyncThunk<
           : data.items.length === 0
             ? 0
             : null;
-      const draftTotal =
-        typeof drafts.pagination.total === "number" && Number.isFinite(drafts.pagination.total)
-          ? drafts.pagination.total
-          : drafts.items.length === 0
-            ? 0
-            : null;
+      const draftTotal = resolveDraftSidebarTotal(drafts);
       return { total: resolved, draftTotal, authUserId };
     } catch (error) {
       return thunkApi.rejectWithValue(getApiErrorMessage(error));

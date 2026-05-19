@@ -13,6 +13,7 @@ import {
   getCityNameForSubmissionCityId,
   getPropertyTypeSlugFromTypeId,
 } from "./submissionReferenceIds";
+import { parseMediaFileRefs } from "./mediaFileRefUtils";
 
 function asRecord(v: unknown): Record<string, unknown> | null {
   return v !== null && typeof v === "object" && !Array.isArray(v)
@@ -54,30 +55,6 @@ function splitPhone(phone: string): { countryCode: string; phone: string } {
     return { countryCode: m[1] ?? "+962", phone: (m[2] ?? "").trim() };
   }
   return { countryCode: "+962", phone: t };
-}
-
-function parseMediaRows(rows: unknown): MediaFileRef[] {
-  if (!Array.isArray(rows)) return [];
-  const out: MediaFileRef[] = [];
-  for (const row of rows) {
-    const o = asRecord(row);
-    if (!o) continue;
-    const file_name = readStr(o, "file_name");
-    const url = readStr(o, "url");
-    if (!file_name || !url) continue;
-    const caption = readStr(o, "caption");
-    const display_order =
-      typeof o.display_order === "number" && Number.isFinite(o.display_order)
-        ? o.display_order
-        : undefined;
-    out.push({
-      file_name,
-      url,
-      ...(caption ? { caption } : {}),
-      ...(display_order !== undefined ? { display_order } : {}),
-    });
-  }
-  return out;
 }
 
 /**
@@ -250,17 +227,17 @@ export function applySubmissionPayloadToWizardState(
   if (payload.media_documents != null) {
     const md = asRecord(payload.media_documents) ?? {};
     if ("images" in md) {
-      let images = parseMediaRows(md.images);
+      let images = parseMediaFileRefs(md.images);
       images = [...images].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
       state.mediaImages = images;
     }
     if ("videos" in md) {
-      let videos = parseMediaRows(md.videos);
+      let videos = parseMediaFileRefs(md.videos);
       videos = [...videos].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
       state.mediaVideos = videos;
     }
     if ("documents" in md) {
-      let documents = parseMediaRows(md.documents);
+      let documents = parseMediaFileRefs(md.documents);
       documents = [...documents].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
       state.propertyListingDocuments = documents;
     }

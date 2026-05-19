@@ -100,6 +100,83 @@ export function getAreaNamesForSubmissionAreaId(
   return match?.name ? [match.name] : [];
 }
 
+type LocationIdSource = {
+  city: string;
+  cityId: number | null;
+  selectedAreas: string[];
+  areaId: number | null;
+};
+
+function normalizeName(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+/** Resolve `area_id` from taxonomy when Redux `areaId` is missing but the user picked a label. */
+export function findAreaIdInTaxonomy(
+  cityId: number | null | undefined,
+  cityName: string,
+  areaName: string,
+  taxonomyCities: LocationTaxonomyCity[] = [],
+): number | null {
+  const areaNorm = normalizeName(areaName);
+  if (!areaNorm || taxonomyCities.length === 0) return null;
+
+  const taxCity =
+    (cityId != null && Number.isFinite(cityId)
+      ? taxonomyCities.find((c) => c.id === cityId)
+      : undefined) ??
+    taxonomyCities.find((c) => normalizeName(c.name) === normalizeName(cityName));
+
+  const match = taxCity?.areas?.find((a) => normalizeName(a.name) === areaNorm);
+  return match?.id ?? null;
+}
+
+/**
+ * Resolves `city_id` / `area_id` for API payloads. Prefers Redux ids, then taxonomy by labels.
+ * Returns `null` when the user has not selected a city and area (avoids sending default fallbacks).
+ */
+export function resolveLocationIdsForPayload(
+  state: LocationIdSource,
+  taxonomyCities: LocationTaxonomyCity[] = [],
+): { city_id: number; area_id: number } | null {
+  const cityName = state.city.trim();
+  const areaName = state.selectedAreas[0]?.trim() ?? "";
+  const hasAreaSelection =
+    areaName.length > 0 || (state.areaId != null && Number.isFinite(state.areaId) && state.areaId > 0);
+
+  if (!cityName || !hasAreaSelection) {
+    return null;
+  }
+
+  if (
+    state.cityId != null &&
+    state.cityId > 0 &&
+    state.areaId != null &&
+    state.areaId > 0
+  ) {
+    return { city_id: state.cityId, area_id: state.areaId };
+  }
+
+  const fromNames = getCityAndAreaIds(cityName, state.selectedAreas, taxonomyCities);
+  let city_id = state.cityId ?? fromNames.city_id;
+  let area_id = state.areaId ?? fromNames.area_id;
+
+  const matchedAreaId = findAreaIdInTaxonomy(
+    city_id,
+    cityName,
+    areaName,
+    taxonomyCities,
+  );
+  if (matchedAreaId != null) {
+    area_id = matchedAreaId;
+  }
+
+  if (city_id > 0 && area_id > 0) {
+    return { city_id, area_id };
+  }
+  return null;
+}
+
 export function getCityAndAreaIds(
   cityName: string,
   areaNames: string[],

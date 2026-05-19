@@ -1,6 +1,6 @@
 "use client";
 
-import { authApi, publicApi } from "@/lib/http/clients";
+import { publicApi } from "@/lib/http/clients";
 import { createPaginatedResult, type PaginatedResult } from "@/lib/api/pagination";
 import type {
   CategoryKey,
@@ -242,23 +242,36 @@ const toLocalizedField = (
   }, {});
 };
 
+function isNonEmptyImageUrl(value: string | null | undefined): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function extractMediaImageUrls(
+  mediaImages: NonNullable<PropertySearchApiItem["media"]>["images"] | null | undefined,
+): string[] {
+  if (!Array.isArray(mediaImages) || mediaImages.length === 0) return [];
+
+  if (typeof mediaImages[0] === "string") {
+    return (mediaImages as string[]).filter(isNonEmptyImageUrl);
+  }
+
+  return (mediaImages as Array<{ url?: string | null; thumb_url?: string | null }>)
+    .map((img) => img.url || img.thumb_url || "")
+    .filter(isNonEmptyImageUrl);
+}
+
 const extractImageUrls = (item: PropertySearchApiItem): string[] => {
   if (Array.isArray(item.images)) {
-    return item.images.filter((img): img is string => typeof img === "string" && img.length > 0);
+    const fromImages = item.images.filter(isNonEmptyImageUrl);
+    if (fromImages.length > 0) return fromImages;
   }
 
-  const mediaImages = item.media?.images;
-  if (Array.isArray(mediaImages)) {
-    if (typeof mediaImages[0] === "string") {
-      return (mediaImages as string[]).filter((img): img is string => typeof img === "string" && img.length > 0);
-    }
+  const fromMedia = extractMediaImageUrls(item.media?.images);
+  if (fromMedia.length > 0) return fromMedia;
 
-    return (mediaImages as Array<{ url?: string | null; thumb_url?: string | null }>)
-      .map((img) => img.url || img.thumb_url || "")
-      .filter((img): img is string => img.length > 0);
+  if (isNonEmptyImageUrl(item.media?.thumbnail)) {
+    return [item.media!.thumbnail as string];
   }
-
-  if (item.media?.thumbnail) return [item.media.thumbnail];
   return [];
 };
 
@@ -430,7 +443,7 @@ export async function fetchExclusiveProperties(
 export async function fetchPropertyDetailsById(
   propertyId: number,
 ): Promise<PropertyDetailsApiResponse> {
-  const response = await authApi.get<PropertyDetailsApiResponse>(
+  const response = await publicApi.get<PropertyDetailsApiResponse>(
     `/properties/${propertyId}`,
   );
   return response.data;

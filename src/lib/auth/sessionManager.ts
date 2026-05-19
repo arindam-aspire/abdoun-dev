@@ -3,7 +3,10 @@
  * Guards and header use this instead of raw cookie/token access.
  */
 import type { AuthUser } from "@/features/auth/authSlice";
-import { browserVaultTokenStore, resolveTokenVault } from "@/lib/auth/adapters/vaultTokenStore";
+import {
+  browserVaultTokenStore,
+  isPersistentTokenVault,
+} from "@/lib/auth/adapters/vaultTokenStore";
 import {
   clearAuthSession,
   persistAuthSession,
@@ -41,9 +44,8 @@ export function persistSession(session: {
   /** When set, overrides inferred cookie persistence from the active token vault. */
   rememberMe?: boolean;
 }): void {
-  const vaultKind = resolveTokenVault();
   const persistent =
-    session.rememberMe !== undefined ? session.rememberMe : vaultKind !== "session";
+    session.rememberMe !== undefined ? session.rememberMe : isPersistentTokenVault();
   persistAuthSession(session.user, { persistent });
   if (session.tokens) {
     tokenStore.setTokens(session.tokens);

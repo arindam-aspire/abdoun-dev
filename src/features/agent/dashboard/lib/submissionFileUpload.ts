@@ -1,10 +1,12 @@
 "use client";
 
 import {
+  createPresignedImageUpload,
   createPresignedUploadUrl,
   putFileToPresignedUrl,
   type UploadContext,
 } from "../api/uploads.api";
+import { mediaFileRefFromUpload } from "./mediaFileRefUtils";
 
 export type UploadPropertyFileOptions = {
   file: File;
@@ -15,8 +17,9 @@ export type UploadPropertyFileOptions = {
 );
 
 /**
- * Presigns and PUTs to S3. Returns only `{ file_name, url }` for Redux.
- * Prefer `submissionId` when the draft is persisted; otherwise `draftClientId`.
+ * Uploads a property file and returns `{ file_name, url }` for Redux.
+ * Images: multipart presign (server watermarks); skip S3 PUT when `upload_completed`.
+ * Videos/documents/owner docs: JSON presign + PUT to `upload_url`.
  */
 export async function uploadPropertyFile(
   options: UploadPropertyFileOptions,
@@ -25,26 +28,40 @@ export async function uploadPropertyFile(
   const contentType =
     file.type && file.type.length > 0 ? file.type : "application/octet-stream";
 
-  const presignBody =
-    options.submissionId != null && options.submissionId !== ""
-      ? {
-          submission_id: options.submissionId,
-          context,
-          file_name: file.name,
-          content_type: contentType,
-          file_size: file.size,
-        }
-      : {
-          draft_client_id: options.draftClientId as string,
-          context,
-          file_name: file.name,
-          content_type: contentType,
-          file_size: file.size,
-        };
+  const hasSubmission =
+    options.submissionId != null && options.submissionId !== "";
+
+  if (context === "property_media_image") {
+    const identifiers = hasSubmission
+      ? { submission_id: options.submissionId as string }
+      : { draft_client_id: options.draftClientId as string };
+
+    const presign = await createPresignedImageUpload(file, identifiers);
+    if (!presign.upload_completed) {
+      await putFileToPresignedUrl(presign.upload_url, file, contentType);
+    }
+    return mediaFileRefFromUpload(file, presign.url);
+  }
+
+  const presignBody = hasSubmission
+    ? {
+        submission_id: options.submissionId as string,
+        context,
+        file_name: file.name,
+        content_type: contentType,
+        file_size: file.size,
+      }
+    : {
+        draft_client_id: options.draftClientId as string,
+        context,
+        file_name: file.name,
+        content_type: contentType,
+        file_size: file.size,
+      };
 
   const presign = await createPresignedUploadUrl(presignBody);
   await putFileToPresignedUrl(presign.upload_url, file, contentType);
-  return { file_name: file.name, url: presign.url };
+  return mediaFileRefFromUpload(file, presign.url);
 }
 
 /** @deprecated Use uploadPropertyFile */

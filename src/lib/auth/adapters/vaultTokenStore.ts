@@ -1,5 +1,6 @@
 import type { AuthTokens, TokenStore } from "@/lib/auth/ports";
 import { authTokenLog, authTokenWarn, logTokenPairMeta } from "@/lib/auth/authTokenLog";
+import { readAuthSessionFromBrowser } from "@/lib/auth/sessionCookies";
 import {
   isAuthTokenVerboseLoggingEnabled,
   isJwtAccessTokenLikelyExpired,
@@ -16,6 +17,91 @@ const DEFAULT_ACCESS_KEY = "accessToken";
 const DEFAULT_REFRESH_KEY = "refreshToken";
 
 export type VaultKind = "local" | "session";
+
+/** Tokens in localStorage without this marker are shared across tabs but cleared after browser restart. */
+function isPersistMarkerOn(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(AUTH_TOKEN_PERSIST_MARKER_KEY) === "1";
+}
+
+/**
+ * sessionStorage is per-tab (not per browser session). Move legacy tab-scoped tokens into
+ * localStorage so new tabs and target="_blank" links keep Bearer auth.
+ */
+function migrateLegacySessionVaultToLocal(
+  accessTokenKey = DEFAULT_ACCESS_KEY,
+  refreshTokenKey = DEFAULT_REFRESH_KEY,
+): void {
+  if (typeof window === "undefined") return;
+
+  const sessionPair = readPair(window.sessionStorage, accessTokenKey, refreshTokenKey);
+  const sessionAccess = readAccessToken(window.sessionStorage, accessTokenKey);
+  if (!sessionPair && !sessionAccess) return;
+
+  const localPair = readPair(window.localStorage, accessTokenKey, refreshTokenKey);
+  const localAccess = readAccessToken(window.localStorage, accessTokenKey);
+
+  if (isPersistMarkerOn() && (localPair || localAccess)) {
+    clearPair(window.sessionStorage, accessTokenKey, refreshTokenKey);
+    clearAuxKeys(window.sessionStorage);
+    return;
+  }
+
+  if (localPair || localAccess) {
+    clearPair(window.sessionStorage, accessTokenKey, refreshTokenKey);
+    clearAuxKeys(window.sessionStorage);
+    return;
+  }
+
+  if (sessionPair) {
+    window.localStorage.setItem(accessTokenKey, sessionPair.accessToken);
+    window.localStorage.setItem(refreshTokenKey, sessionPair.refreshToken);
+  } else if (sessionAccess) {
+    window.localStorage.setItem(accessTokenKey, sessionAccess);
+  }
+
+  const sessionMode = window.sessionStorage.getItem(AUTH_REFRESH_MODE_KEY);
+  if (sessionMode === "token" || sessionMode === "cookie") {
+    window.localStorage.setItem(AUTH_REFRESH_MODE_KEY, sessionMode);
+  }
+  const sessionSub = window.sessionStorage.getItem("subId");
+  if (sessionSub) window.localStorage.setItem("subId", sessionSub);
+  const sessionUsername = window.sessionStorage.getItem("authUsername");
+  if (sessionUsername) window.localStorage.setItem("authUsername", sessionUsername);
+
+  clearPair(window.sessionStorage, accessTokenKey, refreshTokenKey);
+  clearAuxKeys(window.sessionStorage);
+  authTokenLog("vault.migrate:session-to-local");
+}
+
+/**
+ * Drop non-persistent tokens left over after the browser session ended (cookies cleared).
+ * Call only once on app startup — not during token reads (would race with login before cookies exist).
+ */
+export function purgeOrphanedEphemeralTokens(
+  accessTokenKey = DEFAULT_ACCESS_KEY,
+  refreshTokenKey = DEFAULT_REFRESH_KEY,
+): void {
+  if (typeof window === "undefined") return;
+  if (isPersistMarkerOn() || readAuthSessionFromBrowser()) return;
+
+  const hasLocal =
+    readPair(window.localStorage, accessTokenKey, refreshTokenKey) != null ||
+    readAccessToken(window.localStorage, accessTokenKey) != null;
+  if (!hasLocal) return;
+
+  clearPair(window.localStorage, accessTokenKey, refreshTokenKey);
+  clearAuxKeys(window.localStorage);
+  authTokenLog("vault.purge:orphan-ephemeral-tokens");
+}
+
+/** Migrate legacy per-tab sessionStorage tokens (safe to call during token reads). */
+export function reconcileAuthStorageOnLoad(
+  accessTokenKey = DEFAULT_ACCESS_KEY,
+  refreshTokenKey = DEFAULT_REFRESH_KEY,
+): void {
+  migrateLegacySessionVaultToLocal(accessTokenKey, refreshTokenKey);
+}
 
 function readPair(
   storage: Storage,
@@ -62,7 +148,7 @@ export function peekTokenVaultFromPairs(
     return "local";
   }
   if (localPair && sessionPair) {
-    return "session";
+    return "local";
   }
   if (sessionPair) {
     return "session";
@@ -75,14 +161,13 @@ export function peekTokenVaultFromPairs(
 
 /**
  * Where access/refresh tokens should be read from.
- * Session vault = tab/browser session; local vault = survives restart when marker is set.
+ * All new logins store tokens in localStorage (shared across tabs). The persist marker alone
+ * controls whether tokens survive a full browser restart (remember-me).
  *
- * Resolution rules (single source of truth for interceptors + session):
- * - If persistence marker is on **and** local has a full pair → **local** (remember-me).
- * - If **both** storages have a full pair → **session** (active tab session wins over stale local).
- * - Otherwise prefer whichever storage has a full pair.
- * - Repairs orphan `abdoun_persist_refresh_tokens` marker when session is canonical without local
- *   tokens, or when no tokens exist anywhere.
+ * Resolution rules:
+ * - Migrate legacy per-tab sessionStorage tokens into localStorage first.
+ * - Prefer localStorage when it holds tokens (persistent or ephemeral).
+ * - sessionStorage is only used for unmigrated legacy data.
  */
 export function resolveTokenVault(
   accessTokenKey = DEFAULT_ACCESS_KEY,
@@ -90,29 +175,26 @@ export function resolveTokenVault(
 ): VaultKind | null {
   if (typeof window === "undefined") return null;
 
-  const markerRaw = window.localStorage.getItem(AUTH_TOKEN_PERSIST_MARKER_KEY);
-  const markerOn = markerRaw === "1";
+  reconcileAuthStorageOnLoad(accessTokenKey, refreshTokenKey);
+
+  const markerOn = isPersistMarkerOn();
   const localPair = readPair(window.localStorage, accessTokenKey, refreshTokenKey);
   const sessionPair = readPair(window.sessionStorage, accessTokenKey, refreshTokenKey);
   const localAccess = readAccessToken(window.localStorage, accessTokenKey);
   const sessionAccess = readAccessToken(window.sessionStorage, accessTokenKey);
 
-  // Remember-me cookie mode may have access token only (refresh is server HttpOnly cookie).
   if (markerOn && localAccess) {
     return "local";
   }
 
+  if (localPair || localAccess) {
+    return "local";
+  }
   if (sessionPair) {
     return "session";
   }
-  if (localPair) {
-    return "local";
-  }
   if (sessionAccess) {
     return "session";
-  }
-  if (localAccess) {
-    return "local";
   }
 
   if (markerOn) {
@@ -154,12 +236,14 @@ export function logVaultTokenPlacement(
   authTokenLog("vault.placement", getVaultPlacementDiagnostics(accessTokenKey, refreshTokenKey));
 }
 
-/** Cookie max-age should mirror persistent vault (not session vault). */
+/** True when remember-me is active (tokens + profile cookies survive browser restart). */
 export function isPersistentTokenVault(
   accessTokenKey = DEFAULT_ACCESS_KEY,
   refreshTokenKey = DEFAULT_REFRESH_KEY,
 ): boolean {
-  return resolveTokenVault(accessTokenKey, refreshTokenKey) === "local";
+  void accessTokenKey;
+  void refreshTokenKey;
+  return isPersistMarkerOn();
 }
 
 export function getSubIdFromActiveVault(
@@ -185,8 +269,8 @@ export type RefreshMode = "token" | "cookie";
 
 export function setRefreshModeInActiveVault(mode: RefreshMode, rememberMe: boolean): void {
   if (typeof window === "undefined") return;
-  const storage = rememberMe ? window.localStorage : window.sessionStorage;
-  storage.setItem(AUTH_REFRESH_MODE_KEY, mode);
+  void rememberMe;
+  window.localStorage.setItem(AUTH_REFRESH_MODE_KEY, mode);
 }
 
 export function getRefreshModeFromActiveVault(
@@ -211,8 +295,10 @@ export function getRefreshModeFromActiveVault(
 }
 
 /**
- * Writes tokens for password / OTP login. Clears the opposite vault.
- * @param rememberMe - When true, tokens survive browser restart (localStorage + marker).
+ * Writes tokens for password / OTP login.
+ * @param rememberMe - When true, sets the persist marker so tokens survive browser restart.
+ *   When false, tokens still use localStorage (shared across tabs) but are purged on next
+ *   load if session cookies are gone.
  */
 export function persistTokensToVault(
   tokens: AuthTokens,
@@ -241,9 +327,9 @@ export function persistTokensToVault(
       window.localStorage.setItem(AUTH_REFRESH_MODE_KEY, "token");
     } else {
       window.localStorage.removeItem(AUTH_TOKEN_PERSIST_MARKER_KEY);
-      window.sessionStorage.setItem(accessTokenKey, normalized.accessToken);
-      window.sessionStorage.setItem(refreshTokenKey, normalized.refreshToken);
-      window.sessionStorage.setItem(AUTH_REFRESH_MODE_KEY, "token");
+      window.localStorage.setItem(accessTokenKey, normalized.accessToken);
+      window.localStorage.setItem(refreshTokenKey, normalized.refreshToken);
+      window.localStorage.setItem(AUTH_REFRESH_MODE_KEY, "token");
     }
   } catch (e) {
     authTokenWarn("vault.persist:storage-write-failed", {
@@ -253,12 +339,11 @@ export function persistTokensToVault(
     throw e;
   }
 
-  authTokenLog("vault.persist:write", { rememberMe, vault: rememberMe ? "local" : "session" });
-  const vault = rememberMe ? "local" : "session";
-  const storage = vault === "local" ? window.localStorage : window.sessionStorage;
+  authTokenLog("vault.persist:write", { rememberMe, vault: "local" });
+  const storage = window.localStorage;
   const verify = revalidateAuthTokens(normalizeAuthTokens(readPair(storage, accessTokenKey, refreshTokenKey)));
   if (!verify || verify.accessToken !== normalized.accessToken || verify.refreshToken !== normalized.refreshToken) {
-    authTokenWarn("vault.persist:read-after-write-mismatch", { vault });
+    authTokenWarn("vault.persist:read-after-write-mismatch", { vault: "local" });
   }
 }
 
@@ -291,8 +376,8 @@ export function persistAccessTokenToVault(
       window.localStorage.setItem(AUTH_REFRESH_MODE_KEY, "cookie");
     } else {
       window.localStorage.removeItem(AUTH_TOKEN_PERSIST_MARKER_KEY);
-      window.sessionStorage.setItem(accessTokenKey, normalizedAccess);
-      window.sessionStorage.setItem(AUTH_REFRESH_MODE_KEY, "cookie");
+      window.localStorage.setItem(accessTokenKey, normalizedAccess);
+      window.localStorage.setItem(AUTH_REFRESH_MODE_KEY, "cookie");
     }
   } catch (e) {
     authTokenWarn("vault.persist-access-only:storage-write-failed", {
@@ -302,22 +387,19 @@ export function persistAccessTokenToVault(
     throw e;
   }
 
-  authTokenLog("vault.persist-access-only:write", {
-    rememberMe,
-    vault: rememberMe ? "local" : "session",
-  });
+  authTokenLog("vault.persist-access-only:write", { rememberMe, vault: "local" });
 }
 
 export function setSubIdInActiveVault(subId: string, rememberMe: boolean): void {
   if (typeof window === "undefined") return;
-  const storage = rememberMe ? window.localStorage : window.sessionStorage;
-  storage.setItem("subId", subId);
+  void rememberMe;
+  window.localStorage.setItem("subId", subId);
 }
 
 export function setAuthUsernameInActiveVault(username: string, rememberMe: boolean): void {
   if (typeof window === "undefined") return;
-  const storage = rememberMe ? window.localStorage : window.sessionStorage;
-  storage.setItem("authUsername", username.trim());
+  void rememberMe;
+  window.localStorage.setItem("authUsername", username.trim());
 }
 
 /** Clears marker, both storages' token + aux keys. */
@@ -346,14 +428,13 @@ export class VaultTokenStore implements TokenStore {
   getAccessToken(): string | null {
     if (typeof window === "undefined") return null;
 
-    const markerOn = window.localStorage.getItem(AUTH_TOKEN_PERSIST_MARKER_KEY) === "1";
+    reconcileAuthStorageOnLoad(this.accessTokenKey, this.refreshTokenKey);
+
     const localAccess = window.localStorage.getItem(this.accessTokenKey)?.trim() ?? "";
     const sessionAccess = window.sessionStorage.getItem(this.accessTokenKey)?.trim() ?? "";
 
-    // Access-token reads for Authorization header should not depend on refresh token presence.
-    if (markerOn && localAccess) return localAccess;
-    if (sessionAccess) return sessionAccess;
     if (localAccess) return localAccess;
+    if (sessionAccess) return sessionAccess;
     return null;
   }
 
@@ -418,7 +499,7 @@ export class VaultTokenStore implements TokenStore {
 
     const vault = resolveTokenVault(this.accessTokenKey, this.refreshTokenKey);
     if (!vault) {
-      persistTokensToVault(normalized, true, this.accessTokenKey, this.refreshTokenKey);
+      persistTokensToVault(normalized, isPersistMarkerOn(), this.accessTokenKey, this.refreshTokenKey);
       return;
     }
 
@@ -451,23 +532,11 @@ export class VaultTokenStore implements TokenStore {
     if (typeof window === "undefined") return;
     const trimmed = accessToken.trim();
     if (!trimmed) return;
-    const vault = resolveTokenVault(this.accessTokenKey, this.refreshTokenKey);
-    const storage =
-      vault === "session"
-        ? window.sessionStorage
-        : vault === "local"
-          ? window.localStorage
-          : window.localStorage;
-    storage.setItem(this.accessTokenKey, trimmed);
+    window.localStorage.setItem(this.accessTokenKey, trimmed);
   }
 
   setRefreshMode(mode: RefreshMode): void {
     if (typeof window === "undefined") return;
-    const vault = resolveTokenVault(this.accessTokenKey, this.refreshTokenKey);
-    if (vault === "session") {
-      window.sessionStorage.setItem(AUTH_REFRESH_MODE_KEY, mode);
-      return;
-    }
     window.localStorage.setItem(AUTH_REFRESH_MODE_KEY, mode);
   }
 

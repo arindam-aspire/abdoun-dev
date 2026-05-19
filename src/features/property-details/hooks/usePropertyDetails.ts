@@ -6,10 +6,15 @@ import type { PropertyDetailsApiResponse } from "@/features/property-details/api
 export type UsePropertyDetailsResult = {
   resolvedPropertyId: number | null;
   item: PropertyDetailsApiResponse | null;
-  loading: boolean;
+  isPropertyLoading: boolean;
+  propertyNotFound: boolean;
   error: string | null;
 };
 
+/**
+ * Loads property details via the public API — does not require sign-in.
+ * Fetch runs on mount without waiting for auth hydration.
+ */
 export function usePropertyDetails(propertyId: string | undefined): UsePropertyDetailsResult {
   const dispatch = useAppDispatch();
   const { item, loading, error, currentId } = useAppSelector((state) => state.propertyDetails);
@@ -22,9 +27,30 @@ export function usePropertyDetails(propertyId: string | undefined): UsePropertyD
   useEffect(() => {
     if (!resolvedPropertyId) return;
     if (currentId === resolvedPropertyId && item) return;
+    if (loading && currentId === resolvedPropertyId) return;
     void dispatch(fetchPropertyDetails(resolvedPropertyId));
-  }, [currentId, dispatch, item, resolvedPropertyId]);
+  }, [currentId, dispatch, item, loading, resolvedPropertyId]);
 
-  return { resolvedPropertyId, item, loading, error };
+  const isPropertyLoading = Boolean(
+    resolvedPropertyId &&
+      (loading ||
+        (currentId !== resolvedPropertyId && !error) ||
+        (currentId === resolvedPropertyId && !item && !error)),
+  );
+
+  const propertyNotFound = Boolean(
+    resolvedPropertyId &&
+      !loading &&
+      currentId === resolvedPropertyId &&
+      !item &&
+      !error,
+  );
+
+  return {
+    resolvedPropertyId,
+    item,
+    isPropertyLoading,
+    propertyNotFound,
+    error,
+  };
 }
-

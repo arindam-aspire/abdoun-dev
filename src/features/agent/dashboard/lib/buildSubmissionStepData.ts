@@ -1,16 +1,22 @@
 import type { LocationTaxonomyCity } from "@/features/location-taxonomy/api/locationTaxonomy.api";
 import { compactE164ForStorage } from "@/lib/phone";
 import type { AddPropertyWizardState } from "../components/add-property/addPropertyWizardSlice";
+import { displayMediaFileName } from "./mediaFileRefUtils";
 import {
   ADD_PROPERTY_STEP_ORDER,
   type AddPropertyStepId,
   type OwnerState,
 } from "../components/add-property/addPropertyWizard.types";
-import { getCategoryId, getCityAndAreaIds, getTypeId } from "./submissionReferenceIds";
+import {
+  getCategoryId,
+  getTypeId,
+  resolveLocationIdsForPayload,
+} from "./submissionReferenceIds";
 import type { ApiSubmissionStep } from "../api/propertySubmissions.api";
 
-function parseNum(s: string): number | undefined {
-  const t = s.trim();
+/** Parses numeric form fields; strips thousands separators so `1,600` matches step validation. */
+export function parseNum(s: string): number | undefined {
+  const t = String(s).replace(/[, ]/g, "").trim();
   if (!t) return undefined;
   const n = Number(t);
   return Number.isFinite(n) ? n : undefined;
@@ -62,10 +68,9 @@ export function buildStepData(
         description: state.description,
       };
     case "location": {
-      const { city_id, area_id } = getCityAndAreaIds(state.city, state.selectedAreas, taxonomyCities);
+      const ids = resolveLocationIdsForPayload(state, taxonomyCities);
       return {
-        city_id: state.cityId ?? city_id,
-        area_id: state.areaId ?? area_id,
+        ...(ids ? { city_id: ids.city_id, area_id: ids.area_id } : {}),
         address: state.address,
       };
     }
@@ -104,33 +109,37 @@ export function buildStepData(
     }
     case "pricing": {
       const price = parseNum(state.price);
+      const service_charge = parseNum(state.serviceFee);
+      const maintenance_fee = parseNum(state.maintenanceFee);
       return {
         ...(price !== undefined ? { price } : {}),
         currency: "JOD",
-        service_charge: parseNum(state.serviceFee),
-        maintenance_fee: parseNum(state.maintenanceFee),
+        ...(service_charge !== undefined ? { service_charge } : {}),
+        ...(maintenance_fee !== undefined ? { maintenance_fee } : {}),
       };
     }
     case "features-amenities":
       return { feature_ids: state.amenityFeatureIds };
     case "media-documents": {
-      const images = (state.mediaImages ?? []).map((row, i) => ({
-        file_name: row.file_name,
+      const imageRows = state.mediaImages ?? [];
+      const hasPrimaryFlag = imageRows.some((row) => row.is_primary === true);
+      const images = imageRows.map((row, i) => ({
+        file_name: displayMediaFileName(row.file_name, row.url),
         url: row.url,
-        ...(i === 0 ? { is_primary: true } : {}),
-        display_order: i,
+        ...(row.is_primary === true || (!hasPrimaryFlag && i === 0) ? { is_primary: true } : {}),
+        display_order: row.display_order ?? i,
         ...(row.caption ? { caption: row.caption } : {}),
       }));
       const videos = (state.mediaVideos ?? []).map((row, i) => ({
-        file_name: row.file_name,
+        file_name: displayMediaFileName(row.file_name, row.url),
         url: row.url,
-        display_order: i,
+        display_order: row.display_order ?? i,
         ...(row.caption ? { caption: row.caption } : {}),
       }));
       const documents = (state.propertyListingDocuments ?? []).map((row, i) => ({
-        file_name: row.file_name,
+        file_name: displayMediaFileName(row.file_name, row.url),
         url: row.url,
-        display_order: i,
+        display_order: row.display_order ?? i,
         ...(row.caption ? { caption: row.caption } : {}),
       }));
       return {
