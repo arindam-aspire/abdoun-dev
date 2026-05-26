@@ -60,10 +60,22 @@ export const resetAppState = createAction("app/resetState");
 
 const rootReducer: typeof appReducer = (state, action) => {
   if (resetAppState.match(action)) {
-    // Preserve visual preferences while dropping all authenticated/session-derived data.
+    // Preserve slices that are NOT tied to the authenticated session:
+    // - `ui`: visual preferences (e.g. theme, layout) chosen by the visitor
+    // - `locationTaxonomy`: public reference data (cities/areas) cached to avoid
+    //   re-fetching `/api/v1/location-taxonomy` on every logout
     const preservedUi = state?.ui ? { ...state.ui } : undefined;
+    const preservedLocationTaxonomy = state?.locationTaxonomy
+      ? { ...state.locationTaxonomy }
+      : undefined;
     const next = appReducer(undefined, { type: "@@INIT" });
-    return preservedUi ? { ...next, ui: preservedUi } : next;
+    return {
+      ...next,
+      ...(preservedUi ? { ui: preservedUi } : {}),
+      ...(preservedLocationTaxonomy
+        ? { locationTaxonomy: preservedLocationTaxonomy }
+        : {}),
+    };
   }
   return appReducer(state, action);
 };

@@ -56,7 +56,36 @@ function isDataOrBlobUrl(url: string): boolean {
   return url.startsWith("data:") || url.startsWith("blob:");
 }
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+function getTempEmailValidationError(
+  value: string,
+  currentEmail: string,
+  dirty: boolean,
+  t: (key: string) => string,
+): string | null {
+  const next = value.trim();
+  if (!next) return t("emailRequired");
+  if (!EMAIL_REGEX.test(next)) return t("emailInvalid");
+  if (next === currentEmail.trim() && dirty) return t("identitySameEmail");
+  return null;
+}
+
+function getTempPhoneValidationError(
+  value: string,
+  currentPhone: string,
+  dirty: boolean,
+  t: (key: string) => string,
+  tPhone: (key: string) => string,
+): string | null {
+  const next = value.trim();
+  if (!next) return t("phoneRequired");
+  const { iso2 } = splitPhoneNumber(next);
+  const issueCode = getPhoneValidationIssueCodeForSelectedCountry(next, iso2, false);
+  if (issueCode) return formatPhoneValidationIssue(tPhone, issueCode);
+  if (next === currentPhone.trim() && dirty) return t("identitySamePhone");
+  return null;
+}
 
 /** Avatar initials: two words → first letter each; one word → first two graphemes (e.g. John → JO). */
 function getInitials(fullName: string): string {
@@ -136,6 +165,8 @@ function ProfileFormBody({
   const [editingField, setEditingField] = useState<"email" | "phone" | null>(null);
   const [tempEmail, setTempEmail] = useState("");
   const [tempPhone, setTempPhone] = useState("");
+  const [tempEmailDirty, setTempEmailDirty] = useState(false);
+  const [tempPhoneDirty, setTempPhoneDirty] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [requestingEmail, setRequestingEmail] = useState(false);
   const [requestingPhone, setRequestingPhone] = useState(false);
@@ -267,6 +298,21 @@ function ProfileFormBody({
     setToast({ kind: "error", message: apiError });
   }, [apiError]);
 
+  const profileEmail = (getValues("email") || profileData.profile.email || "").trim();
+  const profilePhone = (getValues("phone") || profileData.profile.phone || "").trim();
+
+  /** Centralized inline validation for the inline email editor. */
+  const tempEmailValidationError = useMemo(
+    () => getTempEmailValidationError(tempEmail, profileEmail, tempEmailDirty, t),
+    [tempEmail, profileEmail, tempEmailDirty, t],
+  );
+
+  /** Centralized inline validation for the inline phone editor. */
+  const tempPhoneValidationError = useMemo(
+    () => getTempPhoneValidationError(tempPhone, profilePhone, tempPhoneDirty, t, tPhone),
+    [tempPhone, profilePhone, tempPhoneDirty, t, tPhone],
+  );
+
   const fullNameField = register("fullName", {
     validate: (value) =>
       String(value ?? "").trim().length > 0 || t("fullNameRequired"),
@@ -278,36 +324,36 @@ function ProfileFormBody({
     setApiError(null);
     setEditingField("email");
     setTempEmail((getValues("email") || profileData.profile.email || "").trim());
+    setTempEmailDirty(false);
   }, [getValues, profileData.profile.email]);
 
   const startEditPhone = useCallback(() => {
     setApiError(null);
     setEditingField("phone");
     setTempPhone((getValues("phone") || profileData.profile.phone || "").trim());
+    setTempPhoneDirty(false);
   }, [getValues, profileData.profile.phone]);
 
   const cancelEditIdentity = useCallback(() => {
     setEditingField(null);
     setTempEmail("");
     setTempPhone("");
+    setTempEmailDirty(false);
+    setTempPhoneDirty(false);
     setApiError(null);
   }, []);
 
   const submitEmailChange = useCallback(async () => {
     const next = tempEmail.trim();
-    const current = (getValues("email") || profileData.profile.email || "").trim();
-    if (!next) {
-      setApiError(t("emailRequired"));
-      return;
-    }
-    if (!EMAIL_REGEX.test(next)) {
-      setApiError(t("emailInvalid"));
-      return;
-    }
-    if (next === current) {
-      setApiError(t("identitySameEmail"));
-      return;
-    }
+    const markSameAsCurrent = next === profileEmail;
+    if (markSameAsCurrent) setTempEmailDirty(true);
+    const validationError = getTempEmailValidationError(
+      tempEmail,
+      profileEmail,
+      tempEmailDirty || markSameAsCurrent,
+      t,
+    );
+    if (validationError) return;
     setApiError(null);
     setRequestingEmail(true);
     const extras = getIdentityRequestExtras();
@@ -334,25 +380,20 @@ function ProfileFormBody({
     } finally {
       setRequestingEmail(false);
     }
-  }, [getIdentityRequestExtras, getValues, profileData.profile.email, t, tempEmail]);
+  }, [getIdentityRequestExtras, profileEmail, t, tempEmail, tempEmailDirty]);
 
   const submitPhoneChange = useCallback(async () => {
     const next = tempPhone.trim();
-    const current = (getValues("phone") || profileData.profile.phone || "").trim();
-    if (!next) {
-      setApiError(t("phoneRequired"));
-      return;
-    }
-    const { iso2 } = splitPhoneNumber(next);
-    const issueCode = getPhoneValidationIssueCodeForSelectedCountry(next, iso2, false);
-    if (issueCode) {
-      setApiError(formatPhoneValidationIssue(tPhone, issueCode));
-      return;
-    }
-    if (next === current) {
-      setApiError(t("identitySamePhone"));
-      return;
-    }
+    const markSameAsCurrent = next === profilePhone;
+    if (markSameAsCurrent) setTempPhoneDirty(true);
+    const validationError = getTempPhoneValidationError(
+      tempPhone,
+      profilePhone,
+      tempPhoneDirty || markSameAsCurrent,
+      t,
+      tPhone,
+    );
+    if (validationError) return;
     setApiError(null);
     setRequestingPhone(true);
     const extras = getIdentityRequestExtras();
@@ -380,7 +421,7 @@ function ProfileFormBody({
     } finally {
       setRequestingPhone(false);
     }
-  }, [getIdentityRequestExtras, getValues, profileData.profile.phone, t, tPhone, tempPhone]);
+  }, [getIdentityRequestExtras, profilePhone, t, tPhone, tempPhone, tempPhoneDirty]);
 
   const handlePhotoSelect = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -726,11 +767,13 @@ function ProfileFormBody({
                   value={tempEmail}
                   onChange={(e) => {
                     setTempEmail(e.target.value);
+                    setTempEmailDirty(true);
                     setApiError(null);
                   }}
                   placeholder={t("emailFieldPlaceholder")}
                   autoComplete="email"
                   disabled={requestingEmail}
+                  error={tempEmailValidationError ?? undefined}
                 />
                 <div className="flex w-full flex-wrap justify-end gap-2">
                   <Button
@@ -749,7 +792,7 @@ function ProfileFormBody({
                     className="bg-primary text-white hover:brightness-95 focus-visible:ring-primary"
                     size="sm"
                     onClick={() => void submitEmailChange()}
-                    disabled={requestingEmail}
+                    disabled={requestingEmail || !!tempEmailValidationError}
                   >
                     {requestingEmail ? (
                       <>
@@ -827,10 +870,12 @@ function ProfileFormBody({
                   value={tempPhone || undefined}
                   onChange={(v) => {
                     setTempPhone(v ?? "");
+                    setTempPhoneDirty(true);
                     setApiError(null);
                   }}
                   placeholder={t("phonePlaceholder")}
                   disabled={requestingPhone}
+                  error={tempPhoneValidationError ?? undefined}
                 />
                 <div className="flex w-full flex-wrap justify-end gap-2">
                   <Button
@@ -849,7 +894,7 @@ function ProfileFormBody({
                     className="bg-primary text-white hover:brightness-95 focus-visible:ring-primary"
                     size="sm"
                     onClick={() => void submitPhoneChange()}
-                    disabled={requestingPhone}
+                    disabled={requestingPhone || !!tempPhoneValidationError}
                   >
                     {requestingPhone ? (
                       <>

@@ -75,6 +75,23 @@ function areStringArraysEqual(a: string[], b: string[]): boolean {
   return true;
 }
 
+// Delay (ms) before propagating advanced-search text-input changes to the URL
+// (which drives the listings API call). Dropdowns/checkboxes still sync immediately.
+const ADVANCED_INPUT_DEBOUNCE_MS = 1000;
+
+function useDebouncedValue<T>(
+  value: T,
+  delay: number,
+): [T, Dispatch<SetStateAction<T>>] {
+  const [debounced, setDebounced] = useState<T>(value);
+  useEffect(() => {
+    if (value === debounced) return;
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, debounced, delay]);
+  return [debounced, setDebounced];
+}
+
 export function SearchFields({
   translations: t,
   isRtl: isRtlProp,
@@ -230,6 +247,41 @@ export function SearchFields({
   const [village, setVillage] = useState(() => getInitialAdvanced().village);
   const [parcelName, setParcelName] = useState(
     () => getInitialAdvanced().parcelName,
+  );
+  // Debounced mirrors of the advanced-search text inputs. They lag behind the
+  // live state by `ADVANCED_INPUT_DEBOUNCE_MS` so the URL (and the listings API
+  // call it triggers) only updates after the user stops typing.
+  const [minAreaSync, setMinAreaSync] = useDebouncedValue(
+    minArea,
+    ADVANCED_INPUT_DEBOUNCE_MS,
+  );
+  const [maxAreaSync, setMaxAreaSync] = useDebouncedValue(
+    maxArea,
+    ADVANCED_INPUT_DEBOUNCE_MS,
+  );
+  const [minPlotAreaSync, setMinPlotAreaSync] = useDebouncedValue(
+    minPlotArea,
+    ADVANCED_INPUT_DEBOUNCE_MS,
+  );
+  const [maxPlotAreaSync, setMaxPlotAreaSync] = useDebouncedValue(
+    maxPlotArea,
+    ADVANCED_INPUT_DEBOUNCE_MS,
+  );
+  const [governorateSync, setGovernorateSync] = useDebouncedValue(
+    governorate,
+    ADVANCED_INPUT_DEBOUNCE_MS,
+  );
+  const [directorateSync, setDirectorateSync] = useDebouncedValue(
+    directorate,
+    ADVANCED_INPUT_DEBOUNCE_MS,
+  );
+  const [villageSync, setVillageSync] = useDebouncedValue(
+    village,
+    ADVANCED_INPUT_DEBOUNCE_MS,
+  );
+  const [parcelNameSync, setParcelNameSync] = useDebouncedValue(
+    parcelName,
+    ADVANCED_INPUT_DEBOUNCE_MS,
   );
   const [balcony, setBalcony] = useState(() => getInitialAdvanced().balcony);
   const [builtInCloset, setBuiltInCloset] = useState(
@@ -649,23 +701,27 @@ export function SearchFields({
     if (showFloorLevel && floorLevel) params.set("floorLevel", floorLevel);
     if (showParking && parking) params.set("parking", parking);
     if (showPropertyAge && propertyAge) params.set("propertyAge", propertyAge);
-    if (showAreaRange && isMinMaxSqmPairAllowedForQuery(minArea, maxArea)) {
-      if (minArea.trim()) params.set("minArea", minArea.trim());
-      if (maxArea.trim()) params.set("maxArea", maxArea.trim());
+    if (showAreaRange && isMinMaxSqmPairAllowedForQuery(minAreaSync, maxAreaSync)) {
+      if (minAreaSync.trim()) params.set("minArea", minAreaSync.trim());
+      if (maxAreaSync.trim()) params.set("maxArea", maxAreaSync.trim());
     }
     if (showBedrooms && bedrooms) params.set("bedrooms", bedrooms);
     if (showRooms && rooms) params.set("rooms", rooms);
-    if (showPlotAreaRange && isMinMaxSqmPairAllowedForQuery(minPlotArea, maxPlotArea)) {
-      if (minPlotArea.trim()) params.set("minPlotArea", minPlotArea.trim());
-      if (maxPlotArea.trim()) params.set("maxPlotArea", maxPlotArea.trim());
+    if (
+      showPlotAreaRange &&
+      isMinMaxSqmPairAllowedForQuery(minPlotAreaSync, maxPlotAreaSync)
+    ) {
+      if (minPlotAreaSync.trim()) params.set("minPlotArea", minPlotAreaSync.trim());
+      if (maxPlotAreaSync.trim()) params.set("maxPlotArea", maxPlotAreaSync.trim());
     }
-    if (showGovernorate && governorate.trim())
-      params.set("governorate", governorate.trim());
-    if (showDirectorate && directorate.trim())
-      params.set("directorate", directorate.trim());
-    if (showVillage && village.trim()) params.set("village", village.trim());
-    if (showParcelName && parcelName.trim())
-      params.set("parcelName", parcelName.trim());
+    if (showGovernorate && governorateSync.trim())
+      params.set("governorate", governorateSync.trim());
+    if (showDirectorate && directorateSync.trim())
+      params.set("directorate", directorateSync.trim());
+    if (showVillage && villageSync.trim())
+      params.set("village", villageSync.trim());
+    if (showParcelName && parcelNameSync.trim())
+      params.set("parcelName", parcelNameSync.trim());
     const amenityList: string[] = [];
     if (showBalconyAmenity && balcony) amenityList.push("balcony");
     if (showBuiltInClosetAmenity && builtInCloset)
@@ -692,6 +748,15 @@ export function SearchFields({
     if (showElectricityNearbyAmenity && electricityNearby)
       amenityList.push("electricityNearby");
     if (amenityList.length > 0) params.set("amenities", amenityList.join(","));
+    // Preserve presentation-only params owned by SearchResults (view toggle, sort, pagination).
+    // SearchFieldsCore does not manage these, so it must not strip them when syncing filters to the URL.
+    const PRESERVED_PARAMS = ["view", "sort", "page", "pageSize"] as const;
+    for (const key of PRESERVED_PARAMS) {
+      const value = searchParams.get(key);
+      if (value != null && value !== "") {
+        params.set(key, value);
+      }
+    }
     const query = params.toString();
     const currentQuery = searchParams.toString();
     if (query === currentQuery) {
@@ -721,16 +786,16 @@ export function SearchFields({
     floorLevel,
     parking,
     propertyAge,
-    minArea,
-    maxArea,
+    minAreaSync,
+    maxAreaSync,
     bedrooms,
     rooms,
-    minPlotArea,
-    maxPlotArea,
-    governorate,
-    directorate,
-    village,
-    parcelName,
+    minPlotAreaSync,
+    maxPlotAreaSync,
+    governorateSync,
+    directorateSync,
+    villageSync,
+    parcelNameSync,
     balcony,
     builtInCloset,
     garden,
@@ -809,6 +874,16 @@ export function SearchFields({
     setDirectorate("");
     setVillage("");
     setParcelName("");
+    // Also flush the debounced mirrors so the URL clears immediately
+    // (no 3-second wait when the user explicitly resets filters).
+    setMinAreaSync("");
+    setMaxAreaSync("");
+    setMinPlotAreaSync("");
+    setMaxPlotAreaSync("");
+    setGovernorateSync("");
+    setDirectorateSync("");
+    setVillageSync("");
+    setParcelNameSync("");
     setBalcony(false);
     setBuiltInCloset(false);
     setGarden(false);

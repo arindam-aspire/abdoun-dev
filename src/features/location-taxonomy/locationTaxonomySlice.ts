@@ -36,11 +36,16 @@ export const fetchLocationTaxonomyIfNeeded = createAsyncThunk<
     }
   },
   {
+    /**
+     * Only hit the network when the location store is actually empty.
+     * - If a request is already in flight → skip (prevents parallel duplicates).
+     * - If we already have at least one city cached → skip (no refetch).
+     * - Otherwise (idle / failed / succeeded-but-empty) → fetch.
+     */
     condition: (_, { getState }) => {
       const s = getState().locationTaxonomy;
       if (s.inFlight) return false;
-      /** Treat any successful response (including empty `[]`) as cached — avoids refetch storms. */
-      if (s.status === "succeeded") return false;
+      if (s.cities.length > 0) return false;
       return true;
     },
   },
