@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance } from "axios";
 import type { AuthService, AuthTokens } from "@/lib/auth/ports";
 import { peelV1EnvelopePayload } from "@/lib/http/standardEnvelope";
-import { getSubIdFromActiveVault } from "@/lib/auth/adapters/vaultTokenStore";
+import { isPersistentTokenVault } from "@/lib/auth/adapters/vaultTokenStore";
 
 type RestAuthServiceOptions = {
   baseURL: string;
@@ -35,16 +35,25 @@ export class RestAuthService implements AuthService {
   }
 
   async refresh(refreshToken?: string | null): Promise<AuthTokens> {
-    const subId =
-      typeof window !== "undefined" ? getSubIdFromActiveVault() : null;
+    const username =
+      typeof window !== "undefined"
+        ? (window.localStorage.getItem("authUsername") ?? "").trim()
+        : "";
+    const rememberMe = typeof window !== "undefined" ? isPersistentTokenVault() : false;
+    const hasRefreshToken = Boolean(refreshToken && refreshToken.trim().length > 0);
 
-    const payload =
-      refreshToken && refreshToken.trim().length > 0
+    const payload = rememberMe
+      ? {
+          username,
+        }
+      : hasRefreshToken
         ? {
             refresh_token: refreshToken,
-            username: subId || undefined,
+            username,
           }
-        : {};
+        : {
+            username,
+          };
     const response = await this.client.post<unknown>(this.refreshPath, payload);
 
     const peeled = peelV1EnvelopePayload(response.data) as RefreshResponse;
