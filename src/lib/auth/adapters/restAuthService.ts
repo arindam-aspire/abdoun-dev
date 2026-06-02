@@ -2,6 +2,26 @@ import axios, { type AxiosInstance } from "axios";
 import type { AuthService, AuthTokens } from "@/lib/auth/ports";
 import { peelV1EnvelopePayload } from "@/lib/http/standardEnvelope";
 import { isPersistentTokenVault } from "@/lib/auth/adapters/vaultTokenStore";
+import { readAuthSessionFromBrowser } from "@/lib/auth/sessionCookies";
+
+/**
+ * Resolves the username for the `/auth/refresh` payload.
+ *
+ * Primary source: `localStorage["authUsername"]` (written by `setAuthUsername` at login).
+ * Fallback: the email stored in the `abdoun_user` session cookie (written by
+ * `persistAuthSession` at login). The fallback covers legacy sessions created before
+ * `setAuthUsername` was wired into the login path, and any case where aux keys were
+ * cleared independently of the tokens.
+ */
+function resolveRefreshUsername(): string {
+  if (typeof window === "undefined") return "";
+
+  const fromVault = (window.localStorage.getItem("authUsername") ?? "").trim();
+  if (fromVault) return fromVault;
+
+  const fromCookie = readAuthSessionFromBrowser()?.email?.trim();
+  return fromCookie ?? "";
+}
 
 type RestAuthServiceOptions = {
   baseURL: string;
@@ -35,10 +55,7 @@ export class RestAuthService implements AuthService {
   }
 
   async refresh(refreshToken?: string | null): Promise<AuthTokens> {
-    const username =
-      typeof window !== "undefined"
-        ? (window.localStorage.getItem("authUsername") ?? "").trim()
-        : "";
+    const username = resolveRefreshUsername();
     const rememberMe = typeof window !== "undefined" ? isPersistentTokenVault() : false;
     const hasRefreshToken = Boolean(refreshToken && refreshToken.trim().length > 0);
 

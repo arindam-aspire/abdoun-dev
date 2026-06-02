@@ -448,7 +448,14 @@ const adminAgentsSlice = createSlice({
       })
       .addCase(createAdminAgentManually.fulfilled, (state, action) => {
         state.agentsListStale = true;
-        const created = action.payload as Awaited<ReturnType<typeof agentOnboardingManually>>;
+        const created = action.payload as
+          | Awaited<ReturnType<typeof agentOnboardingManually>>
+          | undefined;
+        // Defensive: if the API contract ever drifts and the payload is missing,
+        // mark the list stale so the next fetch refreshes data, but don't crash the reducer.
+        if (!created || typeof created !== "object" || !created.id || !created.email) {
+          return;
+        }
         const now = new Date().toISOString();
         const st = normalizeAgentStatus(created.status ?? AGENT_STATUS.INVITED);
         const newAgent: AdminAgent = {

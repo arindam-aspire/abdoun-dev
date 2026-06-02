@@ -365,14 +365,22 @@ export type ManualOnboardedAgent = {
   temporaryPassword?: string;
 };
 
-export async function agentOnboardingManually(agent: AdminAgent): Promise<ManualOnboardedAgent> {
-  const response = await authApi.post<
-    StandardApiResponse<ManualOnboardedAgent>
-  >("/agents/manual-onboard", {
+export type ManualOnboardedAgentResult = ManualOnboardedAgent & {
+  message?: string | null;
+};
+
+export async function agentOnboardingManually(
+  agent: AdminAgent,
+): Promise<ManualOnboardedAgentResult> {
+  // The Axios response interceptor (`peelV1EnvelopeForAxios`) already strips the
+  // `{ success, data, message }` envelope, so `response.data` is the agent payload.
+  // The original envelope `message` is stashed on the response for callers that need it.
+  const response = await authApi.post<ManualOnboardedAgent>("/agents/manual-onboard", {
     fullName: agent.fullName,
     email: agent.email,
     phone: agent.phone,
     serviceArea: agent.city,
   });
-  return unwrap(response.data);
+  const message = readV1EnvelopeMessage(response);
+  return { ...response.data, message };
 }

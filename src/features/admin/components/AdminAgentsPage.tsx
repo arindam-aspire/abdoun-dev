@@ -511,7 +511,14 @@ export function AdminAgentsPage() {
       );
 
       if (createAdminAgentManually.fulfilled.match(result)) {
-        setToast({ kind: "success", message: "Agent onboarded successfully" });
+        const apiMessage =
+          typeof result.payload?.message === "string" && result.payload.message.trim()
+            ? result.payload.message
+            : null;
+        setToast({
+          kind: "success",
+          message: apiMessage ?? "Agent onboarded successfully",
+        });
         resetManualForm();
         setOnboardStep("choice");
         setIsOnboardModalOpen(false);

@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { ChangePasswordForm } from "@/components/auth/ChangePasswordForm";
-import { LoadingScreen } from "@/components/ui";
+import { LoadingScreen, Toast } from "@/components/ui";
+import type { ToastKind } from "@/components/ui/toast";
 import { useAppDispatch, useAppSelector } from "@/hooks/storeHooks";
 import { login } from "@/features/auth/authSlice";
 import { getApiErrorMessage } from "@/lib/http/apiError";
@@ -19,7 +20,7 @@ import { isPersistentTokenVault } from "@/lib/auth/adapters/vaultTokenStore";
 export default function ForceChangePasswordPage() {
   const [ready, setReady] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ kind: ToastKind; message: string } | null>(null);
   const dispatch = useAppDispatch();
   const router = useRouter();
   const params = useParams<{ locale: string }>();
@@ -77,7 +78,7 @@ export default function ForceChangePasswordPage() {
       <ChangePasswordForm
         initialLoading={submitting}
         onSubmit={async (newPassword) => {
-          setSubmitError(null);
+          setToast(null);
           setSubmitting(true);
           try {
             await setPasswordAfterLogin({
@@ -99,16 +100,19 @@ export default function ForceChangePasswordPage() {
             }
           } catch (error) {
             const message = getApiErrorMessage(error, "Failed to set password. Please try again.");
-            setSubmitError(message);
+            setToast({ kind: "error", message });
           } finally {
             setSubmitting(false);
           }
         }}
       />
-      {submitError ? (
-        <p className="mt-3 text-center text-size-sm text-red-600" role="alert">
-          {submitError}
-        </p>
+      {toast ? (
+        <Toast
+          kind={toast.kind}
+          message={toast.message}
+          duration={toast.kind === "error" ? 5000 : 4000}
+          onClose={() => setToast(null)}
+        />
       ) : null}
     </div>
   );
